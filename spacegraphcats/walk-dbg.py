@@ -5,45 +5,24 @@ import screed
 import argparse
 from collections import OrderedDict
 
+# graph settings
 DEFAULT_KSIZE=31
 NODEGRAPH_SIZE=8e8 # small, big is 2e8
 
+# minhash settings
 MH_SIZE_DIVISOR=50
 MH_MIN_SIZE=5
 MH_PRIME=9999999967
 
-def kmers(sequence, K):
-    for i in range(len(sequence) - K + 1):
-        yield sequence[i:i+K]
-
-
-def neighbors(kmer, cg):
-    assert len(kmer) == cg.ksize()
-
-    prefix = kmer[1:]
-    postfix = kmer[:-1]
-
-    for ch in 'ACGT':
-        kmer = prefix + ch
-        if cg.get(kmer):
-            yield kmer
-
-        kmer = ch + postfix
-        if cg.get(kmer):
-            yield kmer
-
-
 class Pathfinder(object):
-    def __init__(self, cg, bf):
-        self.cg = cg
-        self.bf = bf
+    "Track segment IDs, adjacency lists, and MinHashes"
+    def __init__(self, ksize):
+        self.ksize = ksize
 
         self.segment_counter = 1
         self.segments = {}
         self.segments_r = {}
-        self.segment_start = {}
         self.adjacencies = {}
-        self.adj_tips = {}
         self.hashdict = OrderedDict()
 
     def new_segment(self, kmer):
@@ -53,7 +32,7 @@ class Pathfinder(object):
         this_id = self.segment_counter
         self.segment_counter += 1
 
-        self.segments[this_id] = self.cg.ksize()
+        self.segments[this_id] = self.ksize
         self.segments_r[kmer] = this_id
 
         return this_id
@@ -65,12 +44,36 @@ class Pathfinder(object):
         return this_id
 
     def add_adjacency(self, node_id, adj):
-        if adj < node_id:
-            return
+        node_id, adj = min(node_id, adj), max(node_id, adj)
         
         x = self.adjacencies.get(node_id, set())
         x.add(adj)
         self.adjacencies[node_id] = x
+
+
+def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy):
+    size, conns, visited = graph.traverse_linear_path(nk, stop_bf)
+    if not size:
+        return
+
+    # give it a segment ID
+    path_id = pathy.new_linear_segment(size)
+
+    # for all adjacencies, add.
+    for conn in conns:
+        conn_id = pathy.segments_r.get(conn)
+        pathy.add_adjacency(path_id, conn_id)
+
+    # next, calculate minhash from visited k-mers
+    v = [ khmer.reverse_hash(i, graph.ksize()) for i in visited ]
+    mh_size = max(len(visited) // MH_SIZE_DIVISOR, MH_MIN_SIZE)
+
+    mh = khmer.MinHash(mh_size, graph.ksize())
+    for kmer in v:
+        mh.add_sequence(kmer)
+
+    # save minhash info
+    pathy.hashdict[path_id] = mh.get_mins()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -87,19 +90,30 @@ def main():
     assert args.output, "you probably want an output file"
 
     print('building graphs and loading files')
-    cg = khmer.Countgraph(args.ksize, args.tablesize, 2)
-    bf = khmer.Nodegraph(args.ksize, args.tablesize, 2)
-    bf2 = khmer.Nodegraph(args.ksize, args.tablesize, 2)
+
+    # Create graph, and two stop bloom filters - one for loading, one for
+    # traversing. Create them all here so that we can error out quickly
+    # if memory is a problem.
+
+    graph = khmer.Nodegraph(args.ksize, args.tablesize, 2)
+    stop_bf = khmer.Nodegraph(args.ksize, args.tablesize, 2)
+    stop_bf2 = khmer.Nodegraph(args.ksize, args.tablesize, 2)
     n = 0
+
+    # load in all of the input sequences, one file at a time.
     for seqfile in args.seqfiles:
         for record in screed.open(seqfile):
             n += 1
             if n % 10000 == 0:
                 print('...', seqfile, n)
-            cg.consume(record.sequence)
+            graph.consume(record.sequence)
 
-    fp_rate = khmer.calc_expected_collisions(cg, args.force, max_false_pos=.05)
-    pathy = Pathfinder(cg, bf)
+    # complain if too small set of graphs was used.
+    fp_rate = khmer.calc_expected_collisions(graph,
+                                             args.force, max_false_pos=.05)
+
+    # initialize the object that will track information for us.
+    pathy = Pathfinder(args.ksize)
 
     print('finding high degree nodes')
     n = 0
@@ -109,55 +123,50 @@ def main():
             if n % 10000 == 0:
                 print('...2', seqfile, n)
             # walk across sequences, find all high degree nodes,
-            # name them and cherish them.
-            if min(bf2.get_kmer_counts(record.sequence)) == 0:
-                bf2.consume(record.sequence)
-                cg.find_high_degree_nodes(record.sequence)
+            # name them and cherish them. Don't do this on identical sequences.
+            if min(stop_bf2.get_kmer_counts(record.sequence)) == 0:
+                stop_bf2.consume(record.sequence)
+                graph.find_high_degree_nodes(record.sequence)
+    del stop_bf2
 
-    del bf2
-
-    degree_nodes = cg.get_high_degree_nodes()
+    # get all of the degree > 2 nodes and give them IDs.
+    degree_nodes = graph.get_high_degree_nodes()
     for node in degree_nodes:
         pathy.new_segment(node)
 
     print('traversing linear segments from', len(degree_nodes), 'nodes')
+
+    # now traverse from each high degree nodes into all neighboring nodes,
+    # seeking adjacencies.  if neighbor is high degree node, add it to
+    # adjacencies; if neighbor is not, then traverse the linear path.  also
+    # track minhashes while we're at it.
     for n, k in enumerate(degree_nodes):
         if n % 10000 == 0:
             print('...', n, 'of', len(degree_nodes))
+
+        # retrieve the segment ID of the primary node.
         k_id = pathy.segments_r[k]
-        
-        k_str = khmer.reverse_hash(k, cg.ksize())
+
+        # add its hash value.
+        k_str = khmer.reverse_hash(k, graph.ksize())
         hashval = khmer._minhash.hash_murmur32(k_str) % MH_PRIME;
         pathy.hashdict[k_id] = [hashval]
 
-        nbh = cg.neighbors(k)
+        # find all the neighbors of this high-degree node.
+        nbh = graph.neighbors(k)
         for nk in nbh:
-            if cg.is_high_degree_node(nk):
+            # neighbor is high degree? fine, mark its adjacencies.
+            if graph.is_high_degree_node(nk):
                 nk_id = pathy.segments_r[nk]
                 pathy.add_adjacency(k_id, nk_id)
             else:
-                size, conns, visited = cg.traverse(nk, bf)
-                if size:
-                    path_id = pathy.new_linear_segment(size)
-
-                    v = [ khmer.reverse_hash(i, cg.ksize()) for i in visited ]
-                    mh_size = max(len(visited) // MH_SIZE_DIVISOR, MH_MIN_SIZE)
-                    mh = khmer.MinHash(mh_size, cg.ksize())
-                    for kmer in v:
-                        mh.add_sequence(kmer)
-                    pathy.hashdict[path_id] = mh.get_mins()
-
-                    for conn in conns:
-                        conn_id = pathy.segments_r.get(conn)
-                        pathy.add_adjacency(path_id, conn_id)
-                        pathy.add_adjacency(conn_id, path_id)
+                # linear! walk it.
+                traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy)
 
     print(len(pathy.segments), 'segments, containing',
               sum(pathy.segments.values()), 'nodes')
-    #for k in pathy.segments:
-    #    print(k, pathy.segments[k], pathy.adjacencies.get(k, []))
 
-    # save to GML
+    # save to GXT or GML.
     if args.output:
         import parser
 

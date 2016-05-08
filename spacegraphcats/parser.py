@@ -39,7 +39,7 @@ def parse_minhash(file, add_minhash):
         if len(line) < 2:
             return
         parsed = _parse_line(line)
-        add_minhash(parsed[0], list(map(str.strip, parsed[1].split())))
+        add_minhash(parsed[0], list(map(int,map(str.strip, parsed[1].split()))))
 
 
 class Writer(object):
@@ -103,7 +103,7 @@ class GmlWriter(object):
         if edge_attributes is not None:
             self.edge_attributes = edge_attributes
 
-        self._write('graph [\n')
+        self._write('graph [\n   directed 0\n')
 
     def _write(self, string):
         self.file.write(string)

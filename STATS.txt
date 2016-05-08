@@ -1,0 +1,29 @@
+2.5m-subset.gxt.mxt.gz 185871
+
+time ~/spacegraphcats/spacegraphcats/walk-dbg.py -x 8e9 ../2.5m-subset.fq.gz -o 2.5m-subset.gxt
+
+real    4m44.395s
+user    4m40.104s
+sys     0m4.260s
+
+
+----
+
+25m-subset.gxt.mxt.gz 947252
+
+time ~/spacegraphcats/spacegraphcats/walk-dbg.py -x 8e9 ../25m-subset.fq.gz -o 25m-subset.gxt
+
+real    42m58.462s
+user    42m50.384s
+sys     0m7.452s
+
+---
+
+time ~/spacegraphcats/spacegraphcats/walk-dbg.py -x 25e9 ../SRR606249.combined.fq -o SRR606249.combined.gxt
+
+7648879 segments, containing 283946825 nodes
+saving to SRR606249.combined.gxt
+
+real    145m17.550s
+user    144m21.548s
+sys     0m51.580s
