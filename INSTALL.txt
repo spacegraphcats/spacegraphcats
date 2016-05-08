@@ -1,0 +1,24 @@
+# Boot something like ubuntu-wily-15.10-amd64-server-20160222 (ami-05384865).
+
+# install required Debian packages
+sudo apt-get update && \
+     sudo apt-get -y install python-dev python-pip python-virtualenv
+
+# activate virtualenv
+python -m virtualenv env
+. env/bin/activate
+
+# install khmer
+git clone https://github.com/dib-lab/khmer.git -b minhash
+cd khmer
+make
+export PYTHONPATH=$(pwd)
+echo "export PYTHONPATH=$(pwd)" >> ~/.bashrc
+cd
+
+# get spacegraphcats
+git clone https://github.com/spacegraphcats/spacegraphcats.git
+
+# install requirements
+pip -r spacegraphcats/requirements.txt
+
