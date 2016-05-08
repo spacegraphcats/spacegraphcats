@@ -20,5 +20,5 @@ cd
 git clone https://github.com/spacegraphcats/spacegraphcats.git
 
 # install requirements
-pip -r spacegraphcats/requirements.txt
+pip install -r spacegraphcats/requirements.txt
 
