@@ -78,6 +78,12 @@ class Graph(object):
         for v in self:
             self.remove_edge(v,v)
 
+    def has_loops(self):
+        for v in self:
+            if self.adjacent(v,v):
+                return True
+        return False
+
     def adjacent(self,u,v):
         return v in self.adj[u]
 
@@ -277,6 +283,7 @@ class TFGraph(object):
         self.nodes.add(u)
 
     def add_arc(self,u,v,weight):
+        assert u != v
         self.inarcs[v][u] = weight
         self.inarcs_weight[v][weight].add(u)
 
@@ -379,54 +386,60 @@ class TFGraph(object):
         return res
 
     # Returns transitive triples (x,u,weightsum)
-    def trans_trips(self,u):
+    def trans_trips(self, u):
         inbs = frozenset(self.inarcs[u].items())
-        for (y,wy) in inbs:
-            for x,wx in self.in_neighbours(y):
-                if not self.adjacent(x,u):
-                    yield (x,u,wx+wy)
+        for (y, wy) in inbs:
+            assert y != u
+            for x, wx in self.in_neighbours(y):
+                if not self.adjacent(x, u):
+                    yield (x, u, wx+wy)
 
     # Returns transitive triples (x,y,weightsum) whose weightsum
     # is precisely 'weight'
     def trans_trips_weight(self,u,weight):
-        for wy in range(1,weight):
+        for wy in range(1, weight):
             wx = weight-wy
             inbs = frozenset(self.inarcs_weight[u][wy])
             for y in inbs:
-                for x in self.in_neighbours_weight(y,wx):
-                    if not self.adjacent(x,u):
-                        yield (x,u,weight)
+                assert y != u
+                for x in self.in_neighbours_weight(y, wx):
+                    if not self.adjacent(x, u) and x != u:
+                        yield (x, u, weight)
 
 
     # Returns fraternal triples (x,y,weightsum)
     def frat_trips(self,u):
         inbs = frozenset(self.inarcs[u].items())
-        for (x,wx),(y,wy) in itertools.combinations(inbs, 2):
-            if not (self.adjacent(x,y) or self.adjacent(y,x)):
-                yield (x,y,wx+wy)
+        for (x, wx), (y, wy) in itertools.combinations(inbs, 2):
+            assert x != u and y != u
+            if not (self.adjacent(x, y) or self.adjacent(y, x)):
+                yield (x, y, wx+wy)
 
     # Returns fraternal triples (x,y,weightsum) whose weightsum
     # is precisely 'weight'
-    def frat_trips_weight(self,u,weight):
+    def frat_trips_weight(self, u, weight):
         ''' Since we draw all vertices from the same in-neighbourhood,
         the considered sets have usually different weights and
         are thus disjoint. Only for even weights do we have to consider
         the slightly annoying case of (weight/2, weight/2).
         '''
-        wh = (weight+1)//2
+        wh = (weight+1) // 2
         for wx in range(1,wh):
             wy = weight-wx
             for x in self.in_neighbours_weight(u,wx):
+                assert x != u
                 for y in self.in_neighbours_weight(u,wy):
+                    assert y != u
                     if not (self.adjacent(x,y) or self.adjacent(y,x)):
-                        yield (x,y,weight)
+                        yield (x, y, weight)
 
         if weight % 2 == 0:
-            wy = wx = weight//2
+            wy = wx = weight // 2
             inbs = frozenset(self.inarcs_weight[u][wh])
-            for x,y in itertools.combinations(inbs, 2):
+            for x, y in itertools.combinations(inbs, 2):
+                assert x != u and y != u
                 if not (self.adjacent(x,y) or self.adjacent(y,x)):
-                    yield (x,y,weight)
+                    yield (x, y, weight)
 
     # For memoization
     def __str__(self):
