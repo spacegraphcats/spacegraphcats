@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
-import argparse
-import sys, os
+import argparse, sys, os
+import gzip
 from os import path
 from graph import Graph
 from parser import parse_minhash
@@ -34,9 +34,17 @@ def parse_minhash_dict(file):
 
 def read_project_file(projectpath, filename):
 	fullpath = path.join(projectpath, filename)
+	zipped = False
 	if not path.exists(fullpath):
-		error("Missing file {} in {}".format(filename, projectpath))
+		if not path.exists(fullpath+".gz"):
+			error("Missing file {} in {}".format(filename, projectpath))
+		else:
+			zipped = True
+			fullpath += ".gz"
+			filename += ".gz" # for consistent report
 	report("Found {} in {}".format(filename, projectpath))
+	if zipped:
+		return gzip.open(fullpath, 'rt')	
 	return open(fullpath, 'r')
 
 parser = argparse.ArgumentParser()
@@ -65,6 +73,10 @@ report("Project {} in {}".format(project.name, project.path))
 file = read_project_file(project.path, project.name+".gxt")
 project.graph, project.node_attr, project.edge_attr = Graph.from_gxt(file)
 
+if project.graph.has_loops():
+	report("Graph contains loops. Removing loops for further processing.")
+	project.graph.remove_loops()
+
 report("Loaded graph with {} vertices and {} edges".format(len(project.graph),project.graph.num_edges()))
 
 file = read_project_file(project.path, project.name+".mxt")
@@ -75,7 +87,6 @@ for v in project.graph:
 		warn("Vertex {} is missing minhashes".format(v))
 
 report("Loaded minhashes for graph")
-
 
 
 """ 
@@ -90,3 +101,4 @@ project.dominators = calc_dominators(project.augg, project.domset, project.radiu
 project.domgraph = calc_domset_graph(project.domset, project.dominators, project.radius)
 
 report("Computed {}-catlas base graph with {} edges".format(project.radius,project.domgraph.num_edges()))
+

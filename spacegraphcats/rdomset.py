@@ -15,16 +15,16 @@ def dtf(g, r):
 
     changed = True
     d = 1
-    print("Augmenting",end=" ")
+    print("Augmenting", end=" ", flush=True)
     while changed and d <= r:
-        print(d,end=" ")
+        print(d, end=" ", flush=True)
         dtf_step(auggraph, d+1)
 
         curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
         changed = num_arcs < curr_arcs
         num_arcs = curr_arcs
         d += 1
-    print("")
+    print("", flush=True)
     return auggraph
 
 def dtf_step(g, dist):
@@ -32,18 +32,22 @@ def dtf_step(g, dist):
     newTrans = {}
 
     for v in g:
-        for x,y,_ in g.trans_trips_weight(v, dist):
-            newTrans[(x,y)] = dist
-        for x,y,_ in g.frat_trips_weight(v, dist):
-            fratGraph.add_edge(x,y)
+        for x, y, _ in g.trans_trips_weight(v, dist):
+            assert x != y
+            newTrans[(x, y)] = dist
+        for x, y, _ in g.frat_trips_weight(v, dist):
+            assert x != y
+            fratGraph.add_edge(x, y)
 
     for (s, t) in newTrans:
+        assert s != t
         g.add_arc(s, t, dist)
         fratGraph.remove_edge(s,t)
 
     fratDigraph = ldo(fratGraph)
 
-    for s,t,_ in fratDigraph.arcs():
+    for s, t, _ in fratDigraph.arcs():
+        assert s != t
         g.add_arc(s,t,dist)
 
 def ldo(g, weight=None):
