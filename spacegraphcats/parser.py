@@ -34,13 +34,23 @@ def parse(file, add_vertex, add_edge):
 
 
 def parse_minhash(file, add_minhash):
-    """Parse minhash file."""
-    for line in file.readlines():
+    """Parse minhash (.mxt) file."""
+    for line in file:
         if len(line) < 2:
-            return
+            continue
         parsed = _parse_line(line)
         add_minhash(parsed[0], list(map(int,map(str.strip, parsed[1].split()))))
 
+def parse_edgelist(file, add_edge):
+    """Parse and edgelist (.ext) file."""
+    for line in file:
+        parsed = _parse_line(line)
+        add_edge(parsed[0], parsed[1])
+
+def write_edgelist(file, edges):
+    """Write an edgelist into an .ext file."""
+    for u,v in edges:
+        file.write('{},{}\n'.format(u,v))
 
 class Writer(object):
     """Writer for the gxt graph format.

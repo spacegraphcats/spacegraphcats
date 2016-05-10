@@ -55,6 +55,14 @@ class Graph(object):
     def num_edges(self):
         return sum(1 for _ in self.edges())
 
+    def num_components(self):
+        comps = UnionFind()
+        for v in self:
+            N = self.neighbours(v) | set([v])
+            comps.union(*N)
+        ids = set([comps[v] for v in comps])
+        return len(ids)
+
     def add_node(self,u):
         self.nodes.add(u)
 
@@ -597,7 +605,7 @@ def graph_hash(g):
                 deg[ (indegs[w],w) ] += 1
         m = hashlib.md5()
         for d in sorted(deg.keys()):
-            m.update(str(deg[d]**(d[0]*d[1])))
+            m.update(str(deg[d]**(d[0]*d[1])).encode())
         return m.hexdigest()
     elif isinstance(g, Graph):
         deg = defaultdict(int)
@@ -605,5 +613,5 @@ def graph_hash(g):
             deg[g.degree(v)] += 1
         m = hashlib.md5()
         for d in sorted(deg.keys()):
-            m.update(str(deg[d]**d))
+            m.update(str(deg[d]**d).encode())
         return m.hexdigest()
