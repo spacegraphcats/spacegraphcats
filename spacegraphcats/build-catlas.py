@@ -75,7 +75,6 @@ def read_project_file(projectpath, filename):
 
 def load_and_compute_augg(project):
     augname = path.join(project.path,project.name+".aug.{}.ext")
-    print(augname)
 
     augs = {}
     for f in glob.glob(augname.format("[0-9]*")):
