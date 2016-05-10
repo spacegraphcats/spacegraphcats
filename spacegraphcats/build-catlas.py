@@ -35,6 +35,7 @@ def parse_minhash_dict(file):
     return res
 
 def parse_arclist(file):
+    """ Loads .ext file into a list of arcs """
     res = []
     def add_arc(u, v):
         res.append((int(u),int(v)))
@@ -44,6 +45,7 @@ def parse_arclist(file):
     return res
 
 def write_arcs(tfgraph,weight,file):
+    """ Write arcs of a tfgraph that have the specified weight into a .ext file """
     arcs = []
     for u,v,w in tfgraph.arcs():
         if w == weight:
@@ -53,11 +55,16 @@ def write_arcs(tfgraph,weight,file):
     f.close()
 
 def add_arcs_from_file(tfgraph,weight,file):
+    """ Adds arcs from an .ext file to the tfgraph with the specified weight """
     arcs = parse_arclist(file)
     for u,v in arcs:
         tfgraph.add_arc(u,v,weight)
 
 def read_project_file(projectpath, filename):
+    """
+        Attempts to read a project file. Checks whether compressed file (.gz)
+        exists that otherwise matches the filename.
+    """
     fullpath = path.join(projectpath, filename)
     zipped = False
     if not path.exists(fullpath):
@@ -72,8 +79,12 @@ def read_project_file(projectpath, filename):
         return gzip.open(fullpath, 'rt')    
     return open(fullpath, 'r')
 
-
 def load_and_compute_augg(project):
+    """ 
+        Returns a project.radius-dtf augmentation of project.graph.
+        Loads cached augmentations from the project directory and writes
+        newly computed augmentations into it.
+    """
     augname = path.join(project.path,project.name+".aug.{}.ext")
 
     augs = {}
@@ -156,9 +167,7 @@ report("Loaded minhashes for graph")
     Compute r-dominating set 
 """
 
-""" Check whether augmentations have already been computed """
-
-
+""" Compute augmentations or load them from the project directory """
 project.augg = load_and_compute_augg(project)
 
 project.domset = better_dvorak_reidl(project.augg, project.radius)
