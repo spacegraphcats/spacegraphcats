@@ -4,7 +4,7 @@ import sys, os
 from os import path
 from graph import Graph
 from parser import parse_minhash
-from rdomset import rdomset, calc_dominators
+from rdomset import rdomset, calc_dominators, calc_domset_graph
 
 DEBUG = True
 
@@ -87,3 +87,6 @@ project.domset, project.augg = rdomset(project.graph, project.radius)
 report("Computed {}-domset of size {} for graph with {} vertices".format(project.radius, len(project.domset), len(project.graph)))
 
 project.dominators = calc_dominators(project.augg, project.domset, project.radius)
+project.domgraph = calc_domset_graph(project.domset, project.dominators, project.radius)
+
+report("{}-catlas base graph has size {}".format(project.radius,len(project.domgraph)))
