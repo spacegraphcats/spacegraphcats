@@ -95,7 +95,7 @@ class Graph(object):
 
     def rneighbours(self,u,r):
         res = set([u])
-        for _ in xrange(r):
+        for _ in range(r):
             res |= self.neighbours_set_closed(res)
         return res
 
@@ -113,7 +113,7 @@ class Graph(object):
 
     def calc_average_degree(self):
         num_edges = len( [e for e in self.edges()] )
-        return float(2*num_edges) / len(self.nodes)
+        return 2.0*num_edges / len(self.nodes)
 
     def calc_degeneracy(self):
         degbuckets = defaultdict(set)
@@ -130,7 +130,7 @@ class Graph(object):
         while len(removed) < n:
             while len(degbuckets[mindeg]) == 0:
                 mindeg += 1
-            v = iter(degbuckets[mindeg]).next()
+            v = next(iter(degbuckets[mindeg]))
             degbuckets[mindeg].remove(v)
             removed.add(v)
             degen = max(degen, mindeg)
@@ -191,7 +191,7 @@ class Graph(object):
                 parts = map( int, name[1:].split(',') )
                 if len(parts) == 1:
                     size = parts[0]
-                    for x,y in itertools.combinations(xrange(0,size),2):
+                    for x,y in itertools.combinations(range(0,size),2):
                         res.add_edge(x,y)
                 else:
                     print("Generating", name)
@@ -200,14 +200,14 @@ class Graph(object):
                     for s in parts:
                         indices.append( (size, size+s) )
                         size += s
-                    for a,b in itertools.combinations(xrange(0,len(parts)),2):
-                        for x in xrange( indices[a][0], indices[a][1] ):
-                            for y in xrange( indices[b][0], indices[b][1] ):
+                    for a,b in itertools.combinations(range(0,len(parts)),2):
+                        for x in range( indices[a][0], indices[a][1] ):
+                            for y in range( indices[b][0], indices[b][1] ):
                                 res.add_edge(x,y)
 
             elif t == 'P' or t == 'C':
                 size = int(name[1:])
-                for x in xrange(0,size-1):
+                for x in range(0,size-1):
                     res.add_edge(x,x+1)
                 if t == 'C':
                     res.add_edge(size-1,0)
@@ -223,7 +223,8 @@ class Graph(object):
     def is_connected(self):
         if len(self) <= 1:
             return True
-        comp = set( [iter(self).next()] )
+        comp = set()
+        comp.add(next(iter(self)))
         exp = self.neighbours_set(comp)
         while len(exp) > 0:
             comp.update( exp )
@@ -388,7 +389,7 @@ class TFGraph(object):
     # Returns transitive triples (x,y,weightsum) whose weightsum
     # is precisely 'weight'
     def trans_trips_weight(self,u,weight):
-        for wy in xrange(1,weight):
+        for wy in range(1,weight):
             wx = weight-wy
             inbs = frozenset(self.inarcs_weight[u][wy])
             for y in inbs:
@@ -412,8 +413,8 @@ class TFGraph(object):
         are thus disjoint. Only for even weights do we have to consider
         the slightly annoying case of (weight/2, weight/2).
         '''
-        wh = (weight+1)/2
-        for wx in xrange(1,wh):
+        wh = (weight+1)//2
+        for wx in range(1,wh):
             wy = weight-wx
             for x in self.in_neighbours_weight(u,wx):
                 for y in self.in_neighbours_weight(u,wy):
@@ -421,7 +422,7 @@ class TFGraph(object):
                         yield (x,y,weight)
 
         if weight % 2 == 0:
-            wy = wx = weight/2
+            wy = wx = weight//2
             inbs = frozenset(self.inarcs_weight[u][wh])
             for x,y in itertools.combinations(inbs, 2):
                 if not (self.adjacent(x,y) or self.adjacent(y,x)):

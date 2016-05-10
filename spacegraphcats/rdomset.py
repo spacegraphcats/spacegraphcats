@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from collections import defaultdict, Counter
 from operator import itemgetter
 import itertools
@@ -15,16 +15,16 @@ def dtf(g, r):
 
     changed = True
     d = 1
-    print "Augmenting",
+    print("Augmenting",end=" ")
     while changed and d <= r:
-        print d,
+        print(d,end=" ")
         dtf_step(auggraph, d+1)
 
         curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
         changed = num_arcs < curr_arcs
         num_arcs = curr_arcs
         d += 1
-    print ""
+    print("")
     return auggraph
 
 def dtf_step(g, dist):
@@ -60,11 +60,11 @@ def ldo(g, weight=None):
         buckets[d].add(v)
 
     seen = set()
-    for i in xrange(0, len(g)):
+    for i in range(0, len(g)):
         d = 0
         while len(buckets[d]) == 0:
             d += 1
-        v = iter(buckets[d]).next()
+        v = next(iter(buckets[d]))
         buckets[d].remove(v)
 
         for u in g.neighbours(v):
@@ -89,7 +89,7 @@ def calc_distance(augg, X):
         dist[v] = 0
 
     # We need two passes
-    for _ in xrange(2):
+    for _ in range(2):
         for v in augg:
             for u, r in augg.in_neighbours(v):
                 dist[v] = min(dist[v],dist[u]+r)
@@ -105,7 +105,7 @@ def calc_dominators(augg, domset, d):
         dominators[v][0].add(v)
 
     # We need two passes
-    for _ in xrange(2):
+    for _ in range(2):
         for v in augg:
             # Pull dominators
             for u, r in augg.in_neighbours(v):
@@ -122,7 +122,7 @@ def calc_dominators(augg, domset, d):
 
     for v in dominators:
         cumulated = set()
-        for r in xrange(d+1):
+        for r in range(d+1):
             dominators[v][r] -= cumulated
             cumulated |= dominators[v][r]
 
@@ -146,13 +146,13 @@ def calc_domset_graph(domset, dominators, d):
         if v in domset:
             continue
         # Collect closest pairs
-        sorted_doms = filter(lambda s: len(s) > 0, [dominators[v][r] for r in xrange(d+1)])
+        sorted_doms = filter(lambda s: len(s) > 0, [dominators[v][r] for r in range(d+1)])
         if len(sorted_doms[0]) >= 2:
             for x,y in itertools.combinations(sorted_doms[0],2):
                 h.add_edge(x,y)
         else:
             assert len(sorted_doms[0]) == 1
-            x = iter(sorted_doms[0]).next()
+            x = next(iter(sorted_doms[0]))
             if len(sorted_doms) >= 2:
                 for y in sorted_doms[1]:
                     h.add_edge(x,y)
@@ -187,48 +187,6 @@ def better_dvorak_reidl(augg,d):
 
     return domset
 
-def vc_compression(g,dominators,d):
-    confgraph = Graph()
-    forced = set()
-    for v in g:
-        candidates = [x for r in xrange(d+1) for x in dominators[v][r] ]
-        if len(candidates) == 1:
-            confgraph.add_node(candidates[0])
-            forced.add(candidates[0])
-            continue
-        elif len(candidates) == 2:
-            confgraph.add_edge(*candidates)
-            continue
-
-        fixed = [] # Candidate already in the graph
-        for c in reversed(candidates):
-            if c in confgraph:
-                fixed.append(c)
-                if len(fixed) == 2:
-                    break
-        u,w = None,None
-        if len(fixed) == 0:
-            u,w = random.sample(candidates,2)
-        elif len(fixed) == 1:
-            u = fixed[0]
-            w = random.sample(candidates,1)[0]
-        else:
-            u,w = fixed
-        confgraph.add_edge(u,w)
-
-    # Calculate vertex cover of confgraph
-    cover = set(forced)
-    edges = [(u,v,g.degree(u),g.degree(v)) for u,v in confgraph.edges()]
-    edges.sort(key=lambda (u,v,du,dv): du+dv, reverse=False)
-    for u,v,_,_ in edges:
-        if u not in cover and v not in cover:
-            cover.add(u)
-            cover.add(v)
-    domset = cover
-
-    return domset
-
-
 def test_scattered(g, sc, d):
     sc = set(sc)
     for v in sc:
@@ -247,10 +205,10 @@ def test_dominators(g, domset, dominators, d):
     for v in g:
         dN = g.rneighbours(v,d)
         candidates = dN & domset
-        for r in xrange(0,d+1):
+        for r in range(0,d+1):
             candidates -= dominators[v][r]
         if len(candidates) > 0:
-            print v, candidates, dominators[v]
+            print(v, candidates, dominators[v])
             return False
     return True
 
@@ -260,7 +218,7 @@ def test_dominators_strict(g, domset, dominators, d):
         if dominators[v][0] != (dN & domset):
             return False
 
-        for r in xrange(1,d+1):
+        for r in range(1,d+1):
             shell = g.neighbours_set(dN) - dN
             if dominators[v][r] != (shell & domset):
                 return False
@@ -278,19 +236,19 @@ def main(inputgxt, outputgxt, d, test, domgraph):
     g.remove_loops()
 
     domset, augg = rdomset(g,d)
-    print "Computed {}-domset of size {} in graph with {} vertices".format(d,len(domset),len(g))
+    print("Computed {}-domset of size {} in graph with {} vertices".format(d,len(domset),len(g)))
 
     dominators = calc_dominators(augg, domset, d)
 
     # Compute domset graph
     if domgraph:
-        print "Computing domgraph"
+        print("Computing domgraph")
         h = calc_domset_graph(domset, dominators, d)
         write_gxt(domgraph, h)
 
     # Test domset
     if test:
-        print "Testing domset:", test_domset(g,domset,d)
+        print("Testing domset:", test_domset(g,domset,d))
 
     # Annotate domset
     labelds = 'ds{}'.format(d)

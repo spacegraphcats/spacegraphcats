@@ -4,6 +4,7 @@ import sys, os
 from os import path
 from graph import Graph
 from parser import parse_minhash
+from rdomset import rdomset, calc_dominators
 
 DEBUG = True
 
@@ -41,10 +42,11 @@ def read_project_file(projectpath, filename):
 parser = argparse.ArgumentParser()
 parser.add_argument('project', help='Project directory. Must contain a .gxt and an .mxt file with the same base name \
 									 as the directory.', type=str)
-parser.add_argument('n', help="The target atlas size.", type=int )
+parser.add_argument('r', help="The catlas' radius.", type=int )
 args = parser.parse_args()
 
 project = AttributeDict()
+project.radius = args.r
 
 if not path.isdir(args.project):
 	error("{} is not a valid pathname".format(args.project))
@@ -56,7 +58,9 @@ project.name = path.basename(path.normpath(args.project))
 
 report("Project {} in {}".format(project.name, project.path))
 
-""" Make sure .gxt and .mxt with the right naming conventions exist and load them """
+""" 
+	Make sure .gxt and .mxt with the right naming conventions exist and load them 
+"""
 
 file = read_project_file(project.path, project.name+".gxt")
 project.graph, project.node_attr, project.edge_attr = Graph.from_gxt(file)
@@ -72,3 +76,14 @@ for v in project.graph:
 
 report("Loaded minhashes for graph")
 
+
+
+""" 
+	Compute r-dominating set 
+"""
+
+project.domset, project.augg = rdomset(project.graph, project.radius)
+
+report("Computed {}-domset of size {} for graph with {} vertices".format(project.radius, len(project.domset), len(project.graph)))
+
+project.dominators = calc_dominators(project.augg, project.domset, project.radius)
