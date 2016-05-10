@@ -146,7 +146,7 @@ def calc_domset_graph(domset, dominators, d):
         if v in domset:
             continue
         # Collect closest pairs
-        sorted_doms = filter(lambda s: len(s) > 0, [dominators[v][r] for r in range(d+1)])
+        sorted_doms = list(filter(lambda s: len(s) > 0, [dominators[v][r] for r in range(d+1)]))
         if len(sorted_doms[0]) >= 2:
             for x,y in itertools.combinations(sorted_doms[0],2):
                 h.add_edge(x,y)
