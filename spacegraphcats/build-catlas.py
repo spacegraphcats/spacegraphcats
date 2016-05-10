@@ -89,4 +89,4 @@ report("Computed {}-domset of size {} for graph with {} vertices".format(project
 project.dominators = calc_dominators(project.augg, project.domset, project.radius)
 project.domgraph = calc_domset_graph(project.domset, project.dominators, project.radius)
 
-report("{}-catlas base graph has size {}".format(project.radius,len(project.domgraph)))
+report("Computed {}-catlas base graph with {} edges".format(project.radius,project.domgraph.num_edges()))
