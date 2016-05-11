@@ -19,3 +19,4 @@ Grab this:
 ## References
 
 [Graph Modelling Language](https://en.wikipedia.org/wiki/Graph_Modelling_Language)
+[Graph Text (GXT)](https://github.com/spacegraphcats/spacegraphcats/blob/master/spacegraphcats/parser-examples/README.md)
