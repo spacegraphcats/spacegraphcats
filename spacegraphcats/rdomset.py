@@ -143,7 +143,7 @@ def calc_dominated(augg, domset, d):
     return filter(lambda v: dist[v] <= d, dist)
 
 
-def calc_domset_graph(domset, dominators, d):
+def _calc_domset_graph(domset, dominators, d):
     """ 
         Builds up a 'domination graph' by assigning each vertex to 
         its closest dominators. These dominators will be connected in the
@@ -172,11 +172,11 @@ def calc_domset_graph(domset, dominators, d):
 
     return h, assignment
 
-def calc_connected_domset_graph(g, augg, domset, dominators, d):
-    h, assignment = calc_domset_graph(domset, dominators, d)
+def calc_domination_graph(g, augg, domset, dominators, d):
+    h, assignment = _calc_domset_graph(domset, dominators, d)
     hcomps = h.component_index()
 
-    print("  First domgraph has {} components".format(h.num_components()))
+    # print("  First domgraph has {} components".format(h.num_components()))
 
     compmap = {}
     for u in g:
@@ -210,11 +210,11 @@ def calc_connected_domset_graph(g, augg, domset, dominators, d):
 
     newdomset = domset | vc
     if len(newdomset) != len(domset):
-        print("  Recomputing domgraph")
+        # print("  Recomputing domgraph")
         dominators = calc_dominators(augg, newdomset, d)
-        h, _ = calc_domset_graph(newdomset, dominators, d)
+        h, assignment = _calc_domset_graph(newdomset, dominators, d)
 
-    return h, newdomset, dominators
+    return h, newdomset, dominators, assignment
 
 def better_dvorak_reidl(augg,d):
     domset = set()
@@ -300,7 +300,7 @@ def main(inputgxt, outputgxt, d, test, domgraph):
     # Compute domset graph
     if domgraph:
         print("Computing domgraph")
-        h = calc_domset_graph(domset, dominators, d)
+        h = _calc_domset_graph(domset, dominators, d)
         write_gxt(domgraph, h)
 
     # Test domset

@@ -16,6 +16,11 @@ class MinHash:
         res.list = list(hashes)
         return res
 
+    def subhash(self, hash_size):
+        res = MinHash(hash_size)
+        res.list = hashes[:hash_size]
+        return res
+
     def normalize(self):
         self.list = sorted(self.list)[:self.size]
         assert len(self.list) <= self.size
@@ -53,4 +58,4 @@ class MinHash:
 if __name__ == "__main__":
     A = MinHash.from_list([1,2,3,5])
     B = MinHash.from_list([2,3,4,5])
-    print A.intersect(B)
+    print(A.intersect(B))
