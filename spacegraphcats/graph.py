@@ -65,26 +65,31 @@ class Graph(object):
 
     def add_node(self,u):
         self.nodes.add(u)
+        return self
 
     def add_edge(self,u,v):
         self.nodes.add(u)
         self.nodes.add(v)
         self.adj[u].add(v)
         self.adj[v].add(u)
+        return self
 
     def remove_edge(self,u,v):
         self.adj[u].discard(v)
         self.adj[v].discard(u)
+        return self
 
     def remove_node(self, u):
         self.nodes.remove(u)
         for v in self.adj[u]:
             self.adj[v].remove(u)
         del self.adj[u]
+        return self        
 
     def remove_loops(self):
         for v in self:
             self.remove_edge(v,v)
+        return self            
 
     def has_loops(self):
         for v in self:
@@ -194,42 +199,6 @@ class Graph(object):
 
         return res, backmapping
 
-    @staticmethod
-    def generate(name):
-        res = Graph()
-
-        # Ki, Pi, Ci
-        t = name[0]
-        if t in ['K','P','C']:
-            if t == 'K':
-                parts = map( int, name[1:].split(',') )
-                if len(parts) == 1:
-                    size = parts[0]
-                    for x,y in itertools.combinations(range(0,size),2):
-                        res.add_edge(x,y)
-                else:
-                    print("Generating", name)
-                    indices = []
-                    size = 0
-                    for s in parts:
-                        indices.append( (size, size+s) )
-                        size += s
-                    for a,b in itertools.combinations(range(0,len(parts)),2):
-                        for x in range( indices[a][0], indices[a][1] ):
-                            for y in range( indices[b][0], indices[b][1] ):
-                                res.add_edge(x,y)
-
-            elif t == 'P' or t == 'C':
-                size = int(name[1:])
-                for x in range(0,size-1):
-                    res.add_edge(x,x+1)
-                if t == 'C':
-                    res.add_edge(size-1,0)
-
-            return res
-
-        raise Exception("Unknown name "+name)
-
     # For memoization
     def __str__(self):
         return graph_hash(self)
@@ -246,31 +215,15 @@ class Graph(object):
 
         return len(self) == len(comp)
 
-    def get_components(self, vertices=None):
-        if vertices == None:
-            vertices = set(self.nodes)
-        else:
-            vertices = set(vertices)
-
-        while len(vertices) > 0:
-            comp = set([ vertices.pop()])
-            exp = self.neighbours_set(comp) & vertices
-            while len(exp) > 0:
-                comp.update( exp )
-                exp = self.neighbours_set(comp) & vertices
-
-            vertices = vertices - comp
-            yield comp
-
-def graph_from_pickle(lst):
-    cls = lst.pop(0) # load class object
-    g = Graph()
-
-    while len(lst) > 0:
-        u = lst.pop(0)
-        g.add_edge(u,lst.pop(0))
-
-    return g
+    def get_components(self):
+        comps = UnionFind()
+        for v in self:
+            N = self.neighbours(v) | set([v])
+            comps.union(*N)
+        res = defaultdict(set)
+        for v in self:
+            res[comps[v]].add(v)
+        return res.values()
 
 class TFGraph(object):
     def __init__(self, nodes):
@@ -289,11 +242,13 @@ class TFGraph(object):
 
     def add_node(self,u):
         self.nodes.add(u)
+        return self
 
     def add_arc(self,u,v,weight):
         assert u != v
         self.inarcs[v][u] = weight
         self.inarcs_weight[v][weight].add(u)
+        return self
 
     def remove_arc(self,u,v):
         if u not in self.inarcs[v]:
@@ -302,6 +257,7 @@ class TFGraph(object):
         del self.inarcs[v][u]
         self.inarcs_weight[v][weight].remove(u)
         assert not self.adjacent(u,v)
+        return self
 
     def arcs(self):
         for u in self:
@@ -452,109 +408,6 @@ class TFGraph(object):
     # For memoization
     def __str__(self):
         return graph_hash(self)
-
-class AGraph(object):
-    def __init__(self):
-        self.adj = defaultdict(set)
-        self.nodes = set()
-        self.degs = defaultdict(int)
-        self.deglists = defaultdict(set)
-        self.hidden = set()
-        self.m = 0
-
-    @staticmethod
-    def from_networkx(nxg):
-        res = AGraph()
-        for u in nxg:
-            res.add_node(u)
-        for u,v in nxg.edges():
-            res.add_edge(u,v)
-        return res
-
-    def add_node(self,u):
-        if u in self.nodes:
-            return
-        self.nodes.add(u)
-        self.degs[u] = 0
-        self.deglists[0].add(u)
-
-    def hide_node(self,u):
-        assert u in self.nodes
-        assert u not in self.hidden
-        affected = set()
-        for v in self.adj[u]: # Also decrease degree of hidden nodes!
-            olddeg = self.degs[v]
-            self.degs[v] -= 1
-            self.m -= 0 if v in self.hidden else 1
-            self.deglists[olddeg].remove(v)
-            self.deglists[olddeg-1].add(v)
-            affected.add(v)
-        self.hidden.add(u)
-        return affected - self.hidden
-
-    def hide_nodes(self,nodes):
-        for v in nodes:
-            if v not in self.hidden:
-                self.hide_node(v)
-
-    def show_node(self,u):
-        for v in self.adj[u]: # Also increase degree of hidden nodes!
-            olddeg = self.degs[v]
-            self.degs[v] += 1
-            self.m += 0 if v in self.hidden else 1
-            self.deglists[olddeg].remove(v)
-            self.deglists[olddeg+1].add(v)
-        self.hidden.remove(u)
-
-    def show_nodes(self,nodes):
-        for v in nodes:
-            if v in self.hidden:
-                self.show_node(v)
-
-    def degree(self, u):
-        assert u not in self.hidden
-        return self.degs[u]
-
-    def neighbours(self, u):
-        return self.adj[u] - self.hidden
-
-    def _add_adj(self,u,v):
-        if v not in self.adj[u]:
-            self.adj[u].add(v)
-            # Update u's degree
-            olddeg = self.degs[u]
-            self.degs[u] = olddeg+1
-            self.deglists[olddeg].remove(u)
-            self.deglists[olddeg+1].add(u)
-            if u < v:
-                self.m += 1
-
-    def add_edge(self,u,v):
-        assert u not in self.hidden, v not in self.hidden
-        self.add_node(u)
-        self.add_node(v)
-        self._add_adj(u,v)
-        self._add_adj(v,u)
-
-    def num_edges(self):
-        return self.m
-
-    def get_by_degree(self,d):
-        return self.deglists[d] - self.hidden
-
-    def num_components(self):
-        comps = UnionFind()
-        for v in self:
-            N = self.neighbours(v) | set([v])
-            comps.union(*N)
-        ids = set([comps[v] for v in comps])
-        return len(ids)
-
-    def __len__(self):
-        return len(self.nodes) - len(self.hidden)
-
-    def __iter__(self):
-        return iter(self.nodes - self.hidden)
 
 
 def write_gxt(file, g, node_attrs=None, edge_attrs=None):
