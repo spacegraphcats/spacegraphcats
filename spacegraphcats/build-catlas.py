@@ -3,9 +3,9 @@ import argparse, sys, os, re
 import gzip, glob
 from operator import itemgetter
 from os import path
-from graph import Graph, TFGraph
+from graph import Graph, TFGraph, write_gxt
 from parser import parse_minhash, parse_edgelist, write_edgelist
-from rdomset import better_dvorak_reidl, calc_dominators, calc_domset_graph, dtf_step, ldo
+from rdomset import better_dvorak_reidl, calc_dominators, calc_connected_domset_graph, dtf_step, ldo
 
 DEBUG = True
 sys.stdin
@@ -175,7 +175,16 @@ project.domset = better_dvorak_reidl(project.augg, project.radius)
 report("Computed {}-domset of size {} for graph with {} vertices".format(project.radius, len(project.domset), len(project.graph)))
 
 project.dominators = calc_dominators(project.augg, project.domset, project.radius)
-project.domgraph = calc_domset_graph(project.domset, project.dominators, project.radius)
 
-report("Computed {}-catlas base graph with {} edges and {} components".format(project.radius,project.domgraph.num_edges(),project.domgraph.num_components()))
+domsetsize = len(project.domset)
+project.domgraph, project.domset, project.dominators = calc_connected_domset_graph(project.graph, project.augg, project.domset, project.dominators, project.radius)
 
+report("Computed {}-catlas domination graph with {} edges and {} components".format(project.radius,project.domgraph.num_edges(),project.domgraph.num_components()))
+if domsetsize != len(project.domset):
+    report("Increased domset to {} in order to ensure connectivity".format(len(project.domset)))
+    report("Domgraph now has {} component(s)".format(project.domgraph.num_components()))
+
+file = path.join(project.path,project.name+".domgraph."+str(project.radius)+".gxt")
+f = open(file,'w')
+write_gxt(f, project.domgraph)
+f.close()

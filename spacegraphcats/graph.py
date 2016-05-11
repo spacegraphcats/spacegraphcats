@@ -55,14 +55,6 @@ class Graph(object):
     def num_edges(self):
         return sum(1 for _ in self.edges())
 
-    def num_components(self):
-        comps = UnionFind()
-        for v in self:
-            N = self.neighbours(v) | set([v])
-            comps.union(*N)
-        ids = set([comps[v] for v in comps])
-        return len(ids)
-
     def add_node(self,u):
         self.nodes.add(u)
         return self
@@ -215,15 +207,27 @@ class Graph(object):
 
         return len(self) == len(comp)
 
-    def get_components(self):
+    def component_index(self):
+        """ Returns a union-find data structure associating each vertex 
+            with an id (another vertex) the connected component it is contained in """
         comps = UnionFind()
         for v in self:
             N = self.neighbours(v) | set([v])
             comps.union(*N)
+        return comps
+
+    def components(self):
+        comps = self.component_index()
         res = defaultdict(set)
         for v in self:
             res[comps[v]].add(v)
         return res.values()
+
+
+    def num_components(self):
+        comps = self.component_index()
+        ids = set([comps[v] for v in comps])
+        return len(ids)        
 
 class TFGraph(object):
     def __init__(self, nodes):

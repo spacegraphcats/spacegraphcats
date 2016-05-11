@@ -144,24 +144,77 @@ def calc_dominated(augg, domset, d):
 
 
 def calc_domset_graph(domset, dominators, d):
+    """ 
+        Builds up a 'domination graph' by assigning each vertex to 
+        its closest dominators. These dominators will be connected in the
+        final graph.
+    """
     h = Graph.on(domset)
 
+    assignment = defaultdict(set)
     for v in dominators:
-        if v in domset:
-            continue
         # Collect closest pairs
         sorted_doms = list(filter(lambda s: len(s) > 0, [dominators[v][r] for r in range(d+1)]))
         if len(sorted_doms[0]) >= 2:
+            for x in sorted_doms[0]:
+                assignment[v].add(x)
+
             for x,y in itertools.combinations(sorted_doms[0],2):
                 h.add_edge(x,y)
         else:
             assert len(sorted_doms[0]) == 1
             x = next(iter(sorted_doms[0]))
+            assignment[v].add(x)
             if len(sorted_doms) >= 2:
                 for y in sorted_doms[1]:
+                    assignment[v].add(y)
                     h.add_edge(x,y)
 
-    return h
+    return h, assignment
+
+def calc_connected_domset_graph(g, augg, domset, dominators, d):
+    h, assignment = calc_domset_graph(domset, dominators, d)
+    hcomps = h.component_index()
+
+    print("  First domgraph has {} components".format(h.num_components()))
+
+    compmap = {}
+    for u in g:
+        candidates = [hcomps[v] for v in assignment[u]]
+        assert len(candidates) > 0
+        assert candidates.count(candidates[0]) == len(candidates) # Make sure all the comps. agree
+        compmap[u] = candidates[0]
+
+    conn_graph = Graph()
+    for u,v in g.edges():
+        if u in domset or v in domset:
+            continue
+        # Check whether u,v 'connects' to components of h
+        if compmap[u] != compmap[v]:
+            conn_graph.add_edge(u,v)
+ 
+    # Compute vertex cover for conn_graph
+    vc = set()
+    for u in conn_graph: # Add neighbours of deg-1 vertices
+        if conn_graph.degree(u) == 1 and u not in vc:
+            vc.add(next(iter(conn_graph.neighbours(u))))
+
+    # We expect this to be mostly disjoint edges, so the following
+    # heuristic works well.
+    for u,v in conn_graph.edges():
+        if u not in vc and v not in vc:
+            if conn_graph.degree(u) > conn_graph.degree(v):
+                vc.add(u)
+            else:
+                vc.add(v)
+
+    newdomset = domset | vc
+    if len(newdomset) != len(domset):
+        print("  Recomputing domgraph")
+        dominators = calc_dominators(augg, newdomset, d)
+        h, _ = calc_domset_graph(newdomset, dominators, d)
+
+    return h, newdomset, dominators
 
 def better_dvorak_reidl(augg,d):
     domset = set()
