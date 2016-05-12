@@ -185,7 +185,10 @@ def main():
                 w.add_edge(k, edge, [])
 
         if not args.gml:
-            fp = open(args.output + '.mxt', 'w')
+            parts = args.output.split('.')
+            if parts[-1] == 'gxt':
+                parts[-1] = 'mxt'
+            fp = open('.'.join(parts), 'w')
             for k, v in pathy.hashdict.items():
                 fp.write("%d,%s\n" % (k, " ".join(map(str, v))))
             fp.close()
