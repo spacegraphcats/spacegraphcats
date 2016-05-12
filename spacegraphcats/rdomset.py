@@ -1,11 +1,108 @@
 #!/usr/bin/env python3
+import itertools, sys, random, os, argparse, glob
 from collections import defaultdict, Counter
 from operator import itemgetter
-import itertools
-import sys, random, os
-import argparse
+from os import path
 from Eppstein import priorityDictionary
-from graph import Graph, TFGraph, write_gxt
+from graph import Graph, TFGraph, EdgeSet, EdgeStream, VertexDict, write_gxt
+
+
+class Domination:
+    def __init__(self, domset, domgraph, assignment, radius):
+        self.domset = domset
+        self.domgraph = domgraph
+        self.assignment = VertexDict(assignment)
+        self.radius = radius
+
+    def write(self, projectpath, projectname):
+        fname = path.join(projectpath, projectname+".{name}.{radius}.{extension}")
+
+        with open(fname.format(name="domgraph",extension="gxt",radius=self.radius), 'w') as f:
+            write_gxt(f, self.domgraph)
+
+        with open(fname.format(name="assignment",extension="vxt",radius=self.radius), 'w') as f:
+            self.assignment.write_vxt(f, param_writer=lambda s: ' '.join(map(str,s)))
+
+    @staticmethod
+    def read(projectpath, projectname, radius):
+        fname = path.join(projectpath, projectname+".{name}.{radius}.{extension}")
+
+        with open(fname.format(name="domgraph",extension="gxt",radius=radius), 'r') as f:
+            domgraph, _, _ = Graph.from_gxt(f)
+
+        with open(fname.format(name="assignment",extension="vxt",radius=radius), 'r') as f:
+            assignment = VertexDict.from_vxt(f, lambda s: list(map(int,s[0].split())))
+
+        domset = set([v for v in domgraph])
+
+        return Domination(domset, domgraph, assignment, radius)
+
+
+class LazyDomination:
+    def __init__(self, project):
+        self.radius = project.radius
+        self.projectpath = project.path
+        self.projectname = project.name
+        self.graph = project.graph
+
+    def compute(self):
+        try:
+            res = Domination.read(self.projectpath, self.projectname, self.radius)
+            print("Loaded {}-domination from project folder".format(self.radius))
+        except FileNotFoundError:
+            augg = self._compute_augg()
+            domset = better_dvorak_reidl(augg, self.radius)
+            dominators = calc_dominators(augg, domset, self.radius)
+            domgraph, domset, dominators, assignment = calc_domination_graph(self.graph, augg, domset, dominators, self.radius)
+
+            res = Domination(domset, domgraph, assignment, self.radius)
+            res.write(self.projectpath, self.projectname)
+
+        return res
+
+    def _compute_augg(self):
+        """
+            Computes dtf augmentations or loads them from the project folder.
+        """
+        augname = path.join(self.projectpath,self.projectname+".aug.{}.ext")
+
+        augs = {}
+        for f in glob.glob(augname.format("[0-9]*")):
+            d = int(f.split(".")[-2])
+            augs[d] = f
+
+        if 0 in augs:
+            auggraph = TFGraph(self.graph)
+            with open(augname.format("0"), 'r') as f:
+                auggraph.add_arcs(EdgeStream.from_ext(f), 1)
+        else:
+            auggraph = ldo(self.graph)
+            with open(augname.format("0"), 'w') as f:
+                EdgeSet(auggraph.arcs(weight=1)).write_ext(f)
+
+        num_arcs = auggraph.num_arcs()
+        changed = True
+        d = 1
+        print("Augmenting", end=" ", flush=True)
+        while changed and d <= self.radius:
+            if d in augs:
+                print("({})".format(d), end=" ", flush=True)                        
+                with open(augname.format(d), 'r') as f:
+                    auggraph.add_arcs(EdgeStream.from_ext(f), d+1)
+            else:
+                print(d, end=" ", flush=True)            
+                dtf_step(auggraph, d+1)
+                with open(augname.format(d), 'w') as f:
+                    EdgeSet(auggraph.arcs(weight=d+1)).write_ext(f)            
+
+            curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
+            changed = num_arcs < curr_arcs
+            num_arcs = curr_arcs
+            d += 1
+        print("", flush=True)
+        return auggraph
+
+
 
 """ Dtf functions """
 

@@ -3,11 +3,11 @@ import argparse, sys, os, re
 import gzip, glob
 from operator import itemgetter
 from os import path
-from graph import Graph, TFGraph, EdgeSet, write_gxt
+from graph import Graph, TFGraph, EdgeSet, VertexDict, write_gxt
 from parser import parse_minhash
 from catlas import CAtlasBuilder, CAtlas
 from minhash import MinHash
-from rdomset import better_dvorak_reidl, calc_dominators, calc_domination_graph, dtf_step, ldo
+from rdomset import LazyDomination
 
 DEBUG = True
 sys.stdin
@@ -133,7 +133,7 @@ if project.graph.has_loops():
 report("Loaded graph with {} vertices, {} edges and {} components".format(len(project.graph),project.graph.num_edges(),project.graph.num_components()))
 
 file = read_project_file(project.path, project.name+".mxt")
-project.minhashes = parse_minhash_dict(file)
+project.minhashes = VertexDict.from_mxt(file)
 
 for v in project.graph:
     if v not in project.minhashes:
@@ -142,42 +142,22 @@ for v in project.graph:
 report("Loaded minhashes for graph")
 
 
-""" 
-    Compute r-dominating set 
-"""
+""" Compute / load r-dominating set """
 
 report("\nDomset computation\n")
-
-""" Compute augmentations or load them from the project directory """
-project.augg = load_and_compute_augg(project)
-
-project.domset = better_dvorak_reidl(project.augg, project.radius)
-
-report("Computed {}-domset of size {} for graph with {} vertices".format(project.radius, len(project.domset), len(project.graph)))
-
-project.dominators = calc_dominators(project.augg, project.domset, project.radius)
-
-domsetsize = len(project.domset)
-project.domgraph, project.domset, project.dominators, project.assignment = calc_domination_graph(project.graph, project.augg, project.domset, project.dominators, project.radius)
-
-report("Computed {}-catlas domination graph with {} edges and {} components".format(project.radius,project.domgraph.num_edges(),project.domgraph.num_components()))
-if domsetsize != len(project.domset):
-    report("Increased domset to {} in order to ensure connectivity".format(len(project.domset)))
-    report("Domgraph now has {} component(s)".format(project.domgraph.num_components()))
+project.domination = LazyDomination(project).compute()
 
 
-file = path.join(project.path,project.name+".domgraph."+str(project.radius)+".gxt")
-f = open(file,'w')
-write_gxt(f, project.domgraph)
-f.close()
+""" Compute catlas """
 
-
-"""
-    Compute catlas
-"""
-
-report("\nAtlas computation\n")
-builder = CAtlasBuilder(project)
-
+report("\nCatlas computation\n")
+vsizes = dict( (v, project.node_attr[v]['size']) for v in project.graph)
+builder = CAtlasBuilder(project.graph, vsizes, project.domination, project.minhashes)
 catlas = builder.build()
+report("\nCatlas done")
 
+for i,level in enumerate(catlas.bfs()):
+    print(i, len(level))
+
+catlas.write(project.path, project.name, project.radius)
+    

@@ -5,25 +5,51 @@ import hashlib
 
 class VertexDict(dict):
     @classmethod
-    def from_vxt(cls, file):
+    def from_vxt(cls, file, param_parser=None):
         from parser import _parse_line
+        if param_parser == None:
+            param_parser = lambda p: p
+
         res = cls()
         for line in file:
-            u, params = _parse_line(line)
-            res[int(u)] = cls._unpack_params(params)
+            u, *params = _parse_line(line)
+            res[int(u)] = param_parser(params)
         return res
 
     @classmethod
-    def _unpack_params(cls, params):
-        return params
+    def from_mxt(cls, file):
+        from minhash import MinHash
+        from parser import _parse_line
+        res = cls()
+        for line in file:
+            u, hashes = _parse_line(line)
+            hashes = list(map(int,hashes.split()))
+            res[int(u)] = MinHash.from_list(hashes)
+        return res
+
+
+    def write_vxt(self, file, param_writer=None):
+        if param_writer == None:
+            param_writer = lambda p: p
+
+        for u, p in self.items():
+            file.write('{},{}\n'.format(u, param_writer(p)))
+
+
+class EdgeStream:
+    @staticmethod 
+    def from_ext(file):
+        from parser import _parse_line
+        for line in file:
+            u, v = list(map(int, _parse_line(line)))
+            yield (u,v)
 
 class EdgeSet(set):
     @classmethod 
     def from_ext(cls, file):
         from parser import _parse_line
         res = cls()
-        for line in file:
-            u, v = list(map(int, _parse_line(line)))
+        for u, v in EdgeStream.from_ext(file):
             res.add((u, v))
 
         return res
@@ -33,7 +59,7 @@ class EdgeSet(set):
             file.write('{},{}\n'.format(u,v))
 
 
-class Graph(object):
+class Graph:
     def __init__(self):
         self.adj = defaultdict(set)
         self.nodes = set()
@@ -259,7 +285,7 @@ class Graph(object):
         ids = set([comps[v] for v in comps])
         return len(ids)        
 
-class TFGraph(object):
+class TFGraph:
     def __init__(self, nodes):
         self.nodes = nodes
         self.inarcs = defaultdict(dict)

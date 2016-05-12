@@ -1,21 +1,21 @@
 #!/usr/bin/python
 import sys, os, argparse
+from os import path
 from collections import deque, defaultdict
 from graph import Graph
 from rdomset import rdomset, calc_domination_graph, calc_dominators
 from minhash import MinHash
-from parser import parse_minhash
+from parser import parse_minhash, Writer
 
-class CAtlasBuilder(object):
-    def __init__(self, project):
-        self.graph = project.graph
-        self.domgraph = project.domgraph
-        self.domset = project.domset
-        self.minhashes = project.minhashes
-        self.assignment = project.assignment
-        self.sizes = {}
-        for v in project.graph:
-            self.sizes[v] = project.node_attr[v]['size']
+class CAtlasBuilder:
+    def __init__(self, graph, vsizes, domination, minhashes):
+        self.graph = graph
+        self.domgraph = domination.domgraph
+        self.domset = domination.domset
+        self.minhashes = minhashes
+
+        self.assignment = domination.assignment
+        self.sizes = vsizes
 
         self.level_threshold = 10
         self.minhash_size = 1000
@@ -37,13 +37,17 @@ class CAtlasBuilder(object):
         # Collect vertices from g that belong to the domset component 'comp'
         vertices = set()
         for u in self.graph:
-            if next(iter(self.assignment[u])) in comp:
+            is_in_comp = next(iter(self.assignment[u])) in comp
+            # debug: check consistency
+            for v in self.assignment[u]:
+                assert (v in comp) == is_in_comp
+            if is_in_comp:
                 vertices.add(u)
 
         for u in vertices:
             # Add u's hashes to all its assigned dominators
             for v in self.assignment[u]:
-                leaf_hashes[u] = leaf_hashes[u].merge(self.minhashes[v], self.minhash_size)
+                leaf_hashes[v] = leaf_hashes[v].merge(self.minhashes[u], self.minhash_size)
 
         for v in comp:
             curr_level[v] = CAtlas.create_leaf(v, self.sizes[v], leaf_hashes[v])
@@ -94,7 +98,7 @@ class CAtlasBuilder(object):
         raise RuntimeError("Implement this")
       
 
-class CAtlas(object):
+class CAtlas:
     def __init__(self, id, level, size, children, minhash):
         self.id = id
         self.children = children
@@ -103,7 +107,7 @@ class CAtlas(object):
         self.level = level
 
     @staticmethod
-    def create_leaf(id, size, minhash):
+    def create_leaf(id,  size, minhash):
         return CAtlas(id, 0, size, [], minhash)
 
     @staticmethod
@@ -117,7 +121,7 @@ class CAtlas(object):
             size += c.size
             minhash = minhash.merge(c.minhash,hash_size)
 
-        return CAtlas(id, level, size, children, minhash)
+        return CAtlas(id, level+1, size, children, minhash)
 
     def score(self, Q, querysize):
         minsize = 1.0*min(len(Q),len(self.minhash))
@@ -157,16 +161,54 @@ class CAtlas(object):
             res |= c.leaves2()
         return res
 
-
-    def to_file(self, stream):
-        """
-            write properties to filestream stream
-        """
-        children_id_str = [str(c.id) for c in self.children]
-        children_str = ','.join(children_id_str)
-        stream.write("{};{};{};{};{}\n".format(self.id, self.level, self.size, children_str, self.minhash))
+    def dfs(self): 
+        yield self
         for c in self.children:
-            c.to_file(stream)
+            for v in c.dfs():
+                yield v
+
+    def bfs(self): 
+        curr_level = set([self])
+        while len(curr_level) > 0:
+            yield curr_level
+            next_level = set()              
+            for v in curr_level:
+                next_level |= set(v.children)
+            curr_level = next_level
+
+    def write(self, projectpath, projectname, radius):
+        """
+            Write catlas to file
+        """
+        # Create unique ids for DAG-nodes
+        idmap = {}
+        id = 0
+        for level in self.bfs():
+            for v in level:
+                idmap[v] = id
+                id += 1
+
+        # Store DAG in .gxt file
+        with open(path.join(projectpath, "{}.catlas.{}.gxt".format(projectname, radius)), 'w') as f:
+            writer = Writer(f, ['vertex', 'level'], [])
+            for level in self.bfs():
+                for v in level:
+                    writer.add_vertex(idmap[v], v.size, [v.id, v.level])
+
+            for level in self.bfs():
+                for v in level:
+                    for c in v.children:
+                        writer.add_edge(idmap[v], idmap[c])
+            writer.done()
+
+        # Store hashes separately in .mxt
+        with open(path.join(projectpath, "{}.catlas.{}.mxt".format(projectname, radius)), 'w') as f:
+            for level in self.bfs():
+                for v in level:
+                    f.write(str(idmap[v])+',')
+                    f.write(' '.join(map(str,v.minhash)))
+                    f.write('\n')
+
 
 def read_minhashes(inputfile):
     res = {}

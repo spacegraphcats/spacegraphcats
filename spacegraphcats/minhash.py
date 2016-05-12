@@ -7,49 +7,49 @@ class MinHash:
         Class of MinHashes
     """
     def __init__(self, hash_size):
-        self.list = []
+        self.values = []
         self.size = hash_size
 
     @staticmethod
     def from_list(hashes):
         res = MinHash(len(hashes))
-        res.list = list(hashes)
+        res.values = list(hashes)
         return res
 
     def subhash(self, hash_size):
         res = MinHash(hash_size)
-        res.list = hashes[:hash_size]
+        res.values = hashes[:hash_size]
         return res
 
     def normalize(self):
-        self.list = sorted(self.list)[:self.size]
-        assert len(self.list) <= self.size
+        self.values = sorted(self.values)[:self.size]
+        assert len(self.values) <= self.size
 
     def add(self, val):
-        self.list.append(val)
+        self.values.append(val)
         self.normalize()
 
     def merge(self, h, size):
         res = MinHash(size)
-        res.list = self.list + h.list
+        res.values = self.values + h.values
         res.normalize()
-        assert len(res.list) <= size
+        assert len(res.values) <= size
         return res
 
     def intersect(self, other):
         return [x for x in other if x in self]
 
     def __contains__(self, val):
-        return val in self.list
+        return val in self.values
 
     def __iter__(self):
-        return iter(self.list)
+        return iter(self.values)
 
     def __len__(self):
-        return len(self.list)
+        return len(self.values)
 
     def __str__(self):
-        return ','.join(str(i) for i in self.list)
+        return ','.join(str(i) for i in self.values)
 
     @staticmethod
     def string_generator(size=6, chars=string.ascii_uppercase + string.digits):

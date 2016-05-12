@@ -52,7 +52,7 @@ def write_edgelist(file, edges):
     for u,v in edges:
         file.write('{},{}\n'.format(u,v))
 
-class Writer(object):
+class Writer:
     """Writer for the gxt graph format.
 
     You need to either pass the vertex and edge attributes (the names)
@@ -101,10 +101,10 @@ class Writer(object):
         pass
 
 
-class GmlWriter(object):
+class GmlWriter:
     """Similar to the writer for gxt above but for gml."""
 
-    def __init__(self, file, vertex_attributes=None, edge_attributes=None):
+    def __init__(self, file, vertex_attributes=None, edge_attributes=None, directed=False):
         """Initialize graph writer."""
         self.file = file
 
@@ -113,7 +113,10 @@ class GmlWriter(object):
         if edge_attributes is not None:
             self.edge_attributes = edge_attributes
 
-        self._write('graph [\n   directed 0\n')
+        if directed:
+            self._write('graph [\n   directed 1\n')
+        else:
+            self._write('graph [\n   directed 0\n')
 
     def _write(self, string):
         self.file.write(string)
@@ -152,7 +155,7 @@ class GmlWriter(object):
         self._write(']\n')
 
 
-class DotWriter(object):
+class DotWriter:
     """Similar to the writer for gxt above but for dot."""
 
     def __init__(self, file):
