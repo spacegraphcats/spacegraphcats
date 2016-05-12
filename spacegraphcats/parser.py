@@ -41,7 +41,7 @@ def parse_minhash(file, add_minhash):
         parsed = _parse_line(line)
         add_minhash(parsed[0], list(map(int,map(str.strip, parsed[1].split()))))
 
-def parse_edgelist(file, add_edge):
+def _parse_edgelist(file, add_edge):
     """Parse and edgelist (.ext) file."""
     for line in file:
         parsed = _parse_line(line)

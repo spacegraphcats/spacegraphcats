@@ -31,14 +31,21 @@ class CAtlasBuilder(object):
     def _build_component_catlas(self, comp):
           # Build first level 
         curr_level = {}
-        curr_domgraph = self.domgraph
+        curr_domgraph = self.domgraph.subgraph(comp)
         leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size))
+
+        # Collect vertices from g that belong to the domset component 'comp'
+        vertices = set()
         for u in self.graph:
+            if next(iter(self.assignment[u])) in comp:
+                vertices.add(u)
+
+        for u in vertices:
             # Add u's hashes to all its assigned dominators
             for v in self.assignment[u]:
                 leaf_hashes[u] = leaf_hashes[u].merge(self.minhashes[v], self.minhash_size)
 
-        for v in self.domgraph:
+        for v in comp:
             curr_level[v] = CAtlas.create_leaf(v, self.sizes[v], leaf_hashes[v])
 
         # Build remaining levels

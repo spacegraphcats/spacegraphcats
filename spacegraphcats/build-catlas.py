@@ -3,8 +3,8 @@ import argparse, sys, os, re
 import gzip, glob
 from operator import itemgetter
 from os import path
-from graph import Graph, TFGraph, write_gxt
-from parser import parse_minhash, parse_edgelist, write_edgelist
+from graph import Graph, TFGraph, EdgeSet, write_gxt
+from parser import parse_minhash
 from catlas import CAtlasBuilder, CAtlas
 from minhash import MinHash
 from rdomset import better_dvorak_reidl, calc_dominators, calc_domination_graph, dtf_step, ldo
@@ -35,32 +35,6 @@ def parse_minhash_dict(file):
         res[int(v)] = MinHash.from_list(hashlist)
     parse_minhash(file, add_minhash)
     return res
-
-def parse_arclist(file):
-    """ Loads .ext file into a list of arcs """
-    res = []
-    def add_arc(u, v):
-        res.append((int(u),int(v)))
-    f = open(file, 'r')
-    parse_edgelist(f, add_arc)
-    f.close()
-    return res
-
-def write_arcs(tfgraph,weight,file):
-    """ Write arcs of a tfgraph that have the specified weight into a .ext file """
-    arcs = []
-    for u,v,w in tfgraph.arcs():
-        if w == weight:
-            arcs.append((u,v))
-    f = open(file, 'w')
-    write_edgelist(f,arcs)
-    f.close()
-
-def add_arcs_from_file(tfgraph,weight,file):
-    """ Adds arcs from an .ext file to the tfgraph with the specified weight """
-    arcs = parse_arclist(file)
-    for u,v in arcs:
-        tfgraph.add_arc(u,v,weight)
 
 def read_project_file(projectpath, filename):
     """
@@ -96,10 +70,12 @@ def load_and_compute_augg(project):
 
     if 0 in augs:
         auggraph = TFGraph(project.graph)
-        add_arcs_from_file(auggraph, 1, augname.format("0"))
+        with open(augname.format("0"), 'r') as f:
+            auggraph.add_arcs(EdgeSet.from_ext(f), 1)
     else:
         auggraph = ldo(project.graph)
-        write_arcs(auggraph, 1, augname.format("0"))
+        with open(augname.format("0"), 'w') as f:
+            EdgeSet(auggraph.arcs(weight=1)).write_ext(f)
 
     num_arcs = auggraph.num_arcs()
     changed = True
@@ -108,11 +84,13 @@ def load_and_compute_augg(project):
     while changed and d <= project.radius:
         if d in augs:
             print("({})".format(d), end=" ", flush=True)                        
-            add_arcs_from_file(auggraph, d+1, augname.format(d))
+            with open(augname.format(d), 'r') as f:
+                auggraph.add_arcs(EdgeSet.from_ext(f), d+1)
         else:
             print(d, end=" ", flush=True)            
             dtf_step(auggraph, d+1)
-            write_arcs(auggraph, d+1, augname.format(d))
+            with open(augname.format(d), 'w') as f:
+                EdgeSet(auggraph.arcs(weight=d+1)).write_ext(f)            
 
         curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
         changed = num_arcs < curr_arcs
@@ -120,7 +98,6 @@ def load_and_compute_augg(project):
         d += 1
     print("", flush=True)
     return auggraph
-
 
 
 parser = argparse.ArgumentParser()

@@ -3,6 +3,36 @@ from collections import defaultdict as defaultdict
 from Eppstein import priorityDictionary, UnionFind
 import hashlib
 
+class VertexDict(dict):
+    @classmethod
+    def from_vxt(cls, file):
+        from parser import _parse_line
+        res = cls()
+        for line in file:
+            u, params = _parse_line(line)
+            res[int(u)] = cls._unpack_params(params)
+        return res
+
+    @classmethod
+    def _unpack_params(cls, params):
+        return params
+
+class EdgeSet(set):
+    @classmethod 
+    def from_ext(cls, file):
+        from parser import _parse_line
+        res = cls()
+        for line in file:
+            u, v = list(map(int, _parse_line(line)))
+            res.add((u, v))
+
+        return res
+
+    def write_ext(self, file):
+        for u, v in self:
+            file.write('{},{}\n'.format(u,v))
+
+
 class Graph(object):
     def __init__(self):
         self.adj = defaultdict(set)
@@ -248,10 +278,15 @@ class TFGraph(object):
         self.nodes.add(u)
         return self
 
-    def add_arc(self,u,v,weight):
+    def add_arc(self, u, v, weight):
         assert u != v
         self.inarcs[v][u] = weight
         self.inarcs_weight[v][weight].add(u)
+        return self
+
+    def add_arcs(self, arcs, weight):
+        for u, v in arcs:
+            self.add_arc(u, v, weight)
         return self
 
     def remove_arc(self,u,v):
@@ -263,10 +298,16 @@ class TFGraph(object):
         assert not self.adjacent(u,v)
         return self
 
-    def arcs(self):
-        for u in self:
-            for v,weight in self.in_neighbours(u):
-                yield (v,u,weight)
+    def arcs(self, weight=None):
+        if weight == None:
+            for u in self:
+                for v, w in self.in_neighbours(u):
+                    yield (v, u, w)
+        else:
+            for u in self:
+                for v, w in self.in_neighbours(u):
+                    if w == weight:
+                        yield (v, u)
 
     def num_arcs(self):
         return sum( 1 for _ in self.arcs() )
