@@ -19,7 +19,7 @@ Grab this:
 ## Running the pipeline
 
 For a pair of .gxt/.mxt files (say `eldritch.gxt` and `eldritch.mxt`) create
-a matching project folder `eldritch'. The folder name must match the .gxt/.mxt name.
+a matching project folder `eldritch`. The folder name must match the .gxt/.mxt name.
 
 Run `python3 build-catlas.py /path/to/eldritch r` where *r* determines the coverage
 radius. Larger *r* will create smaller atlases at the cost of precision and will
