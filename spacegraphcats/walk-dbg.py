@@ -51,8 +51,9 @@ class Pathfinder(object):
         self.adjacencies[node_id] = x
 
 
-def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy):
-    size, conns, visited = graph.traverse_linear_path(nk, stop_bf)
+def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
+    size, conns, visited = graph.traverse_linear_path(nk, degree_nodes,
+                                                      stop_bf)
     if not size:
         return
 
@@ -116,6 +117,7 @@ def main():
     pathy = Pathfinder(args.ksize)
 
     print('finding high degree nodes')
+    degree_nodes = khmer.HashSet(args.ksize)
     n = 0
     for seqfile in args.seqfiles:
         for record in screed.open(seqfile):
@@ -126,11 +128,10 @@ def main():
             # name them and cherish them. Don't do this on identical sequences.
             if min(stop_bf2.get_kmer_counts(record.sequence)) == 0:
                 stop_bf2.consume(record.sequence)
-                graph.find_high_degree_nodes(record.sequence)
+                graph.find_high_degree_nodes(record.sequence, degree_nodes)
     del stop_bf2
 
     # get all of the degree > 2 nodes and give them IDs.
-    degree_nodes = graph.get_high_degree_nodes()
     for node in degree_nodes:
         pathy.new_segment(node)
 
@@ -156,12 +157,13 @@ def main():
         nbh = graph.neighbors(k)
         for nk in nbh:
             # neighbor is high degree? fine, mark its adjacencies.
-            if graph.is_high_degree_node(nk):
+            if nk in degree_nodes:
                 nk_id = pathy.segments_r[nk]
                 pathy.add_adjacency(k_id, nk_id)
             else:
                 # linear! walk it.
-                traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy)
+                traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy,
+                                               degree_nodes)
 
     print(len(pathy.segments), 'segments, containing',
               sum(pathy.segments.values()), 'nodes')
