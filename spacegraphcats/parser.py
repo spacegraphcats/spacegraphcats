@@ -34,15 +34,25 @@ def parse(file, add_vertex, add_edge):
 
 
 def parse_minhash(file, add_minhash):
-    """Parse minhash file."""
-    for line in file.readlines():
+    """Parse minhash (.mxt) file."""
+    for line in file:
         if len(line) < 2:
-            return
+            continue
         parsed = _parse_line(line)
         add_minhash(parsed[0], list(map(int,map(str.strip, parsed[1].split()))))
 
+def _parse_edgelist(file, add_edge):
+    """Parse and edgelist (.ext) file."""
+    for line in file:
+        parsed = _parse_line(line)
+        add_edge(parsed[0], parsed[1])
 
-class Writer(object):
+def write_edgelist(file, edges):
+    """Write an edgelist into an .ext file."""
+    for u,v in edges:
+        file.write('{},{}\n'.format(u,v))
+
+class Writer:
     """Writer for the gxt graph format.
 
     You need to either pass the vertex and edge attributes (the names)
@@ -91,10 +101,10 @@ class Writer(object):
         pass
 
 
-class GmlWriter(object):
+class GmlWriter:
     """Similar to the writer for gxt above but for gml."""
 
-    def __init__(self, file, vertex_attributes=None, edge_attributes=None):
+    def __init__(self, file, vertex_attributes=None, edge_attributes=None, directed=False):
         """Initialize graph writer."""
         self.file = file
 
@@ -103,7 +113,10 @@ class GmlWriter(object):
         if edge_attributes is not None:
             self.edge_attributes = edge_attributes
 
-        self._write('graph [\n   directed 0\n')
+        if directed:
+            self._write('graph [\n   directed 1\n')
+        else:
+            self._write('graph [\n   directed 0\n')
 
     def _write(self, string):
         self.file.write(string)
@@ -142,7 +155,7 @@ class GmlWriter(object):
         self._write(']\n')
 
 
-class DotWriter(object):
+class DotWriter:
     """Similar to the writer for gxt above but for dot."""
 
     def __init__(self, file):
