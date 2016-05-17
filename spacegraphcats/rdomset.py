@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import print_function
 import itertools, sys, random, os, argparse, glob
 from collections import defaultdict, Counter
 from operator import itemgetter
@@ -49,7 +50,7 @@ class LazyDomination:
         try:
             res = Domination.read(self.projectpath, self.projectname, self.radius)
             print("Loaded {}-domination from project folder".format(self.radius))
-        except FileNotFoundError:
+        except IOError:
             augg = self._compute_augg()
             domset = better_dvorak_reidl(augg, self.radius)
             dominators = calc_dominators(augg, domset, self.radius)
@@ -83,14 +84,17 @@ class LazyDomination:
         num_arcs = auggraph.num_arcs()
         changed = True
         d = 1
-        print("Augmenting", end=" ", flush=True)
+        print("Augmenting", end=" ")
+        sys.stdout.flush()
         while changed and d <= self.radius:
             if d in augs:
-                print("({})".format(d), end=" ", flush=True)                        
+                print("({})".format(d), end=" ")
+                sys.stdout.flush()
                 with open(augname.format(d), 'r') as f:
                     auggraph.add_arcs(EdgeStream.from_ext(f), d+1)
             else:
-                print(d, end=" ", flush=True)            
+                print(d, end=" ")
+                sys.stdout.flush()
                 dtf_step(auggraph, d+1)
                 with open(augname.format(d), 'w') as f:
                     EdgeSet(auggraph.arcs(weight=d+1)).write_ext(f)            
@@ -99,7 +103,7 @@ class LazyDomination:
             changed = num_arcs < curr_arcs
             num_arcs = curr_arcs
             d += 1
-        print("", flush=True)
+        print("")
         return auggraph
 
 

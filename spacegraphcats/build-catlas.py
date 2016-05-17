@@ -1,4 +1,5 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
+from __future__ import print_function
 import argparse, sys, os, re
 import gzip, glob
 from operator import itemgetter
@@ -160,4 +161,3 @@ for i,level in enumerate(catlas.bfs()):
     print(i, len(level))
 
 catlas.write(project.path, project.name, project.radius)
-    
