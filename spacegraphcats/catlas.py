@@ -34,6 +34,7 @@ class CAtlasBuilder:
         return self        
 
     def _build_component_catlas(self, comp):
+        comp = set(comp)
           # Build first level 
         curr_level = {}
         curr_domgraph = self.domgraph.subgraph(comp)
@@ -60,7 +61,6 @@ class CAtlasBuilder:
         # Build remaining levels
         level = 1 # Just for debugging
         while len(curr_level) > self.level_threshold:
-            print("Computing level {}".format(level))
             domset, augg = rdomset(curr_domgraph,1)
             dominators = calc_dominators(augg, domset, 1)
             next_domgraph, domset, dominators, next_assignment = calc_domination_graph(curr_domgraph, augg, domset, dominators, 1)
@@ -84,9 +84,6 @@ class CAtlasBuilder:
             curr_level = next_level
             level += 1
 
-            print("Level {} has {} vertices".format(level-1, len(curr_level)))
-            print("  min deg ist {}, max deg is {}, average is {:.2f}".format(mindeg, maxdeg, degsum/len(curr_level)))
-
         # Add root
         root = CAtlas.create_node('root', curr_level.values(), self.minhash_size)
         return root
@@ -94,7 +91,10 @@ class CAtlasBuilder:
 
     def build(self):
         comp_atlases = []
-        for comp in self.domgraph.components():
+        components = self.domgraph.components()
+        num_comps = len(components)
+        for i, comp in enumerate(components):
+            print("\rProcessing component {}/{}".format(i,num_comps), end="", flush=True)
             comp_atlases.append(self._build_component_catlas(comp))
 
         if len(comp_atlases) == 1:
