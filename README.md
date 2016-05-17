@@ -34,7 +34,9 @@ and `eldrictch.catlas.*r*.mxt`. The .gxt file contains the DAG structure with th
 * `size`: In a leaf node this size reflects the number of vertices of the original graph assigned to this node.
   For internal nodes this value is the sum of it's childrens sizes.
 * `vertex`: If this node corresponds to a vertex from the source graph then this field contains that vertex' id.
-			For the root of the DAG this field will say `root`, in all other cases `virtual`.
+			Every node labeled `root` identifies a connected component of the input graph (that is, the union of all leaves
+			below such a node covers exactly one connected component). If the input graph has multiple connected components
+			the respective `root` nodes are joined oup by a tree structure in which all nodes are labeled `virtual`.
 * `level`: The level of this node in the DAG. Leaves are on level 0 and the level increases towards the root.
 
 The .mxt file contains a minhash set for every node of the DAG, referenced by the `id` field.

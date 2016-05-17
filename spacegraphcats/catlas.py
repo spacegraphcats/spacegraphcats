@@ -7,6 +7,11 @@ from rdomset import rdomset, calc_domination_graph, calc_dominators
 from minhash import MinHash
 from parser import parse_minhash, Writer
 
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i+n]
+
 class CAtlasBuilder:
     def __init__(self, graph, vsizes, domination, minhashes):
         self.graph = graph
@@ -95,7 +100,19 @@ class CAtlasBuilder:
         if len(comp_atlases) == 1:
             return comp_atlases[0]
 
-        raise RuntimeError("Implement this")
+        curr_level = comp_atlases
+        while len(curr_level) > self.level_threshold:
+            next_level = []
+            for block in chunks(curr_level, self.level_threshold):
+                next_level.append(CAtlas.create_node('virtual', block, self.minhash_size))
+            curr_level = next_level
+
+        if len(curr_level) > 1:
+            root = CAtlas.create_node('virtual', curr_level, self.minhash_size)
+        else:
+            root = curr_level[0]
+
+        return root
       
 
 class CAtlas:
