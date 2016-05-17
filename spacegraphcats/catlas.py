@@ -33,28 +33,19 @@ class CAtlasBuilder:
         self.minhash_size = size
         return self        
 
-    def _build_component_catlas(self, comp):
+    def _build_component_catlas(self, comp, vertices):
         comp = set(comp)
           # Build first level 
         curr_level = {}
         curr_domgraph = self.domgraph.subgraph(comp)
-        leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size))
 
-        # Collect vertices from g that belong to the domset component 'comp'
-        vertices = set()
-        for u in self.graph:
-            is_in_comp = next(iter(self.assignment[u])) in comp
-            # debug: check consistency
-            for v in self.assignment[u]:
-                assert (v in comp) == is_in_comp
-            if is_in_comp:
-                vertices.add(u)
-
+        # Collect hashes of the assigned vertices 
+        leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size))        
         for u in vertices:
-            # Add u's hashes to all its assigned dominators
             for v in self.assignment[u]:
                 leaf_hashes[v] = leaf_hashes[v].merge(self.minhashes[u], self.minhash_size)
 
+        # Create level 0
         for v in comp:
             curr_level[v] = CAtlas.create_leaf(v, self.sizes[v], leaf_hashes[v])
 
@@ -91,11 +82,33 @@ class CAtlasBuilder:
 
     def build(self):
         comp_atlases = []
-        components = self.domgraph.components()
+
+        # Compute data structure to handle components
+        comp_lookup = self.domgraph.component_index() # Maps vertices to component ids
+        components = defaultdict(set)
+        for v in self.domgraph:
+            components[comp_lookup[v]].add(v)
+        components = list(components.values())
+
         num_comps = len(components)
+
+        # Collect vertices from g that belong to the respective components
+        print("Mapping graph vertices to dominators")
+        graph_comps = defaultdict(set)
+        n = len(self.graph)
+        for i, u in enumerate(self.graph):
+            if i % 10 == 0:
+                print("\rProcessing node {}/{}".format(i,n), end="", flush=True)
+            dominator = next(iter(self.assignment[u]))
+            graph_comps[comp_lookup[dominator]].add(u)
+
+        print("\rProcessing node {}/{}".format(n,n), end="", flush=True) # For my OCD
+
+        print("\nBuilding catlasses for connected components")
         for i, comp in enumerate(components):
             print("\rProcessing component {}/{}".format(i,num_comps), end="", flush=True)
-            comp_atlases.append(self._build_component_catlas(comp))
+            comp_id = comp_lookup[next(iter(comp))] 
+            comp_atlases.append(self._build_component_catlas(comp, graph_comps[comp_id]))
 
         if len(comp_atlases) == 1:
             return comp_atlases[0]
@@ -104,11 +117,11 @@ class CAtlasBuilder:
         while len(curr_level) > self.level_threshold:
             next_level = []
             for block in chunks(curr_level, self.level_threshold):
-                next_level.append(CAtlas.create_node('virtual', block, self.minhash_size))
+                next_level.append(CAtlas.create_virtual_node(block, self.minhash_size))
             curr_level = next_level
 
         if len(curr_level) > 1:
-            root = CAtlas.create_node('virtual', curr_level, self.minhash_size)
+            root = CAtlas.create_virtual_node(curr_level, self.minhash_size)
         else:
             root = curr_level[0]
 
@@ -139,6 +152,20 @@ class CAtlas:
             minhash = minhash.merge(c.minhash,hash_size)
 
         return CAtlas(id, level+1, size, children, minhash)
+
+    @staticmethod
+    def create_virtual_node(children, hash_size):
+        assert len(children) > 0
+        size = 0
+        maxlevel = max(children, key=lambda c: c.size).size
+        minhash = MinHash(hash_size)
+        for c in children:
+            assert c.level <= maxlevel
+            size += c.size
+            minhash = minhash.merge(c.minhash,hash_size)
+
+        return CAtlas('virtual', maxlevel+1, size, children, minhash)
+
 
     def score(self, Q, querysize):
         minsize = 1.0*min(len(Q),len(self.minhash))

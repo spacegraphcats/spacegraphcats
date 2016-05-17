@@ -116,16 +116,13 @@ def dtf(g, r):
 
     changed = True
     d = 1
-    print("Augmenting", end=" ", flush=True)
     while changed and d <= r:
-        print(d, end=" ", flush=True)
         dtf_step(auggraph, d+1)
 
         curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
         changed = num_arcs < curr_arcs
         num_arcs = curr_arcs
         d += 1
-    print("", flush=True)
     return auggraph
 
 def dtf_step(g, dist):
