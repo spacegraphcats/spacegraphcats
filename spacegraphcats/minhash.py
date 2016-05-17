@@ -7,31 +7,26 @@ class MinHash:
         Class of MinHashes
     """
     def __init__(self, hash_size):
-        self.values = []
+        self.values = set()
         self.size = hash_size
 
     @staticmethod
     def from_list(hashes):
         res = MinHash(len(hashes))
-        res.values = list(hashes)
-        return res
-
-    def subhash(self, hash_size):
-        res = MinHash(hash_size)
-        res.values = hashes[:hash_size]
+        res.values = set(hashes)
         return res
 
     def normalize(self):
-        self.values = sorted(self.values)[:self.size]
+        self.values = set(sorted(self.values)[:self.size])
         assert len(self.values) <= self.size
 
     def add(self, val):
-        self.values.append(val)
+        self.values.add(val)
         self.normalize()
 
     def merge(self, h, size):
         res = MinHash(size)
-        res.values = self.values + h.values
+        self.values.update(h.values)
         res.normalize()
         assert len(res.values) <= size
         return res
