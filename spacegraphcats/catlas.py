@@ -157,7 +157,7 @@ class CAtlas:
     def create_virtual_node(children, hash_size):
         assert len(children) > 0
         size = 0
-        maxlevel = max(children, key=lambda c: c.size).size
+        maxlevel = max(children, key=lambda c: c.level).level
         minhash = MinHash(hash_size)
         for c in children:
             assert c.level <= maxlevel

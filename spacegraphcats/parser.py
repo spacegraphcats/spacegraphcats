@@ -122,9 +122,12 @@ class GmlWriter:
         self.file.write(string)
 
     def _quote(self, value):
-        if isinstance(value, str):
-            return '"{}"'.format(value)
-        return value
+        try:
+            return int(value)
+            return float(value)
+        except ValueError:
+            pass
+        return '"{}"'.format(value)            
 
     def add_vertex(self, id, size, attribute_values=[], vertex_attributes=None):
         """Add a vertex to the output."""
