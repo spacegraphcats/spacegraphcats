@@ -12,7 +12,8 @@ class VertexDict(dict):
 
         res = cls()
         for line in file:
-            u, *params = _parse_line(line)
+            line = _parse_line(line)
+            u, params = line[0], line[1:]
             res[int(u)] = param_parser(params)
         return res
 
