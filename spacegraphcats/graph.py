@@ -222,14 +222,11 @@ class Graph:
         return res
 
     def subgraph(self, vertices):
-        res = Graph()
-        selected = set(vertices)
-        for v in self:
-            if v in selected:
-                res.add_node(v)
-
-        for u,v in self.edges():
-            if u in selected and v in selected:
+        vertices = set(vertices)
+        res = Graph.on(vertices)
+        for u in vertices:
+            N = self.neighbours(u) & vertices
+            for v in N:
                 res.add_edge(u,v)
         return res
 
