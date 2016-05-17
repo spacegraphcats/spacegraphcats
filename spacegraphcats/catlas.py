@@ -126,7 +126,7 @@ class CAtlas:
     def score(self, Q, querysize):
         minsize = 1.0*min(len(Q),len(self.minhash))
         querysize = 1.0*len(Q)
-        score = len(self.minhash.intersect(Q)) / querysize
+        score = self.minhash.intersect(Q) / querysize
         return score
 
     def query(self, Q, querysize, threshold):
