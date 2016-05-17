@@ -26,6 +26,19 @@ radius. Larger *r* will create smaller atlases at the cost of precision and will
 take longer to compute. Intermediate computational steps are cached in the project
 director and will speed up subsequence catlas-computations.
 
+### CAtlas file structure
+
+An r-catlas (where *r* is the same parameter as above) consists of the files `eldrictch.catlas.*r*.gxt`
+and `eldrictch.catlas.*r*.mxt`. The .gxt file contains the DAG structure with the following fields for nodes:
+* `id`: A unique node unrelated to the id in the source graph
+* `size`: In a leaf node this size reflects the number of vertices of the original graph assigned to this node.
+  For internal nodes this value is the sum of it's childrens sizes.
+* `vertex`: If this node corresponds to a vertex from the source graph then this field contains that vertex' id.
+			For the root of the DAG this field will say `root`, in all other cases `virtual`.
+* `level`: The level of this node in the DAG. Leaves are on level 0 and the level increases towards the root.
+
+The .mxt file contains a minhash set for every node of the DAG, referenced by the `id` field.
+
 ## References
 
 [Graph Modelling Language](https://en.wikipedia.org/wiki/Graph_Modelling_Language)
