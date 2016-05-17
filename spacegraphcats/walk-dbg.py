@@ -190,6 +190,8 @@ def main():
             parts = args.output.split('.')
             if parts[-1] == 'gxt':
                 parts[-1] = 'mxt'
+            else:
+                parts.append('mxt')
             fp = open('.'.join(parts), 'w')
             for k, v in pathy.hashdict.items():
                 fp.write("%d,%s\n" % (k, " ".join(map(str, v))))
