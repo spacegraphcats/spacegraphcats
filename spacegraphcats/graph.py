@@ -222,7 +222,7 @@ class Graph:
         return res
 
     def subgraph(self, vertices):
-        vertices = set(vertices)
+        vertices = frozenset(vertices)
         res = Graph.on(vertices)
         for u in vertices:
             N = self.neighbours(u) & vertices
