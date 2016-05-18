@@ -54,6 +54,20 @@ nodes:
 The .mxt file contains a minhash set for every node of the DAG,
 referenced by the `id` field.
 
+### Backtracking to the original graph
+
+The 'assignment.r.vxt' file contains information linking the original
+graph nodes to the first level domination nodes.
+The first entry contains the vertices of the original graph, the
+second is (space-separated) list of dominator vertices.
+
+Reading this file can btw be done as follows:
+
+```
+with open(fname.format(name="assignment",extension="vxt",radius=radius), 'r') as f:
+            assignment = VertexDict.from_vxt(f, lambda s: list(map(int,s[0].split())))
+```
+
 ## References
 
 [Graph Modelling Language](https://en.wikipedia.org/wiki/Graph_Modelling_Language)
