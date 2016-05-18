@@ -6,14 +6,17 @@ from khmer import MinHash
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('catlas_dir')
+    parser.add_argument('-r', '--catlas-radius', type=int, default=5)
     parser.add_argument('signature_txt_files', nargs='+')
     parser.add_argument('-l', '--level', type=int, default=None)
     args = parser.parse_args()
 
-    mxtfile = os.path.basename(args.catlas_dir) + '.catlas.5.mxt'
+    mxtfile = '.catlas.%d.mxt' % args.catlas_radius
+    mxtfile = os.path.basename(args.catlas_dir) + mxtfile
     mxtfile = os.path.join(args.catlas_dir, mxtfile)
     
-    gxtfile = os.path.basename(args.catlas_dir) + '.catlas.5.gxt'
+    gxtfile = '.catlas.%d.gxt' % args.catlas_radius
+    gxtfile = os.path.basename(args.catlas_dir) + gxtfile
     gxtfile = os.path.join(args.catlas_dir, gxtfile)
 
     gxt_nodes = set()
@@ -25,6 +28,8 @@ def main():
         gxt_nodes = set([ a for (a,b) in gxt_nodes if b == args.level ])
 
         print('read %d nodes' % len(gxt_nodes))
+    else:
+        print('searching ALL levels at once')
 
     print('reading mxt file')
         
@@ -57,12 +62,16 @@ def main():
                 mxt_dict[v].compare(mh), mh.compare(mxt_dict[v]), v))
         results.sort()
         print('sig:', filename)
-        print('top N matches at level %d --' % args.level)
+        if args.level:
+            print('top N matches at level %d --' % args.level)
+        else:
+            print('top N matches across all levels')
         for score1, score2, node in results[-4:]:
             if score1 > 0.000:
                 print('%.3f' % score1, '%.3f' % score2, node)
 
-        print('sum: %.3f' % (sum( [ x[0] for x in results ] )))
+        if args.level:
+            print('sum: %.3f' % (sum( [ x[0] for x in results ] )))
         print('---')
 
 if __name__ == '__main__':

@@ -6,13 +6,16 @@ from khmer import MinHash
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('catlas_dir')
+    parser.add_argument('-r', '--catlas-radius', type=int, default=5)
     parser.add_argument('signature_txt_file')
     args = parser.parse_args()
 
-    mxtfile = os.path.basename(args.catlas_dir) + '.catlas.5.mxt'
+    mxtfile = '.catlas.%d.mxt' % args.catlas_radius
+    mxtfile = os.path.basename(args.catlas_dir) + mxtfile
     mxtfile = os.path.join(args.catlas_dir, mxtfile)
     
-    gxtfile = os.path.basename(args.catlas_dir) + '.catlas.5.gxt'
+    gxtfile = '.catlas.%d.gxt' % args.catlas_radius
+    gxtfile = os.path.basename(args.catlas_dir) + gxtfile
     gxtfile = os.path.join(args.catlas_dir, gxtfile)
 
     nodes_by_level = {}
