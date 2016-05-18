@@ -104,6 +104,7 @@ def main():
     # load in all of the input sequences, one file at a time.
     for seqfile in args.seqfiles:
         for record in screed.open(seqfile):
+            if len(record.sequence) < args.ksize: continue
             n += 1
             if n % 10000 == 0:
                 print('...', seqfile, n)
@@ -121,6 +122,7 @@ def main():
     n = 0
     for seqfile in args.seqfiles:
         for record in screed.open(seqfile):
+            if len(record.sequence) < args.ksize: continue
             n += 1
             if n % 10000 == 0:
                 print('...2', seqfile, n)
@@ -172,7 +174,7 @@ def main():
     if args.output:
         import parser
 
-        print('saving to', args.output)
+        print('saving graph to', args.output)
         fp = open(args.output, 'w')
         if args.gml:
             w = parser.GmlWriter(fp, [], [])
@@ -193,6 +195,7 @@ def main():
             else:
                 parts.append('mxt')
             fp = open('.'.join(parts), 'w')
+            print('saving minhashes to', ".".join(parts))
             for k, v in pathy.hashdict.items():
                 fp.write("%d,%s\n" % (k, " ".join(map(str, v))))
             fp.close()

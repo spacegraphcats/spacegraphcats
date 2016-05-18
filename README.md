@@ -4,6 +4,7 @@ supercool stuff from DDD Barnraising
 
 ## Setup
 
+* See [INSTALL.txt](https://github.com/spacegraphcats/spacegraphcats/blob/master/INSTALL.txt) for blank-machine install instructions.
 * Install dependencies with `pip install -r requirements.txt`
 * [Set up git lfs](https://git-lfs.github.com/) and initialize it with
   `git lfs install`
@@ -18,28 +19,40 @@ Grab this:
 
 ## Running the pipeline
 
-For a pair of .gxt/.mxt files (say `eldritch.gxt` and `eldritch.mxt`) create
-a matching project folder `eldritch`. The folder name must match the .gxt/.mxt name.
+For a pair of .gxt/.mxt files (say `eldritch.gxt` and `eldritch.mxt`)
+create a matching project folder `eldritch`. The folder name must
+match the .gxt/.mxt name.
 
-Run `python3 build-catlas.py /path/to/eldritch r` where *r* determines the coverage
-radius. Larger *r* will create smaller atlases at the cost of precision and will
-take longer to compute. Intermediate computational steps are cached in the project
-director and will speed up subsequence catlas-computations.
+Run `spacegraphcats/build-catlas.py /path/to/eldritch r` where *r*
+determines the coverage radius. Larger *r* will create smaller atlases
+at the cost of precision and will take longer to compute. Intermediate
+computational steps are cached in the project director and will speed
+up subsequence catlas-computations.
 
 ### CAtlas file structure
 
-An r-catlas (where *r* is the same parameter as above) consists of the files `eldrictch.catlas.*r*.gxt`
-and `eldrictch.catlas.*r*.mxt`. The .gxt file contains the DAG structure with the following fields for nodes:
-* `id`: A unique node unrelated to the id in the source graph
-* `size`: In a leaf node this size reflects the number of vertices of the original graph assigned to this node.
-  For internal nodes this value is the sum of it's childrens sizes.
-* `vertex`: If this node corresponds to a vertex from the source graph then this field contains that vertex' id.
-			Every node labeled `root` identifies a connected component of the input graph (that is, the union of all leaves
-			below such a node covers exactly one connected component). If the input graph has multiple connected components
-			the respective `root` nodes are joined oup by a tree structure in which all nodes are labeled `virtual`.
-* `level`: The level of this node in the DAG. Leaves are on level 0 and the level increases towards the root.
+An r-catlas (where *r* is the same parameter as above) consists of the
+files `eldritch.catlas.r.gxt` and `eldrictch.catlas.r.mxt`. The
+.gxt file contains the DAG structure with the following fields for
+nodes:
 
-The .mxt file contains a minhash set for every node of the DAG, referenced by the `id` field.
+* `id`: A unique node unrelated to the id in the source graph
+* `size`: In a leaf node this size reflects the number of vertices of
+  the original graph assigned to this node.  For internal nodes this
+  value is the sum of its childrens sizes.
+* `vertex`: If this node corresponds to a vertex from the source graph
+			then this field contains that vertex's id. Every node
+			labeled `root` identifies a connected component of the
+			input graph (that is, the union of all leaves below such a
+			node covers exactly one connected component). If the input
+			graph has multiple connected components the respective
+			`root` nodes are joined up by a tree structure in which
+			all nodes are labeled `virtual`.
+* `level`: The level of this node in the DAG. Leaves are on level 0
+  and the level increases towards the root.
+
+The .mxt file contains a minhash set for every node of the DAG,
+referenced by the `id` field.
 
 ## References
 
