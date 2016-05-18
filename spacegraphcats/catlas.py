@@ -43,7 +43,7 @@ class CAtlasBuilder:
         leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size))        
         for u in vertices:
             for v in self.assignment[u]:
-                leaf_hashes[v] = leaf_hashes[v].merge(self.minhashes[u], self.minhash_size)
+                leaf_hashes[v].merge(self.minhashes[u], self.minhash_size)
 
         # Create level 0
         for v in comp:
@@ -149,8 +149,7 @@ class CAtlas:
         for c in children:
             assert c.level == level
             size += c.size
-            minhash = minhash.merge(c.minhash,hash_size)
-
+            minhash.merge(c.minhash,hash_size)
         return CAtlas(id, level+1, size, children, minhash)
 
     @staticmethod
@@ -162,7 +161,7 @@ class CAtlas:
         for c in children:
             assert c.level <= maxlevel
             size += c.size
-            minhash = minhash.merge(c.minhash,hash_size)
+            minhash.merge(c.minhash,hash_size)
 
         return CAtlas('virtual', maxlevel+1, size, children, minhash)
 

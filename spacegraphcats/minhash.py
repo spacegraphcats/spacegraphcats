@@ -21,9 +21,7 @@ class MinHash:
         self.mh.add_hash(val)
 
     def merge(self, h, size):
-        res = MinHash(size)
-        res.mh.merge(h.mh)
-        return res
+        self.mh.merge(h.mh)
 
     def intersect(self, other):
         return self.mh.count_common(other.mh)
