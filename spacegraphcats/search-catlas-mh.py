@@ -60,7 +60,7 @@ def main():
         for v in mxt_dict:
             results.append((
                 mxt_dict[v].compare(mh), mh.compare(mxt_dict[v]), v))
-        results.sort()
+        results.sort(key=lambda x: x[1])
         print('sig:', filename)
         if args.level:
             print('top N matches at level %d --' % args.level)

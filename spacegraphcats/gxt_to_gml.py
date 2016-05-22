@@ -16,7 +16,7 @@ if __name__ == '__main__':
     writer = GmlWriter(args.output, directed=args.directed)
 
     def add_vertex(v, size, attributes, values):
-            writer.add_vertex(v, size, values, attributes)
+        writer.add_vertex(v, size, values, attributes)
 
     def add_edge(u, v, attributes, values):
         writer.add_edge(u, v, values, attributes)
