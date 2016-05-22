@@ -32,7 +32,7 @@ up subsequence catlas-computations.
 ### CAtlas file structure
 
 An r-catlas (where *r* is the same parameter as above) consists of the
-files `eldritch.catlas.r.gxt` and `eldrictch.catlas.r.mxt`. The
+files `eldritch.catlas.r.gxt` and `eldritch.catlas.r.mxt`. The
 .gxt file contains the DAG structure with the following fields for
 nodes:
 
