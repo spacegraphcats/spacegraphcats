@@ -20,6 +20,7 @@ def main():
     gxtfile = os.path.join(args.catlas_dir, gxtfile)
 
     gxt_nodes = set()
+    gxt_levels = {}
     if args.level is not None:
         print('reading gxtfile', gxtfile, 'for level', args.level)
         gxt_nodes = [ x.strip().split(',') for x in open(gxtfile) ]
@@ -30,6 +31,10 @@ def main():
         print('read %d nodes' % len(gxt_nodes))
     else:
         print('searching ALL levels at once')
+        gxt_nodes = [ x.strip().split(',') for x in open(gxtfile) ]
+        gxt_nodes = [ x for x in gxt_nodes[1:] if len(x) == 4 ]
+        gxt_levels = dict([ (int(x[0]), int(x[3])) for x in gxt_nodes ])
+        gxt_nodes = set()
 
     print('reading mxt file')
         
@@ -58,17 +63,18 @@ def main():
         print('')
         results = []
         for v in mxt_dict:
+            level = gxt_levels.get(v, args.level)
             results.append((
-                mxt_dict[v].compare(mh), mh.compare(mxt_dict[v]), v))
+                mxt_dict[v].compare(mh), mh.compare(mxt_dict[v]), v, level))
         results.sort(key=lambda x: x[1])
         print('sig:', filename)
         if args.level:
             print('top N matches at level %d --' % args.level)
         else:
             print('top N matches across all levels')
-        for score1, score2, node in results[-4:]:
+        for score1, score2, node, level in results[-4:]:
             if score1 > 0.000:
-                print('%.3f' % score1, '%.3f' % score2, node)
+                print('%.3f' % score1, '%.3f' % score2, node, level)
 
         if args.level:
             print('sum: %.3f' % (sum( [ x[0] for x in results ] )))
