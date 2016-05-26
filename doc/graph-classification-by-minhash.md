@@ -37,7 +37,7 @@ definitions would change to returning nodes that contain cDBG nodes.
 There may be acceptable tradeoffs for different downstream
 applications, of course!
 
-Assumptions and confounding factors:
+## Assumptions and confounding factors:
 
 * we can assume that the best match is connected, although if not, that's
   also fine.

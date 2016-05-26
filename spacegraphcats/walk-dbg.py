@@ -20,10 +20,12 @@ class Pathfinder(object):
         self.ksize = ksize
 
         self.segment_counter = 1
-        self.segments = {}
-        self.segments_r = {}
+        self.segments = {}                # segment IDs (int) to size
+        self.segments_f = {}              # segment IDs (int) to kmers
+        self.segments_r = {}              # kmers to segment IDs
         self.adjacencies = {}
         self.hashdict = OrderedDict()
+        self.labels = {}
 
     def new_segment(self, kmer):
         if kmer in self.segments_r:
@@ -33,6 +35,7 @@ class Pathfinder(object):
         self.segment_counter += 1
 
         self.segments[this_id] = self.ksize
+        self.segments_f[this_id] = kmer
         self.segments_r[kmer] = this_id
 
         return this_id
@@ -49,6 +52,11 @@ class Pathfinder(object):
         x = self.adjacencies.get(node_id, set())
         x.add(adj)
         self.adjacencies[node_id] = x
+
+    def add_label(self, node_id, label):
+        x = self.labels.get(node_id, [])
+        x.append(label)
+        self.labels[node_id] = x
 
 
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
@@ -85,6 +93,7 @@ def main():
                             type=float)
     parser.add_argument('--force', action='store_true')
     parser.add_argument('--gml', action='store_true')
+    parser.add_argument('--label', action='store_true')
     args = parser.parse_args()
 
     assert args.ksize % 2, "ksize must be odd"
@@ -131,6 +140,9 @@ def main():
             if min(stop_bf2.get_kmer_counts(record.sequence)) == 0:
                 stop_bf2.consume(record.sequence)
                 degree_nodes += graph.find_high_degree_nodes(record.sequence)
+                if args.label:
+                    for node_id in degree_nodes:
+                        pathy.add_label(node_id, n)
     del stop_bf2
 
     # get all of the degree > 2 nodes and give them IDs.
@@ -179,10 +191,16 @@ def main():
         if args.gml:
             w = parser.GmlWriter(fp, [], [])
         else:
-            w = parser.Writer(fp, [], [])
+            w = parser.Writer(fp, ['labels'], [])
         
         for k, v in pathy.segments.items():
-            w.add_vertex(k, v, [])
+            kmer = pathy.segments_f.get(k)
+            l = ""
+            if kmer:
+                l = pathy.labels.get(kmer, "")
+                if l:
+                    l = " ".join(map(str, l))
+            w.add_vertex(k, v, [l])
 
         for k, v in pathy.adjacencies.items():
             for edge in v:
