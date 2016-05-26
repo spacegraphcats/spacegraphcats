@@ -3,6 +3,10 @@ import argparse
 import os
 from khmer import MinHash
 
+
+KSIZE=31
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('catlas_dir')
@@ -44,8 +48,13 @@ def main():
         node = int(node)
         if gxt_nodes and node not in gxt_nodes:
             continue
+        if args.level and 0:
+            fp = open(mxtfile + '.node%d.level%d.mh' % (node, args.level),
+                      'wt')
+            fp.write(hashes)
+            fp.close()
         hashes = [ int(h) for h in hashes.split(' ') ]
-        mh = MinHash(len(hashes), 31)
+        mh = MinHash(len(hashes), KSIZE)
         for h in hashes:
             mh.add_hash(h)
             
@@ -55,7 +64,7 @@ def main():
         print('loading:', filename)
         data = open(filename).read().strip()
         hashes = list(map(int, data.split()))
-        mh = MinHash(len(hashes), 31)
+        mh = MinHash(len(hashes), KSIZE)
         for h in hashes:
             mh.add_hash(h)
 
@@ -65,19 +74,24 @@ def main():
         for v in mxt_dict:
             level = gxt_levels.get(v, args.level)
             results.append((
-                mxt_dict[v].compare(mh), mh.compare(mxt_dict[v]), v, level))
+                mxt_dict[v].compare(mh), mh.compare(mxt_dict[v]), v, level, mxt_dict[v]))
         results.sort(key=lambda x: x[1])
         print('sig:', filename)
         if args.level:
             print('top N matches at level %d --' % args.level)
         else:
             print('top N matches across all levels')
-        for score1, score2, node, level in results[-4:]:
+        for score1, score2, node, level, mxt_mh in results[-4:]:
             if score1 > 0.000:
-                print('%.3f' % score1, '%.3f' % score2, node, level)
+                print(",".join((filename,'%.3f' % score1, '%.3f' % score2, str(node), str(level))))
 
         if args.level:
-            print('sum: %.3f' % (sum( [ x[0] for x in results ] )))
+            sum_mh = MinHash(10000000, KSIZE)
+            for score1, score2, node, level, mxt_mh in results:
+                if score1 > 0.05:
+                    sum_mh.merge(mxt_mh)
+            print('sum mh: %.3f %.3f' % (sum_mh.compare(mh), mh.compare(sum_mh)))
+            #print('sum: %.3f' % (sum( [ x[0] for x in results ] )))
         print('---')
 
 if __name__ == '__main__':
