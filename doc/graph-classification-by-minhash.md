@@ -37,16 +37,29 @@ definitions would change to returning nodes that contain cDBG nodes.
 There may be acceptable tradeoffs for different downstream
 applications, of course!
 
-Assumptions:
+Assumptions and confounding factors:
 
 * we can assume that the best match is connected, although if not, that's
   also fine.
 
-Confounding factors:
-
+* sometimes we may have multiple MinHash signatures to search with,
+  but not always. Generally speaking, we will not have a comprehensive
+  idea of what (else) might be in the graph.
+  
 * it may not be possible to get 100% true negative; there are
   situations (strains and pan-genomes) where genomes may partially
   overlap.
+  
+* because of the previous point, we may know (& use) the size of the
+  query sequence/graph from which the query MinHash was constructed,
+  but the matching graph may be bigger or smaller.
+  
+* more generally, the maximum size of the query sequence/graph may be
+  between 5,000 and 5 billion k-mers.  (The former is the size of some
+  viruses or phage; the latter is the size of some genomes.) For now,
+  we can restrict ourselves to the less general case of 500,000 to 5
+  million k-mers.  The MinHash sizes of both the query and the catlas
+  can be adjusted as needed.
 
 ## Benchmarking data sets
 
