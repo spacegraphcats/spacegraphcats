@@ -159,7 +159,7 @@ def main():
         orig_nodes += dom_to_orig[k]
 
     found_label_counts = {}
-    for k in orig_nodes:
+    for k in set(orig_nodes):
         for label in orig_to_labels.get(k, []):
             found_label_counts[label] = found_label_counts.get(label, 0) + 1
 
@@ -184,15 +184,20 @@ def main():
         if k not in label_list:
             fp = found_label_counts.get(k, 0)
             tn += all_label_counts[k] - found_label_counts.get(k, 0)
-    
+
+    print('')
     print('looking for labels:', " ".join([str(i) for i in label_list]))
     print('actually found:', found_label_counts)
     print('all label counts:', all_label_counts)
+
+    print('')
 
     print('tp:', tp)
     print('fp:', fp)
     print('fn:', fn)
     print('tn:', tn)
+
+    assert tp + fp + fn + tn == sum(all_label_counts.values())
 
     sys.exit(0)
 
