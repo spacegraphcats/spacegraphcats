@@ -8,6 +8,9 @@ import os
 import sys
 
 
+KSIZE=31
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix')
@@ -103,9 +106,51 @@ def main():
             # convert leaves into the original domination graph coordinates.
             return [leaves_to_domnode[node_id]]
 
+    ### load mxt
+
+    print('reading mxt file', catlas_mxt)
+        
+    mxt_dict = {}
+    for line in open(catlas_mxt):
+        node, hashes = line.strip().split(',')
+        node = int(node)
+        hashes = [ int(h) for h in hashes.split(' ') ]
+        mh = MinHash(len(hashes), KSIZE)
+        for h in hashes:
+            mh.add_hash(h)
+            
+        mxt_dict[int(node)] = mh
+
+    ### load mh
+
+    print('reading mh file', args.mh_file)
+
+    hashes = open(args.mh_file).read().strip().split(' ')
+    query_mh = MinHash(len(hashes), KSIZE)
+
+    for h in hashes:
+        query_mh.add_hash(int(h))
+        
     ### next, find the relevant catlas nodes
 
-    leaves = recurse_from(59)
+    print('searching catlas minhashes w/%s' % args.mh_file)
+
+    best_match = -1
+    best_match_node = None
+    best_mh = None
+    for catlas_node, subject_mh in mxt_dict.items():
+        match = query_mh.compare(subject_mh)
+        if match > best_match:
+            best_match = match
+            best_match_node = catlas_node
+            best_mh = subject_mh
+
+    print('best match: similarity %.3f, catlas node %d' % (best_match,
+                                                           best_match_node))
+    leaves = set(recurse_from(best_match_node))
+
+    print('found %d domgraph leaves under catlas node %d' % (len(leaves),
+                                                      best_match_node))
 
     ### finally, count!
     
@@ -140,8 +185,9 @@ def main():
             fp = found_label_counts.get(k, 0)
             tn += all_label_counts[k] - found_label_counts.get(k, 0)
     
-    print('found:', found_label_counts)
-    print('all:', all_label_counts)
+    print('looking for labels:', " ".join([str(i) for i in label_list]))
+    print('actually found:', found_label_counts)
+    print('all label counts:', all_label_counts)
 
     print('tp:', tp)
     print('fp:', fp)
