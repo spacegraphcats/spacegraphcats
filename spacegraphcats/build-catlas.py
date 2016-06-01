@@ -1,14 +1,15 @@
-#! /usr/bin/env python
-from __future__ import print_function
+#! /usr/bin/env python3
+
 import argparse, sys, os, re
 import gzip, glob
 from operator import itemgetter
 from os import path
-from graph import Graph, TFGraph, EdgeSet, VertexDict, write_gxt
-from parser import parse_minhash
-from catlas import CAtlasBuilder, CAtlas
-from minhash import MinHash
-from rdomset import LazyDomination
+
+from spacegraphcats.graph import Graph, TFGraph, EdgeSet, VertexDict, write_gxt
+from spacegraphcats.parser import parse_minhash
+from spacegraphcats.catlas import CAtlasBuilder, CAtlas
+from spacegraphcats.minhash import MinHash
+from spacegraphcats.rdomset import LazyDomination
 
 DEBUG = True
 sys.stdin

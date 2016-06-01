@@ -1,4 +1,5 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
 from khmer import MinHash
 import screed
 import os.path

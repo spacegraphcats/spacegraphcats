@@ -1,11 +1,13 @@
-#!/usr/bin/python
+#! /usr/bin/env python3
+
 import sys, os, argparse
 from os import path
 from collections import deque, defaultdict
-from graph import Graph
-from rdomset import rdomset, calc_domination_graph, calc_dominators
-from minhash import MinHash
-from parser import parse_minhash, Writer
+
+from spacegraphcats.graph import Graph
+from spacegraphcats.rdomset import rdomset, calc_domination_graph, calc_dominators
+from spacegraphcats.minhash import MinHash
+from spacegraphcats.parser import parse_minhash, Writer
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""

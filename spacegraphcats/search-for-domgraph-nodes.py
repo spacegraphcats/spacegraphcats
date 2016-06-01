@@ -1,8 +1,9 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
 """
 """
 import argparse
-import parser                             #spacegraphcats parser
+import spacegraphcats.parser as parser
 from khmer import MinHash
 import os
 import sys

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-from __future__ import print_function
+
 import itertools, sys, random, os, argparse, glob
 from collections import defaultdict, Counter
 from operator import itemgetter
 from os import path
-from Eppstein import priorityDictionary
-from graph import Graph, TFGraph, EdgeSet, EdgeStream, VertexDict, write_gxt
+
+from spacegraphcats.Eppstein import priorityDictionary
+from spacegraphcats.graph import Graph, TFGraph, EdgeSet, EdgeStream, VertexDict, write_gxt
 
 
 class Domination:

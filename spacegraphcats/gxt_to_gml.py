@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-from parser import parse, GmlWriter
 import sys
 import argparse
+
+from spacegraphcats.parser import parse, GmlWriter
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
