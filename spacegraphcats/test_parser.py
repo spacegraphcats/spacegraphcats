@@ -1,5 +1,5 @@
 import unittest
-import parser
+from parser import parse
 import os
 
 DIR = os.path.dirname(os.path.realpath(__file__))
@@ -30,7 +30,7 @@ class ParserTest(unittest.TestCase):
             all_values_e.append(values)
 
         with open(os.path.join(DIR, 'parser-examples/graph.gxt')) as f:
-            self.p = parser.parse(f, collect_vertex, collect_edge)
+            self.p = parse(f, collect_vertex, collect_edge)
 
         self.assertEqual(all_ids, [1, 2, 3])
         self.assertEqual(all_sizes, [2, 3, 1])
