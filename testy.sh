@@ -1,4 +1,6 @@
-mkdir ttt
+set -e
+
+mkdir -p ttt
 spacegraphcats/walk-dbg.py -x 1e7 data/tr-cross.fa -o ttt/ttt.gxt
 spacegraphcats/build-catlas.py ttt 1
 spacegraphcats/build-catlas.py ttt 2
