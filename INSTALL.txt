@@ -14,7 +14,7 @@ cd khmer
 make
 export PYTHONPATH=$(pwd)
 echo "export PYTHONPATH=$(pwd)" >> ~/.bashrc
-cd
+cd ..
 
 # get spacegraphcats
 git clone https://github.com/spacegraphcats/spacegraphcats.git
