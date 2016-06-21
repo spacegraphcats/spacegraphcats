@@ -1,5 +1,8 @@
+#! /usr/bin/env python3
+
 import unittest
-from graph import Graph
+
+from spacegraphcats.graph import Graph
 
 class GraphTest(unittest.TestCase):
 

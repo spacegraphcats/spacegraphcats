@@ -1,4 +1,5 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
 """
 Color a domgraph based on nodes under one or more catlas node.
 
@@ -10,7 +11,7 @@ will set the 'colorme' attribute on all domgraph nodes that are underneath
 catlas nodes 1, 3, and 9 in the r-5 catlas.
 """
 import argparse
-import parser                             #spacegraphcats parser
+import spacegraphcats.parser as parser
 from khmer import MinHash
 
 

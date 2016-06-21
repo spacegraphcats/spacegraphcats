@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """Parser for simple graph format."""
 
 

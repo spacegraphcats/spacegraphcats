@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 """UnionFind.py
 
 Union-find data structure. Based on Josiah Carlson's code,

@@ -1,7 +1,8 @@
 import sys, itertools, operator
 from collections import defaultdict as defaultdict
-from Eppstein import priorityDictionary, UnionFind
 import hashlib
+
+from spacegraphcats.Eppstein import priorityDictionary, UnionFind
 
 class VertexDict(dict):
     @classmethod

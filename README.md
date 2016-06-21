@@ -1,4 +1,4 @@
-# spacegraphcats
+# spacegraphcats [![Build Status](https://drone.io/github.com/spacegraphcats/spacegraphcats/status.png)](https://drone.io/github.com/spacegraphcats/spacegraphcats/latest)
 
 supercool stuff from DDD Barnraising
 

@@ -1,6 +1,9 @@
+#! /usr/bin/env python3
+
 import unittest
-import parser
 import os
+
+import spacegraphcats.parser as parser
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 
