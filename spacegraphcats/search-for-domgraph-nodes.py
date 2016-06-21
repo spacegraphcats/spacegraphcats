@@ -3,7 +3,7 @@
 """
 """
 import argparse
-import spacegraphcats.parser as parser
+import spacegraphcats.graph_parser as parser
 from khmer import MinHash
 import os
 import sys
