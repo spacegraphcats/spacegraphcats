@@ -6,7 +6,7 @@ from operator import itemgetter
 from os import path
 
 from spacegraphcats.graph import Graph, TFGraph, EdgeSet, VertexDict, write_gxt
-from spacegraphcats.parser import parse_minhash
+from spacegraphcats.graph_parser import parse_minhash
 from spacegraphcats.catlas import CAtlasBuilder, CAtlas
 from spacegraphcats.minhash import MinHash
 from spacegraphcats.rdomset import LazyDomination

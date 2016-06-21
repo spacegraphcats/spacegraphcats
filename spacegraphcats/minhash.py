@@ -2,7 +2,7 @@ import string
 import random
 from khmer import MinHash as kMinHash
 
-from spacegraphcats.parser import parse_minhash
+from spacegraphcats.graph_parser import parse_minhash
 
 class MinHash:
     """

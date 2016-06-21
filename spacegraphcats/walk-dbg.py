@@ -4,6 +4,8 @@ import khmer
 import screed
 import argparse
 from collections import OrderedDict
+import os, os.path
+import graph_parser
 
 # graph settings
 DEFAULT_KSIZE=31
@@ -84,20 +86,44 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     pathy.hashdict[path_id] = mh.get_mins()
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('seqfiles', nargs='+')
-    parser.add_argument('-o', '--output', default=None)
-    parser.add_argument('-k', '--ksize', default=DEFAULT_KSIZE, type=int)
-    parser.add_argument('-x', '--tablesize', default=NODEGRAPH_SIZE,
+    p = argparse.ArgumentParser()
+    p.add_argument('seqfiles', nargs='+')
+    p.add_argument('-o', '--output', default=None)
+    p.add_argument('-k', '--ksize', default=DEFAULT_KSIZE, type=int)
+    p.add_argument('-x', '--tablesize', default=NODEGRAPH_SIZE,
                             type=float)
-    parser.add_argument('--force', action='store_true')
-    parser.add_argument('--gml', action='store_true')
-    parser.add_argument('--label', action='store_true')
-    args = parser.parse_args()
+    p.add_argument('--force', action='store_true')
+    p.add_argument('--label', action='store_true')
+    args = p.parse_args()
 
     assert args.ksize % 2, "ksize must be odd"
-    assert args.output, "you probably want an output file"
 
+    output_dir = args.output
+    if not output_dir:
+        if len(args.seqfiles) > 1:
+            print('** please specify an output directory with -o',
+                  file=sys.stderr)
+            sys.exit(-1)
+
+        output_dir = os.path.basename(args.seqfiles[0])
+        if output_dir.endswith('.fa'):
+            output_dir = output_dir[:-3]
+
+    gxtfile = os.path.basename(output_dir) + '.gxt'
+    gxtfile = os.path.join(output_dir, gxtfile)
+    mxtfile = os.path.basename(output_dir) + '.mxt'
+    mxtfile = os.path.join(output_dir, mxtfile)
+
+    print('')
+    print('placing output in directory:', output_dir)
+    print('gxt will be:', gxtfile)
+    print('mxt will be:', mxtfile)
+    try:
+        os.mkdir(output_dir)
+    except FileExistsError:
+        print('(note: directory already exists)')
+
+    print('')
     print('building graphs and loading files')
 
     # Create graph, and two stop bloom filters - one for loading, one for
@@ -181,17 +207,11 @@ def main():
     print(len(pathy.segments), 'segments, containing',
               sum(pathy.segments.values()), 'nodes')
 
-    # save to GXT or GML.
-    if args.output:
-        import parser
+    # save to GXT/MXT.
+    print('saving gxtfile', gxtfile)
+    with open(gxtfile, 'w') as fp:
+        w = parser.Writer(fp, ['labels'], [])
 
-        print('saving graph to', args.output)
-        fp = open(args.output, 'w')
-        if args.gml:
-            w = parser.GmlWriter(fp, [], [])
-        else:
-            w = parser.Writer(fp, ['labels'], [])
-        
         for k, v in pathy.segments.items():
             kmer = pathy.segments_f.get(k)
             l = ""
@@ -205,17 +225,11 @@ def main():
             for edge in v:
                 w.add_edge(k, edge, [])
 
-        if not args.gml:
-            parts = args.output.split('.')
-            if parts[-1] == 'gxt':
-                parts[-1] = 'mxt'
-            else:
-                parts.append('mxt')
-            fp = open('.'.join(parts), 'w')
-            print('saving minhashes to', ".".join(parts))
-            for k, v in pathy.hashdict.items():
-                fp.write("%d,%s\n" % (k, " ".join(map(str, v))))
-            fp.close()
+    print('saving mxtfile', mxtfile)
+    with open(mxtfile, 'w') as fp:
+        for k, v in pathy.hashdict.items():
+            fp.write("%d,%s\n" % (k, " ".join(map(str, v))))
+        fp.close()
 
 
 if __name__ == '__main__':

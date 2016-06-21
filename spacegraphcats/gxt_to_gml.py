@@ -3,7 +3,7 @@
 import sys
 import argparse
 
-from spacegraphcats.parser import parse, GmlWriter
+from spacegraphcats.graph_parser import parse, GmlWriter
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

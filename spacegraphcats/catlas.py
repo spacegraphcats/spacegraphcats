@@ -7,7 +7,7 @@ from collections import deque, defaultdict
 from spacegraphcats.graph import Graph
 from spacegraphcats.rdomset import rdomset, calc_domination_graph, calc_dominators
 from spacegraphcats.minhash import MinHash
-from spacegraphcats.parser import parse_minhash, Writer
+from spacegraphcats.graph_parser import parse_minhash, Writer
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
