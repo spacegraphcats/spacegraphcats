@@ -1,6 +1,6 @@
-# spacegraphcats [![Build Status](https://drone.io/github.com/spacegraphcats/spacegraphcats/status.png)](https://drone.io/github.com/spacegraphcats/spacegraphcats/latest)
+# spacegraphcats [![Build Status](https://drone.io/github.com/spacegraphcats/spacegraphcats/status.png)](https://drone.io/github.com/spacegraphcats/spacegraphcats/latest) [![codecov](https://codecov.io/gh/spacegraphcats/spacegraphcats/branch/master/graph/badge.svg)](https://codecov.io/gh/spacegraphcats/spacegraphcats)
 
-supercool stuff from DDD Barnraising
+Supercool stuff from DDD Barnraising.
 
 ## Setup
 
