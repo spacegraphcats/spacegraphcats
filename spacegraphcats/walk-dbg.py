@@ -12,7 +12,6 @@ NODEGRAPH_SIZE=8e8 # small, big is 2e8
 # minhash settings
 MH_SIZE_DIVISOR=50
 MH_MIN_SIZE=5
-MH_PRIME=9999999967
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
@@ -164,7 +163,7 @@ def main():
 
         # add its hash value.
         k_str = khmer.reverse_hash(k, graph.ksize())
-        hashval = khmer._minhash.hash_murmur32(k_str) % MH_PRIME;
+        hashval = khmer._minhash.hash_murmur(k_str)
         pathy.hashdict[k_id] = [hashval]
 
         # find all the neighbors of this high-degree node.
