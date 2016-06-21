@@ -44,13 +44,13 @@ def test_build_catlas_tr_cross_prebuilt():
         catlas_dir = os.path.join(tempdir, 'tr-cross')
         os.mkdir(catlas_dir)
 
-        with open(os.path.join(catlas_dir, 'tr-cross.gxt'), 'w') as fp:
-            with gzip.open(tr_cross_gxt) as infp:
+        with open(os.path.join(catlas_dir, 'tr-cross.gxt'), 'wb') as fp:
+            with gzip.open(tr_cross_gxt, 'rb') as infp:
                 data = infp.read()
                 fp.write(data)
 
-        with open(os.path.join(catlas_dir, 'tr-cross.mxt'), 'w') as fp:
-            with gzip.open(tr_cross_mxt) as infp:
+        with open(os.path.join(catlas_dir, 'tr-cross.mxt'), 'wb') as fp:
+            with gzip.open(tr_cross_mxt, 'rb') as infp:
                 data = infp.read()
                 fp.write(data)
 
