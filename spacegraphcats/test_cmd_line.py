@@ -13,7 +13,6 @@ def test_walk_dbg():
 
 
 def test_build_cdbg_tr_small():
-    return
     tr_small = utils.get_test_data('tr-small.fa')
 
     with utils.TempDirectory() as tempdir:
@@ -22,7 +21,6 @@ def test_build_cdbg_tr_small():
 
 
 def test_build_catlas_tr_cross():
-    return
     tr_cross = utils.get_test_data('tr-cross.fa')
 
     with utils.TempDirectory() as tempdir:
