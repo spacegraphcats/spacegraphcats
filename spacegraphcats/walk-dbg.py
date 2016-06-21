@@ -210,7 +210,7 @@ def main():
     # save to GXT/MXT.
     print('saving gxtfile', gxtfile)
     with open(gxtfile, 'w') as fp:
-        w = parser.Writer(fp, ['labels'], [])
+        w = graph_parser.Writer(fp, ['labels'], [])
 
         for k, v in pathy.segments.items():
             kmer = pathy.segments_f.get(k)
