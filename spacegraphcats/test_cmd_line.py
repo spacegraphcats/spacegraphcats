@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
-import sys, os.path
-sys.path.insert(0, os.path.dirname(__file__))
+from __future__ import print_function
+import os.path
 import gzip
 import shutil
 

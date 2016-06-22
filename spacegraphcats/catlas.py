@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+from __future__ import print_function
 
 import sys, os, argparse
 from os import path
@@ -100,15 +101,18 @@ class CAtlasBuilder:
         n = len(self.graph)
         for i, u in enumerate(self.graph):
             if i % 10 == 0:
-                print("\rProcessing node {}/{}".format(i,n), end="", flush=True)
+                print("\rProcessing node {}/{}".format(i,n), end="")
+                sys.stdout.flush()
             dominator = next(iter(self.assignment[u]))
             graph_comps[comp_lookup[dominator]].add(u)
 
-        print("\rProcessing node {}/{}".format(n,n), end="", flush=True) # For my OCD
+        print("\rProcessing node {}/{}".format(n,n), end="") # For my OCD
+        sys.stdout.flush()
 
         print("\nBuilding catlasses for connected components")
         for i, comp in enumerate(components):
-            print("\rProcessing component {}/{}".format(i,num_comps), end="", flush=True)
+            print("\rProcessing component {}/{}".format(i,num_comps), end="")
+            sys.stdout.flush()
             comp_id = comp_lookup[next(iter(comp))] 
             comp_atlases.append(self._build_component_catlas(comp, graph_comps[comp_id]))
 

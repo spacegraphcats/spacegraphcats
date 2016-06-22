@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-
+from __future__ import print_function
 import argparse, sys, os, re
 import gzip, glob
 from operator import itemgetter

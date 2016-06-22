@@ -1,2 +1,3 @@
 screed
 pytest
+git+https://github.com/dib-lab/khmer.git@minhash
