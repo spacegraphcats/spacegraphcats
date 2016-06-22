@@ -5,7 +5,7 @@ import screed
 import argparse
 from collections import OrderedDict
 import os, os.path
-import graph_parser
+from spacegraphcats import graph_parser
 
 # graph settings
 DEFAULT_KSIZE=31

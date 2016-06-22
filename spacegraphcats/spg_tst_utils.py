@@ -19,16 +19,20 @@ def scriptpath(scriptname='build-catlas.py'):
     # it's some script present in this version of spacegraphcats.
 
     path = os.path.dirname(__file__)
+    path = os.path.join(path, '..')
+    path = os.path.abspath(path)
     if os.path.exists(os.path.join(path, scriptname)):
         return path
 
-    path = os.path.join(os.path.dirname(__file__), "../EGG-INFO/")
-    if os.path.exists(os.path.join(path, 'spacegraphcats', scriptname)):
+    path = os.path.join(path, "../EGG-INFO/")
+    if os.path.exists(os.path.join(path, scriptname)):
         return path
 
     for path in os.environ['PATH'].split(':'):
         if os.path.exists(os.path.join(path, scriptname)):
             return path
+
+    raise Exception('cannot find', scriptname)
 
 
 def _runscript(scriptname):
@@ -44,6 +48,7 @@ def _runscript(scriptname):
         path = scriptpath()
 
         scriptfile = os.path.join(path, scriptname)
+        print('%s resolves to %s' % (scriptname, scriptfile))
         if os.path.isfile(scriptfile):
             if os.path.isfile(scriptfile):
                 exec(  # pylint: disable=exec-used
