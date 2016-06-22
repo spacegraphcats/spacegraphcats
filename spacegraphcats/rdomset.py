@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import print_function
 
 import itertools, sys, random, os, argparse, glob
 from collections import defaultdict, Counter
