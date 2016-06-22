@@ -68,6 +68,14 @@ with open(fname.format(name="assignment",extension="vxt",radius=radius), 'r') as
             assignment = VertexDict.from_vxt(f, lambda s: list(map(int,s[0].split())))
 ```
 
+## Developer notes
+
+To run the tests, execute:
+
+    py.test
+
+in the main directory.
+
 ## References
 
 [Graph Modelling Language](https://en.wikipedia.org/wiki/Graph_Modelling_Language)

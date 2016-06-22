@@ -145,3 +145,41 @@ def test_search_prebuilt_catlas():
 
         assert out.endswith('levels\n---\n'), (out,)
         print(out)
+
+
+def test_benchmark_code_tr_cross():
+    # run the benchmarking code on tr_cross
+    tr_cross = utils.get_test_data('tr-cross.fa')
+
+    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
+    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
+
+    with utils.TempDirectory() as tempdir:
+        status, out, err = utils.runscript('walk-dbg.py',
+                                           [tr_cross, '--label', '-x 1e7'],
+                                           in_directory=tempdir)
+        assert 'used/assigned 2 labels total' in out
+
+        status, out, err = utils.runscript('build-catlas.py',
+                                           ['tr-cross', '3'],
+                                           in_directory=tempdir)
+        print(out)
+        assert 'Catlas done' in out
+
+        status, out, err = utils.runscript('search-for-domgraph-nodes.py',
+                            ['tr-cross', '3', mh1_txt, '1'],
+                            in_directory=tempdir)
+        print(out)
+        assert 'tp: 221' in out
+        assert 'fp: 439' in out
+        assert 'fn: 0' in out
+        assert 'tn: 0' in out
+
+        status, out, err = utils.runscript('search-for-domgraph-nodes.py',
+                            ['tr-cross', '3', mh2_txt, '2'],
+                            in_directory=tempdir)
+        print(out)
+        assert 'tp: 439' in out
+        assert 'fp: 221' in out
+        assert 'fn: 0' in out
+        assert 'tn: 0' in out

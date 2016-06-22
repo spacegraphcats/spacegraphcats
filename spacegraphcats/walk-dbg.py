@@ -209,6 +209,8 @@ def main():
 
     # save to GXT/MXT.
     print('saving gxtfile', gxtfile)
+
+    all_labels = set()
     with open(gxtfile, 'w') as fp:
         w = graph_parser.Writer(fp, ['labels'], [])
 
@@ -218,6 +220,7 @@ def main():
             if kmer:
                 l = pathy.labels.get(kmer, "")
                 if l:
+                    all_labels.update(l)
                     l = " ".join(map(str, l))
             w.add_vertex(k, v, [l])
 
@@ -230,6 +233,9 @@ def main():
         for k, v in pathy.hashdict.items():
             fp.write("%d,%s\n" % (k, " ".join(map(str, v))))
         fp.close()
+
+    if args.label:
+        print('note: used/assigned %d labels total' % (len(set(all_labels)),))
 
 
 if __name__ == '__main__':

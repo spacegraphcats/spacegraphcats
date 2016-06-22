@@ -68,6 +68,8 @@ applications, of course!
 `data/tr-cross.fa` and `data/tr-loop.fa` are both constructed from two
 linear paths, `data/tr-1.fa` and `data/tr-2.fa`.
 
+Benchmarking results are [here](https://github.com/spacegraphcats/spacegraphcats/blob/master/doc/benchmark-tr-cross.ipynb).
+
 ### Real data sets with ground truth
 
 `data/15genome.fa.gz` consists of 15 separate microbial genomes.  The
