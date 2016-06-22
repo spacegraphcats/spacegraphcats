@@ -1,0 +1,3 @@
+[run]
+include=*.py,spacegraphcats/*.py
+omit=setup.py,spacegraphcates/test*.py
