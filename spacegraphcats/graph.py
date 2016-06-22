@@ -7,7 +7,7 @@ from spacegraphcats.Eppstein import priorityDictionary, UnionFind
 class VertexDict(dict):
     @classmethod
     def from_vxt(cls, file, param_parser=None):
-        from graph_parser import _parse_line
+        from .graph_parser import _parse_line
         if param_parser == None:
             param_parser = lambda p: p
 
@@ -20,8 +20,8 @@ class VertexDict(dict):
 
     @classmethod
     def from_mxt(cls, file):
-        from minhash import MinHash
-        from graph_parser import _parse_line
+        from .minhash import MinHash
+        from .graph_parser import _parse_line
         res = cls()
         for line in file:
             u, hashes = _parse_line(line)
@@ -41,7 +41,7 @@ class VertexDict(dict):
 class EdgeStream:
     @staticmethod 
     def from_ext(file):
-        from graph_parser import _parse_line
+        from .graph_parser import _parse_line
         for line in file:
             u, v = list(map(int, _parse_line(line)))
             yield (u,v)
@@ -49,7 +49,7 @@ class EdgeStream:
 class EdgeSet(set):
     @classmethod 
     def from_ext(cls, file):
-        from graph_parser import _parse_line
+        from .graph_parser import _parse_line
         res = cls()
         for u, v in EdgeStream.from_ext(file):
             res.add((u, v))
@@ -68,7 +68,7 @@ class Graph:
 
     @staticmethod
     def from_gxt(file):
-        from graph_parser import parse
+        from .graph_parser import parse
         res = Graph()
         node_attr = defaultdict(dict)
         edge_attr = defaultdict(dict)
@@ -481,7 +481,7 @@ class TFGraph:
 
 
 def write_gxt(file, g, node_attrs=None, edge_attrs=None):
-    from graph_parser import Writer
+    from .graph_parser import Writer
 
     node_keys = set()
     if node_attrs:
