@@ -2,3 +2,5 @@
 *.gxt
 *.mxt
 *.pyc
+.cache
+.coverage
