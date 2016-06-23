@@ -186,6 +186,7 @@ def main():
     print('fn:', fn)
     print('tn:', tn)
 
+    print('sum:', tp + fp + fn + tn, sum(all_label_counts.values()))
     assert tp + fp + fn + tn == sum(all_label_counts.values())
 
     sys.exit(0)
