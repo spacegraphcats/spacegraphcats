@@ -16,24 +16,22 @@ class CAtlasReader(object):
     def find_level0(self, node_id):
         """Take a node in the catlas and find all level 0 nodes beneath it.
 
-        Return a list of domination graph node IDs.
-
-        @CTB: convert to returning a set?
+        Return a set of domination graph node IDs.
         """
 
-        x = []
+        x = set()
 
         beneath = self.edges.get(node_id, [])
         if beneath:
             # recurse!
             for y in beneath:
-                x += self.find_level0(y)
+                x.update(self.find_level0(y))
             return x
         else:
             # only thing there should be nothing beneath are the leaves...
             assert node_id in self.leaves
             # convert leaves into the original domination graph IDs.
-            return [self.leaves_to_domnode[node_id]]
+            return set([self.leaves_to_domnode[node_id]])
 
     def _load(self):
         catlas_gxt = '%s.catlas.%d.gxt' % (self.prefix, self.radius)
