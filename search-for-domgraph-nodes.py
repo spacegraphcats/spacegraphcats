@@ -3,8 +3,9 @@
 """
 from __future__ import print_function
 import argparse
-import spacegraphcats.graph_parser as parser
 from khmer import MinHash
+from spacegraphcats import graph_parser
+from spacegraphcats.catlas_reader import CAtlasReader
 import os
 import sys
 
@@ -20,50 +21,16 @@ def main():
     p.add_argument('label_list', type=str)
     args = p.parse_args()
 
-    assignment_vxt = '%s.assignment.%d.vxt' % (args.catlas_prefix,
-                                               args.catlas_r)
-    assignment_vxt = os.path.join(args.catlas_prefix, assignment_vxt)
-    
-    catlas_gxt = '%s.catlas.%d.gxt' % (args.catlas_prefix, args.catlas_r)
-    catlas_gxt = os.path.join(args.catlas_prefix, catlas_gxt)
-    
-    catlas_mxt = '%s.catlas.%d.mxt' % (args.catlas_prefix, args.catlas_r)
-    catlas_mxt = os.path.join(args.catlas_prefix, catlas_mxt)
-                                  
-    catlas_domgraph = '%s.domgraph.%d.gxt' % (args.catlas_prefix,
-                                              args.catlas_r)
-    catlas_domgraph = os.path.join(args.catlas_prefix, catlas_domgraph)
-
-    original_graph = '%s.gxt' % (args.catlas_prefix)
-    original_graph = os.path.join(args.catlas_prefix, original_graph)
-
     ### first, parse the catlas gxt
-    
-    edges = {}
-    vertices = {}
-    roots = []
-    leaves = []
-    leaves_to_domnode = {}
 
-    def add_edge(a, b, *extra):
-        x = edges.get(a, [])
-        x.append(b)
-        edges[a] = x
-
-    def add_vertex(node_id, size, names, vals):
-        assert names[0] == 'vertex'
-        assert names[1] == 'level'
-        vertex, level = vals
-        if vertex == 'root':
-            roots.append(node_id)
-
-        if level == '0':
-            leaves.append(node_id)
-            leaves_to_domnode[node_id] = int(vertex)
-
-    parser.parse(open(catlas_gxt), add_vertex, add_edge)
+    catlas = CAtlasReader(args.catlas_prefix, args.catlas_r)
 
     ### get the labels from the original graph
+
+    # here, 'orig_to_labels' is a dictionary mapping De Bruijn graph node IDs
+    # to a list of labels for each node.
+    #
+    #   orig_to_labels[dbg_node_id] => list of [label_ids]
 
     orig_to_labels = {}
     def parse_source_graph_labels(node_id, size, names, vals):
@@ -75,12 +42,18 @@ def main():
     def nop(*x):
         pass
 
-    parser.parse(open(original_graph), parse_source_graph_labels, nop)
+    with open(catlas.original_graph) as fp:
+        graph_parser.parse(fp, parse_source_graph_labels, nop)
 
     ### backtrack the leaf nodes to the domgraph
-    
+
+    # here, 'dom_to_orig' is a dictionary mapping domination nodes to
+    # a list of original vertices in the De Bruijn graph.
+    #
+    #   dom_to_orig[dom_node_id] => list of [orig_node_ids]
+
     dom_to_orig = {}
-    for line in open(assignment_vxt, 'rt'):
+    for line in open(catlas.assignment_vxt, 'rt'):
         orig_node, dom_list = line.strip().split(',')
         orig_node = int(orig_node)
         dom_list = list(map(int, dom_list.split(' ')))
@@ -90,29 +63,14 @@ def main():
             x.append(orig_node)
             dom_to_orig[dom_node] = x
 
-    ### next, build function to find the leaf nodes
-    
-    def recurse_from(node_id):
-        x = []
-
-        beneath = edges.get(node_id, [])
-        if beneath:
-            # recurse!
-            for y in beneath:
-                x += recurse_from(y)
-            return x
-        else:
-            # only thing there should be nothing beneath are the leaves...
-            assert node_id in leaves
-            # convert leaves into the original domination graph coordinates.
-            return [leaves_to_domnode[node_id]]
+    ### next, build function to find the leaf nodes in the catlas
 
     ### load mxt
 
-    print('reading mxt file', catlas_mxt)
+    print('reading mxt file', catlas.catlas_mxt)
         
     mxt_dict = {}
-    for line in open(catlas_mxt):
+    for line in open(catlas.catlas_mxt):
         node, hashes = line.strip().split(',')
         node = int(node)
         hashes = [ int(h) for h in hashes.split(' ') ]
@@ -148,7 +106,7 @@ def main():
 
     print('best match: similarity %.3f, catlas node %d' % (best_match,
                                                            best_match_node))
-    leaves = set(recurse_from(best_match_node))
+    leaves = set(catlas.find_level0(best_match_node))
 
     print('found %d domgraph leaves under catlas node %d' % (len(leaves),
                                                       best_match_node))
