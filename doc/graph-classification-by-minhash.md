@@ -61,6 +61,27 @@ applications, of course!
   million k-mers.  The MinHash sizes of both the query and the catlas
   can be adjusted as needed.
 
+## An initial implementation
+
+The script
+[search-for-domgraph-nodes.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/search-for-domgraph-nodes.py)
+is a simple implementation of search that calculates the TP/TN/FP/FN.
+
+Briefly, `search-for-domgraph-nodes.py`:
+
+* searches all of the catlas nodes with a provided MinHash query, and
+  finds the best matching node;
+
+* for the best matching node, the script then finds the level 0
+  nodes (the domination graph nodes) underneath it;
+
+* these level0 nodes are then connected to the original graph, and
+  the recovered nodes are compared with "known-true" labels on the
+  original graph.
+
+This is probably the dumbest possible search algorithm on the catlas,
+but it's a start :).
+
 ## Benchmarking data sets
 
 ### Synthetic / simple data sets
@@ -71,6 +92,13 @@ linear paths, `data/tr-1.fa` and `data/tr-2.fa`.
 Benchmarking results are [here](https://github.com/spacegraphcats/spacegraphcats/blob/master/doc/benchmark-tr-cross.ipynb).
 
 ### Real data sets with ground truth
+
+`data/acido.fa.gz` is an Acidobacterium genome downloaded from NCBI.
+`data/acido-chunk?.fa.gz` is that genome divided into 8.  The associated
+`*.sig.dump.txt` files are the signatures for each cunk.
+
+Benchmarking results for retrieving the first chunk of 8 are
+[here](https://github.com/spacegraphcats/spacegraphcats/blob/master/doc/benchmark-acido-chunks.ipynb).
 
 `data/15genome.fa.gz` consists of 15 separate microbial genomes.  The
 `data/15genome.fa.*.sigdump.txt` are MinHash signatures for each of
