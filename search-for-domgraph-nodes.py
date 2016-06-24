@@ -81,6 +81,7 @@ def main():
     p.add_argument('mh_file', help='file containing dumped MinHash signature')
     p.add_argument('label_list', type=str,
                    help='list of labels that should correspond to MinHash')
+    p.add_argument('--flip', action='store_true', help='reverse MH comparison')
     args = p.parse_args()
 
     ### first, parse the catlas gxt
@@ -127,7 +128,11 @@ def main():
     best_match_node = None
     best_mh = None
     for catlas_node, subject_mh in mxt_dict.items():
-        match = query_mh.compare(subject_mh)
+        if not args.flip:
+            match = query_mh.compare(subject_mh)
+        else:
+            match = subject_mh.compare(query_mh)
+            
         if match > best_match:
             best_match = match
             best_match_node = catlas_node
@@ -142,52 +147,68 @@ def main():
 
     ### finally, count the matches/mismatches between MinHash-found nodes
     ### and expected labels.
-    
-    orig_nodes = []
+
+    search_labels = set([ int(i) for i in args.label_list.split(',') ])
+    all_labels = set()
+    for vv in orig_to_labels.values():
+        all_labels.update(vv)
+
+    print("labels we're looking for:", search_labels)
+    print("all labels:", all_labels)
+
+    # all_nodes is set of all labeled node_ids on original graph:
+    all_nodes = set(dom_to_orig.keys())
+
+    # pos_nodes is set of MH-matching node_ids from original cDBG.
+    pos_nodes = set()
     for k in leaves:
-        orig_nodes += dom_to_orig[k]
+        pos_nodes.update(dom_to_orig[k])
 
-    found_label_counts = {}
-    for k in set(orig_nodes):
-        for label in orig_to_labels.get(k, []):
-            found_label_counts[label] = found_label_counts.get(label, 0) + 1
+    # intersect pos_nodes with all_nodes so we only have labeled
+    pos_nodes.intersection_update(all_nodes)
 
-    all_label_counts = {}
-    for k, labels in orig_to_labels.items():
-        for label in labels:
-            all_label_counts[label] = all_label_counts.get(label, 0) + 1
+    # neg_nodes is set of non-MH-matching node IDs
+    neg_nodes = all_nodes - pos_nodes
 
-    label_list = [ int(i) for i in args.label_list.split(',') ]
-    all_labels = list(all_label_counts.keys())
+    print('pos nodes:', len(pos_nodes))
+    print('neg nodes:', len(neg_nodes))
+    print('all nodes:', len(all_nodes))
 
+    def has_search_label(node_id):
+        node_labels = orig_to_labels.get(node_id, set())
+        return bool(search_labels.intersection(node_labels))
+
+    # true positives: how many nodes did we find that had the right label?
     tp = 0
+
+    # false positives: how many nodes did we find that didn't have right label?
     fp = 0
-    fn = 0
+    
+    for orig_node_id in pos_nodes:
+        if has_search_label(orig_node_id):
+            tp += 1
+        else:
+            fp += 1
+
+    # true negatives: how many nodes did we miss that didn't have right label?
     tn = 0
-
-    for k in all_labels:
-        if k in label_list:
-            tp += found_label_counts.get(k, 0)
-            fn += all_label_counts[k] - found_label_counts.get(k, 0)
-            
-        if k not in label_list:
-            fp = found_label_counts.get(k, 0)
-            tn += all_label_counts[k] - found_label_counts.get(k, 0)
-
-    print('')
-    print('looking for labels:', " ".join([str(i) for i in label_list]))
-    print('actually found:', found_label_counts)
-    print('all label counts:', all_label_counts)
-
-    print('')
+    
+    # false negatives: how many nodes did we miss that did have right label?
+    fn = 0
+    
+    for orig_node_id in neg_nodes:
+        if not has_search_label(orig_node_id):
+            tn += 1
+        else:
+            fn += 1
 
     print('tp:', tp)
     print('fp:', fp)
     print('fn:', fn)
     print('tn:', tn)
 
-    print('sum:', tp + fp + fn + tn, sum(all_label_counts.values()))
-    assert tp + fp + fn + tn == sum(all_label_counts.values())
+    print('sum:', tp + fp + fn + tn, len(all_nodes))
+    assert tp + fp + fn + tn == len(all_nodes)
 
     sys.exit(0)
 
