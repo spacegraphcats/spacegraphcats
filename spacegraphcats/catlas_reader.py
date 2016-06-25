@@ -4,7 +4,7 @@ from . import graph_parser
 
 class CAtlasReader(object):
     """
-    Load the given catlas into 'edges', 'vertices', 'roots', 'leaves',
+    Load the given catlas into 'edges', 'vertices', 'roots', 'levels',
     and 'leaves_to_domnode'.
     """
     def __init__(self, prefix, radius):
@@ -29,7 +29,7 @@ class CAtlasReader(object):
             return x
         else:
             # only thing there should be nothing beneath are the leaves...
-            assert node_id in self.leaves
+            assert self.levels[node_id] == 0
             # convert leaves into the original domination graph IDs.
             return set([self.leaves_to_domnode[node_id]])
 
@@ -54,7 +54,7 @@ class CAtlasReader(object):
         edges = {}
         vertices = {}
         roots = []
-        leaves = []
+        levels = {}
         leaves_to_domnode = {}
 
         def add_edge(a, b, *extra):
@@ -69,8 +69,9 @@ class CAtlasReader(object):
             if vertex == 'root':
                 roots.append(node_id)
 
+            levels[node_id] = int(level)
+
             if level == '0':
-                leaves.append(node_id)
                 leaves_to_domnode[node_id] = int(vertex)
 
         graph_parser.parse(open(catlas_gxt), add_vertex, add_edge)
@@ -78,7 +79,7 @@ class CAtlasReader(object):
         self.edges = edges
         self.vertices = vertices
         self.roots = roots
-        self.leaves = leaves
+        self.levels = levels
         self.leaves_to_domnode = leaves_to_domnode
     
     def find_matching_nodes_best_match(self, query_mh, mxt_dict):
@@ -97,3 +98,20 @@ class CAtlasReader(object):
                   (best_match, best_match_node))
 
         return [best_match_node]
+
+
+    def find_matching_nodes_search_level(self, query_mh, mxt_dict, level=0):
+        all_nodes = []
+
+        for catlas_node, subject_mh in mxt_dict.items():
+            if self.levels[catlas_node] != level:
+                continue
+
+            match1 = query_mh.compare(subject_mh)
+            match2 = subject_mh.compare(query_mh)
+
+            if match1 >= 0.05 or match2 >= 0.05:
+                print('match!', match1, match2)
+                all_nodes.append(catlas_node)
+
+        return all_nodes

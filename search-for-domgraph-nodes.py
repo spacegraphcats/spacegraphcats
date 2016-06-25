@@ -81,6 +81,8 @@ def main():
     p.add_argument('mh_file', help='file containing dumped MinHash signature')
     p.add_argument('label_list', type=str,
                    help='list of labels that should correspond to MinHash')
+    p.add_argument('--strategy', type=str, default='bestnode',
+                   help='search strategy: bestnode, xxx')
     args = p.parse_args()
 
     ### first, parse the catlas gxt
@@ -123,7 +125,13 @@ def main():
 
     print('searching catlas minhashes w/%s' % args.mh_file)
 
-    match_nodes = catlas.find_matching_nodes_best_match(query_mh, mxt_dict)
+    if args.strategy == 'bestnode':
+        match_nodes = catlas.find_matching_nodes_best_match(query_mh, mxt_dict)
+    elif args.strategy == 'searchlevel':
+        match_nodes = catlas.find_matching_nodes_search_level(query_mh, mxt_dict)
+    else:
+        print('\n*** search strategy not understood:', args.strategy)
+        sys.exit(-1)
 
     leaves = set()
     for match_node in match_nodes:
