@@ -81,7 +81,6 @@ def main():
     p.add_argument('mh_file', help='file containing dumped MinHash signature')
     p.add_argument('label_list', type=str,
                    help='list of labels that should correspond to MinHash')
-    p.add_argument('--flip', action='store_true', help='reverse MH comparison')
     args = p.parse_args()
 
     ### first, parse the catlas gxt
@@ -124,26 +123,14 @@ def main():
 
     print('searching catlas minhashes w/%s' % args.mh_file)
 
-    best_match = -1
-    best_match_node = None
-    best_mh = None
-    for catlas_node, subject_mh in mxt_dict.items():
-        if not args.flip:
-            match = query_mh.compare(subject_mh)
-        else:
-            match = subject_mh.compare(query_mh)
-            
-        if match > best_match:
-            best_match = match
-            best_match_node = catlas_node
-            best_mh = subject_mh
+    match_nodes = catlas.find_matching_nodes_best_match(query_mh, mxt_dict)
 
-    print('best match: similarity %.3f, catlas node %d' % (best_match,
-                                                           best_match_node))
-    leaves = catlas.find_level0(best_match_node)
+    leaves = set()
+    for match_node in match_nodes:
+        leaves.update(catlas.find_level0(match_node))
 
-    print('found %d domgraph leaves under catlas node %d' % (len(leaves),
-                                                             best_match_node))
+    print('found %d domgraph leaves under catlas nodes %s' % \
+              (len(leaves), match_nodes))
 
     ### finally, count the matches/mismatches between MinHash-found nodes
     ### and expected labels.
@@ -170,6 +157,7 @@ def main():
     # neg_nodes is set of non-MH-matching node IDs
     neg_nodes = all_nodes - pos_nodes
 
+    print('')
     print('pos nodes:', len(pos_nodes))
     print('neg nodes:', len(neg_nodes))
     print('all nodes:', len(all_nodes))
@@ -202,12 +190,12 @@ def main():
         else:
             fn += 1
 
+    print('')
     print('tp:', tp)
     print('fp:', fp)
     print('fn:', fn)
     print('tn:', tn)
 
-    print('sum:', tp + fp + fn + tn, len(all_nodes))
     assert tp + fp + fn + tn == len(all_nodes)
 
     sys.exit(0)

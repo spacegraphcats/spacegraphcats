@@ -81,3 +81,19 @@ class CAtlasReader(object):
         self.leaves = leaves
         self.leaves_to_domnode = leaves_to_domnode
     
+    def find_matching_nodes_best_match(self, query_mh, mxt_dict):
+        best_match = -1
+        best_match_node = None
+        best_mh = None
+        for catlas_node, subject_mh in mxt_dict.items():
+            match = query_mh.compare(subject_mh)
+
+            if match > best_match:
+                best_match = match
+                best_match_node = catlas_node
+                best_mh = subject_mh
+
+        print('best match: similarity %.3f, catlas node %d' % \
+                  (best_match, best_match_node))
+
+        return [best_match_node]

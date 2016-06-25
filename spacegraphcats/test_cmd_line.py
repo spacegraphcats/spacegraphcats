@@ -170,8 +170,8 @@ def test_benchmark_code_tr_cross():
                             ['tr-cross', '3', mh1_txt, '1'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 221' in out
-        assert 'fp: 439' in out
+        assert 'tp: 91' in out
+        assert 'fp: 97' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
@@ -179,7 +179,7 @@ def test_benchmark_code_tr_cross():
                             ['tr-cross', '3', mh2_txt, '2'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 439' in out
-        assert 'fp: 221' in out
+        assert 'tp: 186' in out
+        assert 'fp: 2' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
