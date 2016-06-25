@@ -115,3 +115,85 @@ class CAtlasReader(object):
                 all_nodes.append(catlas_node)
 
         return all_nodes
+
+
+    def find_matching_nodes_gather_mins(self, query_mh, mxt_dict, level=3):
+        """
+        Find matching nodes at specified level;
+        eliminate those that are entirely redundant, by examining contents
+        of minhash.
+        """
+        all_nodes = []
+        matches = []
+
+        for catlas_node, subject_mh in mxt_dict.items():
+            if self.levels[catlas_node] != level:
+                continue
+
+            match1 = query_mh.compare(subject_mh)
+
+            if match1 >= 0.05:
+                print('match!', match1)
+                matches.append((match1, catlas_node, subject_mh))
+
+        print('found %d matches; sorting and deredundanticizing' % len(matches))
+        matches.sort(reverse=True)
+
+        keep = []
+        query_mins = set(query_mh.get_mins())
+        sofar = set()
+        for (score, node_id, mh) in matches:
+            thismins = set(mh.get_mins())
+            if (thismins - sofar).intersection(query_mins):
+                keep.append((score, node_id, mh))
+                sofar.update(thismins)
+
+        print('had %d, now have %d' % (len(matches), len(keep)))
+
+        all_nodes = [ x[1] for x in keep ]
+
+        return all_nodes
+
+
+    def find_matching_nodes_gather_mins2(self, query_mh, mxt_dict, level=3):
+        """
+        Find matching nodes at specified level;
+        descend one level, gather nodes;
+        eliminate those that are entirely redundant, by examining contents
+        of minhash.
+        """
+        all_nodes = []
+        matches = []
+
+        for catlas_node, subject_mh in mxt_dict.items():
+            if self.levels[catlas_node] != level:
+                continue
+
+            match1 = query_mh.compare(subject_mh)
+
+            if match1 >= 0.05:
+                print('match!', match1)
+                matches.append((match1, catlas_node, subject_mh))
+
+        print('found %d matches; sorting and deredundanticizing' % len(matches))
+        matches.sort(reverse=True)
+
+        # extract nodes beneath these nodes
+        subnodes = set()
+        for (score, node_id, mh) in matches:
+            subnodes.update(self.edges.get(node_id, []))
+
+        # get the non-redundant subnodes
+        keep = []
+        query_mins = set(query_mh.get_mins())
+        sofar = set()
+        for subnode in subnodes:
+            mh = mxt_dict[subnode]
+            thismins = set(mh.get_mins())
+            if (thismins - sofar).intersection(query_mins):
+                keep.append(subnode)
+                sofar.update(thismins)
+
+        print('had %d, now have %d' % (len(matches), len(keep)))
+
+        return keep

@@ -58,7 +58,7 @@ def load_mxt_dict(mxt_filename):
         for h in hashes:
             mh.add_hash(h)
             
-        mxt_dict[int(node)] = mh
+        mxt_dict[node] = mh
 
     return mxt_dict
 
@@ -83,6 +83,7 @@ def main():
                    help='list of labels that should correspond to MinHash')
     p.add_argument('--strategy', type=str, default='bestnode',
                    help='search strategy: bestnode, xxx')
+    p.add_argument('--searchlevel', type=int, default=0)
     args = p.parse_args()
 
     ### first, parse the catlas gxt
@@ -128,7 +129,11 @@ def main():
     if args.strategy == 'bestnode':
         match_nodes = catlas.find_matching_nodes_best_match(query_mh, mxt_dict)
     elif args.strategy == 'searchlevel':
-        match_nodes = catlas.find_matching_nodes_search_level(query_mh, mxt_dict)
+        match_nodes = catlas.find_matching_nodes_search_level(query_mh, mxt_dict, args.searchlevel)
+    elif args.strategy == 'gathermins':
+        match_nodes = catlas.find_matching_nodes_gather_mins(query_mh, mxt_dict, args.searchlevel)
+    elif args.strategy == 'gathermins2':
+        match_nodes = catlas.find_matching_nodes_gather_mins2(query_mh, mxt_dict, args.searchlevel)
     else:
         print('\n*** search strategy not understood:', args.strategy)
         sys.exit(-1)
