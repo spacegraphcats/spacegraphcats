@@ -108,6 +108,15 @@ def main():
 
     dom_to_orig = load_dom_to_orig(catlas.assignment_vxt)
 
+    ## now, transfer labels to dom nodes
+
+    dom_labels = {}
+    for k, vv in dom_to_orig.items():
+        x = dom_labels.get(k, set())
+        for v in vv:
+            x.update(orig_to_labels.get(v, []))
+        dom_labels[k] = x
+
     ### load mxt
 
     # 'mxt_dict' is a dictionary mapping catlas node IDs to MinHash
@@ -150,33 +159,28 @@ def main():
 
     search_labels = set([ int(i) for i in args.label_list.split(',') ])
     all_labels = set()
-    for vv in orig_to_labels.values():
+    for vv in dom_labels.values():
         all_labels.update(vv)
 
     print("labels we're looking for:", search_labels)
     print("all labels:", all_labels)
 
     # all_nodes is set of all labeled node_ids on original graph:
-    all_nodes = set(dom_to_orig.keys())
+    all_nodes = set(dom_labels.keys())
 
-    # pos_nodes is set of MH-matching node_ids from original cDBG.
-    pos_nodes = set()
-    for k in leaves:
-        pos_nodes.update(dom_to_orig[k])
-
-    # intersect pos_nodes with all_nodes so we only have labeled
-    pos_nodes.intersection_update(all_nodes)
+    # pos_nodes is set of MH-matching node_ids from dominating set.
+    pos_nodes = set(leaves)
 
     # neg_nodes is set of non-MH-matching node IDs
     neg_nodes = all_nodes - pos_nodes
 
     print('')
-    print('pos nodes:', len(pos_nodes))
-    print('neg nodes:', len(neg_nodes))
-    print('all nodes:', len(all_nodes))
+    print('pos dom nodes:', len(pos_nodes))
+    print('neg dom nodes:', len(neg_nodes))
+    print('all dom nodes:', len(all_nodes))
 
     def has_search_label(node_id):
-        node_labels = orig_to_labels.get(node_id, set())
+        node_labels = dom_labels.get(node_id, set())
         return bool(search_labels.intersection(node_labels))
 
     # true positives: how many nodes did we find that had the right label?
@@ -185,8 +189,8 @@ def main():
     # false positives: how many nodes did we find that didn't have right label?
     fp = 0
     
-    for orig_node_id in pos_nodes:
-        if has_search_label(orig_node_id):
+    for dom_node_id in pos_nodes:
+        if has_search_label(dom_node_id):
             tp += 1
         else:
             fp += 1
@@ -197,8 +201,8 @@ def main():
     # false negatives: how many nodes did we miss that did have right label?
     fn = 0
     
-    for orig_node_id in neg_nodes:
-        if not has_search_label(orig_node_id):
+    for dom_node_id in neg_nodes:
+        if not has_search_label(dom_node_id):
             tn += 1
         else:
             fn += 1
@@ -210,6 +214,13 @@ def main():
     print('tn:', tn)
 
     assert tp + fp + fn + tn == len(all_nodes)
+
+    ## some double checks.
+
+    # all/pos/neg nodes at the end are dominating set members.
+    assert not pos_nodes - set(dom_to_orig.keys())
+    assert not neg_nodes - set(dom_to_orig.keys())
+    assert not all_nodes - set(dom_to_orig.keys())
 
     sys.exit(0)
 
