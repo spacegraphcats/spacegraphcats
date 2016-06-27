@@ -18,10 +18,10 @@ MH_MIN_SIZE=5
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
-    def __init__(self, ksize):
+    def __init__(self, ksize, segment_offset=0):
         self.ksize = ksize
 
-        self.segment_counter = 1
+        self.segment_counter = 1 + segment_offset
         self.segments = {}                # segment IDs (int) to size
         self.segments_f = {}              # segment IDs (int) to kmers
         self.segments_r = {}              # kmers to segment IDs
@@ -95,6 +95,8 @@ def main():
                             type=float)
     p.add_argument('--force', action='store_true')
     p.add_argument('--label', action='store_true')
+    p.add_argument('--label-offset', type=int, default=0, help='for debug')
+    p.add_argument('--segment-offset', type=int, default=0, help='for debug')
     args = p.parse_args()
 
     assert args.ksize % 2, "ksize must be odd"
@@ -150,11 +152,11 @@ def main():
                                              args.force, max_false_pos=.05)
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(args.ksize)
+    pathy = Pathfinder(args.ksize, args.segment_offset)
 
     print('finding high degree nodes')
     degree_nodes = khmer.HashSet(args.ksize)
-    n = 0
+    n = args.label_offset
     for seqfile in args.seqfiles:
         for record in screed.open(seqfile):
             if len(record.sequence) < args.ksize: continue
