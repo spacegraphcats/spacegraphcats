@@ -225,13 +225,13 @@ class CAtlas:
                 next_level |= set(v.children)
             curr_level = next_level
 
-    def write(self, projectpath, projectname, radius):
+    def write(self, projectpath, projectname, radius, offset=0):
         """
             Write catlas to file
         """
         # Create unique ids for DAG-nodes
         idmap = {}
-        id = 0
+        id = offset
         for level in self.bfs():
             for v in level:
                 idmap[v] = id

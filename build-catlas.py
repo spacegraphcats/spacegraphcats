@@ -106,6 +106,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('project', help='Project directory. Must contain a .gxt and an .mxt file with the same base name \
                                      as the directory.', type=str)
 parser.add_argument('r', help="The catlas' radius.", type=int )
+parser.add_argument('--min-id', help="Smallest id assigned to catlas nodes.", type=int, default=0)
 args = parser.parse_args()
 
 project = AttributeDict()
@@ -161,4 +162,4 @@ report("\nCatlas done")
 for i,level in enumerate(catlas.bfs()):
     print(i, len(level))
 
-catlas.write(project.path, project.name, project.radius)
+catlas.write(project.path, project.name, project.radius, args.min_id)
