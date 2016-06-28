@@ -89,7 +89,8 @@ is used to calculate the output.
 More details: 
 
 * Initialize with F_0 and c_0 equal to the root node of the Catlas. 
-* The worst member of the frontier is the node whose MinHash sketch has minimum overlap with M
+* The worst member of the frontier is the highest-level node in F_i. If there's more than one
+at this level, we take the node whose MinHash sketch has minimum overlap with M.
 * When refining node c_i, we calculate which children to include in the next frontier F_{i+1} by: 
 	- computing the union U_i  (not a join -- this will be larger than any one sketch) 
 of the MinHash sketches of all of c_i's children in the Catlas (call them X = {x_1, x_2,...}) 
@@ -98,8 +99,9 @@ of the MinHash sketches of all of c_i's children in the Catlas (call them X = {x
 		* greedily pick x_j in X so its sketch has maximum intersection with Q_i
 		* delete elements of sketch(x_j) from Q_i
 		* add x_j to F_{i+1} (and remove it from X)
-* A frontier's quality score is the Jaccard similarity of M with the union (not join) of the MinHash 
-sketches of all its members. If score(F_{i+1} < F_{i}), terminate and return F_i. Otherwise, continue.
+* A frontier's quality score is the product of (1/(average-height(F_i)+1)) and the Jaccard similarity 
+of M with the union (not join) of the MinHash sketches of all the frontier's members. The average-height 
+is the average Catlas level of the members. If score(F_{i+1} < F_{i}), terminate and return F_i. Otherwise, continue.
 
 As currently implemented, this has a known bias towards higher query coverage 
 (sensitivity) at the expense of including too many cDBG nodes (lower specificity). 
@@ -109,6 +111,10 @@ performance. Default definitions should be documented in the script comments.
 NB: this is an anytime method, meaning stopping at any iteration gives a valid output (the 
 shadow of the Catlas nodes currently in the frontier)
 
+NB: experimentation with varying quality scores (including expensive options that look at shadows explicitly
+make it clear we need to implement the baseline ASAP to see how good we can possibly do. There appear to be 
+phase transitions in similarity/specificity tradeoffs (which can be seen by trading jaccard similarity for max_height
+related measures in score). 
 
 ## Assumptions and confounding factors:
 
