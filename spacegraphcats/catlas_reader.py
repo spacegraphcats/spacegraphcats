@@ -100,8 +100,8 @@ class CAtlasReader(object):
                 best_match_node = catlas_node
                 best_mh = subject_mh
 
-        print('best match: similarity %.3f, catlas node %d' % \
-                  (best_match, best_match_node))
+        #print('best match: similarity %.3f, catlas node %d' % \
+        #          (best_match, best_match_node))
 
         return [best_match_node]
 
@@ -117,7 +117,7 @@ class CAtlasReader(object):
             match2 = subject_mh.compare(query_mh)
 
             if match1 >= 0.05 or match2 >= 0.05:
-                print('match!', match1, match2)
+                #print('match!', match1, match2)
                 all_nodes.append(catlas_node)
 
         return all_nodes
@@ -139,10 +139,10 @@ class CAtlasReader(object):
             match1 = query_mh.compare(subject_mh)
 
             if match1 >= 0.05:
-                print('match!', match1)
+                #print('match!', match1)
                 matches.append((match1, catlas_node, subject_mh))
 
-        print('found %d matches; sorting and deredundanticizing' % len(matches))
+        #print('found %d matches; sorting and deredundanticizing' % len(matches))
         matches.sort(reverse=True)
 
         keep = []
@@ -154,7 +154,7 @@ class CAtlasReader(object):
                 keep.append((score, node_id, mh))
                 sofar.update(thismins)
 
-        print('had %d, now have %d' % (len(matches), len(keep)))
+        #print('had %d, now have %d' % (len(matches), len(keep)))
 
         all_nodes = [ x[1] for x in keep ]
 
@@ -178,10 +178,10 @@ class CAtlasReader(object):
             match1 = query_mh.compare(subject_mh)
 
             if match1 >= 0.05:
-                print('match!', match1)
+                #print('match!', match1)
                 matches.append((match1, catlas_node, subject_mh))
 
-        print('found %d matches; sorting and deredundanticizing' % len(matches))
+        #print('found %d matches; sorting and deredundanticizing' % len(matches))
         matches.sort(reverse=True)
 
         # extract nodes beneath these nodes
@@ -200,6 +200,6 @@ class CAtlasReader(object):
                 keep.append(subnode)
                 sofar.update(thismins)
 
-        print('had %d, now have %d' % (len(matches), len(keep)))
+        #print('had %d, now have %d' % (len(matches), len(keep)))
 
         return keep

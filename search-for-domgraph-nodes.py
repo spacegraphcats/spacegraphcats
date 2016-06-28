@@ -84,6 +84,7 @@ def main():
     p.add_argument('--strategy', type=str, default='bestnode',
                    help='search strategy: bestnode, xxx')
     p.add_argument('--searchlevel', type=int, default=0)
+    p.add_argument('-q', '--quiet', action='store_true')
     args = p.parse_args()
 
     ### first, parse the catlas gxt
@@ -122,18 +123,24 @@ def main():
     # 'mxt_dict' is a dictionary mapping catlas node IDs to MinHash
     # objects.
 
-    print('reading mxt file', catlas.catlas_mxt)
+    if not args.quiet:
+        print('reading mxt file', catlas.catlas_mxt)
     mxt_dict = load_mxt_dict(catlas.catlas_mxt)
 
     ### load mh
 
-    print('reading mh file', args.mh_file)
+    if not args.quiet:
+        print('reading mh file', args.mh_file)
 
     query_mh = load_mh_dump(args.mh_file)
 
     ### next, find the relevant catlas nodes using the MinHash.
 
-    print('searching catlas minhashes w/%s' % args.mh_file)
+    if not args.quiet:
+        print('searching catlas minhashes w/%s' % args.mh_file)
+
+    print('')
+    print('search strategy:', args.strategy, args.searchlevel)
 
     if args.strategy == 'bestnode':
         match_nodes = catlas.find_matching_nodes_best_match(query_mh, mxt_dict)
@@ -151,7 +158,8 @@ def main():
     for match_node in match_nodes:
         leaves.update(catlas.find_level0(match_node))
 
-    print('found %d domgraph leaves under catlas nodes %s' % \
+    if not args.quiet:
+        print('found %d domgraph leaves under catlas nodes %s' % \
               (len(leaves), match_nodes))
 
     ### finally, count the matches/mismatches between MinHash-found nodes
@@ -162,8 +170,10 @@ def main():
     for vv in dom_labels.values():
         all_labels.update(vv)
 
-    print("labels we're looking for:", search_labels)
-    print("all labels:", all_labels)
+
+    if not args.quiet:
+        print("labels we're looking for:", search_labels)
+        print("all labels:", all_labels)
 
     # all_nodes is set of all labeled node_ids on original graph:
     all_nodes = set(dom_labels.keys())
@@ -174,10 +184,12 @@ def main():
     # neg_nodes is set of non-MH-matching node IDs
     neg_nodes = all_nodes - pos_nodes
 
-    print('')
-    print('pos dom nodes:', len(pos_nodes))
-    print('neg dom nodes:', len(neg_nodes))
-    print('all dom nodes:', len(all_nodes))
+
+    if not args.quiet:
+        print('')
+        print('pos dom nodes:', len(pos_nodes))
+        print('neg dom nodes:', len(neg_nodes))
+        print('all dom nodes:', len(all_nodes))
 
     def has_search_label(node_id):
         node_labels = dom_labels.get(node_id, set())
@@ -207,11 +219,15 @@ def main():
         else:
             fn += 1
 
-    print('')
-    print('tp:', tp)
-    print('fp:', fp)
-    print('fn:', fn)
-    print('tn:', tn)
+    if not args.quiet:
+        print('')
+        print('tp:', tp)
+        print('fp:', fp)
+        print('fn:', fn)
+        print('tn:', tn)
+        print('')
+    print('sensitivity: %.1f' % (100.0 * tp / (tp + fn)))
+    print('specificity: %.1f' % (100.0 * tn / (tn + fp)))
 
     assert tp + fp + fn + tn == len(all_nodes)
 
