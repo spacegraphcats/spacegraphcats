@@ -5,7 +5,7 @@ import sys, os, argparse
 from os import path
 from collections import deque, defaultdict
 
-from spacegraphcats.graph import Graph
+from spacegraphcats.graph import Graph, VertexDict
 from spacegraphcats.rdomset import rdomset, calc_domination_graph, calc_dominators
 from spacegraphcats.minhash import MinHash
 from spacegraphcats.graph_parser import parse_minhash, Writer
@@ -132,9 +132,117 @@ class CAtlasBuilder:
             root = curr_level[0]
 
         return root
-      
+
+
 
 class CAtlas:
+    class Scoring:
+        """ Given a search frontier, a minhash-query and a threshold,
+            return a score (higher == better) of how well the frontier
+            represents the query.
+        """ 
+        @staticmethod
+        def jaccard(frontier, mhquery, threshold):
+            covered = set()
+            for node in frontier:
+                covered |= set(node.minhash)
+            
+            inter = len(set(mhquery) & covered)
+            union = len(set(mhquery) | covered)
+
+            return inter / union
+
+        @staticmethod
+        def jaccard_leaves(frontier, mhquery, threshold):
+            leaves = set()
+            for node in frontier:
+                leaves |= node.leaves2()
+
+            covered = set()
+            for node in leaves:
+                covered |= set(node.minhash)
+            
+            inter = len(set(mhquery) & covered)
+            union = len(set(mhquery) | covered)
+
+            return inter / union            
+
+        @staticmethod
+        def height(frontier, mhquery, threshold):
+            max_level = max(frontier, key=lambda node: node.level).level
+            return 1/(max_level+1)
+
+        @staticmethod
+        def avg_height(frontier, mhquery, threshold):
+            height_sum = sum([node.level for node in frontier])
+            avg_height = height_sum / len(frontier)
+            return 1/(avg_height+1)
+
+        @staticmethod
+        def height_jaccard(frontier, mhquery, threshold):
+            return CAtlas.Scoring.jaccard(frontier, mhquery, threshold) \
+                  * CAtlas.Scoring.avg_height(frontier, mhquery, threshold)
+
+    class Selection:
+        """ Given a search frontier, a minhash-query and a threshold,
+            return the 'worst' node of the frontier, that is, the node
+            that will most likely benefit from refinement.
+        """
+        @staticmethod
+        def smallest_intersection(frontier, mhquery, threshold):
+            # candidates = list(filter(lambda node: node.level != 0, frontier))
+            # if len(candidates) != 0:
+            #     return min(candidates, key=lambda node: mhquery.intersect(node.minhash))
+            # else:
+            return min(frontier, key=lambda node: mhquery.intersect(node.minhash))
+
+        @staticmethod
+        def highest_smallest_intersection(frontier, mhquery, threshold):
+            max_level = max(frontier, key=lambda node: node.level).level
+            candidates = list(filter(lambda node: node.level == max_level, frontier))
+            return CAtlas.Selection.smallest_intersection(candidates, mhquery, threshold)
+
+    class Refinement:
+        """ Given a 'bad node' and a minhash-query and a threshold,
+            return a subset of that node's children that covers the query as well as possible.
+        """            
+        @staticmethod
+        def greedy_coverage(bad_node, mhquery, threshold):
+            uncovered = set()
+            for c in bad_node.children:
+                uncovered |= set(c.minhash)
+            uncovered &= set(mhquery)
+
+            candidates = set(bad_node.children)
+            res = set()
+            while len(uncovered) > 0:
+                # Greedily pick child with largest intersection of uncovered hashes
+                best = max(candidates, key=lambda node: len(uncovered & set(node.minhash)) )
+                candidates.remove(best)
+                res.add(best)
+                uncovered -= set(best.minhash)
+            return res
+
+        @staticmethod
+        def greedy_coverage_leaves(bad_node, mhquery, threshold):
+            leaves = bad_node.leaves2()
+
+            uncovered = set()
+            for c in leaves:
+                uncovered |= set(c.minhash)
+            uncovered &= set(mhquery)
+
+            candidates = set(bad_node.children)
+            res = set()
+            while len(uncovered) > 0 and len(candidates) > 0:
+                # Greedily pick child with largest intersection of uncovered hashes
+                best = max(candidates, key=lambda node: len(uncovered & set(node.minhash)) )
+                candidates.remove(best)
+                res.add(best)
+                uncovered -= set(best.minhash)
+            return res            
+            
+
     def __init__(self, id, level, size, children, minhash):
         self.id = id
         self.children = children
@@ -171,28 +279,43 @@ class CAtlas:
 
         return CAtlas('virtual', maxlevel+1, size, children, minhash)
 
+    def query(self, mhquery, threshold, scoring_strat, selection_strat, refinement_strat):
+        frontier = set([self])
 
-    def score(self, Q, querysize):
-        minsize = 1.0*min(len(Q),len(self.minhash))
-        querysize = 1.0*len(Q)
-        score = self.minhash.intersect(Q) / querysize
-        return score
+        while True:
+            print("Current frontier", [(n.id, n.level) for n in frontier])            
+            scoreBefore = scoring_strat(frontier, mhquery, threshold)
+            print("Current score {:.5f}".format(scoreBefore))
 
-    def query(self, Q, querysize, threshold):
+            bad_node = selection_strat(frontier, mhquery, threshold)
+            print("Refining node {} with {} children".format(bad_node.id, len(bad_node.children)))
+
+            if bad_node.level == 0:
+                frontier.remove(bad_node)
+                refinement = set()
+            else:
+                frontier.remove(bad_node)
+                refinement = set(refinement_strat(bad_node, mhquery, threshold)) 
+                frontier |= refinement                
+                print("Choose {} out of {} children for refinement".format(len(refinement), len(bad_node.children)))
+
+            scoreAfter = scoring_strat(frontier, mhquery, threshold)            
+            print("Score after refinement {:.5f}".format(scoreAfter))
+
+            if scoreBefore > scoreAfter:
+                # Improvement step failed: roll back and stop.
+                frontier -= refinement
+                frontier.add(bad_node)
+                if bad_node.level == 0:
+                    print("Stopped at bad leaf.")
+                break
+
         res = set()
-        score = self.score(Q,querysize)
-        if score < threshold:
-            print(score)
-            return res
-
-        if len(self.children) == 0:
-            res.add(self.id)
-            return res
-
-        for c in self.children:
-            res |= c.query(Q, querysize, threshold)
+        for node in frontier:
+            res |= node.leaves()
 
         return res
+
 
     def leaves(self):
         if len(self.children) == 0:
@@ -258,6 +381,43 @@ class CAtlas:
                     f.write(' '.join(map(str,v.minhash)))
                     f.write('\n')
 
+    @staticmethod 
+    def read(catlas_gxt, catlas_mxt, radius):
+        graph, node_attr, _ = Graph.from_gxt(open(catlas_gxt, 'r'))
+        hashes = VertexDict.from_mxt(open(catlas_mxt, 'r'))
+        # hashes = defaultdict(int)
+
+        # Parse attributes and partition catlas nodes into layers
+        levels = defaultdict(set)
+        for v in graph:
+            node_attr[v]['level'] = int(node_attr[v]['level'])
+            node_attr[v]['size'] = int(node_attr[v]['size'])
+            l = node_attr[v]['level']
+            levels[l].add(v)
+
+        # Build catlas
+        cat_nodes = {}
+        for v in levels[0]:
+            size = node_attr[v]['size']
+            id = int(node_attr[v]['vertex'])
+            cat_nodes[v] = CAtlas(id, 0, size, [], hashes[v])
+
+        max_level = max(levels.keys())
+        assert(len(levels[max_level]) == 1)
+        for l in range(1, max_level+1):
+            for v in levels[l]:
+                size = node_attr[v]['size']
+                children = filter( lambda x: node_attr[x]['level'] < l, graph.neighbours(v))
+                children = list(map( lambda x: cat_nodes[x], children))
+                id = node_attr[v]['vertex']
+                try:
+                    id = int(id)
+                except ValueError:
+                    pass
+                cat_nodes[v] = CAtlas(id, l, size, children, hashes[v])
+
+        root_id = next(iter(levels[max_level]))
+        return cat_nodes[root_id]
 
 def read_minhashes(inputfile):
     res = {}
@@ -285,18 +445,8 @@ def main(inputgraph, inputhash, output, hash_size, d_bottom, d_upper, top_level_
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('inputgraph', help='gxt input file', nargs='?', type=argparse.FileType('r'),
-                        default=sys.stdin)
-    parser.add_argument('inputhash', help='mxt input file', nargs='?', type=argparse.FileType('r'),
-                        default=sys.stdin)
-    parser.add_argument('output', help='catlas output file', nargs='?', type=argparse.FileType('w'),
-                        default=sys.stdout)
-    parser.add_argument("hashsize", help="number of hashes to keep", type=int)
-    parser.add_argument("--bottom", help="bottom level domset distance", type=int, default=10)
-    parser.add_argument("--inner", help="upper levels domset distance", type=int, default=1)
-    parser.add_argument("--t", help="top level size threshold", type=int, default=5)
-    parser.add_argument('--test', action='store_true')
+    parser.add_argument('project', help='project directory', type=str )
     args = parser.parse_args()
 
-    main(args.inputgraph, args.inputhash, args.output, args.hashsize, args.bottom, args.inner, args.t, args.test)
+    print(args.project)
 

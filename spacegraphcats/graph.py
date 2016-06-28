@@ -278,7 +278,6 @@ class Graph:
             res[comps[v]].add(v)
         return res.values()
 
-
     def num_components(self):
         comps = self.component_index()
         ids = set([comps[v] for v in comps])

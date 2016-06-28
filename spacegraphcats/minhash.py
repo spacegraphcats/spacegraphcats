@@ -27,6 +27,9 @@ class MinHash:
     def intersect(self, other):
         return self.mh.count_common(other.mh)
 
+    def jaccard(self, other):
+        return self.mh.compare(other.mh)        
+
     def __contains__(self, val):
         return val in self.mh.get_mins()
 
