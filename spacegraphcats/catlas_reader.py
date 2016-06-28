@@ -5,7 +5,7 @@ from . import graph_parser
 class CAtlasReader(object):
     """
     Load the given catlas into 'edges', 'vertices', 'roots', 'levels',
-    and 'leaves_to_domnode'.
+    and 'catlas_id_to_domnode'.
     """
     def __init__(self, prefix, radius):
         self.prefix = prefix
@@ -31,7 +31,7 @@ class CAtlasReader(object):
             # only thing there should be nothing beneath are the leaves...
             assert self.levels[node_id] == 0
             # convert leaves into the original domination graph IDs.
-            return set([self.leaves_to_domnode[node_id]])
+            return set([self.catlas_id_to_domnode[node_id]])
 
     def _load(self):
         basename = os.path.basename(self.prefix)
@@ -55,7 +55,7 @@ class CAtlasReader(object):
         vertices = {}
         roots = []
         levels = {}
-        leaves_to_domnode = {}
+        catlas_id_to_domnode = {}
 
         def add_edge(a, b, *extra):
             x = edges.get(a, [])
@@ -69,10 +69,16 @@ class CAtlasReader(object):
             if vertex == 'root':
                 roots.append(node_id)
 
-            levels[node_id] = int(level)
+            level = int(level)
+            levels[node_id] = level
 
-            if level == '0':
-                leaves_to_domnode[node_id] = int(vertex)
+            try:
+                v = int(vertex)
+                assert node_id not in catlas_id_to_domnode
+                catlas_id_to_domnode[node_id] = v
+            except ValueError:
+                # catlas node not in domgraph
+                pass
 
         graph_parser.parse(open(catlas_gxt), add_vertex, add_edge)
 
@@ -80,7 +86,7 @@ class CAtlasReader(object):
         self.vertices = vertices
         self.roots = roots
         self.levels = levels
-        self.leaves_to_domnode = leaves_to_domnode
+        self.catlas_id_to_domnode = catlas_id_to_domnode
     
     def find_matching_nodes_best_match(self, query_mh, mxt_dict):
         best_match = -1
