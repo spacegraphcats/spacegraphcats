@@ -135,7 +135,6 @@ def main():
 
     graph = khmer.Nodegraph(args.ksize, args.tablesize, 2)
     stop_bf = khmer.Nodegraph(args.ksize, args.tablesize, 2)
-    stop_bf2 = khmer.Nodegraph(args.ksize, args.tablesize, 2)
     n = 0
 
     # load in all of the input sequences, one file at a time.
@@ -165,13 +164,11 @@ def main():
                 print('...2', seqfile, n)
             # walk across sequences, find all high degree nodes,
             # name them and cherish them. Don't do this on identical sequences.
-            if min(stop_bf2.get_kmer_counts(record.sequence)) == 0:
-                stop_bf2.consume(record.sequence)
-                degree_nodes += graph.find_high_degree_nodes(record.sequence)
-                if args.label:
-                    for node_id in degree_nodes:
-                        pathy.add_label(node_id, n)
-    del stop_bf2
+            these_hdn = graph.find_high_degree_nodes(record.sequence)
+            degree_nodes += these_hdn
+            if args.label:
+                for node_id in these_hdn:
+                    pathy.add_label(node_id, n)
 
     # get all of the degree > 2 nodes and give them IDs.
     for node in degree_nodes:
@@ -214,6 +211,7 @@ def main():
     print('saving gxtfile', gxtfile)
 
     all_labels = set()
+    label_counts = {}
     with open(gxtfile, 'w') as fp:
         w = graph_parser.Writer(fp, ['labels'], [])
 
@@ -221,10 +219,12 @@ def main():
             kmer = pathy.segments_f.get(k)
             l = ""
             if kmer:
-                l = pathy.labels.get(kmer, "")
-                if l:
-                    all_labels.update(l)
-                    l = " ".join(map(str, l))
+                labels = pathy.labels.get(kmer, "")
+                if labels:
+                    for x in labels:
+                        label_counts[x] = label_counts.get(x, 0) + 1
+                    all_labels.update(labels)
+                    l = " ".join(map(str, labels))
             w.add_vertex(k, v, [l])
 
         for k, v in pathy.adjacencies.items():
@@ -239,6 +239,7 @@ def main():
 
     if args.label:
         print('note: used/assigned %d labels total' % (len(set(all_labels)),))
+        print('counts:', label_counts)
 
 
 if __name__ == '__main__':

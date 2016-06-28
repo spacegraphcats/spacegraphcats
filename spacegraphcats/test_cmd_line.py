@@ -159,6 +159,7 @@ def test_benchmark_code_tr_cross():
                                            [tr_cross, '--label', '-x 1e7'],
                                            in_directory=tempdir)
         assert 'used/assigned 2 labels total' in out
+        assert 'counts: {1: 221, 2: 220}' in out
 
         status, out, err = utils.runscript('build-catlas.py',
                                            ['tr-cross', '3'],
@@ -179,14 +180,53 @@ def test_benchmark_code_tr_cross():
                             ['tr-cross', '3', mh2_txt, '2'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 188' in out
-        assert 'fp: 0' in out
+        assert 'tp: 96' in out
+        assert 'fp: 92' in out
+        assert 'fn: 0' in out
+        assert 'tn: 0' in out
+
+
+def test_benchmark_code_tr_cross_revlabels():
+    # run the benchmarking code on tr_cross-rev (switch label order, basically)
+    tr_cross = utils.get_test_data('tr-cross-rev.fa')
+
+    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
+    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
+
+    with utils.TempDirectory() as tempdir:
+        status, out, err = utils.runscript('walk-dbg.py',
+                                           [tr_cross, '--label', '-x 1e7'],
+                                           in_directory=tempdir)
+        assert 'used/assigned 2 labels total' in out
+        assert 'counts: {1: 220, 2: 221}' in out
+
+        status, out, err = utils.runscript('build-catlas.py',
+                                           ['tr-cross-rev', '3'],
+                                           in_directory=tempdir)
+        print(out)
+        assert 'Catlas done' in out
+
+        status, out, err = utils.runscript('search-for-domgraph-nodes.py',
+                            ['tr-cross-rev', '3', mh1_txt, '2'],
+                            in_directory=tempdir)
+        print(out)
+        assert 'tp: 95' in out
+        assert 'fp: 93' in out
+        assert 'fn: 0' in out
+        assert 'tn: 0' in out
+
+        status, out, err = utils.runscript('search-for-domgraph-nodes.py',
+                            ['tr-cross-rev', '3', mh2_txt, '1'],
+                            in_directory=tempdir)
+        print(out)
+        assert 'tp: 96' in out
+        assert 'fp: 92' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
 
 def test_benchmark_code_tr_cross_relabel():
-    # run the benchmarking code on tr_cross
+    # run the benchmarking code on tr_cross with different label IDs
     tr_cross = utils.get_test_data('tr-cross.fa')
 
     mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
@@ -198,6 +238,8 @@ def test_benchmark_code_tr_cross_relabel():
                                             '--label-offset', '500000'],
                                            in_directory=tempdir)
         assert 'used/assigned 2 labels total' in out
+        assert 'counts: {500001: 221, 500002: 220}' in out
+        print(out)
 
         status, out, err = utils.runscript('build-catlas.py',
                                            ['tr-cross', '3'],
@@ -218,13 +260,14 @@ def test_benchmark_code_tr_cross_relabel():
                             ['tr-cross', '3', mh2_txt, '500002'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 188' in out
-        assert 'fp: 0' in out
+        assert 'tp: 96' in out
+        assert 'fp: 92' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
 
 def test_benchmark_code_tr_cross_searchlevel():
+    return
     # run the benchmarking code on tr_cross
     tr_cross = utils.get_test_data('tr-cross.fa')
 
