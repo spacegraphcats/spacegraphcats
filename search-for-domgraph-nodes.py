@@ -85,6 +85,8 @@ def main():
                    help='search strategy: bestnode, xxx')
     p.add_argument('--searchlevel', type=int, default=0)
     p.add_argument('-q', '--quiet', action='store_true')
+    p.add_argument('--append-csv', type=str,
+                   help='append results in CSV to this file')
     args = p.parse_args()
 
     ### first, parse the catlas gxt
@@ -127,7 +129,7 @@ def main():
         print('reading mxt file', catlas.catlas_mxt)
     mxt_dict = load_mxt_dict(catlas.catlas_mxt)
 
-    ### load mh
+    ### load search mh
 
     if not args.quiet:
         print('reading mh file', args.mh_file)
@@ -226,6 +228,8 @@ def main():
         print('fn:', fn)
         print('tn:', tn)
         print('')
+    sens = (100.0 * tp / (tp + fn))
+    spec = (100.0 * tn / (tn + fp))
     print('sensitivity: %.1f' % (100.0 * tp / (tp + fn)))
     print('specificity: %.1f' % (100.0 * tn / (tn + fp)))
 
@@ -237,6 +241,17 @@ def main():
     assert not pos_nodes - set(dom_to_orig.keys())
     assert not neg_nodes - set(dom_to_orig.keys())
     assert not all_nodes - set(dom_to_orig.keys())
+
+    if args.append_csv:
+        write_header = False
+        if not os.path.exists(args.append_csv):
+            write_header = True
+        with open(args.append_csv, 'at') as outfp:
+            if write_header:
+                outfp.write('sens, spec, tp, fp, fn, tn, strategy, searchlevel\n')
+            outfp.write('%.1f, %.1f, %d, %d, %d, %d, %s, %d\n' %\
+                     (sens, spec, tp, fp, fn, tn, args.strategy,
+                      args.searchlevel))
 
     sys.exit(0)
 
