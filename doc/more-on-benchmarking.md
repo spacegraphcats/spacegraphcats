@@ -23,9 +23,18 @@ How do we choose parameters? How do we choose domset radius?
 
 ## Things we could try
 
-Recording the number of k-mers that go into each cDBG node.
+Recording the number of k-mers that go into each catlas node.
+(This is actually kind of done, I believe?)
 
-Calculating MinHashes for multiple ksizes (for differential species/strain resolution a la MetaPalette).
+Balancing the catlas construction so that, at each level in the DAG,
+nodes have approximately the same number of k-mers underneath them.
+(This may be confounded by the contraction.)  Perhaps a better idea
+would be to allow the search algorithm(s) to take into account the
+number of k-mers in the graph beneath each node.
+
+Calculating MinHashes for multiple ksizes (for differential
+species/strain resolution a la MetaPalette); storing multiple minhashes
+per catlas node.
 
 ## Scripts to write
 
