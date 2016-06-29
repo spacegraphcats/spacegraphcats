@@ -18,8 +18,10 @@ How do we choose parameters? How do we choose domset radius?
 
 ## Parameters we can vary
 
-* ksize
+* ksize (currently limited to k=32 by khmer)
 * size of minhash when building graph
+* catlas radius
+* fp rate of khmer cDBG construction
 
 ## Things we could try
 
