@@ -60,8 +60,9 @@ Terminology: In the Catlas, we will refer to the set of level 0 nodes as 'domina
 define a node's 'shadow' to be all the domination nodes below it in the hierarchy. The shadow
 of a set is the union of the shadows of its members. 
 
-### Titus: The script
-[search-for-domgraph-nodes.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/search-for-domgraph-nodes.py)
+### Titus: four basic strategies
+
+The script [search-for-domgraph-nodes.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/search-for-domgraph-nodes.py)
 provides four search strategies: bestnode, searchlevel, gathermins,
 and gathermins2. These can be specified with '--strategy', and all
 four can be run on a small but real data set ('acido') with 'make
@@ -92,6 +93,10 @@ The strategy 'gathermins2' searches a given level of the catlas
 all their **subnodes**, orders them by match score, and then greedily
 selects the subset that contains non-overlapping components of the
 MinHash sketch.
+
+You can see a comparison of the sensitivity & specificity of all four
+approaches on the 8 subchunks of the acidobacterium genome
+[here](https://github.com/spacegraphcats/spacegraphcats/blob/master/doc/plot-benchmark-sens-spec.ipynb).
 
 ### Blair & Felix: 
 The script
