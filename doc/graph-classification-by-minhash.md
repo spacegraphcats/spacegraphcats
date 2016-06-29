@@ -98,6 +98,15 @@ You can see a comparison of the sensitivity & specificity of all four
 approaches on the 8 subchunks of the acidobacterium genome
 [here](https://github.com/spacegraphcats/spacegraphcats/blob/master/doc/plot-benchmark-sens-spec.ipynb).
 
+#### Summary:
+
+The gathermins2 strategy seems to work the best of the four, and it
+certainly works well enough to proceed with more benchmarking on
+bigger data sets.  The biggest question that needs to be answered here
+is whether the searchlevel can be fixed, or if we need to adapt it to
+each catlas; I can imagine it varying with size of query and origin
+of data (mixture of genomes being different from raw data).
+
 ### Blair & Felix: 
 The script
 [search-with-catlas.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/search-with-catlas.py)
@@ -191,6 +200,22 @@ Benchmarking results for retrieving the first chunk of 8 are
 `data/15genome.fa.*.sigdump.txt` are MinHash signatures for each of
 the genomes.
 
+Targets to benchmark:
+
+* 15genome from Shakya et al., 2014
+* the full 70 genome data set from Shakya et al., 2014
+* subsets of that data set chosen for strain similarity
+
 ### Real data sets with approximate ground truth
 
-To be described.
+The raw reads data set from Shakya et al., 2014 is the obvious target here.
+
+Mircea Podar (senior author on Shaky et al.) has some new data sets as well.
+
+### Questions to think about addressing
+
+Can we do taxonomic classification now?
+
+How do we do metagenome comparison via dom set and catlas comparison?
+
+Can we apply this to RNAseq search and comparison?
