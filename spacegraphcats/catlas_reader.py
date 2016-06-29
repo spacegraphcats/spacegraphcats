@@ -189,6 +189,13 @@ class CAtlasReader(object):
         for (score, node_id, mh) in matches:
             subnodes.update(self.edges.get(node_id, []))
 
+        x = []
+        for node_id in subnodes:
+            subject_mh = mxt_dict[node_id]
+            x.append( (query_mh.compare(subject_mh), node_id) )
+
+        subnodes = [ node_id for (match, node_id) in sorted(x) ]
+
         # get the non-redundant subnodes
         keep = []
         query_mins = set(query_mh.get_mins())

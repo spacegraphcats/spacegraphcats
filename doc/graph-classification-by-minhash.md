@@ -60,16 +60,38 @@ Terminology: In the Catlas, we will refer to the set of level 0 nodes as 'domina
 define a node's 'shadow' to be all the domination nodes below it in the hierarchy. The shadow
 of a set is the union of the shadows of its members. 
 
-### Titus: 
-The script
+### Titus: The script
 [search-for-domgraph-nodes.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/search-for-domgraph-nodes.py)
-is probably the dumbest possible search algorithm on the Catlas, but it's a start :).
+provides four search strategies: bestnode, searchlevel, gathermins,
+and gathermins2. These can be specified with '--strategy', and all
+four can be run on a small but real data set ('acido') with 'make
+bench' in the main directory.  All these strategies are implemented
+in `spacegraphcats/catlas_reader.py`.
 
-* searches all of the Catlas nodes with a provided MinHash query, and
-  finds the best matching node;
+All four strategies choose one or more catlas nodes; evaluation is done
+by finding the level0/dominating set nodes underneath those nodes,
+transferring the cDBG labels onto those nodes, and then computing
+TP/FP/FN/TN.
 
-* for the best matching node, the script then finds the level 0
-  nodes (the domination graph nodes) underneath it;
+The first strategy, 'bestnode', is probably the dumbest possible
+search algorithm on the Catlas: it searches all of the Catlas nodes
+with a provided MinHash query, and finds the single best matching
+node.
+
+The strategy 'searchlevel' searches a given level of the catlas
+(specified by `--searchlevel`) and finds all nodes with a MH match
+of above 5%.
+
+The strategy 'gathermins' searches a given level of the catlas
+(specified by `--searchlevel`), finds all matches above 5%, orders
+them by match score, and then greedily selects the subset that
+contains non-overlapping components of the MinHash sketch.
+
+The strategy 'gathermins2' searches a given level of the catlas
+(specified by `--searchlevel`), finds all matches above 5%, selects
+all their **subnodes**, orders them by match score, and then greedily
+selects the subset that contains non-overlapping components of the
+MinHash sketch.
 
 ### Blair & Felix: 
 The script
