@@ -36,7 +36,7 @@ class Pathfinder(object):
         this_id = self.segment_counter
         self.segment_counter += 1
 
-        self.segments[this_id] = self.ksize
+        self.segments[this_id] = 1
         self.segments_f[this_id] = kmer
         self.segments_r[kmer] = this_id
 
