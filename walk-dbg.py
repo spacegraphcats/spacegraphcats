@@ -57,8 +57,8 @@ class Pathfinder(object):
         self.adjacencies[node_id] = x
 
     def add_label(self, node_id, label):
-        x = self.labels.get(node_id, [])
-        x.append(label)
+        x = self.labels.get(node_id, set())
+        x.add(label)
         self.labels[node_id] = x
 
 
@@ -102,6 +102,7 @@ def main():
     p.add_argument('--label', action='store_true')
     p.add_argument('--label-offset', type=int, default=0, help='for debug')
     p.add_argument('--segment-offset', type=int, default=0, help='for debug')
+    p.add_argument('--label-linear-segments', action='store_true')
     args = p.parse_args()
 
     assert args.ksize % 2, "ksize must be odd"
@@ -160,6 +161,7 @@ def main():
 
     print('finding high degree nodes')
     degree_nodes = khmer.HashSet(args.ksize)
+    n = args.label_offset
     for seqfile in args.seqfiles:
         for record in screed.open(seqfile):
             if len(record.sequence) < args.ksize: continue
@@ -170,6 +172,9 @@ def main():
             # name them and cherish them.
             these_hdn = graph.find_high_degree_nodes(record.sequence)
             degree_nodes += these_hdn
+            if args.label:
+                for node_id in these_hdn:
+                    pathy.add_label(node_id, n)
 
     # get all of the degree > 2 nodes and give them IDs.
     for node in degree_nodes:
@@ -212,8 +217,8 @@ def main():
     print(len(pathy.segments), 'segments, containing',
               sum(pathy.segments.values()), 'nodes')
 
-    if args.label:
-        print('...doing labeling pass by request.')
+    if args.label and args.label_linear_segments:
+        print('...doing labeling of linear segments by request.')
         n = args.label_offset
         for seqfile in args.seqfiles:
             for record in screed.open(seqfile):
