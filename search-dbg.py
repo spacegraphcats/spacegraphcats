@@ -18,7 +18,7 @@ def load_orig_to_labels(original_graph_filename):
         labels = vals[0]
         if labels:
             orig_to_labels[node_id] = list(map(int, labels.strip().split(' ')))
-        
+
     def nop(*x):
         pass
 
@@ -38,7 +38,7 @@ def load_mxt_dict(mxt_filename):
         mh = MinHash(len(hashes), KSIZE)
         for h in hashes:
             mh.add_hash(h)
-            
+
         mxt_dict[node] = mh
 
     return mxt_dict
@@ -64,17 +64,17 @@ def main():
     args = p.parse_args()
 
     basename = os.path.basename(args.catlas_dir)
-    
+
     original_graph = '%s.gxt' % (basename)
     original_graph = os.path.join(args.catlas_dir, original_graph)
     orig_to_labels = load_orig_to_labels(original_graph)
-    
+
     graph_mxt = '%s.mxt' % (basename)
     graph_mxt = os.path.join(args.catlas_dir, graph_mxt)
     mxt_dict = load_mxt_dict(graph_mxt)
 
     query_mh = load_mh_dump(args.mh_file)
-    
+
     search_labels = set([ int(i) for i in args.label_list.split(',') ])
 
     ## everything is loaded! collect info & search.
@@ -108,19 +108,19 @@ def main():
 
     # false positives: how many nodes did we find that didn't have right label?
     fp = 0
-    
+
     for node_id in pos_nodes:
         if has_search_label(node_id):
             tp += 1
         else:
             fp += 1
-        
+
     # true negatives: how many nodes did we miss that didn't have right label?
     tn = 0
-    
+
     # false negatives: how many nodes did we miss that did have right label?
     fn = 0
-    
+
     for node_id in neg_nodes:
         if not has_search_label(node_id):
             tn += 1
@@ -139,6 +139,6 @@ def main():
     print('specificity: %.1f' % (100.0 * tn / (tn + fp)))
 
     assert tp + fp + fn + tn == len(all_nodes)
-    
+
 if __name__ == '__main__':
     main()

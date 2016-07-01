@@ -197,10 +197,7 @@ def main():
         k_str = khmer.reverse_hash(k, graph.ksize())
         mh = khmer.MinHash(1, graph.ksize())
         mh.add_sequence(k_str)
-
-        assert len(mh.get_mins()) == 1
-        hashval = mh.get_mins()[0]
-        pathy.hashdict[k_id] = [hashval]
+        pathy.hashdict[k_id] = mh.get_mins()
 
         # find all the neighbors of this high-degree node.
         nbh = graph.neighbors(k)
