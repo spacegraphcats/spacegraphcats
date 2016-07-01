@@ -88,8 +88,12 @@ def main():
     print('all labels:', all_labels)
 
     found = set()
+    n = 0
     for node_id, subject_mh in mxt_dict.items():
-        if query_mh.count_common(subject_mh) > 0:
+        n += 1
+        if n % 100 == 0:
+            print('... search', n, len(mxt_dict))
+        if subject_mh.count_common(query_mh) > 0:
             found.add(node_id)
 
     print('found:', len(found))
