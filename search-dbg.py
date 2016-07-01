@@ -38,8 +38,6 @@ def load_mxt_dict(mxt_filename):
         mh = MinHash(len(hashes), KSIZE)
         for h in hashes:
             mh.add_hash(h)
-        if node in (3, 4):
-            print('NODE LOAD:', node, hashes)
             
         mxt_dict[node] = mh
 
@@ -91,9 +89,6 @@ def main():
 
     found = set()
     for node_id, subject_mh in mxt_dict.items():
-        if node_id in (3, 4):
-            print(subject_mh.get_mins())
-            print(query_mh.count_common(subject_mh))
         if query_mh.count_common(subject_mh) > 0:
             found.add(node_id)
 
@@ -131,7 +126,6 @@ def main():
             tn += 1
         else:
             fn += 1
-            print('XXX', node_id)
 
     print('')
     print('tp:', tp)

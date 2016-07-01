@@ -188,9 +188,9 @@ def main():
         # retrieve the segment ID of the primary node.
         k_id = pathy.segments_r[k]
 
-        # add its hash value.
+        # add its minhash value.
         k_str = khmer.reverse_hash(k, graph.ksize())
-        mh = khmer.MinHash(2, graph.ksize())
+        mh = khmer.MinHash(1, graph.ksize())
         mh.add_sequence(k_str)
 
         assert len(mh.get_mins()) == 1
