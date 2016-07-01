@@ -14,7 +14,7 @@ DEFAULT_KSIZE=31
 NODEGRAPH_SIZE=8e8
 
 # minhash settings
-MH_SIZE_DIVISOR=1
+MH_SIZE_DIVISOR=50
 MH_MIN_SIZE=5
 
 class Pathfinder(object):
