@@ -188,8 +188,13 @@ def main():
         k_id = pathy.segments_r[k]
 
         # add its hash value.
+        # add its minhash value.
         k_str = khmer.reverse_hash(k, graph.ksize())
-        hashval = khmer._minhash.hash_murmur(k_str)
+        mh = khmer.MinHash(1, graph.ksize())
+        mh.add_sequence(k_str)
+
+        assert len(mh.get_mins()) == 1
+        hashval = mh.get_mins()[0]
         pathy.hashdict[k_id] = [hashval]
 
         # find all the neighbors of this high-degree node.
