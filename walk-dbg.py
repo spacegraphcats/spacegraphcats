@@ -103,6 +103,7 @@ def main():
     p.add_argument('--label-offset', type=int, default=0, help='for debug')
     p.add_argument('--segment-offset', type=int, default=0, help='for debug')
     p.add_argument('--label-linear-segments', action='store_true')
+    p.add_argument('--no-label-hdn', action='store_true')
     args = p.parse_args()
 
     assert args.ksize % 2, "ksize must be odd"
@@ -160,6 +161,8 @@ def main():
     pathy = Pathfinder(args.ksize, args.segment_offset)
 
     print('finding high degree nodes')
+    if args.label and not args.no_label_hdn:
+        print('(and labeling them, per request)')
     degree_nodes = khmer.HashSet(args.ksize)
     n = args.label_offset
     for seqfile in args.seqfiles:
@@ -172,7 +175,7 @@ def main():
             # name them and cherish them.
             these_hdn = graph.find_high_degree_nodes(record.sequence)
             degree_nodes += these_hdn
-            if args.label:
+            if args.label and not args.no_label_hdn:
                 for node_id in these_hdn:
                     pathy.add_label(node_id, n)
 
