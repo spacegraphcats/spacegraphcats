@@ -8,12 +8,13 @@ from collections import OrderedDict
 import os, os.path
 from spacegraphcats import graph_parser
 
+
 # graph settings
 DEFAULT_KSIZE=31
-NODEGRAPH_SIZE=8e8 # small, big is 2e8
+NODEGRAPH_SIZE=8e8
 
 # minhash settings
-MH_SIZE_DIVISOR=50
+MH_SIZE_DIVISOR=1
 MH_MIN_SIZE=5
 
 class Pathfinder(object):
@@ -68,7 +69,10 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
         return
 
     # give it a segment ID
+    kmer = min(visited)
     path_id = pathy.new_linear_segment(size)
+    pathy.segments_f[path_id] = kmer
+    pathy.segments_r[kmer] = path_id
 
     # for all adjacencies, add.
     for conn in conns:
@@ -85,6 +89,7 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
 
     # save minhash info
     pathy.hashdict[path_id] = mh.get_mins()
+
 
 def main():
     p = argparse.ArgumentParser()
@@ -155,7 +160,6 @@ def main():
 
     print('finding high degree nodes')
     degree_nodes = khmer.HashSet(args.ksize)
-    n = args.label_offset
     for seqfile in args.seqfiles:
         for record in screed.open(seqfile):
             if len(record.sequence) < args.ksize: continue
@@ -163,12 +167,9 @@ def main():
             if n % 10000 == 0:
                 print('...2', seqfile, n)
             # walk across sequences, find all high degree nodes,
-            # name them and cherish them. Don't do this on identical sequences.
+            # name them and cherish them.
             these_hdn = graph.find_high_degree_nodes(record.sequence)
             degree_nodes += these_hdn
-            if args.label:
-                for node_id in these_hdn:
-                    pathy.add_label(node_id, n)
 
     # get all of the degree > 2 nodes and give them IDs.
     for node in degree_nodes:
@@ -189,7 +190,11 @@ def main():
 
         # add its hash value.
         k_str = khmer.reverse_hash(k, graph.ksize())
-        hashval = khmer._minhash.hash_murmur(k_str)
+        mh = khmer.MinHash(2, graph.ksize())
+        mh.add_sequence(k_str)
+
+        assert len(mh.get_mins()) == 1
+        hashval = mh.get_mins()[0]
         pathy.hashdict[k_id] = [hashval]
 
         # find all the neighbors of this high-degree node.
@@ -206,6 +211,20 @@ def main():
 
     print(len(pathy.segments), 'segments, containing',
               sum(pathy.segments.values()), 'nodes')
+
+    if args.label:
+        print('...doing labeling pass by request.')
+        n = args.label_offset
+        for seqfile in args.seqfiles:
+            for record in screed.open(seqfile):
+                if len(record.sequence) < args.ksize: continue
+
+                all_kmers = graph.get_kmer_hashes(record.sequence)
+                n += 1
+
+                for kmer, path_id in pathy.segments_r.items():
+                    if kmer in all_kmers:
+                        pathy.add_label(kmer, n)
 
     # save to GXT/MXT.
     print('saving gxtfile', gxtfile)

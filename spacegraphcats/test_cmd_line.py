@@ -152,6 +152,7 @@ def test_benchmark_code_tr_cross():
     tr_cross = utils.get_test_data('tr-cross.fa')
 
     mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
+    print(mh1_txt)
     mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
 
     with utils.TempDirectory() as tempdir:
@@ -159,7 +160,7 @@ def test_benchmark_code_tr_cross():
                                            [tr_cross, '--label', '-x 1e7'],
                                            in_directory=tempdir)
         assert 'used/assigned 2 labels total' in out
-        assert 'counts: {1: 221, 2: 220}' in out
+        assert 'counts: {1: 441, 2: 440}' in out
 
         status, out, err = utils.runscript('build-catlas.py',
                                            ['tr-cross', '3'],
@@ -198,7 +199,7 @@ def test_benchmark_code_tr_cross_revlabels():
                                            [tr_cross, '--label', '-x 1e7'],
                                            in_directory=tempdir)
         assert 'used/assigned 2 labels total' in out
-        assert 'counts: {1: 220, 2: 221}' in out
+        assert 'counts: {1: 440, 2: 441}' in out
 
         status, out, err = utils.runscript('build-catlas.py',
                                            ['tr-cross-rev', '3'],
@@ -238,7 +239,7 @@ def test_benchmark_code_tr_cross_relabel():
                                             '--label-offset', '500000'],
                                            in_directory=tempdir)
         assert 'used/assigned 2 labels total' in out
-        assert 'counts: {500001: 221, 500002: 220}' in out
+        assert 'counts: {500001: 441, 500002: 440}' in out
         print(out)
 
         status, out, err = utils.runscript('build-catlas.py',
