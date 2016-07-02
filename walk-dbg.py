@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 from __future__ import print_function
 
+import sys
 import khmer
 import screed
 import argparse
@@ -107,6 +108,8 @@ def main():
     args = p.parse_args()
 
     assert args.ksize % 2, "ksize must be odd"
+    if args.label_linear_segments or args.no_label_hdn:
+        assert args.label
 
     output_dir = args.output
     if not output_dir:

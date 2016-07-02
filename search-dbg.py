@@ -10,12 +10,14 @@ import sys
 KSIZE=31
 
 
-def load_orig_to_labels(original_graph_filename):
-    "Load the labels for the original DBG node IDs"
+def load_orig_sizes_and_labels(original_graph_filename):
+    "Load the sizes & labels for the original DBG node IDs"
     orig_to_labels = {}
+    orig_sizes = {}
     def parse_source_graph_labels(node_id, size, names, vals):
         assert names[0] == 'labels'
         labels = vals[0]
+        orig_sizes[node_id] = size
         if labels:
             orig_to_labels[node_id] = list(map(int, labels.strip().split(' ')))
 
@@ -25,7 +27,7 @@ def load_orig_to_labels(original_graph_filename):
     with open(original_graph_filename) as fp:
         graph_parser.parse(fp, parse_source_graph_labels, nop)
 
-    return orig_to_labels
+    return orig_sizes, orig_to_labels
 
 
 def load_mxt_dict(mxt_filename):
@@ -61,13 +63,14 @@ def main():
     p.add_argument('mh_file')
     p.add_argument('label_list', type=str,
                    help='list of labels that should correspond to MinHash')
+    p.add_argument('-q', '--quiet', action='store_true')
     args = p.parse_args()
 
     basename = os.path.basename(args.catlas_dir)
 
     original_graph = '%s.gxt' % (basename)
     original_graph = os.path.join(args.catlas_dir, original_graph)
-    orig_to_labels = load_orig_to_labels(original_graph)
+    orig_sizes, orig_to_labels = load_orig_sizes_and_labels(original_graph)
 
     graph_mxt = '%s.mxt' % (basename)
     graph_mxt = os.path.join(args.catlas_dir, graph_mxt)
@@ -84,24 +87,37 @@ def main():
     for vv in orig_to_labels.values():
         all_labels.update(vv)
 
-    print('search labels:', search_labels)
-    print('all labels:', all_labels)
+    if not all_labels:
+        print('** error, no labels', file=sys.stderr)
+        sys.exit(1)
+
+    if not args.quiet:
+        print('search labels:', search_labels)
+        print('all labels:', all_labels)
 
     found = set()
+    found_size = 0
+    total_size = 0
     n = 0
     for node_id, subject_mh in mxt_dict.items():
         n += 1
         if n % 100 == 0:
-            print('... search', n, len(mxt_dict))
+            if not args.quiet:
+                print('... search', n, len(mxt_dict))
+
+        size = orig_sizes[node_id]
+
+        total_size += size
         if subject_mh.count_common(query_mh) > 0:
             found.add(node_id)
+            found_size += size
 
-    print('found:', len(found))
+    if not args.quiet:
+        print('found:', len(found))
+        print('found size:', found_size, total_size, round(found_size / total_size, 3))
 
     pos_nodes = all_nodes.intersection(found)
     neg_nodes = all_nodes - pos_nodes
-
-    print(len(pos_nodes), len(neg_nodes))
 
     def has_search_label(node_id):
         node_labels = orig_to_labels.get(node_id, set())
@@ -115,9 +131,9 @@ def main():
 
     for node_id in pos_nodes:
         if has_search_label(node_id):
-            tp += 1
+            tp += orig_sizes[node_id]
         else:
-            fp += 1
+            fp += orig_sizes[node_id]
 
     # true negatives: how many nodes did we miss that didn't have right label?
     tn = 0
@@ -127,22 +143,22 @@ def main():
 
     for node_id in neg_nodes:
         if not has_search_label(node_id):
-            tn += 1
+            tn += orig_sizes[node_id]
         else:
-            fn += 1
+            fn += orig_sizes[node_id]
 
-    print('')
-    print('tp:', tp)
-    print('fp:', fp)
-    print('fn:', fn)
-    print('tn:', tn)
-    print('')
+    if not args.quiet:
+        print('')
+        print('tp:', tp)
+        print('fp:', fp)
+        print('fn:', fn)
+        print('tn:', tn)
+        print('')
     sens = (100.0 * tp / (tp + fn))
     spec = (100.0 * tn / (tn + fp))
     print('sensitivity: %.1f' % (100.0 * tp / (tp + fn)))
     print('specificity: %.1f' % (100.0 * tn / (tn + fp)))
 
-    assert tp + fp + fn + tn == len(all_nodes)
 
 if __name__ == '__main__':
     main()

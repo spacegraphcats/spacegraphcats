@@ -15,7 +15,7 @@ acido_bench_target: acido_bench/results_bestnode.csv \
 
 acido_bench/acido_bench.gxt:
 	-rm -fr acido_bench
-	./walk-dbg.py --label -x 1e9 -k 31 data/acido-chunk*.fa.gz -o acido_bench
+	./walk-dbg.py --label -x 1e9 -k 31 data/acido-chunk*.fa.gz -o acido_bench --label-linear-segments
 
 acido_bench/acido_bench.catlas.5.gxt: acido_bench/acido_bench.gxt
 	./build-catlas.py acido_bench 5
