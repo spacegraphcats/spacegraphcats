@@ -13,22 +13,24 @@ import sys
 KSIZE=31
 
 
-def load_orig_to_labels(original_graph_filename):
-    "Load the labels for the original DBG node IDs"
+def load_orig_sizes_and_labels(original_graph_filename):
+    "Load the sizes & labels for the original DBG node IDs"
     orig_to_labels = {}
+    orig_sizes = {}
     def parse_source_graph_labels(node_id, size, names, vals):
         assert names[0] == 'labels'
         labels = vals[0]
+        orig_sizes[node_id] = size
         if labels:
             orig_to_labels[node_id] = list(map(int, labels.strip().split(' ')))
-        
+
     def nop(*x):
         pass
 
     with open(original_graph_filename) as fp:
         graph_parser.parse(fp, parse_source_graph_labels, nop)
 
-    return orig_to_labels
+    return orig_sizes, orig_to_labels
 
 
 def load_dom_to_orig(assignment_vxt_file):
@@ -96,11 +98,13 @@ def main():
     ### get the labels from the original graph
 
     # here, 'orig_to_labels' is a dictionary mapping De Bruijn graph node IDs
-    # to a list of labels for each node.
+    # to a list of labels for each node, and 'orig_sizes' is the size of the
+    # original nodes.
     #
     #   orig_to_labels[dbg_node_id] => list of [label_ids]
 
-    orig_to_labels = load_orig_to_labels(catlas.original_graph)
+    orig_sizes, orig_to_labels = \
+      load_orig_sizes_and_labels(catlas.original_graph)
 
     ### backtrack the leaf nodes to the domgraph
 
@@ -119,6 +123,15 @@ def main():
         for v in vv:
             x.update(orig_to_labels.get(v, []))
         dom_labels[k] = x
+
+    ### transfer sizes to dom nodes
+
+    dom_sizes = {}
+    for k, vv in dom_to_orig.items():
+        x = dom_sizes.get(k, 0)
+        for v in vv:
+            x += orig_sizes[v]
+        dom_sizes[k] = x
 
     ### load mxt
 
@@ -205,9 +218,9 @@ def main():
     
     for dom_node_id in pos_nodes:
         if has_search_label(dom_node_id):
-            tp += 1
+            tp += dom_sizes[dom_node_id]
         else:
-            fp += 1
+            fp += dom_sizes[dom_node_id]
 
     # true negatives: how many nodes did we miss that didn't have right label?
     tn = 0
@@ -217,9 +230,9 @@ def main():
     
     for dom_node_id in neg_nodes:
         if not has_search_label(dom_node_id):
-            tn += 1
+            tn += dom_sizes[dom_node_id]
         else:
-            fn += 1
+            fn += dom_sizes[dom_node_id]
 
     if not args.quiet:
         print('')
@@ -233,7 +246,7 @@ def main():
     print('sensitivity: %.1f' % (100.0 * tp / (tp + fn)))
     print('specificity: %.1f' % (100.0 * tn / (tn + fp)))
 
-    assert tp + fp + fn + tn == len(all_nodes)
+    #assert tp + fp + fn + tn == len(all_nodes)
 
     ## some double checks.
 
