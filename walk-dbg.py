@@ -20,35 +20,40 @@ MH_MIN_SIZE=5
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
-    def __init__(self, ksize, segment_offset=0):
+    def __init__(self, ksize, node_offset=0):
         self.ksize = ksize
 
-        self.segment_counter = 1 + segment_offset
-        self.segments = {}                # segment IDs (int) to size
-        self.segments_f = {}              # segment IDs (int) to kmers
-        self.segments_r = {}              # kmers to segment IDs
-        self.adjacencies = {}
-        self.hashdict = OrderedDict()
-        self.labels = {}
+        self.node_counter = 1 + node_offset
+        self.nodes = {}                       # node IDs (int) to size
+        self.nodes_to_kmers = {}              # node IDs (int) to kmers
+        self.kmers_to_nodes = {}              # kmers to node IDs
+        self.adjacencies = {}                 # node to node
+        self.hashdict = OrderedDict()         # node to MinHash ID list
+        self.labels = {}                      # nodes to set of labels
 
-    def new_segment(self, kmer):
-        if kmer in self.segments_r:
-            return self.segments_r[kmer]
+    def new_hdn(self, kmer):
+        if kmer in self.kmers_to_nodes:
+            return self.kmers_to_nodes[kmer]
 
-        this_id = self.segment_counter
-        self.segment_counter += 1
+        this_id = self.node_counter
+        self.node_counter += 1
 
-        self.segments[this_id] = 1
-        self.segments_f[this_id] = kmer
-        self.segments_r[kmer] = this_id
+        self.nodes[this_id] = 1
+        self.nodes_to_kmers[this_id] = kmer
+        self.kmers_to_nodes[kmer] = this_id
 
         return this_id
 
-    def new_linear_segment(self, size):
-        this_id = self.segment_counter
-        self.segment_counter += 1
-        self.segments[this_id] = size
-        return this_id
+    def new_linear_node(self, visited, size):
+        node_id = self.node_counter
+        self.node_counter += 1
+        self.nodes[node_id] = size
+
+        kmer = min(visited)               # represent linear nodes by min(hash)
+        self.nodes_to_kmers[node_id] = kmer
+        self.kmers_to_nodes[kmer] = node_id
+
+        return node_id
 
     def add_adjacency(self, node_id, adj):
         node_id, adj = min(node_id, adj), max(node_id, adj)
@@ -57,28 +62,25 @@ class Pathfinder(object):
         x.add(adj)
         self.adjacencies[node_id] = x
 
-    def add_label(self, node_id, label):
-        x = self.labels.get(node_id, set())
+    def add_label(self, kmer, label):
+        x = self.labels.get(kmer, set())
         x.add(label)
-        self.labels[node_id] = x
+        self.labels[kmer] = x
 
 
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
-    size, conns, visited = graph.traverse_linear_path(nk, degree_nodes,
-                                                      stop_bf)
+    size, adj_kmers, visited = graph.traverse_linear_path(nk, degree_nodes,
+                                                          stop_bf)
     if not size:
         return
 
-    # give it a segment ID
-    kmer = min(visited)
-    path_id = pathy.new_linear_segment(size)
-    pathy.segments_f[path_id] = kmer
-    pathy.segments_r[kmer] = path_id
+    # get a ID
+    path_id = pathy.new_linear_node(visited, size)
 
     # for all adjacencies, add.
-    for conn in conns:
-        conn_id = pathy.segments_r.get(conn)
-        pathy.add_adjacency(path_id, conn_id)
+    for kmer in adj_kmers:
+        adj_node_id = pathy.kmers_to_nodes.get(kmer)
+        pathy.add_adjacency(path_id, adj_node_id)
 
     # next, calculate minhash from visited k-mers
     v = [ khmer.reverse_hash(i, graph.ksize()) for i in visited ]
@@ -102,7 +104,7 @@ def main():
     p.add_argument('--force', action='store_true')
     p.add_argument('--label', action='store_true')
     p.add_argument('--label-offset', type=int, default=0, help='for debug')
-    p.add_argument('--segment-offset', type=int, default=0, help='for debug')
+    p.add_argument('--node-offset', type=int, default=0, help='for debug')
     p.add_argument('--label-linear-segments', action='store_true')
     p.add_argument('--no-label-hdn', action='store_true')
     args = p.parse_args()
@@ -161,7 +163,7 @@ def main():
                                              args.force, max_false_pos=.05)
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(args.ksize, args.segment_offset)
+    pathy = Pathfinder(args.ksize, args.node_offset)
 
     print('finding high degree nodes')
     if args.label and not args.no_label_hdn:
@@ -179,12 +181,12 @@ def main():
             these_hdn = graph.find_high_degree_nodes(record.sequence)
             degree_nodes += these_hdn
             if args.label and not args.no_label_hdn:
-                for node_id in these_hdn:
-                    pathy.add_label(node_id, n)
+                for kmer in these_hdn:
+                    pathy.add_label(kmer, n)
 
-    # get all of the degree > 2 nodes and give them IDs.
-    for node in degree_nodes:
-        pathy.new_segment(node)
+    # get all of the degree > 2 kmers and give them IDs.
+    for kmer in degree_nodes:
+        pathy.new_hdn(kmer)
 
     print('traversing linear segments from', len(degree_nodes), 'nodes')
 
@@ -196,8 +198,8 @@ def main():
         if n % 10000 == 0:
             print('...', n, 'of', len(degree_nodes))
 
-        # retrieve the segment ID of the primary node.
-        k_id = pathy.segments_r[k]
+        # retrieve the node ID of the primary segment.
+        k_id = pathy.kmers_to_nodes[k]
 
         # add its minhash value.
         k_str = khmer.reverse_hash(k, graph.ksize())
@@ -210,15 +212,15 @@ def main():
         for nk in nbh:
             # neighbor is high degree? fine, mark its adjacencies.
             if nk in degree_nodes:
-                nk_id = pathy.segments_r[nk]
+                nk_id = pathy.kmers_to_nodes[nk]
                 pathy.add_adjacency(k_id, nk_id)
             else:
                 # linear! walk it.
                 traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy,
                                                degree_nodes)
 
-    print(len(pathy.segments), 'segments, containing',
-              sum(pathy.segments.values()), 'nodes')
+    print(len(pathy.nodes), 'segments, containing',
+              sum(pathy.nodes.values()), 'nodes')
 
     if args.label and args.label_linear_segments:
         print('...doing labeling of linear segments by request.')
@@ -230,7 +232,7 @@ def main():
                 all_kmers = graph.get_kmer_hashes_as_hashset(record.sequence)
                 n += 1
 
-                for kmer, path_id in pathy.segments_r.items():
+                for kmer, path_id in pathy.kmers_to_nodes.items():
                     if kmer in all_kmers:
                         pathy.add_label(kmer, n)
 
@@ -242,8 +244,8 @@ def main():
     with open(gxtfile, 'w') as fp:
         w = graph_parser.Writer(fp, ['labels'], [])
 
-        for k, v in pathy.segments.items():
-            kmer = pathy.segments_f.get(k)
+        for k, v in pathy.nodes.items():
+            kmer = pathy.nodes_to_kmers.get(k)
             l = ""
             if kmer:
                 labels = pathy.labels.get(kmer, "")
