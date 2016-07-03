@@ -8,13 +8,35 @@ clean:
 
 bench: acido_bench_target
 
-15genome_bench: 15genome/15genome.catlas.5.gxt
+15genome_target: 15genome/results_bestnode.csv \
+	15genome/results_searchlevel.5.csv \
+	15genome/results_gathermins.5.csv \
+	15genome/results_gathermins2.5.csv
 
 15genome/15genome.gxt: data/15genome.fa.gz
 	./walk-dbg.py -x 8e9 data/15genome.fa.gz --label-linear-segments --label
 
 15genome/15genome.catlas.5.gxt: 15genome/15genome.gxt
 	./build-catlas.py 15genome 5
+
+15genome/results_bestnode.csv: 15genome/15genome.catlas.5.gxt
+	rm -f 15genome/results_bestnode.csv
+	search-for-domgraph-nodes-multi.py --quiet 15genome 5 ./data/15genome.fa.{?,??}.sig.dump.txt --append-csv 15genome/results_bestnode.csv
+
+15genome/results_searchlevel.5.csv: 15genome/15genome.catlas.5.gxt
+	rm -f 15genome/results_searchlevel*.csv
+	search-for-domgraph-nodes-multi.py --quiet 15genome 5 ./data/15genome.fa.{?,??}.sig.dump.txt --append-csv 15genome/results_searchlevel.3.csv --strategy searchlevel --searchlevel 3
+	search-for-domgraph-nodes-multi.py --quiet 15genome 5 ./data/15genome.fa.{?,??}.sig.dump.txt --append-csv 15genome/results_searchlevel.5.csv --strategy searchlevel --searchlevel 5
+
+15genome/results_gathermins.5.csv: 15genome/15genome.catlas.5.gxt
+	rm -f 15genome/results_gathermins*.csv
+	search-for-domgraph-nodes-multi.py --quiet 15genome 5 ./data/15genome.fa.{?,??}.sig.dump.txt --append-csv 15genome/results_gathermins.3.csv --strategy gathermins --searchlevel 3
+	search-for-domgraph-nodes-multi.py --quiet 15genome 5 ./data/15genome.fa.{?,??}.sig.dump.txt --append-csv 15genome/results_gathermins.5.csv --strategy gathermins --searchlevel 5
+
+15genome/results_gathermins2.5.csv: 15genome/15genome.catlas.5.gxt
+	rm -f 15genome/results_gathermins2*.csv
+	search-for-domgraph-nodes-multi.py --quiet 15genome 5 ./data/15genome.fa.{?,??}.sig.dump.txt --append-csv 15genome/results_gathermins2.3.csv --strategy gathermins2 --searchlevel 3
+	search-for-domgraph-nodes-multi.py --quiet 15genome 5 ./data/15genome.fa.{?,??}.sig.dump.txt --append-csv 15genome/results_gathermins2.5.csv --strategy gathermins2 --searchlevel 5
 
 acido_bench_target: acido_bench/results_bestnode.csv \
 	acido_bench/results_searchlevel.csv \
