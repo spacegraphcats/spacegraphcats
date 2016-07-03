@@ -227,7 +227,7 @@ def main():
             for record in screed.open(seqfile):
                 if len(record.sequence) < args.ksize: continue
 
-                all_kmers = graph.get_kmer_hashes(record.sequence)
+                all_kmers = graph.get_kmer_hashes_as_hashset(record.sequence)
                 n += 1
 
                 for kmer, path_id in pathy.segments_r.items():
