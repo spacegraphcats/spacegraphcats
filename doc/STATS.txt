@@ -1,29 +1,15 @@
-2.5m-subset.gxt.mxt.gz 185871
+load-graph.py -M 8e9 -k 31 SRR606249.combined.ng SRR606249.combined.fq --no-build-tagset
 
-time ~/spacegraphcats/spacegraphcats/walk-dbg.py -x 8e9 ../2.5m-subset.fq.gz -o 2.5m-subset.gxt
+python2 ~/spacegraphcats/walk-dbg.py -l ../SRR606249.combined.ng --label --label-linear-segments ../all.fa 
 
-real    4m44.395s
-user    4m40.104s
-sys     0m4.260s
+4901986 segments, containing 263288975 nodes
+...doing labeling of linear segments by request.
+saving gxtfile all/all.gxt
+saving mxtfile all/all.mxt
+note: used/assigned 89 labels total
 
+python2 build-catlas.py all 5
 
-----
-
-25m-subset.gxt.mxt.gz 947252
-
-time ~/spacegraphcats/spacegraphcats/walk-dbg.py -x 8e9 ../25m-subset.fq.gz -o 25m-subset.gxt
-
-real    42m58.462s
-user    42m50.384s
-sys     0m7.452s
-
----
-
-time ~/spacegraphcats/spacegraphcats/walk-dbg.py -x 25e9 ../SRR606249.combined.fq -o SRR606249.combined.gxt
-
-7648879 segments, containing 283946825 nodes
-saving to SRR606249.combined.gxt
-
-real    145m17.550s
-user    144m21.548s
-sys     0m51.580s
+~40 GB of RAM req'd
+Graph contains loops. Removing loops for further processing.
+Loaded graph with 4901986 vertices, 5026131 edges and 29896 components
