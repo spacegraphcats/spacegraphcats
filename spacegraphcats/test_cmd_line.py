@@ -196,8 +196,8 @@ def test_benchmark_code_tr_cross():
                             ['tr-cross', '3', mh1_txt, '1'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 95' in out
-        assert 'fp: 93' in out
+        assert 'tp: 172651' in out
+        assert 'fp: 163285' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
@@ -205,8 +205,8 @@ def test_benchmark_code_tr_cross():
                             ['tr-cross', '3', mh2_txt, '2'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 96' in out
-        assert 'fp: 92' in out
+        assert 'tp: 171873' in out
+        assert 'fp: 164063' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
@@ -237,8 +237,8 @@ def test_benchmark_code_tr_cross_label_linear():
                             ['tr-cross', '3', mh1_txt, '1'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 95' in out
-        assert 'fp: 93' in out
+        assert 'tp: 172651' in out
+        assert 'fp: 163285' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
@@ -246,8 +246,8 @@ def test_benchmark_code_tr_cross_label_linear():
                             ['tr-cross', '3', mh2_txt, '2'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 96' in out
-        assert 'fp: 92' in out
+        assert 'tp: 171873' in out
+        assert 'fp: 164063' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
@@ -276,8 +276,8 @@ def test_benchmark_code_tr_cross_revlabels():
                             ['tr-cross-rev', '3', mh1_txt, '2'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 95' in out
-        assert 'fp: 93' in out
+        assert 'tp: 172651' in out
+        assert 'fp: 163285' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
@@ -285,8 +285,8 @@ def test_benchmark_code_tr_cross_revlabels():
                             ['tr-cross-rev', '3', mh2_txt, '1'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 96' in out
-        assert 'fp: 92' in out
+        assert 'tp: 171873' in out
+        assert 'fp: 164063' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
@@ -317,8 +317,8 @@ def test_benchmark_code_tr_cross_relabel():
                             ['tr-cross', '3', mh1_txt, '500001'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 95' in out
-        assert 'fp: 93' in out
+        assert 'tp: 172651' in out
+        assert 'fp: 163285' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
@@ -326,8 +326,8 @@ def test_benchmark_code_tr_cross_relabel():
                             ['tr-cross', '3', mh2_txt, '500002'],
                             in_directory=tempdir)
         print(out)
-        assert 'tp: 96' in out
-        assert 'fp: 92' in out
+        assert 'tp: 171873' in out
+        assert 'fp: 164063' in out
         assert 'fn: 0' in out
         assert 'tn: 0' in out
 
