@@ -32,8 +32,32 @@ def test_build_cdbg_tr_small():
     tr_small = utils.get_test_data('tr-small.fa')
 
     with utils.TempDirectory() as tempdir:
-        status, out, err = utils.runscript('walk-dbg.py', [tr_small],
+        status, out, err = utils.runscript('walk-dbg.py',
+                                           ['-x', '1e6', tr_small],
                                            in_directory=tempdir)
+        print(out)
+        print(err)
+        assert '2046 segments, containing 50684 nodes' in out
+
+
+def test_load_cdbg_tr_small():
+    # check a basic run of walk-dbg
+    tr_small = utils.get_test_data('tr-small.fa')
+
+    with utils.TempDirectory() as tempdir:
+        status, out, err = utils.runscript('load-graph.py',
+                                           ['-x', '1e6', '-N', '2',
+                                            '--no-build-tagset', '-k', '31',
+                                            'tr_small.ng', tr_small],
+                                           in_directory=tempdir,
+                                           package='khmer')
+
+        status, out, err = utils.runscript('walk-dbg.py',
+                                           ['-l', 'tr_small.ng', tr_small],
+                                           in_directory=tempdir)
+        print(out)
+        print(err)
+        assert '2046 segments, containing 50684 nodes' in out
 
 
 def test_build_catlas_tr_cross():

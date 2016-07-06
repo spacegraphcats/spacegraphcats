@@ -14,7 +14,7 @@ except ImportError:
     from io import StringIO
 
 
-def scriptpath(scriptname='build-catlas.py'):
+def scriptpath(scriptname='build-catlas.py', package='spacegraphcats'):
     """Return the path to the scripts, in both dev and install situations."""
     # note - it doesn't matter what the scriptname is here, as long as
     # it's some script present in this version of spacegraphcats.
@@ -36,17 +36,17 @@ def scriptpath(scriptname='build-catlas.py'):
     raise Exception('cannot find', scriptname)
 
 
-def _runscript(scriptname):
+def _runscript(scriptname, package='spacegraphcats'):
     """Find & run a script with exec (i.e. not via os.system or subprocess)."""
     namespace = {"__name__": "__main__"}
     namespace['sys'] = globals()['sys']
 
     try:
-        pkg_resources.get_distribution("spacegraphcats").run_script(
+        pkg_resources.get_distribution(package).run_script(
             scriptname, namespace)
         return 0
     except pkg_resources.ResolutionError:
-        path = scriptpath()
+        path = scriptpath(scriptname)
 
         scriptfile = os.path.join(path, scriptname)
         print('%s resolves to %s' % (scriptname, scriptfile))
@@ -61,7 +61,7 @@ def _runscript(scriptname):
 
 
 def runscript(scriptname, args, in_directory=None,
-              fail_ok=False):
+              fail_ok=False, package='spacegraphcats'):
     """Run a Python script using exec().
 
     Run the given Python script, with the given args, in the given directory,
@@ -94,7 +94,7 @@ def runscript(scriptname, args, in_directory=None,
             print('running:', scriptname, 'in:', in_directory, file=oldout)
             print('arguments', sysargs, file=oldout)
 
-            status = _runscript(scriptname)
+            status = _runscript(scriptname, package=package)
         except SystemExit as err:
             status = err.code
         except:  # pylint: disable=bare-except

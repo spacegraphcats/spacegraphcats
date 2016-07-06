@@ -107,6 +107,7 @@ def main():
     p.add_argument('--node-offset', type=int, default=0, help='for debug')
     p.add_argument('--label-linear-segments', action='store_true')
     p.add_argument('--no-label-hdn', action='store_true')
+    p.add_argument('-l', '--loadgraph', type=str, default=None)
     args = p.parse_args()
 
     assert args.ksize % 2, "ksize must be odd"
@@ -141,40 +142,50 @@ def main():
         print('(note: directory already exists)')
 
     print('')
-    print('building graphs and loading files')
+    if args.loadgraph:
+        print('loading nodegraph from:', args.loadgraph)
+        graph = khmer.load_nodegraph(args.loadgraph)
+        print('creating accompanying stopgraph')
+        ksize = graph.ksize()
+        hashsizes = graph.hashsizes()
+        stop_bf = khmer._Nodegraph(ksize, hashsizes)
+    else:
+        print('building graphs and loading files')
 
-    # Create graph, and two stop bloom filters - one for loading, one for
-    # traversing. Create them all here so that we can error out quickly
-    # if memory is a problem.
+        # Create graph and a stop bloom filter - one for loading, one for
+        # traversing. Create them all here so that we can error out quickly
+        # if memory is a problem.
 
-    graph = khmer.Nodegraph(args.ksize, args.tablesize, 2)
-    stop_bf = khmer.Nodegraph(args.ksize, args.tablesize, 2)
-    n = 0
+        graph = khmer.Nodegraph(args.ksize, args.tablesize, 2)
+        stop_bf = khmer.Nodegraph(args.ksize, args.tablesize, 2)
+        n = 0
 
-    # load in all of the input sequences, one file at a time.
-    for seqfile in args.seqfiles:
-        for record in screed.open(seqfile):
-            if len(record.sequence) < args.ksize: continue
-            n += 1
-            if n % 10000 == 0:
-                print('...', seqfile, n)
-            graph.consume(record.sequence)
+        # load in all of the input sequences, one file at a time.
+        for seqfile in args.seqfiles:
+            for record in screed.open(seqfile):
+                if len(record.sequence) < graph.ksize(): continue
+                n += 1
+                if n % 10000 == 0:
+                    print('...', seqfile, n)
+                graph.consume(record.sequence)
 
-    # complain if too small set of graphs was used.
-    fp_rate = khmer.calc_expected_collisions(graph,
-                                             args.force, max_false_pos=.05)
+        # complain if too small set of graphs was used.
+        fp_rate = khmer.calc_expected_collisions(graph,
+                                                 args.force, max_false_pos=.05)
+
+    ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(args.ksize, args.node_offset)
+    pathy = Pathfinder(ksize, args.node_offset)
 
     print('finding high degree nodes')
     if args.label and not args.no_label_hdn:
         print('(and labeling them, per request)')
-    degree_nodes = khmer.HashSet(args.ksize)
+    degree_nodes = khmer.HashSet(ksize)
     n = args.label_offset
     for seqfile in args.seqfiles:
         for record in screed.open(seqfile):
-            if len(record.sequence) < args.ksize: continue
+            if len(record.sequence) < ksize: continue
             n += 1
             if n % 10000 == 0:
                 print('...2', seqfile, n)
@@ -204,8 +215,8 @@ def main():
         k_id = pathy.kmers_to_nodes[k]
 
         # add its minhash value.
-        k_str = khmer.reverse_hash(k, graph.ksize())
-        mh = khmer.MinHash(1, graph.ksize())
+        k_str = khmer.reverse_hash(k, ksize)
+        mh = khmer.MinHash(1, ksize)
         mh.add_sequence(k_str)
         pathy.hashdict[k_id] = mh.get_mins()
 
@@ -229,7 +240,7 @@ def main():
         n = args.label_offset
         for seqfile in args.seqfiles:
             for record in screed.open(seqfile):
-                if len(record.sequence) < args.ksize: continue
+                if len(record.sequence) < ksize: continue
 
                 all_kmers = graph.get_kmer_hashes_as_hashset(record.sequence)
                 n += 1
