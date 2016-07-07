@@ -8,17 +8,16 @@ from spacegraphcats import graph_parser
 from spacegraphcats.catlas_reader import CAtlasReader
 from spacegraphcats.catlas import CAtlas
 from spacegraphcats.graph import VertexDict
+from collections import defaultdict
 import os
 import sys
 
-
 KSIZE=31
-
 
 def load_orig_sizes_and_labels(original_graph_filename):
     "Load the sizes & labels for the original DBG node IDs"
-    orig_to_labels = {}
-    orig_sizes = {}
+    orig_to_labels = defaultdict(list)
+    orig_sizes = defaultdict(int)
     def parse_source_graph_labels(node_id, size, names, vals):
         assert names[0] == 'labels'
         labels = vals[0]
@@ -37,16 +36,14 @@ def load_orig_sizes_and_labels(original_graph_filename):
 
 def load_dom_to_orig(assignment_vxt_file):
     "Load the mapping between level0/dom nodes and the original DBG nodes."
-    dom_to_orig = {}
+    dom_to_orig = defaultdict(list)
     for line in open(assignment_vxt_file, 'rt'):
         orig_node, dom_list = line.strip().split(',')
         orig_node = int(orig_node)
         dom_list = list(map(int, dom_list.split(' ')))
 
         for dom_node in dom_list:
-            x = dom_to_orig.get(dom_node, [])
-            x.append(orig_node)
-            dom_to_orig[dom_node] = x
+            dom_to_orig[dom_node].append(orig_node)
 
     return dom_to_orig
 
@@ -111,21 +108,17 @@ def main():
 
     ## now, transfer labels to dom nodes
 
-    dom_labels = {}
+    dom_labels = defaultdict(set)
     for k, vv in dom_to_orig.items():
-        x = dom_labels.get(k, set())
         for v in vv:
-            x.update(orig_to_labels.get(v, []))
-        dom_labels[k] = x
+            dom_labels[k].update(orig_to_labels[v])
 
     ### transfer sizes to dom nodes
 
-    dom_sizes = {}
+    dom_sizes = defaultdict(int)
     for k, vv in dom_to_orig.items():
-        x = dom_sizes.get(k, 0)
         for v in vv:
-            x += orig_sizes[v]
-        dom_sizes[k] = x
+            dom_sizes[k] += orig_sizes[v]
 
     ### load mxt
 
@@ -201,7 +194,7 @@ def main():
         print('all dom nodes:', len(all_nodes))
 
     def has_search_label(node_id):
-        node_labels = dom_labels.get(node_id, set())
+        node_labels = dom_labels[node_id]
         return bool(search_labels.intersection(node_labels))
 
     # true positives: how many nodes did we find that had the right label?
