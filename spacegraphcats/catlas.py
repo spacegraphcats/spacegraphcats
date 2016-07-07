@@ -4,6 +4,7 @@ from __future__ import print_function
 import sys, os, argparse
 from os import path
 from collections import deque, defaultdict
+from operator import itemgetter
 
 from spacegraphcats.graph import Graph, VertexDict
 from spacegraphcats.rdomset import rdomset, calc_domination_graph, calc_dominators
@@ -331,6 +332,48 @@ class CAtlas:
                 best_node, best_score = n, score
         return [best_node.id]
 
+    def query_level(self, mhquery, level):
+        res = []
+        for n in self.nodes(lambda x: x.level == level):
+            score1 = mhquery.compare(n.minhash.mh)
+            score2 = n.minhash.mh.compare(mhquery)
+
+            if score1 >= 0.05 or score2 >= 0.05:
+                res.append(n.id)
+        return res
+
+    def query_gather_mins(self, mhquery, level, expand=False):
+        matches = []
+        for n in self.nodes(lambda x: x.level == level):
+            score = mhquery.compare(n.minhash.mh)
+            if score >= 0.05:
+                matches.append((score, n))
+
+        matches.sort(reverse=True, key=itemgetter(0))                
+        
+        if expand:
+            subnodes = set()
+            for (_, n) in matches:
+                subnodes.update(n.children)
+
+            matches = []
+            for n in subnodes:
+                score = mhquery.compare(n.minhash.mh)
+                matches.append((score, n))
+
+        matches.sort(key=itemgetter(0))
+
+        res = []
+        query_mins = set(mhquery.get_mins())
+        covered = set()
+        for (_, n) in matches:
+            nodemins = set(n.minhash.mh.get_mins())
+            if (nodemins - covered).intersection(query_mins):
+                res.append(n.id)
+                covered.update(nodemins)
+                
+        return res        
+
     def leaves(self):
         if len(self.children) == 0:
             return set([self.id])
@@ -347,14 +390,25 @@ class CAtlas:
             res |= c.leaves2()
         return res
 
-    def nodes(self):
+    def nodes(self, select=None):
+        if select == None:
+            select = lambda x: True
+        else:
+            try:
+                0 in select
+                collection = select
+                select = lambda x: x.id in collection
+            except:
+                pass
+
         visited = set()
         frontier = [self]
         while len(frontier) > 0:
             curr = frontier[0]
             frontier = frontier[1:]
             if curr not in visited:
-                yield curr
+                if select(curr):
+                    yield curr
                 visited.add(curr)
                 frontier += curr.children
  

@@ -148,15 +148,13 @@ def main():
     print('search strategy:', args.strategy, args.searchlevel)
 
     if args.strategy == 'bestnode':
-        match_nodes = catlas.find_matching_nodes_best_match(query_mh, mxt_dict)
-        _match_nodes = _catlas.query_best_match(query_mh)
-        assert(match_nodes[0] == _match_nodes[0])
+        match_nodes = _catlas.query_best_match(query_mh)
     elif args.strategy == 'searchlevel':
-        match_nodes = catlas.find_matching_nodes_search_level(query_mh, mxt_dict, args.searchlevel)
+        match_nodes = _catlas.query_level(query_mh, args.searchlevel)
     elif args.strategy == 'gathermins':
-        match_nodes = catlas.find_matching_nodes_gather_mins(query_mh, mxt_dict, args.searchlevel)
+        match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel)
     elif args.strategy == 'gathermins2':
-        match_nodes = catlas.find_matching_nodes_gather_mins2(query_mh, mxt_dict, args.searchlevel)
+        match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel, expand=True)
     else:
         print('\n*** search strategy not understood:', args.strategy)
         sys.exit(-1)
