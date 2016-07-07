@@ -162,14 +162,8 @@ def main():
         sys.exit(-1)
 
     leaves = set()
-    for match_node in match_nodes:
-        leaves.update(catlas.find_level0(match_node))
-
-    _matches = _catlas.nodes(matches)
-    _leaves = ()
-    for n in _matches()
-        _leaves.update(n.leaves())
-    assert(leaves == _leaves)
+    for n in _catlas.nodes(match_nodes):
+        leaves.update(n.shadow())
 
     if not args.quiet:
         print('found %d domgraph leaves under catlas nodes %s' % \

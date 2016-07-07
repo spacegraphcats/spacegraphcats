@@ -380,6 +380,7 @@ class CAtlas:
 
     def leaves(self):
         if len(self.children) == 0:
+            assert(self.level == 0)
             return set([self.id])
         res = set()
         for c in self.children:
@@ -388,11 +389,20 @@ class CAtlas:
 
     def leaves2(self):
         if len(self.children) == 0:
+            assert(self.level == 0)
             return set([self])
         res = set()
         for c in self.children:
             res |= c.leaves2()
         return res
+
+    def shadow(self):
+        if self.level == 0:
+            return set([self.vertex])
+        res = set()
+        for c in self.children:
+            res |= c.shadow()
+        return res        
 
     def nodes(self, select=None):
         if select == None:
