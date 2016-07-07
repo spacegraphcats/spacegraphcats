@@ -6,6 +6,8 @@ import argparse
 from khmer import MinHash
 from spacegraphcats import graph_parser
 from spacegraphcats.catlas_reader import CAtlasReader
+from spacegraphcats.catlas import CAtlas
+from spacegraphcats.graph import VertexDict
 import os
 import sys
 
@@ -48,23 +50,6 @@ def load_dom_to_orig(assignment_vxt_file):
 
     return dom_to_orig
 
-
-def load_mxt_dict(mxt_filename):
-    "Load the MXT file containing minhashes for each DAG node."
-    mxt_dict = {}
-    for line in open(mxt_filename):
-        node, hashes = line.strip().split(',')
-        node = int(node)
-        hashes = [ int(h) for h in hashes.split(' ') ]
-        mh = MinHash(len(hashes), KSIZE)
-        for h in hashes:
-            mh.add_hash(h)
-            
-        mxt_dict[node] = mh
-
-    return mxt_dict
-
-
 def load_mh_dump(mh_filename):
     "Load a MinHash from a file created with 'sourmash dump'."
     with open(mh_filename) as fp:
@@ -92,8 +77,15 @@ def main():
     args = p.parse_args()
 
     ### first, parse the catlas gxt
-
     catlas = CAtlasReader(args.catlas_prefix, args.catlas_r)
+
+    _radius = args.catlas_r
+    _basename = os.path.basename(args.catlas_prefix)
+    _catgxt = '%s.catlas.%d.gxt' % (_basename, _radius)
+    _catmxt = '%s.catlas.%d.mxt' % (_basename, _radius)
+    _catgxt = os.path.join(args.catlas_prefix, _catgxt)
+    _catmxt = os.path.join(args.catlas_prefix, _catmxt)
+    _catlas = CAtlas.read(_catgxt, _catmxt, _radius)    
 
     ### get the labels from the original graph
 
@@ -102,9 +94,11 @@ def main():
     # original nodes.
     #
     #   orig_to_labels[dbg_node_id] => list of [label_ids]
+    _dbg_graph = '%s.gxt' % (_basename)
+    _dbg_graph = os.path.join(args.catlas_prefix, _dbg_graph)
 
     orig_sizes, orig_to_labels = \
-      load_orig_sizes_and_labels(catlas.original_graph)
+      load_orig_sizes_and_labels(_dbg_graph)
 
     ### backtrack the leaf nodes to the domgraph
 
@@ -140,7 +134,7 @@ def main():
 
     if not args.quiet:
         print('reading mxt file', catlas.catlas_mxt)
-    mxt_dict = load_mxt_dict(catlas.catlas_mxt)
+    mxt_dict = VertexDict.from_mxt_mh(open(catlas.catlas_mxt, 'r'))
 
     ### load search mh
 
