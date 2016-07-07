@@ -4,11 +4,14 @@ from __future__ import print_function
 import sys, os, argparse
 from os import path
 from collections import deque, defaultdict
+from operator import itemgetter
 
 from spacegraphcats.graph import Graph, VertexDict
 from spacegraphcats.rdomset import rdomset, calc_domination_graph, calc_dominators
-from spacegraphcats.minhash import MinHash
 from spacegraphcats.graph_parser import parse_minhash, Writer
+from khmer import MinHash
+
+KSIZE=31
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
@@ -36,21 +39,23 @@ class CAtlasBuilder:
         self.minhash_size = size
         return self        
 
-    def _build_component_catlas(self, comp, vertices):
+    def _build_component_catlas(self, comp, vertices, start_id):
         comp = set(comp)
           # Build first level 
         curr_level = {}
         curr_domgraph = self.domgraph.subgraph(comp)
 
         # Collect hashes of the assigned vertices 
-        leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size))        
+        leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size, KSIZE))        
         for u in vertices:
             for v in self.assignment[u]:
-                leaf_hashes[v].merge(self.minhashes[u], self.minhash_size)
+                leaf_hashes[v].merge(self.minhashes[u])
 
         # Create level 0
+        id = start_id
         for v in comp:
-            curr_level[v] = CAtlas.create_leaf(v, self.sizes[v], leaf_hashes[v])
+            curr_level[v] = CAtlas.create_leaf(id, v, self.sizes[v], leaf_hashes[v])
+            id += 1
 
         # Build remaining levels
         level = 1 # Just for debugging
@@ -72,14 +77,15 @@ class CAtlasBuilder:
                 deg = len(children)
                 maxdeg, mindeg = max(maxdeg, deg), min(mindeg, deg)
                 degsum += deg
-                next_level[v] = CAtlas.create_node(v, children, self.minhash_size)
+                next_level[v] = CAtlas.create_node(id, v, children, self.minhash_size)
+                id += 1
 
             curr_domgraph = next_domgraph
             curr_level = next_level
             level += 1
 
         # Add root
-        root = CAtlas.create_node('root', curr_level.values(), self.minhash_size)
+        root = CAtlas.create_node(id, 'root', curr_level.values(), self.minhash_size)
         return root
 
 
@@ -110,11 +116,13 @@ class CAtlasBuilder:
         sys.stdout.flush()
 
         print("\nBuilding catlasses for connected components")
+        id = 0
         for i, comp in enumerate(components):
             print("\rProcessing component {}/{}".format(i,num_comps), end="")
             sys.stdout.flush()
             comp_id = comp_lookup[next(iter(comp))] 
-            comp_atlases.append(self._build_component_catlas(comp, graph_comps[comp_id]))
+            comp_atlases.append(self._build_component_catlas(comp, graph_comps[comp_id], id))
+            id = comp_atlases[-1].id + 1
 
         if len(comp_atlases) == 1:
             return comp_atlases[0]
@@ -123,16 +131,16 @@ class CAtlasBuilder:
         while len(curr_level) > self.level_threshold:
             next_level = []
             for block in chunks(curr_level, self.level_threshold):
-                next_level.append(CAtlas.create_virtual_node(block, self.minhash_size))
+                next_level.append(CAtlas.create_virtual_node(id, block, self.minhash_size))
+                id += 1
             curr_level = next_level
 
         if len(curr_level) > 1:
-            root = CAtlas.create_virtual_node(curr_level, self.minhash_size)
+            root = CAtlas.create_virtual_node(id, curr_level, self.minhash_size)
         else:
             root = curr_level[0]
 
         return root
-
 
 
 class CAtlas:
@@ -143,27 +151,29 @@ class CAtlas:
         """ 
         @staticmethod
         def jaccard(frontier, mhquery, threshold):
+            qset = set(mhquery.get_mins())
             covered = set()
             for node in frontier:
-                covered |= set(node.minhash)
+                covered |= set(node.minhash.get_mins())
             
-            inter = len(set(mhquery) & covered)
-            union = len(set(mhquery) | covered)
+            inter = len(qset & covered)
+            union = len(qset | covered)
 
             return inter / union
 
         @staticmethod
         def jaccard_leaves(frontier, mhquery, threshold):
+            qset = set(mhquery.get_mins())
             leaves = set()
             for node in frontier:
                 leaves |= node.leaves2()
 
             covered = set()
             for node in leaves:
-                covered |= set(node.minhash)
+                covered |= set(node.minhash.get_mins())
             
-            inter = len(set(mhquery) & covered)
-            union = len(set(mhquery) | covered)
+            inter = len(qset & covered)
+            union = len(qset | covered)
 
             return inter / union            
 
@@ -194,7 +204,7 @@ class CAtlas:
             # if len(candidates) != 0:
             #     return min(candidates, key=lambda node: mhquery.intersect(node.minhash))
             # else:
-            return min(frontier, key=lambda node: mhquery.intersect(node.minhash))
+            return min(frontier, key=lambda node: mhquery.count_common(node.minhash))
 
         @staticmethod
         def highest_smallest_intersection(frontier, mhquery, threshold):
@@ -210,17 +220,17 @@ class CAtlas:
         def greedy_coverage(bad_node, mhquery, threshold):
             uncovered = set()
             for c in bad_node.children:
-                uncovered |= set(c.minhash)
-            uncovered &= set(mhquery)
+                uncovered |= set(c.minhash.get_mins())
+            uncovered &= set(mhquery.get_mins())
 
             candidates = set(bad_node.children)
             res = set()
             while len(uncovered) > 0:
                 # Greedily pick child with largest intersection of uncovered hashes
-                best = max(candidates, key=lambda node: len(uncovered & set(node.minhash)) )
+                best = max(candidates, key=lambda node: len(uncovered & set(node.minhash.get_mins())) )
                 candidates.remove(best)
                 res.add(best)
-                uncovered -= set(best.minhash)
+                uncovered -= set(best.minhash.get_mins())
             return res
 
         @staticmethod
@@ -229,66 +239,67 @@ class CAtlas:
 
             uncovered = set()
             for c in leaves:
-                uncovered |= set(c.minhash)
-            uncovered &= set(mhquery)
+                uncovered |= set(c.minhash.get_mins())
+            uncovered &= set(mhquery.get_mins())
 
             candidates = set(bad_node.children)
             res = set()
             while len(uncovered) > 0 and len(candidates) > 0:
                 # Greedily pick child with largest intersection of uncovered hashes
-                best = max(candidates, key=lambda node: len(uncovered & set(node.minhash)) )
+                best = max(candidates, key=lambda node: len(uncovered & set(node.minhash.get_mins())) )
                 candidates.remove(best)
                 res.add(best)
-                uncovered -= set(best.minhash)
+                uncovered -= set(best.minhash.get_mins())
             return res            
             
 
-    def __init__(self, id, level, size, children, minhash):
+    def __init__(self, id, vertex, level, size, children, minhash):
         self.id = id
+        self.vertex = vertex
         self.children = children
         self.size = size
         self.minhash = minhash
         self.level = level
 
     @staticmethod
-    def create_leaf(id,  size, minhash):
-        return CAtlas(id, 0, size, [], minhash)
+    def create_leaf(id, vertex, size, minhash):
+        return CAtlas(id, vertex, 0, size, [], minhash)
 
     @staticmethod
-    def create_node(id, children, hash_size):
+    def create_node(id, vertex, children, hash_size):
         assert len(children) > 0
         size = 0
         level = next(iter(children)).level
-        minhash = MinHash(hash_size)
+        minhash = MinHash(hash_size, KSIZE)
         for c in children:
             assert c.level == level
             size += c.size
-            minhash.merge(c.minhash,hash_size)
-        return CAtlas(id, level+1, size, children, minhash)
+            minhash.merge(c.minhash)
+        return CAtlas(id, vertex, level+1, size, children, minhash)
 
     @staticmethod
-    def create_virtual_node(children, hash_size):
+    def create_virtual_node(id, children, hash_size):
         assert len(children) > 0
         size = 0
         maxlevel = max(children, key=lambda c: c.level).level
-        minhash = MinHash(hash_size)
+        minhash = MinHash(hash_size, KSIZE)
         for c in children:
             assert c.level <= maxlevel
             size += c.size
-            minhash.merge(c.minhash,hash_size)
+            minhash.merge(c.minhash)
 
-        return CAtlas('virtual', maxlevel+1, size, children, minhash)
+        return CAtlas(id, 'virtual', maxlevel+1, size, children, minhash)
 
     def query(self, mhquery, threshold, scoring_strat, selection_strat, refinement_strat):
         frontier = set([self])
 
         while True:
-            print("Current frontier", [(n.id, n.level) for n in frontier])            
+            # print("Current frontier", [(n.id, n.level) for n in frontier])            
             scoreBefore = scoring_strat(frontier, mhquery, threshold)
-            print("Current score {:.5f}".format(scoreBefore))
+            # print("Current score {:.5f}".format(scoreBefore))
 
             bad_node = selection_strat(frontier, mhquery, threshold)
-            print("Refining node {} with {} children".format(bad_node.id, len(bad_node.children)))
+            # print("Refining node {} with {} children".format(bad_node.id, len(bad_node.children)))
 
             if bad_node.level == 0:
                 frontier.remove(bad_node)
@@ -297,17 +308,17 @@ class CAtlas:
                 frontier.remove(bad_node)
                 refinement = set(refinement_strat(bad_node, mhquery, threshold)) 
                 frontier |= refinement                
-                print("Choose {} out of {} children for refinement".format(len(refinement), len(bad_node.children)))
+                # print("Choose {} out of {} children for refinement".format(len(refinement), len(bad_node.children)))
 
             scoreAfter = scoring_strat(frontier, mhquery, threshold)            
-            print("Score after refinement {:.5f}".format(scoreAfter))
+            # print("Score after refinement {:.5f}".format(scoreAfter))
 
             if scoreBefore > scoreAfter:
                 # Improvement step failed: roll back and stop.
                 frontier -= refinement
                 frontier.add(bad_node)
-                if bad_node.level == 0:
-                    print("Stopped at bad leaf.")
+                # if bad_node.level == 0:
+                    # print("Stopped at bad leaf.")
                 break
 
         res = set()
@@ -316,9 +327,60 @@ class CAtlas:
 
         return res
 
+    def query_best_match(self, mhquery):
+        best_score = -1
+        best_node = None
+        for n in self.nodes():
+            score = mhquery.compare(n.minhash)
+            if score > best_score:
+                best_node, best_score = n, score
+        return [best_node.id]
+
+    def query_level(self, mhquery, level):
+        res = []
+        for n in self.nodes(lambda x: x.level == level):
+            score1 = mhquery.compare(n.minhash)
+            score2 = n.minhash.compare(mhquery)
+
+            if score1 >= 0.05 or score2 >= 0.05:
+                res.append(n.id)
+        return res
+
+    def query_gather_mins(self, mhquery, level, expand=False):
+        matches = []
+        for n in self.nodes(lambda x: x.level == level):
+            score = mhquery.compare(n.minhash)
+            if score >= 0.05:
+                matches.append((score, n))
+
+        matches.sort(reverse=True, key=itemgetter(0))                
+        
+        if expand:
+            subnodes = set()
+            for (_, n) in matches:
+                subnodes.update(n.children)
+
+            matches = []
+            for n in subnodes:
+                score = mhquery.compare(n.minhash)
+                matches.append((score, n))
+
+        matches.sort(key=itemgetter(0))
+
+        res = []
+        query_mins = set(mhquery.get_mins())
+        covered = set()
+        for (_, n) in matches:
+            nodemins = set(n.minhash.get_mins())
+            if (nodemins - covered).intersection(query_mins):
+                res.append(n.id)
+                covered.update(nodemins)
+
+        return res        
 
     def leaves(self):
         if len(self.children) == 0:
+            assert(self.level == 0)
             return set([self.id])
         res = set()
         for c in self.children:
@@ -327,12 +389,43 @@ class CAtlas:
 
     def leaves2(self):
         if len(self.children) == 0:
+            assert(self.level == 0)
             return set([self])
         res = set()
         for c in self.children:
             res |= c.leaves2()
         return res
 
+    def shadow(self):
+        if self.level == 0:
+            return set([self.vertex])
+        res = set()
+        for c in self.children:
+            res |= c.shadow()
+        return res        
+
+    def nodes(self, select=None):
+        if select == None:
+            select = lambda x: True
+        else:
+            try:
+                0 in select
+                collection = select
+                select = lambda x: x.id in collection
+            except:
+                pass
+
+        visited = set()
+        frontier = [self]
+        while len(frontier) > 0:
+            curr = frontier[0]
+            frontier = frontier[1:]
+            if curr not in visited:
+                if select(curr):
+                    yield curr
+                visited.add(curr)
+                frontier += curr.children
+ 
     def dfs(self): 
         yield self
         for c in self.children:
@@ -352,33 +445,24 @@ class CAtlas:
         """
             Write catlas to file
         """
-        # Create unique ids for DAG-nodes
-        idmap = {}
-        id = offset
-        for level in self.bfs():
-            for v in level:
-                idmap[v] = id
-                id += 1
-
-        # Store DAG in .gxt file
         with open(path.join(projectpath, "{}.catlas.{}.gxt".format(projectname, radius)), 'w') as f:
             writer = Writer(f, ['vertex', 'level'], [])
             for level in self.bfs():
                 for v in level:
-                    writer.add_vertex(idmap[v], v.size, [v.id, v.level])
+                    writer.add_vertex(v.id, v.size, [v.vertex, v.level])
 
             for level in self.bfs():
                 for v in level:
                     for c in v.children:
-                        writer.add_edge(idmap[v], idmap[c])
+                        writer.add_edge(v.id, c.id)
             writer.done()
 
         # Store hashes separately in .mxt
         with open(path.join(projectpath, "{}.catlas.{}.mxt".format(projectname, radius)), 'w') as f:
             for level in self.bfs():
                 for v in level:
-                    f.write(str(idmap[v])+',')
-                    f.write(' '.join(map(str,v.minhash)))
+                    f.write(str(v.id)+',')
+                    f.write(' '.join(map(str,v.minhash.get_mins())))
                     f.write('\n')
 
     @staticmethod 
@@ -399,8 +483,8 @@ class CAtlas:
         cat_nodes = {}
         for v in levels[0]:
             size = node_attr[v]['size']
-            id = int(node_attr[v]['vertex'])
-            cat_nodes[v] = CAtlas(id, 0, size, [], hashes[v])
+            vertex = int(node_attr[v]['vertex'])
+            cat_nodes[v] = CAtlas(v, vertex, 0, size, [], hashes[v])
 
         max_level = max(levels.keys())
         assert(len(levels[max_level]) == 1)
@@ -409,44 +493,12 @@ class CAtlas:
                 size = node_attr[v]['size']
                 children = filter( lambda x: node_attr[x]['level'] < l, graph.neighbours(v))
                 children = list(map( lambda x: cat_nodes[x], children))
-                id = node_attr[v]['vertex']
+                vertex = node_attr[v]['vertex']
                 try:
-                    id = int(id)
+                    vertex = int(vertex)
                 except ValueError:
                     pass
-                cat_nodes[v] = CAtlas(id, l, size, children, hashes[v])
+                cat_nodes[v] = CAtlas(v, vertex, l, size, children, hashes[v])
 
         root_id = next(iter(levels[max_level]))
         return cat_nodes[root_id]
-
-def read_minhashes(inputfile):
-    res = {}
-
-    def add_hash(v, hashes):
-        res[int(v)] = MinHash.from_list(hashes)
-
-    parse_minhash(inputfile, add_hash)
-    return res
-
-def main(inputgraph, inputhash, output, hash_size, d_bottom, d_upper, top_level_size, test):
-    G,node_attrs,edge_attrs = Graph.from_gxt(inputgraph)
-    hashes = read_minhashes(inputhash)
-
-    for v in G:
-        assert v in hashes, "{} has no minhash".format(v)
-
-    G.remove_loops()
-    AB = CAtlasBuilder(G, hashes, hash_size, d_bottom, d_upper, top_level_size)
-    print("Input graph has size", len(G))
-    catlas = AB.build_catlas()
-    catlas.to_file(output)
-
-    print("CAtlas has {} leaves".format(len(catlas.leaves())))
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('project', help='project directory', type=str )
-    args = parser.parse_args()
-
-    print(args.project)
-

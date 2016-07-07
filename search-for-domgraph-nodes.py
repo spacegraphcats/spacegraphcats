@@ -6,17 +6,18 @@ import argparse
 from khmer import MinHash
 from spacegraphcats import graph_parser
 from spacegraphcats.catlas_reader import CAtlasReader
+from spacegraphcats.catlas import CAtlas
+from spacegraphcats.graph import VertexDict
+from collections import defaultdict
 import os
 import sys
 
-
 KSIZE=31
-
 
 def load_orig_sizes_and_labels(original_graph_filename):
     "Load the sizes & labels for the original DBG node IDs"
-    orig_to_labels = {}
-    orig_sizes = {}
+    orig_to_labels = defaultdict(list)
+    orig_sizes = defaultdict(int)
     def parse_source_graph_labels(node_id, size, names, vals):
         assert names[0] == 'labels'
         labels = vals[0]
@@ -35,35 +36,16 @@ def load_orig_sizes_and_labels(original_graph_filename):
 
 def load_dom_to_orig(assignment_vxt_file):
     "Load the mapping between level0/dom nodes and the original DBG nodes."
-    dom_to_orig = {}
+    dom_to_orig = defaultdict(list)
     for line in open(assignment_vxt_file, 'rt'):
         orig_node, dom_list = line.strip().split(',')
         orig_node = int(orig_node)
         dom_list = list(map(int, dom_list.split(' ')))
 
         for dom_node in dom_list:
-            x = dom_to_orig.get(dom_node, [])
-            x.append(orig_node)
-            dom_to_orig[dom_node] = x
+            dom_to_orig[dom_node].append(orig_node)
 
     return dom_to_orig
-
-
-def load_mxt_dict(mxt_filename):
-    "Load the MXT file containing minhashes for each DAG node."
-    mxt_dict = {}
-    for line in open(mxt_filename):
-        node, hashes = line.strip().split(',')
-        node = int(node)
-        hashes = [ int(h) for h in hashes.split(' ') ]
-        mh = MinHash(len(hashes), KSIZE)
-        for h in hashes:
-            mh.add_hash(h)
-            
-        mxt_dict[node] = mh
-
-    return mxt_dict
-
 
 def load_mh_dump(mh_filename):
     "Load a MinHash from a file created with 'sourmash dump'."
@@ -92,8 +74,15 @@ def main():
     args = p.parse_args()
 
     ### first, parse the catlas gxt
-
     catlas = CAtlasReader(args.catlas_prefix, args.catlas_r)
+
+    _radius = args.catlas_r
+    _basename = os.path.basename(args.catlas_prefix)
+    _catgxt = '%s.catlas.%d.gxt' % (_basename, _radius)
+    _catmxt = '%s.catlas.%d.mxt' % (_basename, _radius)
+    _catgxt = os.path.join(args.catlas_prefix, _catgxt)
+    _catmxt = os.path.join(args.catlas_prefix, _catmxt)
+    _catlas = CAtlas.read(_catgxt, _catmxt, _radius)    
 
     ### get the labels from the original graph
 
@@ -102,9 +91,11 @@ def main():
     # original nodes.
     #
     #   orig_to_labels[dbg_node_id] => list of [label_ids]
+    _dbg_graph = '%s.gxt' % (_basename)
+    _dbg_graph = os.path.join(args.catlas_prefix, _dbg_graph)
 
     orig_sizes, orig_to_labels = \
-      load_orig_sizes_and_labels(catlas.original_graph)
+      load_orig_sizes_and_labels(_dbg_graph)
 
     ### backtrack the leaf nodes to the domgraph
 
@@ -117,21 +108,17 @@ def main():
 
     ## now, transfer labels to dom nodes
 
-    dom_labels = {}
+    dom_labels = defaultdict(set)
     for k, vv in dom_to_orig.items():
-        x = dom_labels.get(k, set())
         for v in vv:
-            x.update(orig_to_labels.get(v, []))
-        dom_labels[k] = x
+            dom_labels[k].update(orig_to_labels[v])
 
     ### transfer sizes to dom nodes
 
-    dom_sizes = {}
+    dom_sizes = defaultdict(int)
     for k, vv in dom_to_orig.items():
-        x = dom_sizes.get(k, 0)
         for v in vv:
-            x += orig_sizes[v]
-        dom_sizes[k] = x
+            dom_sizes[k] += orig_sizes[v]
 
     ### load mxt
 
@@ -140,7 +127,10 @@ def main():
 
     if not args.quiet:
         print('reading mxt file', catlas.catlas_mxt)
-    mxt_dict = load_mxt_dict(catlas.catlas_mxt)
+
+    mxt_dict = VertexDict()
+    for n in _catlas.nodes():
+        mxt_dict[n.id] = n.minhash
 
     ### load search mh
 
@@ -158,20 +148,22 @@ def main():
     print('search strategy:', args.strategy, args.searchlevel)
 
     if args.strategy == 'bestnode':
-        match_nodes = catlas.find_matching_nodes_best_match(query_mh, mxt_dict)
+        match_nodes = _catlas.query_best_match(query_mh)
     elif args.strategy == 'searchlevel':
-        match_nodes = catlas.find_matching_nodes_search_level(query_mh, mxt_dict, args.searchlevel)
+        match_nodes = _catlas.query_level(query_mh, args.searchlevel)
     elif args.strategy == 'gathermins':
-        match_nodes = catlas.find_matching_nodes_gather_mins(query_mh, mxt_dict, args.searchlevel)
+        match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel)
     elif args.strategy == 'gathermins2':
-        match_nodes = catlas.find_matching_nodes_gather_mins2(query_mh, mxt_dict, args.searchlevel)
+        match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel, expand=True)
+    elif args.strategy == 'frontier':
+        match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.jaccard, CAtlas.Selection.smallest_intersection, CAtlas.Refinement.greedy_coverage)
     else:
         print('\n*** search strategy not understood:', args.strategy)
         sys.exit(-1)
 
     leaves = set()
-    for match_node in match_nodes:
-        leaves.update(catlas.find_level0(match_node))
+    for n in _catlas.nodes(match_nodes):
+        leaves.update(n.shadow())
 
     if not args.quiet:
         print('found %d domgraph leaves under catlas nodes %s' % \
@@ -207,7 +199,7 @@ def main():
         print('all dom nodes:', len(all_nodes))
 
     def has_search_label(node_id):
-        node_labels = dom_labels.get(node_id, set())
+        node_labels = dom_labels[node_id]
         return bool(search_labels.intersection(node_labels))
 
     # true positives: how many nodes did we find that had the right label?
