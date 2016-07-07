@@ -156,7 +156,7 @@ def main():
     elif args.strategy == 'gathermins2':
         match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel, expand=True)
     elif args.strategy == 'frontier':
-        match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.height_jaccard, CAtlas.Selection.highest_smallest_intersection, CAtlas.Refinement.greedy_coverage)
+        match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.jaccard, CAtlas.Selection.smallest_intersection, CAtlas.Refinement.greedy_coverage)
     else:
         print('\n*** search strategy not understood:', args.strategy)
         sys.exit(-1)

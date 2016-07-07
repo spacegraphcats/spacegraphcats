@@ -151,27 +151,29 @@ class CAtlas:
         """ 
         @staticmethod
         def jaccard(frontier, mhquery, threshold):
+            qset = set(mhquery.get_mins())
             covered = set()
             for node in frontier:
-                covered |= set(node.minhash)
+                covered |= set(node.minhash.get_mins())
             
-            inter = len(set(mhquery) & covered)
-            union = len(set(mhquery) | covered)
+            inter = len(qset & covered)
+            union = len(qset | covered)
 
             return inter / union
 
         @staticmethod
         def jaccard_leaves(frontier, mhquery, threshold):
+            qset = set(mhquery.get_mins())
             leaves = set()
             for node in frontier:
                 leaves |= node.leaves2()
 
             covered = set()
             for node in leaves:
-                covered |= set(node.minhash)
+                covered |= set(node.minhash.get_mins())
             
-            inter = len(set(mhquery) & covered)
-            union = len(set(mhquery) | covered)
+            inter = len(qset & covered)
+            union = len(qset | covered)
 
             return inter / union            
 
@@ -202,7 +204,7 @@ class CAtlas:
             # if len(candidates) != 0:
             #     return min(candidates, key=lambda node: mhquery.intersect(node.minhash))
             # else:
-            return min(frontier, key=lambda node: mhquery.intersect(node.minhash))
+            return min(frontier, key=lambda node: mhquery.count_common(node.minhash))
 
         @staticmethod
         def highest_smallest_intersection(frontier, mhquery, threshold):
@@ -218,17 +220,17 @@ class CAtlas:
         def greedy_coverage(bad_node, mhquery, threshold):
             uncovered = set()
             for c in bad_node.children:
-                uncovered |= set(c.minhash)
-            uncovered &= set(mhquery)
+                uncovered |= set(c.minhash.get_mins())
+            uncovered &= set(mhquery.get_mins())
 
             candidates = set(bad_node.children)
             res = set()
             while len(uncovered) > 0:
                 # Greedily pick child with largest intersection of uncovered hashes
-                best = max(candidates, key=lambda node: len(uncovered & set(node.minhash)) )
+                best = max(candidates, key=lambda node: len(uncovered & set(node.minhash.get_mins())) )
                 candidates.remove(best)
                 res.add(best)
-                uncovered -= set(best.minhash)
+                uncovered -= set(best.minhash.get_mins())
             return res
 
         @staticmethod
@@ -237,17 +239,17 @@ class CAtlas:
 
             uncovered = set()
             for c in leaves:
-                uncovered |= set(c.minhash)
-            uncovered &= set(mhquery)
+                uncovered |= set(c.minhash.get_mins())
+            uncovered &= set(mhquery.get_mins())
 
             candidates = set(bad_node.children)
             res = set()
             while len(uncovered) > 0 and len(candidates) > 0:
                 # Greedily pick child with largest intersection of uncovered hashes
-                best = max(candidates, key=lambda node: len(uncovered & set(node.minhash)) )
+                best = max(candidates, key=lambda node: len(uncovered & set(node.minhash.get_mins())) )
                 candidates.remove(best)
                 res.add(best)
-                uncovered -= set(best.minhash)
+                uncovered -= set(best.minhash.get_mins())
             return res            
             
 
@@ -292,12 +294,12 @@ class CAtlas:
         frontier = set([self])
 
         while True:
-            print("Current frontier", [(n.id, n.level) for n in frontier])            
+            # print("Current frontier", [(n.id, n.level) for n in frontier])            
             scoreBefore = scoring_strat(frontier, mhquery, threshold)
-            print("Current score {:.5f}".format(scoreBefore))
+            # print("Current score {:.5f}".format(scoreBefore))
 
             bad_node = selection_strat(frontier, mhquery, threshold)
-            print("Refining node {} with {} children".format(bad_node.id, len(bad_node.children)))
+            # print("Refining node {} with {} children".format(bad_node.id, len(bad_node.children)))
 
             if bad_node.level == 0:
                 frontier.remove(bad_node)
@@ -306,17 +308,17 @@ class CAtlas:
                 frontier.remove(bad_node)
                 refinement = set(refinement_strat(bad_node, mhquery, threshold)) 
                 frontier |= refinement                
-                print("Choose {} out of {} children for refinement".format(len(refinement), len(bad_node.children)))
+                # print("Choose {} out of {} children for refinement".format(len(refinement), len(bad_node.children)))
 
             scoreAfter = scoring_strat(frontier, mhquery, threshold)            
-            print("Score after refinement {:.5f}".format(scoreAfter))
+            # print("Score after refinement {:.5f}".format(scoreAfter))
 
             if scoreBefore > scoreAfter:
                 # Improvement step failed: roll back and stop.
                 frontier -= refinement
                 frontier.add(bad_node)
-                if bad_node.level == 0:
-                    print("Stopped at bad leaf.")
+                # if bad_node.level == 0:
+                    # print("Stopped at bad leaf.")
                 break
 
         res = set()
