@@ -127,7 +127,10 @@ def main():
 
     if not args.quiet:
         print('reading mxt file', catlas.catlas_mxt)
-    mxt_dict = VertexDict.from_mxt_mh(open(catlas.catlas_mxt, 'r'))
+
+    mxt_dict = VertexDict()
+    for n in _catlas.nodes():
+        mxt_dict[n.id] = n.minhash.mh
 
     ### load search mh
 
@@ -146,6 +149,8 @@ def main():
 
     if args.strategy == 'bestnode':
         match_nodes = catlas.find_matching_nodes_best_match(query_mh, mxt_dict)
+        _match_nodes = _catlas.query_best_match(query_mh)
+        assert(match_nodes[0] == _match_nodes[0])
     elif args.strategy == 'searchlevel':
         match_nodes = catlas.find_matching_nodes_search_level(query_mh, mxt_dict, args.searchlevel)
     elif args.strategy == 'gathermins':

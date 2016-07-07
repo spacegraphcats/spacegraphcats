@@ -36,7 +36,7 @@ class CAtlasBuilder:
         self.minhash_size = size
         return self        
 
-    def _build_component_catlas(self, comp, vertices):
+    def _build_component_catlas(self, comp, vertices, start_id):
         comp = set(comp)
           # Build first level 
         curr_level = {}
@@ -49,8 +49,10 @@ class CAtlasBuilder:
                 leaf_hashes[v].merge(self.minhashes[u], self.minhash_size)
 
         # Create level 0
+        id = start_id
         for v in comp:
-            curr_level[v] = CAtlas.create_leaf(v, self.sizes[v], leaf_hashes[v])
+            curr_level[v] = CAtlas.create_leaf(id, v, self.sizes[v], leaf_hashes[v])
+            id += 1
 
         # Build remaining levels
         level = 1 # Just for debugging
@@ -72,14 +74,15 @@ class CAtlasBuilder:
                 deg = len(children)
                 maxdeg, mindeg = max(maxdeg, deg), min(mindeg, deg)
                 degsum += deg
-                next_level[v] = CAtlas.create_node(v, children, self.minhash_size)
+                next_level[v] = CAtlas.create_node(id, v, children, self.minhash_size)
+                id += 1
 
             curr_domgraph = next_domgraph
             curr_level = next_level
             level += 1
 
         # Add root
-        root = CAtlas.create_node('root', curr_level.values(), self.minhash_size)
+        root = CAtlas.create_node(id, 'root', curr_level.values(), self.minhash_size)
         return root
 
 
@@ -110,11 +113,13 @@ class CAtlasBuilder:
         sys.stdout.flush()
 
         print("\nBuilding catlasses for connected components")
+        id = 0
         for i, comp in enumerate(components):
             print("\rProcessing component {}/{}".format(i,num_comps), end="")
             sys.stdout.flush()
             comp_id = comp_lookup[next(iter(comp))] 
-            comp_atlases.append(self._build_component_catlas(comp, graph_comps[comp_id]))
+            comp_atlases.append(self._build_component_catlas(comp, graph_comps[comp_id], id))
+            id = comp_atlases[-1].id + 1
 
         if len(comp_atlases) == 1:
             return comp_atlases[0]
@@ -123,16 +128,16 @@ class CAtlasBuilder:
         while len(curr_level) > self.level_threshold:
             next_level = []
             for block in chunks(curr_level, self.level_threshold):
-                next_level.append(CAtlas.create_virtual_node(block, self.minhash_size))
+                next_level.append(CAtlas.create_virtual_node(id, block, self.minhash_size))
+                id += 1
             curr_level = next_level
 
         if len(curr_level) > 1:
-            root = CAtlas.create_virtual_node(curr_level, self.minhash_size)
+            root = CAtlas.create_virtual_node(id, curr_level, self.minhash_size)
         else:
             root = curr_level[0]
 
         return root
-
 
 
 class CAtlas:
@@ -243,19 +248,20 @@ class CAtlas:
             return res            
             
 
-    def __init__(self, id, level, size, children, minhash):
+    def __init__(self, id, vertex, level, size, children, minhash):
         self.id = id
+        self.vertex = vertex
         self.children = children
         self.size = size
         self.minhash = minhash
         self.level = level
 
     @staticmethod
-    def create_leaf(id,  size, minhash):
-        return CAtlas(id, 0, size, [], minhash)
+    def create_leaf(id, vertex, size, minhash):
+        return CAtlas(id, vertex, 0, size, [], minhash)
 
     @staticmethod
-    def create_node(id, children, hash_size):
+    def create_node(id, vertex, children, hash_size):
         assert len(children) > 0
         size = 0
         level = next(iter(children)).level
@@ -264,10 +270,10 @@ class CAtlas:
             assert c.level == level
             size += c.size
             minhash.merge(c.minhash,hash_size)
-        return CAtlas(id, level+1, size, children, minhash)
+        return CAtlas(id, vertex, level+1, size, children, minhash)
 
     @staticmethod
-    def create_virtual_node(children, hash_size):
+    def create_virtual_node(id, children, hash_size):
         assert len(children) > 0
         size = 0
         maxlevel = max(children, key=lambda c: c.level).level
@@ -277,7 +283,7 @@ class CAtlas:
             size += c.size
             minhash.merge(c.minhash,hash_size)
 
-        return CAtlas('virtual', maxlevel+1, size, children, minhash)
+        return CAtlas(id, 'virtual', maxlevel+1, size, children, minhash)
 
     def query(self, mhquery, threshold, scoring_strat, selection_strat, refinement_strat):
         frontier = set([self])
@@ -316,6 +322,14 @@ class CAtlas:
 
         return res
 
+    def query_best_match(self, mhquery):
+        best_score = -1
+        best_node = None
+        for n in self.nodes():
+            score = mhquery.compare(n.minhash.mh)
+            if score > best_score:
+                best_node, best_score = n, score
+        return [best_node.id]
 
     def leaves(self):
         if len(self.children) == 0:
@@ -333,6 +347,17 @@ class CAtlas:
             res |= c.leaves2()
         return res
 
+    def nodes(self):
+        visited = set()
+        frontier = [self]
+        while len(frontier) > 0:
+            curr = frontier[0]
+            frontier = frontier[1:]
+            if curr not in visited:
+                yield curr
+                visited.add(curr)
+                frontier += curr.children
+ 
     def dfs(self): 
         yield self
         for c in self.children:
@@ -352,32 +377,23 @@ class CAtlas:
         """
             Write catlas to file
         """
-        # Create unique ids for DAG-nodes
-        idmap = {}
-        id = offset
-        for level in self.bfs():
-            for v in level:
-                idmap[v] = id
-                id += 1
-
-        # Store DAG in .gxt file
         with open(path.join(projectpath, "{}.catlas.{}.gxt".format(projectname, radius)), 'w') as f:
             writer = Writer(f, ['vertex', 'level'], [])
             for level in self.bfs():
                 for v in level:
-                    writer.add_vertex(idmap[v], v.size, [v.id, v.level])
+                    writer.add_vertex(v.id, v.size, [v.vertex, v.level])
 
             for level in self.bfs():
                 for v in level:
                     for c in v.children:
-                        writer.add_edge(idmap[v], idmap[c])
+                        writer.add_edge(v.id, c.id)
             writer.done()
 
         # Store hashes separately in .mxt
         with open(path.join(projectpath, "{}.catlas.{}.mxt".format(projectname, radius)), 'w') as f:
             for level in self.bfs():
                 for v in level:
-                    f.write(str(idmap[v])+',')
+                    f.write(str(v.id)+',')
                     f.write(' '.join(map(str,v.minhash)))
                     f.write('\n')
 
@@ -399,8 +415,8 @@ class CAtlas:
         cat_nodes = {}
         for v in levels[0]:
             size = node_attr[v]['size']
-            id = int(node_attr[v]['vertex'])
-            cat_nodes[v] = CAtlas(id, 0, size, [], hashes[v])
+            vertex = int(node_attr[v]['vertex'])
+            cat_nodes[v] = CAtlas(v, vertex, 0, size, [], hashes[v])
 
         max_level = max(levels.keys())
         assert(len(levels[max_level]) == 1)
@@ -409,12 +425,12 @@ class CAtlas:
                 size = node_attr[v]['size']
                 children = filter( lambda x: node_attr[x]['level'] < l, graph.neighbours(v))
                 children = list(map( lambda x: cat_nodes[x], children))
-                id = node_attr[v]['vertex']
+                vertex = node_attr[v]['vertex']
                 try:
-                    id = int(id)
+                    vertex = int(vertex)
                 except ValueError:
                     pass
-                cat_nodes[v] = CAtlas(id, l, size, children, hashes[v])
+                cat_nodes[v] = CAtlas(v, vertex, l, size, children, hashes[v])
 
         root_id = next(iter(levels[max_level]))
         return cat_nodes[root_id]
