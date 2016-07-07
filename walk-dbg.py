@@ -125,7 +125,7 @@ def main():
         if output_dir.endswith('.fa'):
             output_dir = output_dir[:-3]
         elif output_dir.endswith('.fa.gz'):
-            output_dir = output_dir[:-3]
+            output_dir = output_dir[:-6]
 
     gxtfile = os.path.basename(output_dir) + '.gxt'
     gxtfile = os.path.join(output_dir, gxtfile)
