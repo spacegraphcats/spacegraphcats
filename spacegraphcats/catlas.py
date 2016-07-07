@@ -8,8 +8,10 @@ from operator import itemgetter
 
 from spacegraphcats.graph import Graph, VertexDict
 from spacegraphcats.rdomset import rdomset, calc_domination_graph, calc_dominators
-from spacegraphcats.minhash import MinHash
 from spacegraphcats.graph_parser import parse_minhash, Writer
+from khmer import MinHash
+
+KSIZE=31
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
@@ -44,10 +46,10 @@ class CAtlasBuilder:
         curr_domgraph = self.domgraph.subgraph(comp)
 
         # Collect hashes of the assigned vertices 
-        leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size))        
+        leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size, KSIZE))        
         for u in vertices:
             for v in self.assignment[u]:
-                leaf_hashes[v].merge(self.minhashes[u], self.minhash_size)
+                leaf_hashes[v].merge(self.minhashes[u])
 
         # Create level 0
         id = start_id
@@ -266,11 +268,11 @@ class CAtlas:
         assert len(children) > 0
         size = 0
         level = next(iter(children)).level
-        minhash = MinHash(hash_size)
+        minhash = MinHash(hash_size, KSIZE)
         for c in children:
             assert c.level == level
             size += c.size
-            minhash.merge(c.minhash,hash_size)
+            minhash.merge(c.minhash)
         return CAtlas(id, vertex, level+1, size, children, minhash)
 
     @staticmethod
@@ -278,11 +280,11 @@ class CAtlas:
         assert len(children) > 0
         size = 0
         maxlevel = max(children, key=lambda c: c.level).level
-        minhash = MinHash(hash_size)
+        minhash = MinHash(hash_size, KSIZE)
         for c in children:
             assert c.level <= maxlevel
             size += c.size
-            minhash.merge(c.minhash,hash_size)
+            minhash.merge(c.minhash)
 
         return CAtlas(id, 'virtual', maxlevel+1, size, children, minhash)
 
@@ -327,7 +329,7 @@ class CAtlas:
         best_score = -1
         best_node = None
         for n in self.nodes():
-            score = mhquery.compare(n.minhash.mh)
+            score = mhquery.compare(n.minhash)
             if score > best_score:
                 best_node, best_score = n, score
         return [best_node.id]
@@ -335,8 +337,8 @@ class CAtlas:
     def query_level(self, mhquery, level):
         res = []
         for n in self.nodes(lambda x: x.level == level):
-            score1 = mhquery.compare(n.minhash.mh)
-            score2 = n.minhash.mh.compare(mhquery)
+            score1 = mhquery.compare(n.minhash)
+            score2 = n.minhash.compare(mhquery)
 
             if score1 >= 0.05 or score2 >= 0.05:
                 res.append(n.id)
@@ -345,7 +347,7 @@ class CAtlas:
     def query_gather_mins(self, mhquery, level, expand=False):
         matches = []
         for n in self.nodes(lambda x: x.level == level):
-            score = mhquery.compare(n.minhash.mh)
+            score = mhquery.compare(n.minhash)
             if score >= 0.05:
                 matches.append((score, n))
 
@@ -358,7 +360,7 @@ class CAtlas:
 
             matches = []
             for n in subnodes:
-                score = mhquery.compare(n.minhash.mh)
+                score = mhquery.compare(n.minhash)
                 matches.append((score, n))
 
         matches.sort(key=itemgetter(0))
@@ -367,11 +369,11 @@ class CAtlas:
         query_mins = set(mhquery.get_mins())
         covered = set()
         for (_, n) in matches:
-            nodemins = set(n.minhash.mh.get_mins())
+            nodemins = set(n.minhash.get_mins())
             if (nodemins - covered).intersection(query_mins):
                 res.append(n.id)
                 covered.update(nodemins)
-                
+
         return res        
 
     def leaves(self):
@@ -448,7 +450,7 @@ class CAtlas:
             for level in self.bfs():
                 for v in level:
                     f.write(str(v.id)+',')
-                    f.write(' '.join(map(str,v.minhash)))
+                    f.write(' '.join(map(str,v.minhash.get_mins())))
                     f.write('\n')
 
     @staticmethod 
@@ -488,35 +490,3 @@ class CAtlas:
 
         root_id = next(iter(levels[max_level]))
         return cat_nodes[root_id]
-
-def read_minhashes(inputfile):
-    res = {}
-
-    def add_hash(v, hashes):
-        res[int(v)] = MinHash.from_list(hashes)
-
-    parse_minhash(inputfile, add_hash)
-    return res
-
-def main(inputgraph, inputhash, output, hash_size, d_bottom, d_upper, top_level_size, test):
-    G,node_attrs,edge_attrs = Graph.from_gxt(inputgraph)
-    hashes = read_minhashes(inputhash)
-
-    for v in G:
-        assert v in hashes, "{} has no minhash".format(v)
-
-    G.remove_loops()
-    AB = CAtlasBuilder(G, hashes, hash_size, d_bottom, d_upper, top_level_size)
-    print("Input graph has size", len(G))
-    catlas = AB.build_catlas()
-    catlas.to_file(output)
-
-    print("CAtlas has {} leaves".format(len(catlas.leaves())))
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('project', help='project directory', type=str )
-    args = parser.parse_args()
-
-    print(args.project)
-

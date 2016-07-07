@@ -25,6 +25,6 @@ _catgxt = os.path.join(args.catlas_prefix, _catgxt)
 _catmxt = os.path.join(args.catlas_prefix, _catmxt)
 _catlas = CAtlas.read(_catgxt, _catmxt, _radius)    
 
-s = "{} (@{}): size={}, vertex={}"
+s = "{} (@{}): size={}, vertex={}, mh={}"
 for n in _catlas.nodes():
-    print(s.format(n.id, n.level, n.size, n.vertex))
+    print(s.format(n.id, n.level, n.size, n.vertex, n.minhash))

@@ -19,18 +19,7 @@ class VertexDict(dict):
         return res
 
     @classmethod
-    def from_mxt(cls, file):
-        from .minhash import MinHash
-        from .graph_parser import _parse_line
-        res = cls()
-        for line in file:
-            u, hashes = _parse_line(line)
-            hashes = list(map(int,hashes.split()))
-            res[int(u)] = MinHash.from_list(hashes)
-        return res
-
-    @classmethod
-    def from_mxt_mh(cls, file, ksize=31):
+    def from_mxt(cls, file, ksize=31):
         from khmer import MinHash
         from .graph_parser import _parse_line
         res = cls()

@@ -8,7 +8,6 @@ from os import path
 from spacegraphcats.graph import Graph, TFGraph, EdgeSet, VertexDict, write_gxt
 from spacegraphcats.graph_parser import parse_minhash
 from spacegraphcats.catlas import CAtlasBuilder, CAtlas
-from spacegraphcats.minhash import MinHash
 from spacegraphcats.rdomset import LazyDomination
 
 DEBUG = True
@@ -30,13 +29,6 @@ def warn(msg):
 
 def error(msg):
     raise RuntimeError(msg)
-
-def parse_minhash_dict(file):
-    res = {}
-    def add_minhash(v, hashlist):
-        res[int(v)] = MinHash.from_list(hashlist)
-    parse_minhash(file, add_minhash)
-    return res
 
 def read_project_file(projectpath, filename):
     """

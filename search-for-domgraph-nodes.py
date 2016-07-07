@@ -130,7 +130,7 @@ def main():
 
     mxt_dict = VertexDict()
     for n in _catlas.nodes():
-        mxt_dict[n.id] = n.minhash.mh
+        mxt_dict[n.id] = n.minhash
 
     ### load search mh
 
@@ -155,6 +155,8 @@ def main():
         match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel)
     elif args.strategy == 'gathermins2':
         match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel, expand=True)
+    elif args.strategy == 'frontier':
+        match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.height_jaccard, CAtlas.Selection.highest_smallest_intersection, CAtlas.Refinement.greedy_coverage)
     else:
         print('\n*** search strategy not understood:', args.strategy)
         sys.exit(-1)
