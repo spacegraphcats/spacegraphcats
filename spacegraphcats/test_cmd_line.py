@@ -128,11 +128,11 @@ def test_search_new_catlas():
 
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh1_txt], in_directory=tempdir)
-        assert 'tr-1.fa.sig.dump.txt,0.488,0.976,0,1' in out
+        assert 'tr-1.fa.sig.dump.txt,0.488,0.976,0,0' in out
 
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh2_txt], in_directory=tempdir)
-        assert 'tr-2.fa.sig.dump.txt,0.500,1.000,0,1' in out
+        assert 'tr-2.fa.sig.dump.txt,0.500,1.000,1,1' in out
 
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh3_txt], in_directory=tempdir)
