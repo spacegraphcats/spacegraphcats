@@ -33,6 +33,10 @@ def scriptpath(scriptname='build-catlas.py', package='spacegraphcats'):
         if os.path.exists(os.path.join(path, scriptname)):
             return path
 
+    path = os.path.dirname(sys.executable)
+    if os.path.exists(os.path.join(path, scriptname)):
+        return path
+
     raise Exception('cannot find', scriptname)
 
 
@@ -46,7 +50,7 @@ def _runscript(scriptname, package='spacegraphcats'):
             scriptname, namespace)
         return 0
     except pkg_resources.ResolutionError:
-        path = scriptpath(scriptname)
+        path = scriptpath(scriptname, package=package)
 
         scriptfile = os.path.join(path, scriptname)
         print('%s resolves to %s' % (scriptname, scriptfile))
