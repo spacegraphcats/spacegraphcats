@@ -162,6 +162,22 @@ class CAtlas:
             return inter / union
 
         @staticmethod
+        def weighted_jaccard(frontier, mhquery, threshold):
+            qset = set(mhquery.get_mins())
+            covered = set()
+            fuzz = 0
+            for node in frontier:
+                inters = node.minhash.count_common(mhquery)
+                inter_perc = inters / node.size
+                fuzz += (1-inter_perc) * node.size
+                covered |= set(node.minhash.get_mins())
+            
+            inter = len(qset & covered) 
+            union = len(qset | covered) + fuzz
+
+            return inter / union    
+
+        @staticmethod
         def jaccard_leaves(frontier, mhquery, threshold):
             qset = set(mhquery.get_mins())
             leaves = set()
@@ -189,9 +205,22 @@ class CAtlas:
             return 1/(avg_height+1)
 
         @staticmethod
+        def worst_node(frontier, mhquery, threshold):
+            def score(node):
+                inter = mhquery.count_common(node.minhash)
+                union = len(mhquery) + len(node.minhash) - inter
+                return inter / union 
+            return max(map(score, frontier))
+
+        @staticmethod
         def height_jaccard(frontier, mhquery, threshold):
             return CAtlas.Scoring.jaccard(frontier, mhquery, threshold) \
                   * CAtlas.Scoring.avg_height(frontier, mhquery, threshold)
+
+        @staticmethod
+        def height_weighted_jaccard(frontier, mhquery, threshold):
+            return CAtlas.Scoring.weighted_jaccard(frontier, mhquery, threshold) \
+                  * CAtlas.Scoring.avg_height(frontier, mhquery, threshold)**0.5
 
     class Selection:
         """ Given a search frontier, a minhash-query and a threshold,
@@ -200,11 +229,25 @@ class CAtlas:
         """
         @staticmethod
         def smallest_intersection(frontier, mhquery, threshold):
-            # candidates = list(filter(lambda node: node.level != 0, frontier))
-            # if len(candidates) != 0:
-            #     return min(candidates, key=lambda node: mhquery.intersect(node.minhash))
-            # else:
             return min(frontier, key=lambda node: mhquery.count_common(node.minhash))
+
+        @staticmethod
+        def largest_weighted_intersection(frontier, mhquery, threshold):
+            return max(frontier, key=lambda node: mhquery.count_common(node.minhash) * node.size )
+
+        @staticmethod
+        def largest_intersection_height(frontier, mhquery, threshold):
+            return max(frontier, key=lambda node: mhquery.count_common(node.minhash) * node.size * (1+node.level) )
+        
+        @staticmethod
+        def weighted_jaccard(frontier, mhquery, threshold):
+            def weighted_jacc(node):
+                inter = mhquery.count_common(node.minhash)
+                assert(len(mhquery) == len(mhquery.get_mins()) and len(node.minhash) == len(node.minhash.get_mins()))
+                union = len(mhquery) + len(node.minhash) - inter
+                return inter / union * node.size
+                
+            return max(frontier, key=weighted_jacc)     
 
         @staticmethod
         def highest_smallest_intersection(frontier, mhquery, threshold):
@@ -223,9 +266,10 @@ class CAtlas:
                 uncovered |= set(c.minhash.get_mins())
             uncovered &= set(mhquery.get_mins())
 
-            candidates = set(bad_node.children)
+            candidates = set(filter(lambda n: mhquery.compare(n.minhash) >= threshold 
+                                           or n.minhash.compare(mhquery) >= threshold, bad_node.children))
             res = set()
-            while len(uncovered) > 0:
+            while len(uncovered) > 0 and len(candidates) > 0:
                 # Greedily pick child with largest intersection of uncovered hashes
                 best = max(candidates, key=lambda node: len(uncovered & set(node.minhash.get_mins())) )
                 candidates.remove(best)
