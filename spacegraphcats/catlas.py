@@ -338,12 +338,8 @@ class CAtlas:
         frontier = set([self])
 
         while True:
-            # print("Current frontier", [(n.id, n.level) for n in frontier])            
             scoreBefore = scoring_strat(frontier, mhquery, threshold)
-            # print("Current score {:.5f}".format(scoreBefore))
-
             bad_node = selection_strat(frontier, mhquery, threshold)
-            # print("Refining node {} with {} children".format(bad_node.id, len(bad_node.children)))
 
             if bad_node.level == 0:
                 frontier.remove(bad_node)
@@ -352,17 +348,12 @@ class CAtlas:
                 frontier.remove(bad_node)
                 refinement = set(refinement_strat(bad_node, mhquery, threshold)) 
                 frontier |= refinement                
-                # print("Choose {} out of {} children for refinement".format(len(refinement), len(bad_node.children)))
 
             scoreAfter = scoring_strat(frontier, mhquery, threshold)            
-            # print("Score after refinement {:.5f}".format(scoreAfter))
 
             if scoreBefore > scoreAfter:
-                # Improvement step failed: roll back and stop.
                 frontier -= refinement
                 frontier.add(bad_node)
-                # if bad_node.level == 0:
-                    # print("Stopped at bad leaf.")
                 break
 
         res = set()
@@ -370,6 +361,39 @@ class CAtlas:
             res |= node.leaves()
 
         return res
+
+    def query_blacklist(self, mhquery, threshold, scoring_strat, selection_strat, refinement_strat):
+        frontier = set([self])
+
+        blacklist = set()
+        while True:
+            scoreBefore = scoring_strat(frontier, mhquery, threshold)
+            candidates = frontier - blacklist
+            if len(candidates) < 0.9*len(frontier):
+                break
+            bad_node = selection_strat(candidates, mhquery, threshold)
+            assert(bad_node not in blacklist)
+
+            if bad_node.level == 0:
+                frontier.remove(bad_node)
+                refinement = set()
+            else:
+                frontier.remove(bad_node)
+                refinement = set(refinement_strat(bad_node, mhquery, threshold)) 
+                frontier |= refinement                
+
+            scoreAfter = scoring_strat(frontier, mhquery, threshold)            
+
+            if scoreBefore > scoreAfter:
+                frontier -= refinement
+                frontier.add(bad_node)
+                blacklist.add(bad_node)
+
+        res = set()
+        for node in frontier:
+            res |= node.leaves()
+
+        return res        
 
     def query_best_match(self, mhquery):
         best_score = -1

@@ -157,10 +157,16 @@ def main():
         match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel, expand=True)
     elif args.strategy == 'frontier-jacc':
         match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.height_weighted_jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)                
+    elif args.strategy == 'frontier-jacc-bl':
+        match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.height_weighted_jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)           
     elif args.strategy == 'frontier-height':
         match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.avg_height, CAtlas.Selection.largest_intersection_height, CAtlas.Refinement.greedy_coverage)
+    elif args.strategy == 'frontier-height-bl':
+        match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.avg_height, CAtlas.Selection.largest_intersection_height, CAtlas.Refinement.greedy_coverage)        
     elif args.strategy == 'frontier-worst':
         match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.worst_node, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)        
+    elif args.strategy == 'frontier-worst-bl':
+        match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.worst_node, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)                
     else:
         print('\n*** search strategy not understood:', args.strategy)
         sys.exit(-1)
