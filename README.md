@@ -39,7 +39,7 @@ nodes:
 * `id`: A unique node unrelated to the id in the source graph
 * `size`: In a leaf node this size reflects the number of vertices of
   the original graph assigned to this node.  For internal nodes this
-  value is the sum of its childrens sizes.
+  value is the sum of its children's sizes.
 * `vertex`: If this node corresponds to a vertex from the source graph
 			then this field contains that vertex's id. Every node
 			labeled `root` identifies a connected component of the
