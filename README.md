@@ -1,4 +1,4 @@
-# spacegraphcats [![Build Status](https://drone.io/github.com/spacegraphcats/spacegraphcats/status.png)](https://drone.io/github.com/spacegraphcats/spacegraphcats/latest) [![codecov](https://codecov.io/gh/spacegraphcats/spacegraphcats/branch/master/graph/badge.svg)](https://codecov.io/gh/spacegraphcats/spacegraphcats)
+# spacegraphcats [![Build Status](https://travis-ci.org/spacegraphcats/spacegraphcats.svg?branch=travis)](https://travis-ci.org/spacegraphcats/spacegraphcats) [![codecov](https://codecov.io/gh/spacegraphcats/spacegraphcats/branch/master/graph/badge.svg)](https://codecov.io/gh/spacegraphcats/spacegraphcats)
 
 Supercool stuff from DDD Barnraising.
 
