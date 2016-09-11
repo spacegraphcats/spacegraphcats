@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import sys
 import khmer
-from sourmash_lib._minhash import MinHash
+from sourmash_lib import MinHash
 import screed
 import argparse
 from collections import OrderedDict

@@ -5,7 +5,7 @@ from __future__ import print_function
 import argparse
 from spacegraphcats import graph_parser
 from spacegraphcats.catlas_reader import CAtlasReader
-from sourmash_lib._minhash import MinHash
+from sourmash_lib import MinHash
 import os
 import sys
 

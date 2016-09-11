@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import argparse
 import os
-from sourmash_lib._minhash import MinHash
+from sourmash_lib import MinHash
 
 
 KSIZE=31

@@ -9,7 +9,7 @@ from operator import itemgetter
 from spacegraphcats.graph import Graph, VertexDict
 from spacegraphcats.rdomset import rdomset, calc_domination_graph, calc_dominators
 from spacegraphcats.graph_parser import parse_minhash, Writer
-from sourmash_lib._minhash import MinHash
+from sourmash_lib import MinHash
 
 KSIZE=31
 

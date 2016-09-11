@@ -1,7 +1,7 @@
 import sys, itertools, operator
 from collections import defaultdict as defaultdict
 import hashlib
-from sourmash_lib._minhash import MinHash
+from sourmash_lib import MinHash
 
 from spacegraphcats.Eppstein import priorityDictionary, UnionFind
 

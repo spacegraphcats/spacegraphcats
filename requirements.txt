@@ -1,4 +1,4 @@
 screed
 pytest
 git+https://github.com/dib-lab/khmer.git
-sourmash >= 0.9.4
+sourmash >= 0.9.6
