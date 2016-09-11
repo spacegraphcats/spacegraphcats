@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import sys
 import khmer
+from sourmash_lib._minhash import MinHash
 import screed
 import argparse
 from collections import OrderedDict
@@ -86,7 +87,7 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     v = [ khmer.reverse_hash(i, graph.ksize()) for i in visited ]
     mh_size = max(len(visited) // MH_SIZE_DIVISOR, MH_MIN_SIZE)
 
-    mh = khmer.MinHash(mh_size, graph.ksize())
+    mh = MinHash(mh_size, graph.ksize())
     for kmer in v:
         mh.add_sequence(kmer)
 
@@ -216,7 +217,7 @@ def main():
 
         # add its minhash value.
         k_str = khmer.reverse_hash(k, ksize)
-        mh = khmer.MinHash(1, ksize)
+        mh = MinHash(1, ksize)
         mh.add_sequence(k_str)
         pathy.hashdict[k_id] = mh.get_mins()
 

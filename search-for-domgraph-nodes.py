@@ -3,7 +3,7 @@
 """
 from __future__ import print_function
 import argparse
-from khmer import MinHash
+from sourmash_lib._minhash import MinHash
 from spacegraphcats import graph_parser
 from spacegraphcats.catlas_reader import CAtlasReader
 from spacegraphcats.catlas import CAtlas

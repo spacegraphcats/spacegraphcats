@@ -3,9 +3,9 @@
 """
 from __future__ import print_function
 import argparse
-from khmer import MinHash
 from spacegraphcats import graph_parser
 from spacegraphcats.catlas_reader import CAtlasReader
+from sourmash_lib._minhash import MinHash
 import os
 import sys
 
