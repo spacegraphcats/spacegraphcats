@@ -3,7 +3,7 @@
 """
 from __future__ import print_function
 import argparse
-from khmer import MinHash
+from sourmash_lib import MinHash
 from spacegraphcats import graph_parser
 from spacegraphcats.catlas_reader import CAtlasReader
 from spacegraphcats.catlas import CAtlas
@@ -63,8 +63,6 @@ def main():
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('catlas_r', type=int, help='catlas radius to load')
     p.add_argument('mh_file', help='file containing dumped MinHash signature')
-    p.add_argument('label_list', type=str,
-                   help='list of labels that should correspond to MinHash')
     p.add_argument('--strategy', type=str, default='bestnode',
                    help='search strategy: bestnode, xxx')
     p.add_argument('--searchlevel', type=int, default=0)
