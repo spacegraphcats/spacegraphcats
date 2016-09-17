@@ -12,7 +12,6 @@ catlas nodes 1, 3, and 9 in the r-5 catlas.
 """
 import argparse
 import spacegraphcats.graph_parser as parser
-from khmer import MinHash
 
 
 def main():

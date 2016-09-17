@@ -1,6 +1,7 @@
 import sys, itertools, operator
 from collections import defaultdict as defaultdict
 import hashlib
+from sourmash_lib import MinHash
 
 from spacegraphcats.Eppstein import priorityDictionary, UnionFind
 
@@ -20,7 +21,6 @@ class VertexDict(dict):
 
     @classmethod
     def from_mxt(cls, file, ksize=31):
-        from khmer import MinHash
         from .graph_parser import _parse_line
         res = cls()
         for line in file:

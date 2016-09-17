@@ -2,7 +2,8 @@
 
 import argparse
 import os
-from khmer import MinHash
+from sourmash_lib import MinHash
+
 
 def main():
     parser = argparse.ArgumentParser()
