@@ -33,7 +33,7 @@ def test_build_cdbg_tr_small():
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('walk-dbg.py',
-                                           ['-x', '1e6', tr_small],
+                                           ['-M', '2.5e5', tr_small],
                                            in_directory=tempdir)
         print(out)
         print(err)
@@ -46,7 +46,7 @@ def test_load_cdbg_tr_small():
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('load-graph.py',
-                                           ['-x', '1e6', '-N', '2',
+                                           ['-M', '2.5e5', '-N', '2',
                                             '--no-build-tagset', '-k', '31',
                                             'tr_small.ng', tr_small],
                                            in_directory=tempdir,
@@ -181,7 +181,7 @@ def test_benchmark_code_tr_cross():
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('walk-dbg.py',
-                                           [tr_cross, '--label', '-x 1e7'],
+                                           [tr_cross, '--label', '-M 2.5e6'],
                                            in_directory=tempdir)
         assert 'used/assigned 2 labels total' in out
         assert 'counts: {1: 221, 2: 220}' in out
@@ -221,7 +221,7 @@ def test_benchmark_code_tr_cross_label_linear():
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('walk-dbg.py',
-                                           [tr_cross, '--label', '-x 1e7',
+                                           [tr_cross, '--label', '-M 2.5e6',
                                             '--label-linear-segments'],
                                            in_directory=tempdir)
         assert 'used/assigned 2 labels total' in out
@@ -261,7 +261,7 @@ def test_benchmark_code_tr_cross_revlabels():
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('walk-dbg.py',
-                                           [tr_cross, '--label', '-x 1e7'],
+                                           [tr_cross, '--label', '-M 2.5e6'],
                                            in_directory=tempdir)
         assert 'used/assigned 2 labels total' in out
         assert 'counts: {1: 220, 2: 221}' in out
@@ -300,7 +300,7 @@ def test_benchmark_code_tr_cross_relabel():
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('walk-dbg.py',
-                                           [tr_cross, '--label', '-x 1e7',
+                                           [tr_cross, '--label', '-M 2.5e6',
                                             '--label-offset', '500000'],
                                            in_directory=tempdir)
         assert 'used/assigned 2 labels total' in out
@@ -342,7 +342,7 @@ def test_benchmark_code_tr_cross_searchlevel():
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('walk-dbg.py',
-                                           [tr_cross, '--label', '-x 1e7'],
+                                           [tr_cross, '--label', '-M 2.5e6'],
                                            in_directory=tempdir)
         assert 'used/assigned 2 labels total' in out
 
