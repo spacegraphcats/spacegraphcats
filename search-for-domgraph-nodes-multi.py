@@ -5,6 +5,7 @@ from __future__ import print_function
 import argparse
 from spacegraphcats import graph_parser
 from spacegraphcats.catlas_reader import CAtlasReader
+from spacegraphcats.catlas import CAtlas
 from sourmash_lib import MinHash
 import os
 import sys
@@ -91,8 +92,15 @@ def main():
     args = p.parse_args()
 
     ### first, parse the catlas gxt
-
     catlas = CAtlasReader(args.catlas_prefix, args.catlas_r)
+
+    _radius = args.catlas_r
+    _basename = os.path.basename(args.catlas_prefix)
+    _catgxt = '%s.catlas.%d.gxt' % (_basename, _radius)
+    _catmxt = '%s.catlas.%d.mxt' % (_basename, _radius)
+    _catgxt = os.path.join(args.catlas_prefix, _catgxt)
+    _catmxt = os.path.join(args.catlas_prefix, _catmxt)
+    _catlas = CAtlas.read(_catgxt, _catmxt, args.catlas_r)
 
     ### get the labels from the original graph
 
@@ -101,8 +109,11 @@ def main():
     #
     #   orig_to_labels[dbg_node_id] => list of [label_ids]
 
+    _dbg_graph = '%s.gxt' % (_basename)
+    _dbg_graph = os.path.join(args.catlas_prefix, _dbg_graph)
+
     orig_sizes, orig_to_labels = \
-      load_orig_sizes_and_labels(catlas.original_graph)
+      load_orig_sizes_and_labels(_dbg_graph)
 
     ### backtrack the leaf nodes to the domgraph
 
@@ -157,6 +168,18 @@ def main():
             match_nodes = catlas.find_matching_nodes_gather_mins(query_mh, mxt_dict, args.searchlevel)
         elif args.strategy == 'gathermins2':
             match_nodes = catlas.find_matching_nodes_gather_mins2(query_mh, mxt_dict, args.searchlevel)
+        elif args.strategy == 'frontier-jacc':
+            match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.height_weighted_jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+        elif args.strategy == 'frontier-jacc-bl':
+            match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.height_weighted_jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+        elif args.strategy == 'frontier-height':
+            match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.avg_height, CAtlas.Selection.largest_intersection_height, CAtlas.Refinement.greedy_coverage)
+        elif args.strategy == 'frontier-height-bl':
+            match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.avg_height, CAtlas.Selection.largest_intersection_height, CAtlas.Refinement.greedy_coverage)
+        elif args.strategy == 'frontier-worst':
+            match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.worst_node, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+        elif args.strategy == 'frontier-worst-bl':
+            match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.worst_node, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
         else:
             print('\n*** search strategy not understood:', args.strategy)
             sys.exit(-1)

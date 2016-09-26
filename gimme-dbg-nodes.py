@@ -63,14 +63,15 @@ def main():
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('catlas_r', type=int, help='catlas radius to load')
     p.add_argument('mh_file', help='file containing dumped MinHash signature')
-    p.add_argument('label_list', type=str,
-                   help='list of labels that should correspond to MinHash')
     p.add_argument('--strategy', type=str, default='bestnode',
                    help='search strategy: bestnode, xxx')
     p.add_argument('--searchlevel', type=int, default=0)
     p.add_argument('-q', '--quiet', action='store_true')
     p.add_argument('--append-csv', type=str,
                    help='append results in CSV to this file')
+    p.add_argument('-o', '--output', metavar="filename",
+                   type=argparse.FileType('w'),
+                   default=None, dest='output_fp')
     args = p.parse_args()
 
     ### first, parse the catlas gxt
@@ -106,19 +107,6 @@ def main():
 
     dom_to_orig = load_dom_to_orig(catlas.assignment_vxt)
 
-    ## now, transfer labels to dom nodes
-
-    dom_labels = defaultdict(set)
-    for k, vv in dom_to_orig.items():
-        for v in vv:
-            dom_labels[k].update(orig_to_labels[v])
-
-    ### transfer sizes to dom nodes
-
-    dom_sizes = defaultdict(int)
-    for k, vv in dom_to_orig.items():
-        for v in vv:
-            dom_sizes[k] += orig_sizes[v]
 
     ### load mxt
 
@@ -156,17 +144,17 @@ def main():
     elif args.strategy == 'gathermins2':
         match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel, expand=True)
     elif args.strategy == 'frontier-jacc':
-        match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.height_weighted_jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+        match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.height_weighted_jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)                
     elif args.strategy == 'frontier-jacc-bl':
-        match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.height_weighted_jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+        match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.height_weighted_jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)           
     elif args.strategy == 'frontier-height':
         match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.avg_height, CAtlas.Selection.largest_intersection_height, CAtlas.Refinement.greedy_coverage)
     elif args.strategy == 'frontier-height-bl':
-        match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.avg_height, CAtlas.Selection.largest_intersection_height, CAtlas.Refinement.greedy_coverage)
+        match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.avg_height, CAtlas.Selection.largest_intersection_height, CAtlas.Refinement.greedy_coverage)        
     elif args.strategy == 'frontier-worst':
-        match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.worst_node, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+        match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.worst_node, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)        
     elif args.strategy == 'frontier-worst-bl':
-        match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.worst_node, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+        match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.worst_node, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)                
     else:
         print('\n*** search strategy not understood:', args.strategy)
         sys.exit(-1)
@@ -179,94 +167,38 @@ def main():
         print('found %d domgraph leaves under catlas nodes %s' % \
               (len(leaves), match_nodes))
 
-    ### finally, count the matches/mismatches between MinHash-found nodes
-    ### and expected labels.
+    dbg_nodes = set()
+    for dom_node in leaves:
+        dbg_nodes.update(dom_to_orig[dom_node])
 
-    search_labels = set([ int(i) for i in args.label_list.split(',') ])
-    all_labels = set()
-    for vv in dom_labels.values():
-        all_labels.update(vv)
+    all_dbg_nodes = set()
+    for v in dom_to_orig.values():
+        all_dbg_nodes.update(v)
 
+    print('found XXX', len(dbg_nodes))
+    print('of', len(all_dbg_nodes))
 
-    if not args.quiet:
-        print("labels we're looking for:", search_labels)
-        print("all labels:", all_labels)
+    print(dbg_nodes)
 
-    # all_nodes is set of all labeled node_ids on original graph:
-    all_nodes = set(dom_labels.keys())
+    # grab the hashes from the final .mxt
 
-    # pos_nodes is set of MH-matching node_ids from dominating set.
-    pos_nodes = set(leaves)
+    _dbg_mxt = '%s.mxt' % (_basename)
+    _dbg_mxt = os.path.join(args.catlas_prefix, _dbg_mxt)
 
-    # neg_nodes is set of non-MH-matching node IDs
-    neg_nodes = all_nodes - pos_nodes
+    sweep_kmers = set()
+    for line in open(_dbg_mxt):
+        node_id, rest = line.split(',', 1)
+        node_id = int(node_id)
 
+        if node_id in dbg_nodes:
+            rest = map(int, rest.split())
+            sweep_kmers.update(rest)
+    print('got %d kmers to sweep' % (len(sweep_kmers),))
 
-    if not args.quiet:
-        print('')
-        print('pos dom nodes:', len(pos_nodes))
-        print('neg dom nodes:', len(neg_nodes))
-        print('all dom nodes:', len(all_nodes))
-
-    def has_search_label(node_id):
-        node_labels = dom_labels[node_id]
-        return bool(search_labels.intersection(node_labels))
-
-    # true positives: how many nodes did we find that had the right label?
-    tp = 0
-
-    # false positives: how many nodes did we find that didn't have right label?
-    fp = 0
-    
-    for dom_node_id in pos_nodes:
-        if has_search_label(dom_node_id):
-            tp += dom_sizes[dom_node_id]
-        else:
-            fp += dom_sizes[dom_node_id]
-
-    # true negatives: how many nodes did we miss that didn't have right label?
-    tn = 0
-    
-    # false negatives: how many nodes did we miss that did have right label?
-    fn = 0
-    
-    for dom_node_id in neg_nodes:
-        if not has_search_label(dom_node_id):
-            tn += dom_sizes[dom_node_id]
-        else:
-            fn += dom_sizes[dom_node_id]
-
-    if not args.quiet:
-        print('')
-        print('tp:', tp)
-        print('fp:', fp)
-        print('fn:', fn)
-        print('tn:', tn)
-        print('')
-    sens = (100.0 * tp / (tp + fn))
-    spec = (100.0 * tn / (tn + fp))
-    print('sensitivity: %.1f' % (100.0 * tp / (tp + fn)))
-    print('specificity: %.1f' % (100.0 * tn / (tn + fp)))
-
-    #assert tp + fp + fn + tn == len(all_nodes)
-
-    ## some double checks.
-
-    # all/pos/neg nodes at the end are dominating set members.
-    assert not pos_nodes - set(dom_to_orig.keys())
-    assert not neg_nodes - set(dom_to_orig.keys())
-    assert not all_nodes - set(dom_to_orig.keys())
-
-    if args.append_csv:
-        write_header = False
-        if not os.path.exists(args.append_csv):
-            write_header = True
-        with open(args.append_csv, 'at') as outfp:
-            if write_header:
-                outfp.write('sens, spec, tp, fp, fn, tn, strategy, searchlevel\n')
-            outfp.write('%.1f, %.1f, %d, %d, %d, %d, %s, %d\n' %\
-                     (sens, spec, tp, fp, fn, tn, args.strategy,
-                      args.searchlevel))
+    if args.output_fp:
+        output = map(str, sweep_kmers)
+        output = "\n".join(output)
+        args.output_fp.write(output)
 
     sys.exit(0)
 

@@ -13,10 +13,10 @@ from spacegraphcats import graph_parser
 
 # graph settings
 DEFAULT_KSIZE=31
-NODEGRAPH_SIZE=8e8
+DEFAULT_MEMORY = 1e8
 
 # minhash settings
-MH_SIZE_DIVISOR=50
+MH_SIZE_DIVISOR=10
 MH_MIN_SIZE=5
 
 class Pathfinder(object):
@@ -100,7 +100,7 @@ def main():
     p.add_argument('seqfiles', nargs='+')
     p.add_argument('-o', '--output', default=None)
     p.add_argument('-k', '--ksize', default=DEFAULT_KSIZE, type=int)
-    p.add_argument('-x', '--tablesize', default=NODEGRAPH_SIZE,
+    p.add_argument('-M', '--memory', default=DEFAULT_MEMORY,
                             type=float)
     p.add_argument('--force', action='store_true')
     p.add_argument('--label', action='store_true')
@@ -110,6 +110,10 @@ def main():
     p.add_argument('--no-label-hdn', action='store_true')
     p.add_argument('-l', '--loadgraph', type=str, default=None)
     args = p.parse_args()
+
+    # @CTB this is kind of a hack - nothing tricky going on, just want to
+    # specify memory on the command line rather than graph size...
+    graph_tablesize = int(args.memory * 8.0 / 2.0)
 
     assert args.ksize % 2, "ksize must be odd"
     if args.label_linear_segments or args.no_label_hdn:
@@ -157,8 +161,8 @@ def main():
         # traversing. Create them all here so that we can error out quickly
         # if memory is a problem.
 
-        graph = khmer.Nodegraph(args.ksize, args.tablesize, 2)
-        stop_bf = khmer.Nodegraph(args.ksize, args.tablesize, 2)
+        graph = khmer.Nodegraph(args.ksize, graph_tablesize, 2)
+        stop_bf = khmer.Nodegraph(args.ksize, graph_tablesize, 2)
         n = 0
 
         # load in all of the input sequences, one file at a time.
