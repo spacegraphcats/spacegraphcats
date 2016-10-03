@@ -3,12 +3,11 @@
 """
 from __future__ import print_function
 import argparse
-from sourmash_lib import MinHash
 from spacegraphcats import graph_parser
-from spacegraphcats.catlas_reader import CAtlasReader
 from spacegraphcats.catlas import CAtlas
 from spacegraphcats.graph import VertexDict
 from collections import defaultdict
+from sourmash_lib import MinHash
 import os
 import sys
 
@@ -74,8 +73,6 @@ def main():
     args = p.parse_args()
 
     ### first, parse the catlas gxt
-    catlas = CAtlasReader(args.catlas_prefix, args.catlas_r)
-
     _radius = args.catlas_r
     _basename = os.path.basename(args.catlas_prefix)
     _catgxt = '%s.catlas.%d.gxt' % (_basename, _radius)
@@ -104,7 +101,9 @@ def main():
     #
     #   dom_to_orig[dom_node_id] => list of [orig_node_ids]
 
-    dom_to_orig = load_dom_to_orig(catlas.assignment_vxt)
+    _assignment_vxt = '%s.assignment.%d.vxt' % (_basename, _radius)
+    _assignment_vxt = os.path.join(args.catlas_prefix, _assignment_vxt)
+    dom_to_orig = load_dom_to_orig(_assignment_vxt)
 
     ## now, transfer labels to dom nodes
 
@@ -119,18 +118,6 @@ def main():
     for k, vv in dom_to_orig.items():
         for v in vv:
             dom_sizes[k] += orig_sizes[v]
-
-    ### load mxt
-
-    # 'mxt_dict' is a dictionary mapping catlas node IDs to MinHash
-    # objects.
-
-    if not args.quiet:
-        print('reading mxt file', catlas.catlas_mxt)
-
-    mxt_dict = VertexDict()
-    for n in _catlas.nodes():
-        mxt_dict[n.id] = n.minhash
 
     ### load search mh
 

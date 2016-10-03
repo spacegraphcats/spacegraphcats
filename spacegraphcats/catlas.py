@@ -297,6 +297,7 @@ class CAtlas:
             return res            
             
 
+    # CAtlas.__init__
     def __init__(self, id, vertex, level, size, children, minhash):
         self.id = id
         self.vertex = vertex
