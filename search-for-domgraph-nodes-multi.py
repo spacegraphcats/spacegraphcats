@@ -219,6 +219,14 @@ def main():
             else:
                 fn += dom_sizes[dom_node_id]
 
+        if not args.quiet:
+            print('')
+            print('tp:', tp)
+            print('fp:', fp)
+            print('fn:', fn)
+            print('tn:', tn)
+            print('')
+
         sens = (100.0 * tp / (tp + fn))
         spec = (100.0 * tn / (tn + fp))
         print('%s - sensitivity: %.1f / specificity / %.1f' % (mh_file, sens, spec))
