@@ -219,7 +219,7 @@ def main():
             else:
                 fn += dom_sizes[dom_node_id]
 
-        if not args.quiet:
+        if not args.quiet and not args.append_csv:
             print('')
             print('tp:', tp)
             print('fp:', fp)
@@ -227,8 +227,11 @@ def main():
             print('tn:', tn)
             print('')
 
-        sens = (100.0 * tp / (tp + fn))
-        spec = (100.0 * tn / (tn + fp))
+        sens = 0
+        if tp + fn:
+            sens = (100.0 * tp / (tp + fn))
+        if tn + fp:
+            spec = (100.0 * tn / (tn + fp))
         print('%s - sensitivity: %.1f / specificity / %.1f' % (mh_file, sens, spec))
 
         ## some double checks.
