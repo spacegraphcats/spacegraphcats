@@ -6,7 +6,7 @@ import khmer
 from sourmash_lib import MinHash
 import screed
 import argparse
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import os, os.path
 from spacegraphcats import graph_parser
 
@@ -28,11 +28,12 @@ class Pathfinder(object):
         self.nodes = {}                       # node IDs (int) to size
         self.nodes_to_kmers = {}              # node IDs (int) to kmers
         self.kmers_to_nodes = {}              # kmers to node IDs
-        self.adjacencies = {}                 # node to node
-        self.labels = {}                      # nodes to set of labels
+        self.adjacencies = defaultdict(set)   # node to node
+        self.labels = defaultdict(set)        # nodes to set of labels
         self.mxtfp = open(mxtfile, 'wt')
 
     def new_hdn(self, kmer):
+        "Add a new high-degree node to the cDBG."
         if kmer in self.kmers_to_nodes:
             return self.kmers_to_nodes[kmer]
 
@@ -46,30 +47,30 @@ class Pathfinder(object):
         return this_id
 
     def new_linear_node(self, visited, size):
+        "Add a new linear path to the cDBG."
         node_id = self.node_counter
         self.node_counter += 1
         self.nodes[node_id] = size
 
-        kmer = min(visited)               # represent linear nodes by min(hash)
+        kmer = min(visited)               # identify linear nodes by min(hash)
         self.nodes_to_kmers[node_id] = kmer
         self.kmers_to_nodes[kmer] = node_id
 
         return node_id
 
     def add_adjacency(self, node_id, adj):
+        "Add an edge between two nodes to the cDBG."
         node_id, adj = min(node_id, adj), max(node_id, adj)
         
-        x = self.adjacencies.get(node_id, set())
+        x = self.adjacencies[node_id]
         x.add(adj)
-        self.adjacencies[node_id] = x
 
     def add_label(self, kmer, label):
-        x = self.labels.get(kmer, set())
+        x = self.labels[kmer]
         x.add(label)
-        self.labels[kmer] = x
 
     def add_minhash(self, path_id, mh):
-        # save minhash info
+        # save minhash info to disk
         mins = " ".join(map(str, mh.get_mins()))
         self.mxtfp.write('{0},{1}\n'.format(path_id, mins))
 
@@ -77,15 +78,15 @@ class Pathfinder(object):
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     size, adj_kmers, visited = graph.traverse_linear_path(nk, degree_nodes,
                                                           stop_bf)
-    if not size:
+    if not size:                          # 0 length paths
         return
 
-    # get a ID
+    # get an ID for the new path
     path_id = pathy.new_linear_node(visited, size)
 
-    # for all adjacencies, add.
+    # add all adjacencies
     for kmer in adj_kmers:
-        adj_node_id = pathy.kmers_to_nodes.get(kmer)
+        adj_node_id = pathy.kmers_to_nodes[kmer]
         pathy.add_adjacency(path_id, adj_node_id)
 
     # next, calculate minhash from visited k-mers
@@ -247,16 +248,22 @@ def main():
     if args.label and args.label_linear_segments:
         print('...doing labeling of linear segments by request.')
         n = args.label_offset
+        path_kmers = set(pathy.kmers_to_nodes)   # set of path identifiers
+
         for seqfile in args.seqfiles:
             for record in screed.open(seqfile):
                 if len(record.sequence) < ksize: continue
-
-                all_kmers = graph.get_kmer_hashes_as_hashset(record.sequence)
                 n += 1
 
-                for kmer, path_id in pathy.kmers_to_nodes.items():
-                    if kmer in all_kmers:
-                        pathy.add_label(kmer, n)
+                # all k-mers in this sequence --
+                all_kmers = graph.get_kmer_hashes_as_hashset(record.sequence)
+                all_kmers = set(all_kmers)
+
+                # are any of these k-mers path identifers? -> attach label
+                all_kmers.intersection_update(path_kmers)
+                for kmer in all_kmers:
+                    pathy.add_label(kmer, n)
+
 
     # save to GXT/MXT.
     print('saving gxtfile', gxtfile)
