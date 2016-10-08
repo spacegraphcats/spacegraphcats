@@ -277,7 +277,7 @@ def main():
             kmer = pathy.nodes_to_kmers.get(k)
             l = ""
             if kmer:
-                labels = pathy.labels.get(kmer, "")
+                labels = pathy.labels.get(kmer)
                 if labels:
                     for x in labels:
                         label_counts[x] = label_counts.get(x, 0) + 1
