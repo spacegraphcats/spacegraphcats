@@ -21,7 +21,7 @@ MH_MIN_SIZE=5
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
-    def __init__(self, ksize, node_offset=0):
+    def __init__(self, ksize, mxtfile, node_offset=0):
         self.ksize = ksize
 
         self.node_counter = 1 + node_offset
@@ -29,8 +29,8 @@ class Pathfinder(object):
         self.nodes_to_kmers = {}              # node IDs (int) to kmers
         self.kmers_to_nodes = {}              # kmers to node IDs
         self.adjacencies = {}                 # node to node
-        self.hashdict = OrderedDict()         # node to MinHash ID list
         self.labels = {}                      # nodes to set of labels
+        self.mxtfp = open(mxtfile, 'wt')
 
     def new_hdn(self, kmer):
         if kmer in self.kmers_to_nodes:
@@ -68,6 +68,11 @@ class Pathfinder(object):
         x.add(label)
         self.labels[kmer] = x
 
+    def add_minhash(self, path_id, mh):
+        # save minhash info
+        mins = " ".join(map(str, mh.get_mins()))
+        self.mxtfp.write('{0},{1}\n'.format(path_id, mins))
+
 
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     size, adj_kmers, visited = graph.traverse_linear_path(nk, degree_nodes,
@@ -91,8 +96,7 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     for kmer in v:
         mh.add_sequence(kmer)
 
-    # save minhash info
-    pathy.hashdict[path_id] = mh.get_mins()
+    pathy.add_minhash(path_id, mh)
 
 
 def main():
@@ -181,7 +185,7 @@ def main():
     ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(ksize, args.node_offset)
+    pathy = Pathfinder(ksize, mxtfile, args.node_offset)
 
     print('finding high degree nodes')
     if args.label and not args.no_label_hdn:
@@ -223,7 +227,7 @@ def main():
         k_str = khmer.reverse_hash(k, ksize)
         mh = MinHash(1, ksize)
         mh.add_sequence(k_str)
-        pathy.hashdict[k_id] = mh.get_mins()
+        pathy.add_minhash(k_id, mh)
 
         # find all the neighbors of this high-degree node.
         nbh = graph.neighbors(k)
@@ -277,12 +281,6 @@ def main():
         for k, v in pathy.adjacencies.items():
             for edge in v:
                 w.add_edge(k, edge, [])
-
-    print('saving mxtfile', mxtfile)
-    with open(mxtfile, 'w') as fp:
-        for k, v in pathy.hashdict.items():
-            fp.write("%d,%s\n" % (k, " ".join(map(str, v))))
-        fp.close()
 
     if args.label:
         print('note: used/assigned %d labels total' % (len(set(all_labels)),))
