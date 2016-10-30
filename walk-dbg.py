@@ -31,7 +31,7 @@ class Pathfinder(object):
         self.adjacencies = defaultdict(set)   # node to node
         self.labels = defaultdict(set)        # nodes to set of labels
         self.mxtfp = open(mxtfile, 'wt')
-        self.assemblyfp = open(mxtfile + '.assembly', 'wt')
+        #self.assemblyfp = open(mxtfile + '.assembly', 'wt')
 
     def new_hdn(self, kmer):
         "Add a new high-degree node to the cDBG."
@@ -104,12 +104,12 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     pathy.add_minhash(path_id, mh)
 
     ###
-    assembly = graph.assemble_linear_path(kmer, stop_bf)
-    if len(visited) - len(assembly) < graph.ksize():
-        print('WEIRD: {0}, {1} for pathid {2}'.format(len(visited),
-                                                      len(assembly),
-                                                      path_id))
-    pathy.add_path_assembly(path_id, assembly)
+    #assembly = graph.assemble_linear_path(kmer, stop_bf)
+    #if len(visited) - len(assembly) < graph.ksize():
+    #    print('WEIRD: {0}, {1} for pathid {2}'.format(len(visited),
+    #                                                  len(assembly),
+    #                                                  path_id))
+    #pathy.add_path_assembly(path_id, assembly)
 
 
 def main():
