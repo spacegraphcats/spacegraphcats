@@ -130,7 +130,7 @@ def main():
 
     # @CTB this is kind of a hack - nothing tricky going on, just want to
     # specify memory on the command line rather than graph size...
-    graph_tablesize = int(args.memory * 8.0 / 2.0)
+    graph_tablesize = int(args.memory * 8.0 / 4.0)
 
     assert args.ksize % 2, "ksize must be odd"
     if args.label_linear_segments or args.no_label_hdn:
