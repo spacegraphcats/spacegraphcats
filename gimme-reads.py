@@ -5,7 +5,7 @@ a file of reads, extracting all of the reads that contain k-mers with
 those hashes into a separate output file.
 """
 import khmer, khmer.utils
-from sourmash_lib import hash_murmur
+from sourmash_lib._minhash import hash_murmur
 import argparse
 import os
 import screed
