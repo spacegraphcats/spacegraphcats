@@ -16,7 +16,7 @@ DEFAULT_KSIZE=31
 DEFAULT_MEMORY = 1e8
 
 # minhash settings
-MH_SIZE_DIVISOR=10
+MH_SIZE_DIVISOR=50
 MH_MIN_SIZE=5
 
 class Pathfinder(object):
