@@ -6,7 +6,7 @@ import khmer
 from sourmash_lib import MinHash
 import screed
 import argparse
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import os, os.path
 from spacegraphcats import graph_parser
 
@@ -16,23 +16,25 @@ DEFAULT_KSIZE=31
 DEFAULT_MEMORY = 1e8
 
 # minhash settings
-MH_SIZE_DIVISOR=10
+MH_SIZE_DIVISOR=50
 MH_MIN_SIZE=5
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
-    def __init__(self, ksize, node_offset=0):
+    def __init__(self, ksize, mxtfile, node_offset=0):
         self.ksize = ksize
 
         self.node_counter = 1 + node_offset
         self.nodes = {}                       # node IDs (int) to size
         self.nodes_to_kmers = {}              # node IDs (int) to kmers
         self.kmers_to_nodes = {}              # kmers to node IDs
-        self.adjacencies = {}                 # node to node
-        self.hashdict = OrderedDict()         # node to MinHash ID list
-        self.labels = {}                      # nodes to set of labels
+        self.adjacencies = defaultdict(set)   # node to node
+        self.labels = defaultdict(set)        # nodes to set of labels
+        self.mxtfp = open(mxtfile, 'wt')
+        #self.assemblyfp = open(mxtfile + '.assembly', 'wt')
 
     def new_hdn(self, kmer):
+        "Add a new high-degree node to the cDBG."
         if kmer in self.kmers_to_nodes:
             return self.kmers_to_nodes[kmer]
 
@@ -46,41 +48,49 @@ class Pathfinder(object):
         return this_id
 
     def new_linear_node(self, visited, size):
+        "Add a new linear path to the cDBG."
         node_id = self.node_counter
         self.node_counter += 1
         self.nodes[node_id] = size
 
-        kmer = min(visited)               # represent linear nodes by min(hash)
+        kmer = min(visited)               # identify linear nodes by min(hash)
         self.nodes_to_kmers[node_id] = kmer
         self.kmers_to_nodes[kmer] = node_id
 
         return node_id
 
     def add_adjacency(self, node_id, adj):
+        "Add an edge between two nodes to the cDBG."
         node_id, adj = min(node_id, adj), max(node_id, adj)
         
-        x = self.adjacencies.get(node_id, set())
+        x = self.adjacencies[node_id]
         x.add(adj)
-        self.adjacencies[node_id] = x
 
     def add_label(self, kmer, label):
-        x = self.labels.get(kmer, set())
+        x = self.labels[kmer]
         x.add(label)
-        self.labels[kmer] = x
+
+    def add_minhash(self, path_id, mh):
+        # save minhash info to disk
+        mins = " ".join(map(str, mh.get_mins()))
+        self.mxtfp.write('{0},{1}\n'.format(path_id, mins))
+
+    def add_path_assembly(self, path_id, assembly):
+        self.assemblyfp.write('>{0}\n{1}\n'.format(path_id, assembly))
 
 
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     size, adj_kmers, visited = graph.traverse_linear_path(nk, degree_nodes,
                                                           stop_bf)
-    if not size:
+    if not size:                          # 0 length paths
         return
 
-    # get a ID
+    # get an ID for the new path
     path_id = pathy.new_linear_node(visited, size)
 
-    # for all adjacencies, add.
+    # add all adjacencies
     for kmer in adj_kmers:
-        adj_node_id = pathy.kmers_to_nodes.get(kmer)
+        adj_node_id = pathy.kmers_to_nodes[kmer]
         pathy.add_adjacency(path_id, adj_node_id)
 
     # next, calculate minhash from visited k-mers
@@ -91,8 +101,15 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     for kmer in v:
         mh.add_sequence(kmer)
 
-    # save minhash info
-    pathy.hashdict[path_id] = mh.get_mins()
+    pathy.add_minhash(path_id, mh)
+
+    ###
+    #assembly = graph.assemble_linear_path(kmer, stop_bf)
+    #if len(visited) - len(assembly) < graph.ksize():
+    #    print('WEIRD: {0}, {1} for pathid {2}'.format(len(visited),
+    #                                                  len(assembly),
+    #                                                  path_id))
+    #pathy.add_path_assembly(path_id, assembly)
 
 
 def main():
@@ -113,7 +130,7 @@ def main():
 
     # @CTB this is kind of a hack - nothing tricky going on, just want to
     # specify memory on the command line rather than graph size...
-    graph_tablesize = int(args.memory * 8.0 / 2.0)
+    graph_tablesize = int(args.memory * 8.0 / 4.0)
 
     assert args.ksize % 2, "ksize must be odd"
     if args.label_linear_segments or args.no_label_hdn:
@@ -181,7 +198,7 @@ def main():
     ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(ksize, args.node_offset)
+    pathy = Pathfinder(ksize, mxtfile, args.node_offset)
 
     print('finding high degree nodes')
     if args.label and not args.no_label_hdn:
@@ -223,7 +240,7 @@ def main():
         k_str = khmer.reverse_hash(k, ksize)
         mh = MinHash(1, ksize)
         mh.add_sequence(k_str)
-        pathy.hashdict[k_id] = mh.get_mins()
+        pathy.add_minhash(k_id, mh)
 
         # find all the neighbors of this high-degree node.
         nbh = graph.neighbors(k)
@@ -243,16 +260,22 @@ def main():
     if args.label and args.label_linear_segments:
         print('...doing labeling of linear segments by request.')
         n = args.label_offset
+        path_kmers = set(pathy.kmers_to_nodes)   # set of path identifiers
+
         for seqfile in args.seqfiles:
             for record in screed.open(seqfile):
                 if len(record.sequence) < ksize: continue
-
-                all_kmers = graph.get_kmer_hashes_as_hashset(record.sequence)
                 n += 1
 
-                for kmer, path_id in pathy.kmers_to_nodes.items():
-                    if kmer in all_kmers:
-                        pathy.add_label(kmer, n)
+                # all k-mers in this sequence --
+                all_kmers = graph.get_kmer_hashes_as_hashset(record.sequence)
+                all_kmers = set(all_kmers)
+
+                # are any of these k-mers path identifers? -> attach label
+                all_kmers.intersection_update(path_kmers)
+                for kmer in all_kmers:
+                    pathy.add_label(kmer, n)
+
 
     # save to GXT/MXT.
     print('saving gxtfile', gxtfile)
@@ -266,7 +289,7 @@ def main():
             kmer = pathy.nodes_to_kmers.get(k)
             l = ""
             if kmer:
-                labels = pathy.labels.get(kmer, "")
+                labels = pathy.labels.get(kmer)
                 if labels:
                     for x in labels:
                         label_counts[x] = label_counts.get(x, 0) + 1
@@ -277,12 +300,6 @@ def main():
         for k, v in pathy.adjacencies.items():
             for edge in v:
                 w.add_edge(k, edge, [])
-
-    print('saving mxtfile', mxtfile)
-    with open(mxtfile, 'w') as fp:
-        for k, v in pathy.hashdict.items():
-            fp.write("%d,%s\n" % (k, " ".join(map(str, v))))
-        fp.close()
 
     if args.label:
         print('note: used/assigned %d labels total' % (len(set(all_labels)),))
