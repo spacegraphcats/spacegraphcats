@@ -9,6 +9,7 @@ import argparse
 from collections import OrderedDict, defaultdict
 import os, os.path
 from spacegraphcats import graph_parser
+from cydata import intset, int_string_map, int_int_map
 
 
 # graph settings
@@ -25,11 +26,11 @@ class Pathfinder(object):
         self.ksize = ksize
 
         self.node_counter = 1 + node_offset
-        self.nodes = {}                       # node IDs (int) to size
-        self.nodes_to_kmers = {}              # node IDs (int) to kmers
-        self.kmers_to_nodes = {}              # kmers to node IDs
-        self.adjacencies = defaultdict(set)   # node to node
-        self.labels = defaultdict(set)        # nodes to set of labels
+        self.nodes = int_int_map()             # node IDs (int) to size
+        self.nodes_to_kmers = {}    # node IDs (int) to kmers
+        self.kmers_to_nodes = {}    # kmers to node IDs
+        self.adjacencies = defaultdict(intset) # node to node
+        self.labels = defaultdict(intset)      # nodes to set of labels
         self.mxtfp = open(mxtfile, 'wt')
         #self.assemblyfp = open(mxtfile + '.assembly', 'wt')
 
