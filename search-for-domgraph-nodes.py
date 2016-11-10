@@ -90,6 +90,13 @@ def main():
     _catlas = CAtlas.read(_catgxt, _catmxt, args.catlas_r)
     print('loaded CAtlas in {0:.1f} seconds.'.format(time.time() - start))
 
+    #delim_str = "#"*40
+    #print(delim_str)
+    #print("Catlas has {} levels".format(_catlas.level))
+    #for i,l in enumerate(_catlas.bfs()):
+    #    print(i,len(l))
+    #print(delim_str)
+    
     ### get the labels from the original graph
 
     # here, 'orig_to_labels' is a dictionary mapping De Bruijn graph node IDs
