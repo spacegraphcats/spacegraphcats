@@ -351,13 +351,13 @@ class CAtlas:
 
             scoreAfter = scoring_strat(frontier, mhquery, threshold)            
 
-            if scoreBefore >= scoreAfter:
+            if scoreBefore > scoreAfter:
                 frontier -= refinement
                 frontier.add(bad_node)
                 break
 
         res = set()
-        print((frontier))
+        #print((frontier))
         for node in frontier:
             res |= node.leaves()
 
