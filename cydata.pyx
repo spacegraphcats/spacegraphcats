@@ -1,6 +1,5 @@
 from libcpp.set cimport set
 from libcpp.map cimport map
-from libcpp.map cimport map
 from libcpp.string cimport string
 
 cdef class intset:
@@ -33,6 +32,9 @@ cdef class int_string_map:
 cdef class int_int_map:
      cdef public map[long, long] _values
 
+     def __getitem__(self, k):
+         return self._values[k]
+
      def __setitem__(self, k, v):
          self._values[k] = v
 
@@ -42,6 +44,10 @@ cdef class int_int_map:
      def __len__(self):
          return len(self._values)
 
+     def __iter__(self):
+         for k in self._values.keys():
+             yield k
+
      def items(self):
          for k, v in self._values.items():
              yield k, v
@@ -50,5 +56,5 @@ cdef class int_int_map:
          for v in self._values.values():
              yield v
 
-#     def __contains__(self, k):
-#         return self._values.get(k)
+     def __contains__(self, k):
+         return self._values.count(k)

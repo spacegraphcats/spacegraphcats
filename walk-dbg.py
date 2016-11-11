@@ -27,8 +27,8 @@ class Pathfinder(object):
 
         self.node_counter = 1 + node_offset
         self.nodes = int_int_map()             # node IDs (int) to size
-        self.nodes_to_kmers = {}    # node IDs (int) to kmers
-        self.kmers_to_nodes = {}    # kmers to node IDs
+        self.nodes_to_kmers = int_int_map()    # node IDs (int) to kmers
+        self.kmers_to_nodes = int_int_map()    # kmers to node IDs
         self.adjacencies = defaultdict(intset) # node to node
         self.labels = defaultdict(intset)      # nodes to set of labels
         self.mxtfp = open(mxtfile, 'wt')
