@@ -154,10 +154,21 @@ def main():
         print('fn:', fn)
         print('tn:', tn)
         print('')
-    sens = (100.0 * tp / (tp + fn))
-    spec = (100.0 * tn / (tn + fp))
-    print('sensitivity: %.1f' % (100.0 * tp / (tp + fn)))
-    print('specificity: %.1f' % (100.0 * tn / (tn + fp)))
+    
+        try:
+            print('sensitivity: %.1f' % (100.0 * tp / (tp + fn))) 
+            #If there is no true-positives or false-negatives divides by zero
+
+        except ZeroDivisionError:
+            print('Cannot calculate sensitivity')
+
+        try:
+            print('specificity: %.1f' % (100.0 * tn / (tn + fp)))
+            #If there is no false-positives or true-negatives divides by zero
+        except ZeroDivisionError:
+            print('Cannot calculate specificity')
+
+
 
 
 if __name__ == '__main__':

@@ -4,7 +4,8 @@ Take a list of murmurhashes output by gimme-dbg-nodes and sweep through
 a file of reads, extracting all of the reads that contain k-mers with
 those hashes into a separate output file.
 """
-import khmer, khmer.utils, khmer._minhash
+import khmer, khmer.utils
+from sourmash_lib._minhash import hash_murmur
 import argparse
 import os
 import screed
@@ -43,7 +44,7 @@ def main():
     for n, record in enumerate(screed.open(args.readfile)):
         keep = False
         for k in kmers(record.sequence, K):
-            if khmer._minhash.hash_murmur(k) in hashes:
+            if hash_murmur(k) in hashes:
                 keep = True
                 break
 
