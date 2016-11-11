@@ -8,14 +8,6 @@ sudo apt-get update && \
 python -m virtualenv env
 . env/bin/activate
 
-# install khmer
-git clone https://github.com/dib-lab/khmer.git -b minhash
-cd khmer
-make
-export PYTHONPATH=$(pwd)
-echo "export PYTHONPATH=$(pwd)" >> ~/.bashrc
-cd ..
-
 # get spacegraphcats
 git clone https://github.com/spacegraphcats/spacegraphcats.git
 
