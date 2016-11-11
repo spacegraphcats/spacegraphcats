@@ -31,6 +31,7 @@ class Pathfinder(object):
         self.adjacencies = defaultdict(set)   # node to node
         self.labels = defaultdict(set)        # nodes to set of labels
         self.mxtfp = open(mxtfile, 'wt')
+        #self.assemblyfp = open(mxtfile + '.assembly', 'wt')
 
     def new_hdn(self, kmer):
         "Add a new high-degree node to the cDBG."
@@ -73,6 +74,9 @@ class Pathfinder(object):
         # save minhash info to disk
         mins = " ".join(map(str, mh.get_mins()))
         self.mxtfp.write('{0},{1}\n'.format(path_id, mins))
+
+    def add_path_assembly(self, path_id, assembly):
+        self.assemblyfp.write('>{0}\n{1}\n'.format(path_id, assembly))
 
 
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
@@ -118,7 +122,7 @@ def main():
 
     # @CTB this is kind of a hack - nothing tricky going on, just want to
     # specify memory on the command line rather than graph size...
-    graph_tablesize = int(args.memory * 8.0 / 2.0)
+    graph_tablesize = int(args.memory * 8.0 / 4.0)
 
     assert args.ksize % 2, "ksize must be odd"
     if args.label_linear_segments or args.no_label_hdn:
