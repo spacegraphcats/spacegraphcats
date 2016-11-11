@@ -58,3 +58,33 @@ cdef class int_int_map:
 
      def __contains__(self, k):
          return self._values.count(k)
+
+cdef class int_intset_map:
+     cdef public map[long, set[int]] _values
+
+     def __getitem__(self, k):
+         return self._values[k]
+
+     def __setitem__(self, k, v):
+         self._values[k] = v
+
+     def get(self, k):
+         return self._values.get(k)
+
+     def __len__(self):
+         return len(self._values)
+
+     def __iter__(self):
+         for k in self._values.keys():
+             yield k
+
+     def items(self):
+         for k, v in self._values.items():
+             yield k, v
+
+     def values(self):
+         for v in self._values.values():
+             yield v
+
+     def __contains__(self, k):
+         return self._values.count(k)
