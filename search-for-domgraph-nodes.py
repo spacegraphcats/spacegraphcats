@@ -90,6 +90,13 @@ def main():
     _catlas = CAtlas.read(_catgxt, _catmxt, args.catlas_r)
     print('loaded CAtlas in {0:.1f} seconds.'.format(time.time() - start))
 
+    #delim_str = "#"*40
+    #print(delim_str)
+    #print("Catlas has {} levels".format(_catlas.level))
+    #for i,l in enumerate(_catlas.bfs()):
+    #    print(i,len(l))
+    #print(delim_str)
+    
     ### get the labels from the original graph
 
     # here, 'orig_to_labels' is a dictionary mapping De Bruijn graph node IDs
@@ -158,9 +165,9 @@ def main():
         elif args.strategy == 'gathermins2':
             match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel, expand=True)
         elif args.strategy == 'frontier-jacc':
-            match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.height_weighted_jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+            match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
         elif args.strategy == 'frontier-jacc-bl':
-            match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.height_weighted_jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+            match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
         elif args.strategy == 'frontier-height':
             match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.avg_height, CAtlas.Selection.largest_intersection_height, CAtlas.Refinement.greedy_coverage)
         elif args.strategy == 'frontier-height-bl':
