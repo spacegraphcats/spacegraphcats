@@ -333,11 +333,14 @@ class CAtlas:
         assert len(children) > 0
         size = 0
         maxlevel = max(children, key=lambda c: c.level).level
-        minhash = MinHash(hash_size, KSIZE)
-        for c in children:
-            assert c.level <= maxlevel
-            size += c.size
-            minhash.merge(c.minhash)
+        if hash_size:
+            minhash = MinHash(hash_size, KSIZE)
+            for c in children:
+                assert c.level <= maxlevel
+                size += c.size
+                minhash.merge(c.minhash)
+        else:
+            minhash = None
 
         return CAtlas(id, 'virtual', maxlevel+1, size, children, minhash)
 
@@ -547,8 +550,10 @@ class CAtlas:
     @staticmethod 
     def read(catlas_gxt, catlas_mxt, radius):
         graph, node_attr, _ = Graph.from_gxt(open(catlas_gxt, 'r'))
-        hashes = VertexDict.from_mxt(open(catlas_mxt, 'r'))
-        # hashes = defaultdict(int)
+        if catlas_mxt:
+            hashes = VertexDict.from_mxt(open(catlas_mxt, 'r'))
+        else:
+            hashes = {}
 
         # Parse attributes and partition catlas nodes into layers
         levels = defaultdict(set)
@@ -563,7 +568,7 @@ class CAtlas:
         for v in levels[0]:
             size = node_attr[v]['size']
             vertex = int(node_attr[v]['vertex'])
-            cat_nodes[v] = CAtlas(v, vertex, 0, size, [], hashes[v])
+            cat_nodes[v] = CAtlas(v, vertex, 0, size, [], hashes.get(v))
 
         max_level = max(levels.keys())
         assert(len(levels[max_level]) == 1)
@@ -577,7 +582,7 @@ class CAtlas:
                     vertex = int(vertex)
                 except ValueError:
                     pass
-                cat_nodes[v] = CAtlas(v, vertex, l, size, children, hashes[v])
+                cat_nodes[v] = CAtlas(v, vertex, l, size, children, hashes.get(v))
 
         root_id = next(iter(levels[max_level]))
         return cat_nodes[root_id]
