@@ -94,64 +94,72 @@ def load_and_compute_augg(project):
     return auggraph
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('project', help='Project directory. Must contain a .gxt and an .mxt file with the same base name \
-                                     as the directory.', type=str)
-parser.add_argument('r', help="The catlas' radius.", type=int )
-parser.add_argument('--min-id', help="Smallest id assigned to catlas nodes.", type=int, default=0)
-args = parser.parse_args()
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('project', help='Project directory. Must contain a .gxt and an .mxt file with the same base name \
+                                         as the directory.', type=str)
+    parser.add_argument('r', help="The catlas' radius.", type=int )
+    parser.add_argument('--min-id', help="Smallest id assigned to catlas nodes.", type=int, default=0)
+    args = parser.parse_args()
 
-project = AttributeDict()
-project.radius = args.r
+    project = AttributeDict()
+    project.radius = args.r
 
-if not path.isdir(args.project):
-    error("{} is not a valid pathname".format(args.project))
-if not path.exists(args.project):
-    error("Project directory {} does not exist".format(args.project))
+    if not path.isdir(args.project):
+        error("{} is not a valid pathname".format(args.project))
+    if not path.exists(args.project):
+        error("Project directory {} does not exist".format(args.project))
 
-project.path = args.project
-project.name = path.basename(path.normpath(args.project))
+    project.path = args.project
+    project.name = path.basename(path.normpath(args.project))
 
-report("Project {} in {}".format(project.name, project.path))
+    report("Project {} in {}".format(project.name, project.path))
 
-""" 
-    Make sure .gxt and .mxt with the right naming conventions exist and load them 
-"""
+    """ 
+        Make sure .gxt and .mxt with the right naming conventions exist and load them 
+    """
 
-file = read_project_file(project.path, project.name+".gxt")
-project.graph, project.node_attr, project.edge_attr = Graph.from_gxt(file)
+    file = read_project_file(project.path, project.name+".gxt")
+    project.graph, project.node_attr, project.edge_attr = Graph.from_gxt(file)
 
-if project.graph.has_loops():
-    report("Graph contains loops. Removing loops for further processing.")
-    project.graph.remove_loops()
+    if project.graph.has_loops():
+        report("Graph contains loops. Removing loops for further processing.")
+        project.graph.remove_loops()
 
-report("Loaded graph with {} vertices, {} edges and {} components".format(len(project.graph),project.graph.num_edges(),project.graph.num_components()))
+    report("Loaded graph with {} vertices, {} edges and {} components".format(len(project.graph),project.graph.num_edges(),project.graph.num_components()))
 
-file = read_project_file(project.path, project.name+".mxt")
-project.minhashes = VertexDict.from_mxt(file)
+    file = read_project_file(project.path, project.name+".mxt")
+    project.minhashes = VertexDict.from_mxt(file)
 
-for v in project.graph:
-    if v not in project.minhashes:
-        warn("Vertex {} is missing minhashes".format(v))
+    for v in project.graph:
+        if v not in project.minhashes:
+            warn("Vertex {} is missing minhashes".format(v))
 
-report("Loaded minhashes for graph")
-
-
-""" Compute / load r-dominating set """
-
-report("\nDomset computation\n")
-project.domination = LazyDomination(project).compute()
+    report("Loaded minhashes for graph")
 
 
-""" Compute catlas """
+    """ Compute / load r-dominating set """
 
-report("\nCatlas computation\n")
-vsizes = dict( (v, project.node_attr[v]['size']) for v in project.graph)
-builder = CAtlasBuilder(project.graph, vsizes, project.domination, project.minhashes)
-catlas = builder.build()
-report("\nCatlas done")
+    report("\nDomset computation\n")
+    project.domination = LazyDomination(project).compute()
 
-for i,level in enumerate(catlas.bfs()):
-    print(i, len(level))
 
-catlas.write(project.path, project.name, project.radius, args.min_id)
+    """ Compute catlas """
+
+    report("\nCatlas computation\n")
+    vsizes = dict( (v, project.node_attr[v]['size']) for v in project.graph)
+    builder = CAtlasBuilder(project.graph, vsizes, project.domination, project.minhashes)
+    catlas = builder.build()
+    report("\nCatlas done")
+
+    for i,level in enumerate(catlas.bfs()):
+        print(i, len(level))
+
+    catlas.write(project.path, project.name, project.radius, args.min_id)
+
+    sys.exit(0)
+
+
+if __name__ == '__main__':
+    main()
+
