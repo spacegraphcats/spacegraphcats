@@ -75,7 +75,7 @@ def test_build_catlas_tr_cross():
         assert 'Catlas done' in out
 
 
-def _build_catlas_from_gz(gxtfile, mxtfile, tempdir, level=5):
+def _build_catlas_from_gz(gxtfile, mxtfile, tempdir, level=5, build_mxt=True):
     # construct catlas name from first component of gxtfile
     catlas_name = os.path.basename(gxtfile).split('.')[0]
     catlas_dir = os.path.join(tempdir, catlas_name)
@@ -94,8 +94,10 @@ def _build_catlas_from_gz(gxtfile, mxtfile, tempdir, level=5):
             fp.write(data)
 
     # run build-catlas!
-    status, out, err = utils.runscript('build-catlas.py',
-                                       [catlas_dir, str(level)])
+    args = [catlas_dir, str(level)]
+    if not build_mxt:
+        args.append('--no-merge-mxt')
+    status, out, err = utils.runscript('build-catlas.py', args)
     print(out)
     # make sure it worked...
     assert 'Catlas done' in out
@@ -125,6 +127,42 @@ def test_search_new_catlas():
     with utils.TempDirectory() as tempdir:
         dirname = _build_catlas_from_gz(tr_cross_gxt, tr_cross_mxt,
                                         tempdir)
+
+        status, out, err = utils.runscript('search-catlas-mh.py',
+                            [dirname, mh1_txt], in_directory=tempdir)
+        assert 'tr-1.fa.sig.dump.txt,0.488,0.976,0,0' in out
+
+        status, out, err = utils.runscript('search-catlas-mh.py',
+                            [dirname, mh2_txt], in_directory=tempdir)
+        assert 'tr-2.fa.sig.dump.txt,0.500,1.000,1,1' in out
+
+        status, out, err = utils.runscript('search-catlas-mh.py',
+                            [dirname, mh3_txt], in_directory=tempdir)
+
+        assert out.endswith('levels\n---\n'), (out,)
+        print(out)
+
+
+def test_search_new_catlas_merge_mxt_on_disk():
+    # build a catlas and then search it --
+    tr_cross_gxt = utils.get_test_data('tr-cross.gxt.gz')
+    tr_cross_mxt = utils.get_test_data('tr-cross.mxt.gz')
+
+    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
+    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
+    mh3_txt = utils.get_test_data('acido-short.fa.sig.dump.txt')
+
+    with utils.TempDirectory() as tempdir:
+        dirname = _build_catlas_from_gz(tr_cross_gxt, tr_cross_mxt,
+                                        tempdir, build_mxt=False)
+
+        # check to make sure no catlas mxt file exists
+        catlas_mxt = os.path.join(dirname, 'tr-cross.catlas.5.mxt')
+        assert not os.path.exists(catlas_mxt)
+
+        # run merge
+        utils.runscript('merge-mxt-on-disk.py', [dirname, '5'])
+        assert os.path.exists(catlas_mxt)
 
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh1_txt], in_directory=tempdir)
