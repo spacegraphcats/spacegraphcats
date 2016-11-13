@@ -5,6 +5,7 @@ import sqlite3
 import argparse
 from sourmash_lib import MinHash
 from collections import defaultdict
+from spacegraphcats.catlas import CAtlas
 
 
 MINHASH_SIZE=1000
@@ -19,6 +20,8 @@ def connect_db(filepath):
     cur.execute("PRAGMA locking_mode=EXCLUSIVE")
 
     cur.execute('''CREATE TABLE graph_minhashes (node_id INTEGER PRIMARY KEY,
+                                                 mins TEXT)''')
+    cur.execute('''CREATE TABLE domgraph_minhashes (node_id INTEGER PRIMARY KEY,
                                                  mins TEXT)''')
     cur.execute('''CREATE TABLE catlas_minhashes (node_id INTEGER PRIMARY KEY,
                                                   mins TEXT)''')
@@ -55,28 +58,37 @@ def export_catlas_mxt(conn, fp):
     return n
 
 
-def merge_graph_nodes(cur, graph_node_list, catlas_node):
+def merge_nodes(cur, child_node_list, parent_node, from_tablename, to_tablename):
     minlist = []
 
-    for graph_node in graph_node_list:
-        cur.execute('SELECT mins FROM graph_minhashes WHERE node_id=?', (graph_node,))
-        mins = cur.fetchone()[0]
+    for graph_node in child_node_list:
+        cur.execute('SELECT mins FROM {} WHERE node_id=?'.format(from_tablename),
+                    (graph_node,))
+        try:
+            mins = cur.fetchone()[0]
+        except TypeError as e:
+            print('ERROR - no results for node {} in table {} (catlas {})'.format(graph_node, from_tablename, parent_node))
+            continue
         mins = list(map(int, mins.split()))
         minlist.append(mins)
+
+    #assert len(minlist) == len(child_node_list)
 
     # merge (note that minhashes are implicitly merged when you simply add all
     # the hashes to one MH).
     merged_mh = MinHash(MINHASH_SIZE, MINHASH_K)
     for mins in minlist:
-        print('XXX', mins)
         for h in mins:
             merged_mh.add_hash(h)
 
-    # add
+    # add into catlas minhashes
     merged_mins = " ".join(map(str, merged_mh.get_mins()))
-    print('YYY', merged_mins)
-    cur.execute('INSERT INTO catlas_minhashes (node_id, mins) VALUES (?, ?)',
-                (catlas_node, merged_mins))
+    try:
+        cur.execute('INSERT INTO {} (node_id, mins) VALUES (?, ?)'.format(to_tablename),
+                    (parent_node, merged_mins))
+    except sqlite3.IntegrityError as e:
+        print('XXX', child_node_list, catlas_node)
+        print(str(e))
 
 
 def load_dom_to_orig(assignment_vxt_file):
@@ -121,9 +133,44 @@ def main():
     n = import_graph_mxt(conn, graphmxt)
     print('imported {} graph minhashes'.format(n))
 
+    # create minhashes for catlas leaf nodes.
     cur = conn.cursor()
-    for dom_node, graph_nodes in dom_to_orig.items():
-        merge_graph_nodes(cur, graph_nodes, dom_node)
+
+    for n, (dom_node, graph_nodes) in enumerate(dom_to_orig.items()):
+        merge_nodes(cur, graph_nodes, dom_node, 'graph_minhashes', 'domgraph_minhashes')
+    print('created {} leaf node MinHashes via merging'.format(n + 1))
+
+    # this gives us the leaf level minhashes that we need for the rest.
+    # now, eliminate the assignment dict & go for the catlas structure.
+    del dom_to_orig
+    catlas = CAtlas.read(catgxt, None, args.catlas_r)
+
+    # for level 0, merge the shadows (domgraph nodes)
+    print('merging level 0')
+    n = 0
+    m = 0
+    select = lambda node: node.level == 0
+    for node in catlas.nodes(select):
+        domgraph_nodes = node.shadow()
+        merge_nodes(cur, domgraph_nodes, node.id,
+                    'domgraph_minhashes',
+                    'catlas_minhashes')
+        n += 1
+        m += len(domgraph_nodes)
+    print('level 0: merged {} children into {} nodes'.format(n, m))
+
+    # for each level above 0, merge the children
+    for level in range(1, catlas.level + 1):
+        print('merging at level:', level)
+        n = 0
+        m = 0
+        select = lambda node: node.level == level
+        for node in catlas.nodes(select):
+            merge_nodes(cur, [ n.id for n in node.children ],
+                        node.id, 'catlas_minhashes', 'catlas_minhashes')
+            n += 1
+            m += len(node.children)
+        print('level {}: merged {} children into {} nodes'.format(level, n, m))
     conn.commit()
 
     with open(catmxt, 'wt') as fp:
