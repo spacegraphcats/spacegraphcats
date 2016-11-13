@@ -165,7 +165,7 @@ def main():
         m = 0
         select = lambda node: node.level == level
         for node in catlas.nodes(select):
-            merge_nodes(cur, [ n.id for n in node.children ],
+            merge_nodes(cur, [ x.id for x in node.children ],
                         node.id, 'catlas_minhashes', 'catlas_minhashes')
             n += 1
             m += len(node.children)
