@@ -156,7 +156,7 @@ def main():
                     'catlas_minhashes')
         n += 1
         m += len(domgraph_nodes)
-    print('level 0: merged {} children into {} nodes'.format(n, m))
+    print('level 0: merged {} children into {} nodes'.format(m, n))
 
     # for each level above 0, merge the children
     for level in range(1, catlas.level + 1):
@@ -169,7 +169,7 @@ def main():
                         node.id, 'catlas_minhashes', 'catlas_minhashes')
             n += 1
             m += len(node.children)
-        print('level {}: merged {} children into {} nodes'.format(level, n, m))
+        print('level {}: merged {} children into {} nodes'.format(level, m, n))
     conn.commit()
 
     with open(catmxt, 'wt') as fp:
