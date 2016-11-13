@@ -13,6 +13,7 @@ MINHASH_K=0
 
 
 def connect_db(filepath):
+    "Connect to the given sqlite DB."
     conn = sqlite3.connect(filepath)
     cur = conn.cursor()
     
@@ -21,7 +22,7 @@ def connect_db(filepath):
 
     cur.execute('''CREATE TABLE graph_minhashes (node_id INTEGER PRIMARY KEY,
                                                  mins TEXT)''')
-    cur.execute('''CREATE TABLE domgraph_minhashes (node_id INTEGER PRIMARY KEY,
+    cur.execute('''CREATE TABLE dom_minhashes (node_id INTEGER PRIMARY KEY,
                                                  mins TEXT)''')
     cur.execute('''CREATE TABLE catlas_minhashes (node_id INTEGER PRIMARY KEY,
                                                   mins TEXT)''')
@@ -29,6 +30,7 @@ def connect_db(filepath):
     return conn
 
 def import_graph_mxt(conn, mxt):
+    "Load all of the minhashes from an MXT file into 'graph_minhashes'."
     n = 0
     with open(mxt, 'rt') as fp:
         cur = conn.cursor()
@@ -47,6 +49,7 @@ def import_graph_mxt(conn, mxt):
 
 
 def export_catlas_mxt(conn, fp):
+    "Dump all of the minhashes from 'catlas_minhashes' to an MXT file."
     n = 0
     cur = conn.cursor()
 
@@ -58,41 +61,37 @@ def export_catlas_mxt(conn, fp):
     return n
 
 
-def merge_nodes(cur, child_node_list, parent_node, from_tablename, to_tablename):
+def merge_nodes(cur, child_node_list, parent_node,
+                from_tablename, to_tablename):
+    """Merge child_node_list from 'from_tablename' into parent_node in
+    'to_tablename'."""
     minlist = []
 
     for graph_node in child_node_list:
         cur.execute('SELECT mins FROM {} WHERE node_id=?'.format(from_tablename),
                     (graph_node,))
-        try:
-            mins = cur.fetchone()[0]
-        except TypeError as e:
-            print('ERROR - no results for node {} in table {} (catlas {})'.format(graph_node, from_tablename, parent_node))
-            continue
+        mins = cur.fetchone()[0]
         mins = list(map(int, mins.split()))
         minlist.append(mins)
 
-    #assert len(minlist) == len(child_node_list)
+    assert len(minlist) == len(child_node_list)
 
-    # merge (note that minhashes are implicitly merged when you simply add all
+    # merge!
+    # (note that minhashes are implicitly merged when you simply add all
     # the hashes to one MH).
     merged_mh = MinHash(MINHASH_SIZE, MINHASH_K)
     for mins in minlist:
         for h in mins:
             merged_mh.add_hash(h)
 
-    # add into catlas minhashes
+    # add into merged minhashes table.
     merged_mins = " ".join(map(str, merged_mh.get_mins()))
-    try:
-        cur.execute('INSERT INTO {} (node_id, mins) VALUES (?, ?)'.format(to_tablename),
-                    (parent_node, merged_mins))
-    except sqlite3.IntegrityError as e:
-        print('XXX', child_node_list, catlas_node)
-        print(str(e))
+    cur.execute('INSERT INTO {} (node_id, mins) VALUES (?, ?)'.format(to_tablename),
+                (parent_node, merged_mins))
 
 
 def load_dom_to_orig(assignment_vxt_file):
-    "Load the mapping between level0/dom nodes and the original DBG nodes."
+    "Load the mapping between dom nodes and the original DBG nodes."
     dom_to_orig = defaultdict(list)
     for line in open(assignment_vxt_file, 'rt'):
         orig_node, dom_list = line.strip().split(',')
@@ -137,7 +136,7 @@ def main():
     cur = conn.cursor()
 
     for n, (dom_node, graph_nodes) in enumerate(dom_to_orig.items()):
-        merge_nodes(cur, graph_nodes, dom_node, 'graph_minhashes', 'domgraph_minhashes')
+        merge_nodes(cur, graph_nodes, dom_node, 'graph_minhashes', 'dom_minhashes')
     print('created {} leaf node MinHashes via merging'.format(n + 1))
 
     # this gives us the leaf level minhashes that we need for the rest.
@@ -153,7 +152,7 @@ def main():
     for node in catlas.nodes(select):
         domgraph_nodes = node.shadow()
         merge_nodes(cur, domgraph_nodes, node.id,
-                    'domgraph_minhashes',
+                    'dom_minhashes',
                     'catlas_minhashes')
         n += 1
         m += len(domgraph_nodes)
