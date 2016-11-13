@@ -157,6 +157,7 @@ def main():
         n += 1
         m += len(domgraph_nodes)
     print('level 0: merged {} children into {} nodes'.format(m, n))
+    conn.commit()
 
     # for each level above 0, merge the children
     for level in range(1, catlas.level + 1):
@@ -170,7 +171,7 @@ def main():
             n += 1
             m += len(node.children)
         print('level {}: merged {} children into {} nodes'.format(level, m, n))
-    conn.commit()
+        conn.commit()
 
     with open(catmxt, 'wt') as fp:
         n = export_catlas_mxt(conn, fp)
