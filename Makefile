@@ -1,8 +1,6 @@
 all:
-	python setup.py build_ext -i
 
 test:
-	python setup.py build_ext -i
 	py.test
 
 clean:
