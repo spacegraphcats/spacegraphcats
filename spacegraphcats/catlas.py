@@ -29,7 +29,10 @@ class CAtlasBuilder:
         self.sizes = vsizes
 
         self.level_threshold = 10
-        self.minhash_size = 1000
+        if minhashes:
+            self.minhash_size = 1000
+        else:
+            self.minhash_size = 0
 
     def set_level_threshold(self, thres):
         self.level_threshold = thres
@@ -46,15 +49,16 @@ class CAtlasBuilder:
         curr_domgraph = self.domgraph.subgraph(comp)
 
         # Collect hashes of the assigned vertices 
-        leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size, KSIZE))        
-        for u in vertices:
-            for v in self.assignment[u]:
-                leaf_hashes[v].merge(self.minhashes[u])
+        leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size, KSIZE))
+        if self.minhashes:
+            for u in vertices:
+                for v in self.assignment[u]:
+                    leaf_hashes[v].merge(self.minhashes[u])
 
         # Create level 0
         id = start_id
         for v in comp:
-            curr_level[v] = CAtlas.create_leaf(id, v, self.sizes[v], leaf_hashes[v])
+            curr_level[v] = CAtlas.create_leaf(id, v, self.sizes[v], leaf_hashes.get(v))
             id += 1
 
         # Build remaining levels
@@ -314,11 +318,14 @@ class CAtlas:
         assert len(children) > 0
         size = 0
         level = next(iter(children)).level
-        minhash = MinHash(hash_size, KSIZE)
-        for c in children:
-            assert c.level == level
-            size += c.size
-            minhash.merge(c.minhash)
+        if hash_size:
+            minhash = MinHash(hash_size, KSIZE)
+            for c in children:
+                assert c.level == level
+                size += c.size
+                minhash.merge(c.minhash)
+        else:
+            minhash = None
         return CAtlas(id, vertex, level+1, size, children, minhash)
 
     @staticmethod
@@ -525,6 +532,9 @@ class CAtlas:
                     for c in v.children:
                         writer.add_edge(v.id, c.id)
             writer.done()
+
+        if not self.minhash:
+            return
 
         # Store hashes separately in .mxt
         with open(path.join(projectpath, "{}.catlas.{}.mxt".format(projectname, radius)), 'w') as f:

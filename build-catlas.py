@@ -100,6 +100,8 @@ def main():
                                          as the directory.', type=str)
     parser.add_argument('r', help="The catlas' radius.", type=int )
     parser.add_argument('--min-id', help="Smallest id assigned to catlas nodes.", type=int, default=0)
+    parser.add_argument('--no-merge-mxt', help='do not merge MinHashes',
+                        action='store_true')
     args = parser.parse_args()
 
     project = AttributeDict()
@@ -128,14 +130,18 @@ def main():
 
     report("Loaded graph with {} vertices, {} edges and {} components".format(len(project.graph),project.graph.num_edges(),project.graph.num_components()))
 
-    file = read_project_file(project.path, project.name+".mxt")
-    project.minhashes = VertexDict.from_mxt(file)
+    if not args.no_merge_mxt:
+        file = read_project_file(project.path, project.name+".mxt")
+        project.minhashes = VertexDict.from_mxt(file)
 
-    for v in project.graph:
-        if v not in project.minhashes:
-            warn("Vertex {} is missing minhashes".format(v))
+        for v in project.graph:
+            if v not in project.minhashes:
+                warn("Vertex {} is missing minhashes".format(v))
 
-    report("Loaded minhashes for graph")
+        report("Loaded minhashes for graph")
+    else:
+        report("Per --no-merge-mxt, NOT loading minhashes for graph.")
+        project.minhashes = None
 
 
     """ Compute / load r-dominating set """
@@ -162,4 +168,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
