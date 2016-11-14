@@ -161,7 +161,7 @@ def test_search_new_catlas_merge_mxt_on_disk():
         assert not os.path.exists(catlas_mxt)
 
         # run merge
-        utils.runscript('merge-mxt-on-disk.py', [dirname, '5'])
+        utils.runscript('merge-mxt-in-memory.py', [dirname, '5'])
         assert os.path.exists(catlas_mxt)
 
         status, out, err = utils.runscript('search-catlas-mh.py',
