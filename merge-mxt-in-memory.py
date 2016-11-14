@@ -12,8 +12,6 @@ MINHASH_K=0
 
 def import_graph_mxt(mxt):
     "Load all of the minhashes from an MXT file into a dict."
-    n = 0
-
     d = {}
     with open(mxt, 'rt') as fp:
         for line in fp:
@@ -23,7 +21,7 @@ def import_graph_mxt(mxt):
 
             d[g_id] = list(map(int, mins.split(' ')))
 
-    return n, d
+    return d
 
 
 def export_catlas_mxt(catlas_minhashes, fp):
@@ -96,8 +94,8 @@ def main():
     dom_to_orig = load_dom_to_orig(assignment_vxt)
     
     # load MXT into dict
-    n, graph_minhashes = import_graph_mxt(graphmxt)
-    print('imported {} graph minhashes'.format(n))
+    graph_minhashes = import_graph_mxt(graphmxt)
+    print('imported {} graph minhashes'.format(len(graph_minhashes)))
 
     # create minhashes for catlas leaf nodes.
     dom_minhashes = {}
