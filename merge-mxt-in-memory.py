@@ -5,6 +5,7 @@ import argparse
 from sourmash_lib import MinHash
 from collections import defaultdict
 from spacegraphcats.catlas import CAtlas
+import time
 
 
 MINHASH_SIZE=1000
@@ -115,6 +116,8 @@ def main():
     m = 0
     select = lambda node: node.level == 0
     catlas_minhashes = {}
+
+    start_time = time.time()
     for node in catlas.nodes(select):
         assert node.id not in catlas_minhashes
         domgraph_nodes = node.shadow()
@@ -122,11 +125,14 @@ def main():
         catlas_minhashes[node.id] = mins
         n += 1
         m += len(domgraph_nodes)
+    end_time = time.time()
 
     print('level 0: merged {} children into {} nodes'.format(m, n))
+    print('{:.1f} seconds'.format(end_time - start_time))
 
     # for each level above 0, merge the children
     for level in range(1, catlas.level + 1):
+        start_time = time.time()
         print('merging at level:', level)
         n = 0
         m = 0
@@ -138,7 +144,9 @@ def main():
             catlas_minhashes[node.id] = mins
             n += 1
             m += len(node.children)
+        end_time = time.time()
         print('level {}: merged {} children into {} nodes'.format(level, m, n))
+        print('{:.1f} seconds'.format(end_time - start_time))
 
     with open(catmxt, 'wt') as fp:
         n = export_catlas_mxt(catlas_minhashes, fp)
