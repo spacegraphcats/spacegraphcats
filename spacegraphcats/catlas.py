@@ -356,12 +356,12 @@ class CAtlas:
                 frontier.add(bad_node)
                 break
 
-        res = set()
+        #res = set()
         #print((frontier))
-        for node in frontier:
-            res |= node.leaves()
+        #for node in frontier:
+        #    res |= node.leaves()
 
-        return res
+        return frontier
 
     def query_blacklist(self, mhquery, threshold, scoring_strat, selection_strat, refinement_strat):
         frontier = set([self])
@@ -390,11 +390,11 @@ class CAtlas:
                 frontier.add(bad_node)
                 blacklist.add(bad_node)
 
-        res = set()
-        for node in frontier:
-            res |= node.leaves()
+        #res = set()
+        #for node in frontier:
+        #    res |= node.leaves()
 
-        return res        
+        return frontier
 
     def query_best_match(self, mhquery):
         best_score = -1
@@ -447,13 +447,18 @@ class CAtlas:
 
         return res        
 
-    def leaves(self):
-        if len(self.children) == 0:
-            assert(self.level == 0)
+    def leaves(self, visited = None):
+        if visited is None:
+            visited = set([self])
+        if self.level==0:
+            #assert(self.level == 0)
             return set([self.id])
         res = set()
+        #print("leaves", self.id, len(self.children), len(visited))
         for c in self.children:
-            res |= c.leaves()
+            if c not in visited:
+                visited.add(c)
+                res |= c.leaves(visited)
         return res
 
     def leaves2(self):
@@ -465,12 +470,16 @@ class CAtlas:
             res |= c.leaves2()
         return res
 
-    def shadow(self):
+    def shadow(self, visited=None):
+        if visited is None:
+            visited = set([self])
         if self.level == 0:
             return set([self.vertex])
         res = set()
         for c in self.children:
-            res |= c.shadow()
+            if c not in visited:
+                visited.add(c)
+                res |= c.shadow(visited)
         return res        
 
     def nodes(self, select=None):
