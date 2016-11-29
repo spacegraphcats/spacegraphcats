@@ -29,7 +29,10 @@ class CAtlasBuilder:
         self.sizes = vsizes
 
         self.level_threshold = 10
-        self.minhash_size = 1000
+        if minhashes:
+            self.minhash_size = 1000
+        else:
+            self.minhash_size = 0
 
     def set_level_threshold(self, thres):
         self.level_threshold = thres
@@ -46,15 +49,16 @@ class CAtlasBuilder:
         curr_domgraph = self.domgraph.subgraph(comp)
 
         # Collect hashes of the assigned vertices 
-        leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size, KSIZE))        
-        for u in vertices:
-            for v in self.assignment[u]:
-                leaf_hashes[v].merge(self.minhashes[u])
+        leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size, KSIZE))
+        if self.minhashes:
+            for u in vertices:
+                for v in self.assignment[u]:
+                    leaf_hashes[v].merge(self.minhashes[u])
 
         # Create level 0
         id = start_id
         for v in comp:
-            curr_level[v] = CAtlas.create_leaf(id, v, self.sizes[v], leaf_hashes[v])
+            curr_level[v] = CAtlas.create_leaf(id, v, self.sizes[v], leaf_hashes.get(v))
             id += 1
 
         # Build remaining levels
@@ -314,11 +318,14 @@ class CAtlas:
         assert len(children) > 0
         size = 0
         level = next(iter(children)).level
-        minhash = MinHash(hash_size, KSIZE)
-        for c in children:
-            assert c.level == level
-            size += c.size
-            minhash.merge(c.minhash)
+        if hash_size:
+            minhash = MinHash(hash_size, KSIZE)
+            for c in children:
+                assert c.level == level
+                size += c.size
+                minhash.merge(c.minhash)
+        else:
+            minhash = None
         return CAtlas(id, vertex, level+1, size, children, minhash)
 
     @staticmethod
@@ -326,11 +333,14 @@ class CAtlas:
         assert len(children) > 0
         size = 0
         maxlevel = max(children, key=lambda c: c.level).level
-        minhash = MinHash(hash_size, KSIZE)
-        for c in children:
-            assert c.level <= maxlevel
-            size += c.size
-            minhash.merge(c.minhash)
+        if hash_size:
+            minhash = MinHash(hash_size, KSIZE)
+            for c in children:
+                assert c.level <= maxlevel
+                size += c.size
+                minhash.merge(c.minhash)
+        else:
+            minhash = None
 
         return CAtlas(id, 'virtual', maxlevel+1, size, children, minhash)
 
@@ -535,6 +545,9 @@ class CAtlas:
                         writer.add_edge(v.id, c.id)
             writer.done()
 
+        if not self.minhash:
+            return
+
         # Store hashes separately in .mxt
         with open(path.join(projectpath, "{}.catlas.{}.mxt".format(projectname, radius)), 'w') as f:
             for level in self.bfs():
@@ -546,8 +559,10 @@ class CAtlas:
     @staticmethod 
     def read(catlas_gxt, catlas_mxt, radius):
         graph, node_attr, _ = Graph.from_gxt(open(catlas_gxt, 'r'))
-        hashes = VertexDict.from_mxt(open(catlas_mxt, 'r'))
-        # hashes = defaultdict(int)
+        if catlas_mxt:
+            hashes = VertexDict.from_mxt(open(catlas_mxt, 'r'))
+        else:
+            hashes = {}
 
         # Parse attributes and partition catlas nodes into layers
         levels = defaultdict(set)
@@ -562,7 +577,7 @@ class CAtlas:
         for v in levels[0]:
             size = node_attr[v]['size']
             vertex = int(node_attr[v]['vertex'])
-            cat_nodes[v] = CAtlas(v, vertex, 0, size, [], hashes[v])
+            cat_nodes[v] = CAtlas(v, vertex, 0, size, [], hashes.get(v))
 
         max_level = max(levels.keys())
         assert(len(levels[max_level]) == 1)
@@ -576,7 +591,7 @@ class CAtlas:
                     vertex = int(vertex)
                 except ValueError:
                     pass
-                cat_nodes[v] = CAtlas(v, vertex, l, size, children, hashes[v])
+                cat_nodes[v] = CAtlas(v, vertex, l, size, children, hashes.get(v))
 
         root_id = next(iter(levels[max_level]))
         return cat_nodes[root_id]
