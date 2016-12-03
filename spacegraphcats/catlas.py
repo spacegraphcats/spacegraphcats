@@ -413,7 +413,7 @@ class CAtlas:
             score = mhquery.compare(n.minhash)
             if score > best_score:
                 best_node, best_score = n, score
-        return [best_node.id]
+        return [best_node]
 
     def query_level(self, mhquery, level):
         res = []
@@ -422,7 +422,7 @@ class CAtlas:
             score2 = n.minhash.compare(mhquery)
 
             if score1 >= 0.05 or score2 >= 0.05:
-                res.append(n.id)
+                res.append(n)
         return res
 
     def query_gather_mins(self, mhquery, level, expand=False):
@@ -452,7 +452,7 @@ class CAtlas:
         for (_, n) in matches:
             nodemins = set(n.minhash.get_mins())
             if (nodemins - covered).intersection(query_mins):
-                res.append(n.id)
+                res.append(n)
                 covered.update(nodemins)
 
         return res        
