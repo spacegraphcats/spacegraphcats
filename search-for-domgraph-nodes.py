@@ -181,7 +181,7 @@ def main():
             sys.exit(-1)
 
         leaves = set()
-        for n in _catlas.nodes(match_nodes):
+        for n in (match_nodes):
             leaves.update(n.shadow())
 
         ### finally, count the matches/mismatches between MinHash-found nodes
