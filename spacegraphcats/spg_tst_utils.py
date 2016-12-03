@@ -50,16 +50,17 @@ def _runscript(scriptname, package='spacegraphcats'):
             scriptname, namespace)
         return 0
     except pkg_resources.ResolutionError:
-        path = scriptpath(scriptname, package=package)
+        pass
+    path = scriptpath(scriptname, package=package)
 
-        scriptfile = os.path.join(path, scriptname)
-        print('%s resolves to %s' % (scriptname, scriptfile))
+    scriptfile = os.path.join(path, scriptname)
+    print('%s resolves to %s' % (scriptname, scriptfile))
+    if os.path.isfile(scriptfile):
         if os.path.isfile(scriptfile):
-            if os.path.isfile(scriptfile):
-                exec(  # pylint: disable=exec-used
-                    compile(open(scriptfile).read(), scriptfile, 'exec'),
-                    namespace)
-                return 0
+            exec(  # pylint: disable=exec-used
+                compile(open(scriptfile).read(), scriptfile, 'exec'),
+                namespace)
+            return 0
 
     return -1
 
