@@ -40,6 +40,8 @@ def load_orig_sizes_and_labels(original_graph_filename):
     orig_sizes = defaultdict(int)
     def parse_source_graph_labels(node_id, size, names, vals):
         assert names[0] == 'labels'
+        if not vals:
+            return
         labels = vals[0]
         orig_sizes[node_id] = size
         if labels:
