@@ -151,7 +151,8 @@ def main():
         label_list = [ i+1 for i in range(len(args.mh_files)) ]
     assert len(label_list) == len(args.mh_files)
     
-    tree = SBT.load(args.catlas_prefix, leaf_loader=SigLeaf.load)
+    tree = SBT.load(os.path.basename(args.catlas_prefix),
+                    leaf_loader=SigLeaf.load)
 
     def search(node, mh, count):
         mins = mh.get_mins()
