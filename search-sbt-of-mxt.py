@@ -1,0 +1,217 @@
+#! /usr/bin/env python3
+import os
+import sys
+import argparse
+from spacegraphcats import graph_parser
+from sourmash_lib import MinHash
+from collections import defaultdict
+from spacegraphcats.catlas import CAtlas
+import time
+import sourmash_lib
+from sourmash_lib.sbt import SBT, GraphFactory
+from sourmash_lib.sbtmh import search_minhashes, SigLeaf
+from sourmash_lib import signature
+
+
+MINHASH_SIZE=1000
+MINHASH_K=31
+
+def import_graph_mxt(mxt):
+    "Load all of the minhashes from an MXT file into a dict."
+    d = {}
+    with open(mxt, 'rt') as fp:
+        for line in fp:
+            line = line.split(',')
+            g_id = int(line[0])
+            mins = line[1]
+
+            mins = list(map(int, mins.split(' ')))
+            mh = sourmash_lib.MinHash(len(mins), MINHASH_K)
+            for k in mins:
+                mh.add_hash(k)
+            d[g_id] = mh
+
+    return d
+
+
+def load_orig_sizes_and_labels(original_graph_filename):
+    "Load the sizes & labels for the original DBG node IDs"
+    orig_to_labels = defaultdict(list)
+    orig_sizes = defaultdict(int)
+    def parse_source_graph_labels(node_id, size, names, vals):
+        assert names[0] == 'labels'
+        labels = vals[0]
+        orig_sizes[node_id] = size
+        if labels:
+            orig_to_labels[node_id] = list(map(int, labels.strip().split(' ')))
+
+    def nop(*x):
+        pass
+
+    with open(original_graph_filename) as fp:
+        graph_parser.parse(fp, parse_source_graph_labels, nop)
+
+    return orig_sizes, orig_to_labels
+
+
+def load_mh_dump(mh_filename):
+    "Load a MinHash from a file created with 'sourmash dump'."
+    with open(mh_filename) as fp:
+        hashes = fp.read().strip().split(' ')
+    query_mh = MinHash(len(hashes), MINHASH_K)
+
+    for h in hashes:
+        query_mh.add_hash(int(h))
+    return query_mh
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument('catlas_prefix', help='catlas prefix')
+    p.add_argument('catlas_r', help='catlas radius', type=int)
+    p.add_argument('mh_files', nargs='+',
+                   help='file containing dumped MinHash signature')
+    p.add_argument('--label-list', type=str,
+                   help='list of labels that should correspond to MinHash; ' + \
+                        'defaults to index of mh_files.')
+    p.add_argument('--threshold', type=int, default=1)
+    args = p.parse_args()
+    
+    radius = args.catlas_r
+    basename = os.path.basename(args.catlas_prefix)
+    graphmxt = '%s.mxt' % (basename,)
+    graphmxt = os.path.join(args.catlas_prefix, graphmxt)
+    
+    catgxt = '%s.catlas.%d.gxt' % (basename, radius)
+    catmxt = '%s.catlas.%d.mxt' % (basename, radius)
+    catgxt = os.path.join(args.catlas_prefix, catgxt)
+    catmxt = os.path.join(args.catlas_prefix, catmxt)
+
+    start = time.time()
+    _catlas = CAtlas.read(catgxt, None, args.catlas_r)
+    print('loaded CAtlas in {0:.1f} seconds.'.format(time.time() - start))
+
+    dbg_graph = '%s.gxt' % (basename)
+    dbg_graph = os.path.join(args.catlas_prefix, dbg_graph)
+
+    orig_sizes, orig_to_labels = \
+      load_orig_sizes_and_labels(dbg_graph)
+
+    end = time.time()
+    print('done loading all the things - {0:.1f} seconds.'.format(end - start))
+
+    # get all labels in graph
+    all_labels = set()
+    for vv in orig_to_labels.values():
+        all_labels.update(vv)
+
+    # construct list of labels to search for
+    if args.label_list:
+        label_list = [ int(i) for i in args.label_list.split(',') ]
+    else:
+        label_list = [ i+1 for i in range(len(args.mh_files)) ]
+    assert len(label_list) == len(args.mh_files)
+    
+    tree = SBT.load(args.catlas_prefix, leaf_loader=SigLeaf.load)
+
+    def search(node, mh, count):
+        mins = mh.get_mins()
+
+        if isinstance(node, SigLeaf):
+            matches = node.data.estimator.mh.count_common(mh)
+        else:  # Node or Leaf, Nodegraph by minhash comparison
+            matches = sum(1 for value in mins if node.data.get(value))
+
+        if matches >= count:
+            return 1
+        return 0
+
+    print('starting searches!')
+    for (mh_file, label) in zip(args.mh_files, label_list):
+        query_mh = load_mh_dump(mh_file)
+
+        leaves = set()
+        for leaf in tree.find(search, query_mh, args.threshold):
+            node_id = int(leaf.data.name())
+            print(node_id, orig_to_labels[node_id])
+            leaves.add(node_id)
+
+        ### finally, count the matches/mismatches between MinHash-found nodes
+        ### and expected labels.
+
+        search_labels = set([ label ])
+
+        # all_nodes is set of all labeled node_ids on original graph:
+        all_nodes = set(orig_to_labels.keys())
+
+        # pos_nodes is set of MH-matching node_ids from dominating set.
+        pos_nodes = set(leaves)
+
+        # neg_nodes is set of non-MH-matching node IDs
+        neg_nodes = all_nodes - pos_nodes
+
+        def has_search_label(node_id):
+            node_labels = orig_to_labels[node_id]
+            return bool(search_labels.intersection(node_labels))
+
+        # true positives: how many nodes did we find that had the right label?
+        tp = 0
+
+        # false positives: how many nodes did we find that didn't have right label?
+        fp = 0
+
+        for node_id in pos_nodes:
+            if has_search_label(node_id):
+                tp += orig_sizes[node_id]
+            else:
+                fp += orig_sizes[node_id]
+
+        # true negatives: how many nodes did we miss that didn't have right label?
+        tn = 0
+
+        # false negatives: how many nodes did we miss that did have right label?
+        fn = 0
+
+        for node_id in neg_nodes:
+            if not has_search_label(node_id):
+                tn += orig_sizes[node_id]
+            else:
+                fn += orig_sizes[node_id]
+
+        if 1: # not args.quiet and not args.append_csv:
+            print('')
+            print('tp:', tp)
+            print('fp:', fp)
+            print('fn:', fn)
+            print('tn:', tn)
+            print('')
+
+        sens = 0
+        if tp + fn:
+            sens = (100.0 * tp / (tp + fn))
+        if tn + fp:
+            spec = (100.0 * tn / (tn + fp))
+        print('%s - sensitivity: %.1f / specificity / %.1f' % (mh_file, sens, spec))
+
+        ## some double checks.
+
+        # all/pos/neg nodes at the end are dominating set members.
+        assert not pos_nodes - set(orig_sizes.keys())
+        assert not neg_nodes - set(orig_sizes.keys())
+        assert not all_nodes - set(orig_sizes.keys())
+
+        if 0 and args.append_csv:
+            write_header = False
+            if not os.path.exists(args.append_csv):
+                write_header = True
+            with open(args.append_csv, 'at') as outfp:
+                if write_header:
+                    outfp.write('sens, spec, tp, fp, fn, tn, strategy, searchlevel\n')
+                outfp.write('%.1f, %.1f, %d, %d, %d, %d, %s, %d\n' %\
+                         (sens, spec, tp, fp, fn, tn, args.strategy,
+                          args.searchlevel))
+
+    sys.exit(0)
+
+if __name__ == '__main__':
+    main()
