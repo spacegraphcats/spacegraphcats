@@ -12,7 +12,6 @@ from sourmash_lib.sbtmh import search_minhashes, SigLeaf
 from sourmash_lib import signature
 
 
-MINHASH_SIZE=1000
 MINHASH_K=31
 
 def import_graph_mxt(mxt):
@@ -45,21 +44,20 @@ def load_dom_to_orig(assignment_vxt_file):
 
 
 def merge_nodes(child_dict, child_node_list):
-    """Merge child_node_list from 'from_tablename' into parent_node in
-    'to_tablename'."""
+    """Merge child nodes into a single minhash."""
     minlist = []
 
     for graph_node in child_node_list:
         mins = child_dict[graph_node]
         minlist.append(mins)
 
-    # merge!
-    # (note that minhashes are implicitly merged when you simply add all
-    # the hashes to one MH). @CTB not done right now.
+    # merge into a single minhash!
     merged_mh = MinHash(len(minlist), MINHASH_K)
     for mins in minlist:
         for h in mins:
             merged_mh.add_hash(h)
+
+    assert len(merged_mh) == len(minlist)
 
     # add into merged minhashes table.
     return merged_mh
@@ -69,7 +67,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('catlas_r', help='catlas radius', type=int)
-    p.add_argument('-x', '--bf-size', type=float, default=1e5)
+    p.add_argument('-x', '--bf-size', type=float, default=1e4)
     args = p.parse_args()
     
     radius = args.catlas_r
@@ -113,7 +111,9 @@ def main():
         tree.add_node(leaf)
 
     print('...done with {} minhashes. saving!'.format(len(dom_minhashes)))
-    tree.save(os.path.basename(args.catlas_prefix))
+    sbt_name = os.path.basename(args.catlas_prefix) + '.' + str(radius)
+    tree.save(sbt_name)
+    print('saved sbt "{}"'.format(sbt_name))
 
     sys.exit(0)
 

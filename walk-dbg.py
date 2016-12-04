@@ -124,6 +124,9 @@ def main():
     if args.label_linear_segments or args.no_label_hdn:
         assert args.label
 
+    if args.label:
+        label_list = []
+
     output_dir = args.output
     if not output_dir:
         if len(args.seqfiles) > 1:
@@ -203,9 +206,11 @@ def main():
             # name them and cherish them.
             these_hdn = graph.find_high_degree_nodes(record.sequence)
             degree_nodes += these_hdn
-            if args.label and not args.no_label_hdn:
-                for kmer in these_hdn:
-                    pathy.add_label(kmer, n)
+            if args.label:
+                label_list.append(record.name)
+                if not args.no_label_hdn:
+                    for kmer in these_hdn:
+                        pathy.add_label(kmer, n)
 
     # get all of the degree > 2 kmers and give them IDs.
     for kmer in degree_nodes:
@@ -292,6 +297,14 @@ def main():
     if args.label:
         print('note: used/assigned %d labels total' % (len(set(all_labels)),))
         print('counts:', label_counts)
+
+        assert label_list
+        print('dumping label list now.')
+        label_file = os.path.basename(output_dir) + '.labels.txt'
+        label_file = os.path.join(output_dir, label_file)
+
+        with open(label_file, "wt") as fp:
+            fp.write("\n".join(label_list))
 
 
 if __name__ == '__main__':

@@ -83,12 +83,12 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('catlas_r', help='catlas radius', type=int)
-    p.add_argument('mh_files', nargs='+',
+    p.add_argument('mh_file',
                    help='file containing dumped MinHash signature')
-    p.add_argument('--label-list', type=str,
-                   help='list of labels that should correspond to MinHash; ' + \
-                        'defaults to index of mh_files.')
     p.add_argument('--threshold', type=int, default=1)
+    p.add_argument('-q', '--quiet', action='store_true')
+    p.add_argument('--append-csv', type=str,
+                   help='append results in CSV to this file')
     args = p.parse_args()
     
     radius = args.catlas_r
@@ -145,14 +145,16 @@ def main():
         all_labels.update(vv)
 
     # construct list of labels to search for
-    if args.label_list:
-        label_list = [ int(i) for i in args.label_list.split(',') ]
-    else:
-        label_list = [ i+1 for i in range(len(args.mh_files)) ]
-    assert len(label_list) == len(args.mh_files)
-    
-    tree = SBT.load(os.path.basename(args.catlas_prefix),
-                    leaf_loader=SigLeaf.load)
+    labels_file = os.path.basename(args.catlas_prefix) + '.labels.txt'
+    labels_file = os.path.join(args.catlas_prefix, labels_file)
+    with open(labels_file, 'rt') as fp:
+        labels_names = [ x.strip() for x in fp.readlines() ]
+
+    label_list = list(range(1, len(labels_names) + 1))
+
+    sbt_name = os.path.basename(args.catlas_prefix) + '.' + str(radius)
+    print('loading sbt "{}"'.format(sbt_name))
+    tree = SBT.load(sbt_name, leaf_loader=SigLeaf.load)
 
     def search(node, mh, count):
         mins = mh.get_mins()
@@ -167,16 +169,32 @@ def main():
         return 0
 
     print('starting searches!')
-    for (mh_file, label) in zip(args.mh_files, label_list):
-        query_mh = load_mh_dump(mh_file)
+
+    siglist = sourmash_lib.signature.load_signatures(args.mh_file)
+    sigdict = dict( [ (sig.name(), sig) for sig in siglist ] )
+
+    for label in label_list:
+        label_seq_name = labels_names[label - 1]
+        print('searching for', label_seq_name, ' ', label)
+        sig = sigdict[label_seq_name]
+
+        query_mh = sig.estimator.mh
 
         leaves = set()
+        mins = []
         for leaf in tree.find(search, query_mh, args.threshold):
             node_id = int(leaf.data.name())
-            print(node_id, orig_to_labels[node_id])
+            mins.extend(leaf.data.estimator.mh.get_mins())
             leaves.add(node_id)
 
-        ### finally, count the matches/mismatches between MinHash-found nodes
+        from sourmash_lib import MinHash
+        mh = MinHash(len(query_mh), 31)
+        for k in mins:
+            mh.add_hash(k)
+
+        print('XXX', mh.compare(query_mh), query_mh.compare(mh))
+
+        ### count the matches/mismatches between MinHash-found nodes
         ### and expected labels.
 
         search_labels = set([ label ])
@@ -218,7 +236,7 @@ def main():
             else:
                 fn += dom_sizes[node_id]
 
-        if 1: # not args.quiet and not args.append_csv:
+        if not args.quiet and not args.append_csv:
             print('')
             print('tp:', tp)
             print('fp:', fp)
@@ -231,7 +249,7 @@ def main():
             sens = (100.0 * tp / (tp + fn))
         if tn + fp:
             spec = (100.0 * tn / (tn + fp))
-        print('%s - sensitivity: %.1f / specificity / %.1f' % (mh_file, sens, spec))
+        print('%s - sensitivity: %.1f / specificity / %.1f' % (label_seq_name, sens, spec))
 
         ## some double checks.
 
@@ -240,7 +258,7 @@ def main():
         assert not neg_nodes - set(dom_sizes.keys())
         assert not all_nodes - set(dom_sizes.keys())
 
-        if 0 and args.append_csv:
+        if args.append_csv:
             write_header = False
             if not os.path.exists(args.append_csv):
                 write_header = True
@@ -248,8 +266,8 @@ def main():
                 if write_header:
                     outfp.write('sens, spec, tp, fp, fn, tn, strategy, searchlevel\n')
                 outfp.write('%.1f, %.1f, %d, %d, %d, %d, %s, %d\n' %\
-                         (sens, spec, tp, fp, fn, tn, args.strategy,
-                          args.searchlevel))
+                         (sens, spec, tp, fp, fn, tn, 'sbt',
+                          0))
 
     sys.exit(0)
 
