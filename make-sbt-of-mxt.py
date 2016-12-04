@@ -113,7 +113,7 @@ def main():
         tree.add_node(leaf)
 
     print('...done with {} minhashes. saving!'.format(len(dom_minhashes)))
-    tree.save(args.catlas_prefix)
+    tree.save(os.path.basename(args.catlas_prefix))
 
     sys.exit(0)
 
