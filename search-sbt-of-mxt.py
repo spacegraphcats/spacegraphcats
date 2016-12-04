@@ -54,6 +54,20 @@ def load_orig_sizes_and_labels(original_graph_filename):
     return orig_sizes, orig_to_labels
 
 
+def load_dom_to_orig(assignment_vxt_file):
+    "Load the mapping between level0/dom nodes and the original DBG nodes."
+    dom_to_orig = defaultdict(list)
+    for line in open(assignment_vxt_file, 'rt'):
+        orig_node, dom_list = line.strip().split(',')
+        orig_node = int(orig_node)
+        dom_list = list(map(int, dom_list.split(' ')))
+
+        for dom_node in dom_list:
+            dom_to_orig[dom_node].append(orig_node)
+
+    return dom_to_orig
+
+
 def load_mh_dump(mh_filename):
     "Load a MinHash from a file created with 'sourmash dump'."
     with open(mh_filename) as fp:
@@ -97,12 +111,37 @@ def main():
     orig_sizes, orig_to_labels = \
       load_orig_sizes_and_labels(dbg_graph)
 
+    ### backtrack the leaf nodes to the domgraph
+
+    # here, 'dom_to_orig' is a dictionary mapping domination nodes to
+    # a list of original vertices in the De Bruijn graph.
+    #
+    #   dom_to_orig[dom_node_id] => list of [orig_node_ids]
+
+    assignment_vxt = '%s.assignment.%d.vxt' % (basename, radius)
+    assignment_vxt = os.path.join(args.catlas_prefix, assignment_vxt)
+    dom_to_orig = load_dom_to_orig(assignment_vxt)
+
+    ## now, transfer labels to dom nodes
+
+    dom_labels = defaultdict(set)
+    for k, vv in dom_to_orig.items():
+        for v in vv:
+            dom_labels[k].update(orig_to_labels[v])
+
+    ### transfer sizes to dom nodes
+
+    dom_sizes = defaultdict(int)
+    for k, vv in dom_to_orig.items():
+        for v in vv:
+            dom_sizes[k] += orig_sizes[v]
+
     end = time.time()
     print('done loading all the things - {0:.1f} seconds.'.format(end - start))
 
     # get all labels in graph
     all_labels = set()
-    for vv in orig_to_labels.values():
+    for vv in dom_labels.values():
         all_labels.update(vv)
 
     # construct list of labels to search for
@@ -142,7 +181,7 @@ def main():
         search_labels = set([ label ])
 
         # all_nodes is set of all labeled node_ids on original graph:
-        all_nodes = set(orig_to_labels.keys())
+        all_nodes = set(dom_labels.keys())
 
         # pos_nodes is set of MH-matching node_ids from dominating set.
         pos_nodes = set(leaves)
@@ -151,7 +190,7 @@ def main():
         neg_nodes = all_nodes - pos_nodes
 
         def has_search_label(node_id):
-            node_labels = orig_to_labels[node_id]
+            node_labels = dom_labels[node_id]
             return bool(search_labels.intersection(node_labels))
 
         # true positives: how many nodes did we find that had the right label?
@@ -160,11 +199,11 @@ def main():
         # false positives: how many nodes did we find that didn't have right label?
         fp = 0
 
-        for node_id in pos_nodes:
-            if has_search_label(node_id):
-                tp += orig_sizes[node_id]
+        for dom_node_id in pos_nodes:
+            if has_search_label(dom_node_id):
+                tp += dom_sizes[dom_node_id]
             else:
-                fp += orig_sizes[node_id]
+                fp += dom_sizes[dom_node_id]
 
         # true negatives: how many nodes did we miss that didn't have right label?
         tn = 0
@@ -174,9 +213,9 @@ def main():
 
         for node_id in neg_nodes:
             if not has_search_label(node_id):
-                tn += orig_sizes[node_id]
+                tn += dom_sizes[node_id]
             else:
-                fn += orig_sizes[node_id]
+                fn += dom_sizes[node_id]
 
         if 1: # not args.quiet and not args.append_csv:
             print('')
@@ -196,9 +235,9 @@ def main():
         ## some double checks.
 
         # all/pos/neg nodes at the end are dominating set members.
-        assert not pos_nodes - set(orig_sizes.keys())
-        assert not neg_nodes - set(orig_sizes.keys())
-        assert not all_nodes - set(orig_sizes.keys())
+        assert not pos_nodes - set(dom_sizes.keys())
+        assert not neg_nodes - set(dom_sizes.keys())
+        assert not all_nodes - set(dom_sizes.keys())
 
         if 0 and args.append_csv:
             write_header = False
