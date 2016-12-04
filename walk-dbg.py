@@ -33,6 +33,7 @@ class Pathfinder(object):
         self.mxtfp = open(mxtfile, 'wt')
         self.gxtfp = open(gxtfile, 'wt')
         self.gxtwriter = graph_parser.Writer(self.gxtfp, ['labels'], [])
+        self.adjfp = open(gxtfile + '.adj', 'wt')
 
     def new_hdn(self, kmer):
         "Add a new high-degree node to the cDBG."
@@ -53,7 +54,7 @@ class Pathfinder(object):
         node_id = self.node_counter
         self.node_counter += 1
 
-        kmer = min(visited)               # identify linear nodes by min(hash)
+        #kmer = min(visited)               # identify linear nodes by min(hash)
         #self.nodes_to_kmers[node_id] = kmer
         #self.kmers_to_nodes[kmer] = node_id
 
@@ -64,9 +65,11 @@ class Pathfinder(object):
     def add_adjacency(self, node_id, adj):
         "Add an edge between two nodes to the cDBG."
         node_id, adj = min(node_id, adj), max(node_id, adj)
+
+        self.adjfp.write('{},{}\n'.format(node_id, adj))
         
-        x = self.adjacencies[node_id]
-        x.add(adj)
+        #x = self.adjacencies[node_id]
+        #x.add(adj)
 
     def add_label(self, kmer, label):
         x = self.labels[kmer]
@@ -214,7 +217,6 @@ def main():
                 if not args.no_label_hdn:
                     for kmer in these_hdn:
                         pathy.add_label(kmer, n)
-                        print('adding label')
 
     # get all of the degree > 2 kmers and give them IDs.
     for kmer in degree_nodes:
@@ -274,6 +276,8 @@ def main():
                 for kmer in all_kmers:
                     pathy.add_label(kmer, n)
 
+    del graph
+    del stop_bf
 
     # save to GXT/MXT.
     print('saving gxtfile', gxtfile)
@@ -296,6 +300,14 @@ def main():
                 all_labels.update(labels)
                 l = " ".join(map(str, labels))
         w.add_vertex(k, v, [l])
+
+    pathy.adjfp.close()
+    adj_filename = open(gxtfile + '.adj', 'rt')
+    for line in adj_filename:
+        a, b = line.split(',')
+        a = int(a)
+        b = int(b)
+        pathy.adjacencies[a].add(b)
 
     for k, v in pathy.adjacencies.items():
         for edge in v:
