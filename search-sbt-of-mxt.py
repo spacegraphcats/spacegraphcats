@@ -169,30 +169,37 @@ def main():
         return 0
 
     print('starting searches!')
-
     siglist = sourmash_lib.signature.load_signatures(args.mh_file)
     sigdict = dict( [ (sig.name(), sig) for sig in siglist ] )
 
+    labels_file = os.path.basename(args.catlas_prefix) + '.labels.txt'
+    labels_file = os.path.join(args.catlas_prefix, labels_file)
+    with open(labels_file, 'rt') as fp:
+        labels_names = [ x.strip().split(' ', 1) for x in fp.readlines() ]
+        labels_names = dict([ (int(x), sigdict[y]) for (x, y) in labels_names ])
     for label in label_list:
-        label_seq_name = labels_names[label - 1]
-        print('searching for', label_seq_name, ' ', label)
-        sig = sigdict[label_seq_name]
+        query_sig = labels_names[label]
+        print('searching for sequence {} / label {}'.format(query_sig.name(),
+                                                            label))
 
-        query_mh = sig.estimator.mh
+        query_mh = query_sig.estimator.mh
 
         leaves = set()
         mins = []
+        n_found = 0
         for leaf in tree.find(search, query_mh, args.threshold):
             node_id = int(leaf.data.name())
             mins.extend(leaf.data.estimator.mh.get_mins())
             leaves.add(node_id)
+            n_found += 1
 
         from sourmash_lib import MinHash
         mh = MinHash(len(query_mh), 31)
         for k in mins:
             mh.add_hash(k)
 
-        print('XXX', mh.compare(query_mh), query_mh.compare(mh))
+        #print('XXX', mh.compare(query_mh), query_mh.compare(mh))
+        print('Found {} dominating set members with MinHash matches'.format(n_found))
 
         ### count the matches/mismatches between MinHash-found nodes
         ### and expected labels.
@@ -249,7 +256,8 @@ def main():
             sens = (100.0 * tp / (tp + fn))
         if tn + fp:
             spec = (100.0 * tn / (tn + fp))
-        print('%s - sensitivity: %.1f / specificity / %.1f' % (label_seq_name, sens, spec))
+        print('%s - sensitivity: %.1f / specificity / %.1f' % \
+              (query_sig.name(), sens, spec))
 
         ## some double checks.
 

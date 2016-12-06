@@ -304,7 +304,8 @@ def main():
         label_file = os.path.join(output_dir, label_file)
 
         with open(label_file, "wt") as fp:
-            fp.write("\n".join(label_list))
+            for n, label in enumerate(label_list):
+                fp.write("{} {}\n".format(n + 1, label))
 
 
 if __name__ == '__main__':

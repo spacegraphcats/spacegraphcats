@@ -27,7 +27,9 @@ def load_orig_sizes_and_labels(original_graph_filename):
 
         if vals:
             labels = vals[0]
-            orig_to_labels[node_id] = list(map(int, labels.strip().split(' ')))
+            if labels:
+                labels = list(map(int, labels.strip().split(' ')))
+                orig_to_labels[node_id] = labels
 
     def nop(*x):
         pass
@@ -146,24 +148,22 @@ def main():
         all_labels.update(vv)
 
     # construct list of labels to search for
-    labels_file = os.path.basename(args.catlas_prefix) + '.labels.txt'
-    labels_file = os.path.join(args.catlas_prefix, labels_file)
-    with open(labels_file, 'rt') as fp:
-        labels_names = [ x.strip() for x in fp.readlines() ]
-
-    label_list = list(range(1, len(labels_names) + 1))
-    
-    print('starting searches!')
     siglist = sourmash_lib.signature.load_signatures(args.mh_file)
     sigdict = dict( [ (sig.name(), sig) for sig in siglist ] )
 
-    for label in label_list:
-        label_seq_name = labels_names[label - 1]
-        print('searching for sequence {} / label {}'.format(
-            label_seq_name, label))
-        sig = sigdict[label_seq_name]
+    labels_file = os.path.basename(args.catlas_prefix) + '.labels.txt'
+    labels_file = os.path.join(args.catlas_prefix, labels_file)
+    with open(labels_file, 'rt') as fp:
+        labels_names = [ x.strip().split(' ', 1) for x in fp.readlines() ]
+        labels_names = dict([ (int(x), sigdict[y]) for (x, y) in labels_names ])
 
-        query_mh = sig.estimator.mh
+    print('starting searches!')
+    for label in labels_names:
+        query_sig = labels_names[label]
+        print('searching for sequence {} / label {}'.format(query_sig.name(),
+                                                            label))
+
+        query_mh = query_sig.estimator.mh
 
         ### next, find the relevant catlas nodes using the MinHash.
         if args.strategy == 'bestnode':
@@ -249,7 +249,8 @@ def main():
             sens = (100.0 * tp / (tp + fn))
         if tn + fp:
             spec = (100.0 * tn / (tn + fp))
-        print('%s - sensitivity: %.1f / specificity / %.1f' % (sig.name(), sens, spec))
+        print('%s - sensitivity: %.1f / specificity / %.1f' % \
+              (query_sig.name(), sens, spec))
 
         ## some double checks.
 
