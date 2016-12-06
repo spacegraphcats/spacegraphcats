@@ -240,7 +240,27 @@ class CAtlas:
 
         @staticmethod
         def largest_weighted_intersection(frontier, mhquery, threshold):
-            return max(frontier, key=lambda node: mhquery.compare(node.minhash) * node.size )
+            return max(frontier, key=lambda node: mhquery.compare(node.minhash)*node.size)
+
+        @staticmethod
+        def largest_weighted_intersection_cached():
+            weighted_intersection_cache = {}
+            def lwi(frontier, mhquery, threshold):
+                largest_node = None
+                largest_score = -1
+                for node in frontier:
+                    # compute comparison if it's not in cache already
+                    if node not in weighted_intersection_cache:
+                        val = mhquery.compare(node.minhash)*node.size
+                        weighted_intersection_cache[node] = val
+                    # check if largest
+                    score = weighted_intersection_cache[node]
+                    if score > largest_score:
+                        largest_score = score
+                        largest_node = node
+                assert largest_node is not None
+                return largest_node
+            return lwi
 
         @staticmethod
         def largest_intersection_height(frontier, mhquery, threshold):
@@ -366,12 +386,12 @@ class CAtlas:
                 frontier.add(bad_node)
                 break
 
-        res = set()
+        #res = set()
         #print((frontier))
-        for node in frontier:
-            res |= node.leaves()
+        #for node in frontier:
+        #    res |= node.leaves()
 
-        return res
+        return frontier
 
     def query_blacklist(self, mhquery, threshold, scoring_strat, selection_strat, refinement_strat):
         frontier = set([self])
@@ -400,11 +420,11 @@ class CAtlas:
                 frontier.add(bad_node)
                 blacklist.add(bad_node)
 
-        res = set()
-        for node in frontier:
-            res |= node.leaves()
+        #res = set()
+        #for node in frontier:
+        #    res |= node.leaves()
 
-        return res        
+        return frontier
 
     def query_best_match(self, mhquery):
         best_score = -1
@@ -457,13 +477,18 @@ class CAtlas:
 
         return res        
 
-    def leaves(self):
-        if len(self.children) == 0:
-            assert(self.level == 0)
+    def leaves(self, visited = None):
+        if visited is None:
+            visited = set([self])
+        if self.level==0:
+            #assert(self.level == 0)
             return set([self.id])
         res = set()
+        #print("leaves", self.id, len(self.children), len(visited))
         for c in self.children:
-            res |= c.leaves()
+            if c not in visited:
+                visited.add(c)
+                res |= c.leaves(visited)
         return res
 
     def leaves2(self):
@@ -475,12 +500,16 @@ class CAtlas:
             res |= c.leaves2()
         return res
 
-    def shadow(self):
+    def shadow(self, visited=None):
+        if visited is None:
+            visited = set([self])
         if self.level == 0:
             return set([self.vertex])
         res = set()
         for c in self.children:
-            res |= c.shadow()
+            if c not in visited:
+                visited.add(c)
+                res |= c.shadow(visited)
         return res        
 
     def nodes(self, select=None):
