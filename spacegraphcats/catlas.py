@@ -240,7 +240,27 @@ class CAtlas:
 
         @staticmethod
         def largest_weighted_intersection(frontier, mhquery, threshold):
-            return max(frontier, key=lambda node: mhquery.compare(node.minhash) * node.size )
+            return max(frontier, key=lambda node: mhquery.compare(node.minhash)*node.size)
+
+        @staticmethod
+        def largest_weighted_intersection_cached():
+            weighted_intersection_cache = {}
+            def lwi(frontier, mhquery, threshold):
+                largest_node = None
+                largest_score = -1
+                for node in frontier:
+                    # compute comparison if it's not in cache already
+                    if node not in weighted_intersection_cache:
+                        val = mhquery.compare(node.minhash)*node.size
+                        weighted_intersection_cache[node] = val
+                    # check if largest
+                    score = weighted_intersection_cache[node]
+                    if score > largest_score:
+                        largest_score = score
+                        largest_node = node
+                assert largest_node is not None
+                return largest_node
+            return lwi
 
         @staticmethod
         def largest_intersection_height(frontier, mhquery, threshold):
