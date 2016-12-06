@@ -80,3 +80,11 @@ It seems obvious that this will be much faster than a top down search.
   catlas structure.  I thought a fair bit about starting this way and
   ultimately couldn't decide if the benefits were worth the implementation
   hassle, so went with code I already had working.
+  
+  Alternatively, we could build the catlas node MinHashes and then use the
+  SBT to search them (i.e. rather than using the catlas nodes as internal
+  nodes in an SBT, use them as leaf nodes that take advantage of the SBT
+  speed).  This would take advantage of both the hierarchical composition of
+  MinHash sketches made possible by the catlas, AND the speed of the SBT,
+  at the expense of time and space in building the SBT, which would have
+  many more nodes.
