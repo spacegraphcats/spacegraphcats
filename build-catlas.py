@@ -100,7 +100,7 @@ def main():
                                          as the directory.', type=str)
     parser.add_argument('r', help="The catlas' radius.", type=int )
     parser.add_argument('--min-id', help="Smallest id assigned to catlas nodes.", type=int, default=0)
-    parser.add_argument('--no-merge-mxt', help='do not merge MinHashes',
+    parser.add_argument('--merge-mxt', help='merge MinHashes => catlas',
                         action='store_true')
     args = parser.parse_args()
 
@@ -130,7 +130,7 @@ def main():
 
     report("Loaded graph with {} vertices, {} edges and {} components".format(len(project.graph),project.graph.num_edges(),project.graph.num_components()))
 
-    if not args.no_merge_mxt:
+    if args.merge_mxt:
         file = read_project_file(project.path, project.name+".mxt")
         project.minhashes = VertexDict.from_mxt(file)
 
