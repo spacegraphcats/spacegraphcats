@@ -11,6 +11,8 @@ from sourmash_lib import MinHash
 import os
 import sys
 import time
+import cProfile
+import pstats
 
 
 KSIZE=31
@@ -155,6 +157,10 @@ def main():
         ### load search mh
         query_mh = load_mh_dump(mh_file)
 
+        prof = cProfile.Profile()
+        prof.enable()
+        q_start = time.time()
+
         ### next, find the relevant catlas nodes using the MinHash.
         if args.strategy == 'bestnode':
             match_nodes = _catlas.query_best_match(query_mh)
@@ -165,9 +171,9 @@ def main():
         elif args.strategy == 'gathermins2':
             match_nodes = _catlas.query_gather_mins(query_mh, args.searchlevel, expand=True)
         elif args.strategy == 'frontier-jacc':
-            match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+            match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.jaccard, CAtlas.Selection.largest_weighted_intersection_cached(), CAtlas.Refinement.greedy_coverage)
         elif args.strategy == 'frontier-jacc-bl':
-            match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.jaccard, CAtlas.Selection.largest_weighted_intersection, CAtlas.Refinement.greedy_coverage)
+            match_nodes  = _catlas.query_blacklist(query_mh, 0, CAtlas.Scoring.jaccard, CAtlas.Selection.largest_weighted_intersection(), CAtlas.Refinement.greedy_coverage)
         elif args.strategy == 'frontier-height':
             match_nodes  = _catlas.query(query_mh, 0, CAtlas.Scoring.avg_height, CAtlas.Selection.largest_intersection_height, CAtlas.Refinement.greedy_coverage)
         elif args.strategy == 'frontier-height-bl':
@@ -180,9 +186,15 @@ def main():
             print('\n*** search strategy not understood:', args.strategy)
             sys.exit(-1)
 
+        f_time = time.time()
+        print("Frontier searched in {0:.1f} seconds.".format(f_time-q_start))
+
         leaves = set()
         for n in (match_nodes):
             leaves.update(n.shadow())
+        q_end = time.time()
+
+        print("Query completed in {0:.1f} seconds.".format(q_end-q_start))
 
         ### finally, count the matches/mismatches between MinHash-found nodes
         ### and expected labels.
@@ -258,6 +270,10 @@ def main():
                 outfp.write('%.1f, %.1f, %d, %d, %d, %d, %s, %d\n' %\
                          (sens, spec, tp, fp, fn, tn, args.strategy,
                           args.searchlevel))
+        prof.disable()
+        ps = pstats.Stats(prof).sort_stats('time')
+        ps.print_stats()
+
     sys.exit(0)
 
 
