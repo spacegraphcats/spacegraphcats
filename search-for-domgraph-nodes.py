@@ -8,6 +8,7 @@ from spacegraphcats.catlas import CAtlas
 from spacegraphcats.graph import VertexDict
 from collections import defaultdict
 from sourmash_lib import MinHash
+import sourmash_lib.signature
 import os
 import sys
 import time
@@ -22,9 +23,10 @@ def load_orig_sizes_and_labels(original_graph_filename):
     orig_sizes = defaultdict(int)
     def parse_source_graph_labels(node_id, size, names, vals):
         assert names[0] == 'labels'
-        labels = vals[0]
         orig_sizes[node_id] = size
-        if labels:
+
+        if vals:
+            labels = vals[0]
             orig_to_labels[node_id] = list(map(int, labels.strip().split(' ')))
 
     def nop(*x):
@@ -65,8 +67,8 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('catlas_r', type=int, help='catlas radius to load')
-    p.add_argument('mh_files', nargs='+',
-                   help='files containing dumped MinHash signature')
+    p.add_argument('mh_file',
+                   help='file containing MinHash signatures')
     p.add_argument('--strategy', type=str, default='bestnode',
                    help='search strategy: bestnode, xxx')
     p.add_argument('--searchlevel', type=int, default=0)
@@ -144,16 +146,24 @@ def main():
         all_labels.update(vv)
 
     # construct list of labels to search for
-    if args.label_list:
-        label_list = [ int(i) for i in args.label_list.split(',') ]
-    else:
-        label_list = [ i+1 for i in range(len(args.mh_files)) ]
-    assert len(label_list) == len(args.mh_files)
+    labels_file = os.path.basename(args.catlas_prefix) + '.labels.txt'
+    labels_file = os.path.join(args.catlas_prefix, labels_file)
+    with open(labels_file, 'rt') as fp:
+        labels_names = [ x.strip() for x in fp.readlines() ]
+
+    label_list = list(range(1, len(labels_names) + 1))
     
     print('starting searches!')
-    for (mh_file, label) in zip(args.mh_files, label_list):
-        ### load search mh
-        query_mh = load_mh_dump(mh_file)
+    siglist = sourmash_lib.signature.load_signatures(args.mh_file)
+    sigdict = dict( [ (sig.name(), sig) for sig in siglist ] )
+
+    for label in label_list:
+        label_seq_name = labels_names[label - 1]
+        print('searching for sequence {} / label {}'.format(
+            label_seq_name, label))
+        sig = sigdict[label_seq_name]
+
+        query_mh = sig.estimator.mh
 
         ### next, find the relevant catlas nodes using the MinHash.
         if args.strategy == 'bestnode':
@@ -239,7 +249,7 @@ def main():
             sens = (100.0 * tp / (tp + fn))
         if tn + fp:
             spec = (100.0 * tn / (tn + fp))
-        print('%s - sensitivity: %.1f / specificity / %.1f' % (mh_file, sens, spec))
+        print('%s - sensitivity: %.1f / specificity / %.1f' % (sig.name(), sens, spec))
 
         ## some double checks.
 
