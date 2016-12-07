@@ -21,7 +21,7 @@ MH_MIN_SIZE=5
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
-    def __init__(self, ksize, mxtfile, node_offset=0):
+    def __init__(self, ksize, gxtfile, mxtfile, node_offset=0):
         self.ksize = ksize
 
         self.node_counter = 1 + node_offset
@@ -31,6 +31,9 @@ class Pathfinder(object):
         self.adjacencies = defaultdict(set)  # node to node
         self.labels = defaultdict(set)       # nodes to set of labels
         self.mxtfp = open(mxtfile, 'wt')
+        self.gxtfp = open(gxtfile, 'wt')
+        self.gxtwriter = graph_parser.Writer(self.gxtfp, ['labels'], [])
+        self.adjfp = open(gxtfile + '.adj', 'wt')
 
     def new_hdn(self, kmer):
         "Add a new high-degree node to the cDBG."
@@ -50,20 +53,23 @@ class Pathfinder(object):
         "Add a new linear path to the cDBG."
         node_id = self.node_counter
         self.node_counter += 1
-        self.nodes[node_id] = size
 
-        kmer = min(visited)               # identify linear nodes by min(hash)
-        self.nodes_to_kmers[node_id] = kmer
-        self.kmers_to_nodes[kmer] = node_id
+        #kmer = min(visited)               # identify linear nodes by min(hash)
+        #self.nodes_to_kmers[node_id] = kmer
+        #self.kmers_to_nodes[kmer] = node_id
+
+        self.gxtwriter.add_vertex(node_id, size, [])
 
         return node_id
 
     def add_adjacency(self, node_id, adj):
         "Add an edge between two nodes to the cDBG."
         node_id, adj = min(node_id, adj), max(node_id, adj)
+
+        self.adjfp.write('{},{}\n'.format(node_id, adj))
         
-        x = self.adjacencies[node_id]
-        x.add(adj)
+        #x = self.adjacencies[node_id]
+        #x.add(adj)
 
     def add_label(self, kmer, label):
         x = self.labels[kmer]
@@ -189,7 +195,7 @@ def main():
     ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(ksize, mxtfile, args.node_offset)
+    pathy = Pathfinder(ksize, gxtfile, mxtfile, args.node_offset)
 
     print('finding high degree nodes')
     if args.label and not args.no_label_hdn:
@@ -251,6 +257,7 @@ def main():
               sum(pathy.nodes.values()), 'nodes')
 
     if args.label and args.label_linear_segments:
+        assert 0
         print('...doing labeling of linear segments by request.')
         n = args.label_offset
         path_kmers = set(pathy.kmers_to_nodes)   # set of path identifiers
@@ -269,30 +276,50 @@ def main():
                 for kmer in all_kmers:
                     pathy.add_label(kmer, n)
 
+    del graph
+    del stop_bf
 
     # save to GXT/MXT.
     print('saving gxtfile', gxtfile)
 
     all_labels = set()
     label_counts = {}
-    with open(gxtfile, 'w') as fp:
-        w = graph_parser.Writer(fp, ['labels'], [])
 
-        for k, v in pathy.nodes.items():
-            kmer = pathy.nodes_to_kmers[k]
-            l = ""
-            if kmer:
-                labels = pathy.labels.get(kmer)
-                if labels:
-                    for x in labels:
-                        label_counts[x] = label_counts.get(x, 0) + 1
-                    all_labels.update(labels)
-                    l = " ".join(map(str, labels))
-            w.add_vertex(k, v, [l])
 
-        for k, v in pathy.adjacencies.items():
-            for edge in v:
-                w.add_edge(k, edge, [])
+    w = pathy.gxtwriter
+
+    for k, v in pathy.nodes.items():
+        kmer = pathy.nodes_to_kmers[k]
+        l = ""
+        if kmer:
+            labels = pathy.labels.get(kmer)
+            if labels:
+                assert v == 1
+                for x in labels:
+                    label_counts[x] = label_counts.get(x, 0) + 1
+                all_labels.update(labels)
+                l = " ".join(map(str, labels))
+        w.add_vertex(k, v, [l])
+
+    pathy.adjfp.close()
+    adj_filename = open(gxtfile + '.adj', 'rt')
+
+    # this uniqifies the edges...
+    for line in adj_filename:
+        a, b = line.split(',')
+        a = int(a)
+        b = int(b)
+        pathy.adjacencies[a].add(b)
+
+    try:
+        os.path.unlink(gxtfile + '.adj')
+    except:
+        print('cannot remove', gxtfile + '.adj')
+
+    # ...and now print them out.
+    for k, v in pathy.adjacencies.items():
+        for edge in v:
+            w.add_edge(k, edge, [])
 
     if args.label:
         print('note: used/assigned %d labels total' % (len(set(all_labels)),))
