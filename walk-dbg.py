@@ -303,12 +303,20 @@ def main():
 
     pathy.adjfp.close()
     adj_filename = open(gxtfile + '.adj', 'rt')
+
+    # this uniqifies the edges...
     for line in adj_filename:
         a, b = line.split(',')
         a = int(a)
         b = int(b)
         pathy.adjacencies[a].add(b)
 
+    try:
+        os.path.unlink(gxtfile + '.adj')
+    except:
+        print('cannot remove', gxtfile + '.adj')
+
+    # ...and now print them out.
     for k, v in pathy.adjacencies.items():
         for edge in v:
             w.add_edge(k, edge, [])
