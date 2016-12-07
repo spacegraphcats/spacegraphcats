@@ -131,6 +131,7 @@ def main():
     report("Loaded graph with {} vertices, {} edges and {} components".format(len(project.graph),project.graph.num_edges(),project.graph.num_components()))
 
     if args.merge_mxt:
+        report("Per --merge-mxt, loading minhashes for graph.")
         file = read_project_file(project.path, project.name+".mxt")
         project.minhashes = VertexDict.from_mxt(file)
 
@@ -140,7 +141,7 @@ def main():
 
         report("Loaded minhashes for graph")
     else:
-        report("Per --no-merge-mxt, NOT loading minhashes for graph.")
+        report("By default, NOT loading minhashes for graph.")
         project.minhashes = None
 
 
