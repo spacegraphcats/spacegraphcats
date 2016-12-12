@@ -63,10 +63,11 @@ We used the following commands:
         extract-paired-reads.py $i -p $i.pe.gz -s /dev/null --gzip;
     done
 
-    load-graph.py -M 6e9 -k 31 --no-build-tagset hu_abundtrim.ng SRR1976948.abundtr
-im.fq.gz SRR1977249.abundtrim.fq.gz
+    load-graph.py -M 6e9 -k 31 --no-build-tagset hu_abundtrim.ng \
+        SRR1976948.abundtrim.fq.gz SRR1977249.abundtrim.fq.gz
 
-    /home/ubuntu/spacegraphcats/walk-dbg.py -o hu_catlas -l hu_abundtrim.ng SRR1976948.abundtrim.fq.gz SRR1977249.abundtrim.fq.gz
+    /home/ubuntu/spacegraphcats/walk-dbg.py -o hu_catlas -l hu_abundtrim.ng \
+        SRR1976948.abundtrim.fq.gz SRR1977249.abundtrim.fq.gz
 
 # Loaded graph with 54583987 vertices, 64166942 edges and 302412 components
 
