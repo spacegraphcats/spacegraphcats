@@ -25,6 +25,47 @@ To run against the entire set of signatures, do:
     
 Add `--append-csv out.csv` to get the output in spreadsheet form.
 
+## mircea
+
+The `mircea` data set contains all 63 genomes used to build the mock
+community data set in the
+[Shakya et al., 2014](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3665634/)
+paper.  The full collection of genomes is available for download in
+FASTA
+[here](http://spacegraphcats.ucdavis.edu.s3.amazonaws.com/mircea.fa.gz).
+(The senior author's name is "Mircea Podar", which is where the data
+set name comes from.)
+
+To download and unpack,
+
+    curl -O http://spacegraphcats.ucdavis.edu.s3.amazonaws.com/mircea.tar.gz
+    tar xzf mircea.tar.gz
+
+The data set contains catlases at radius 3 and radius 5; to benchmark, do:
+
+    ./search-for-domgraph-nodes.py mircea 3 mircea/mircea.all.sig
+
+### Constructing `mircea`
+
+We built 'mircea' like so:
+
+    cats-in-practice/pipeline/make-genome-catlas.py mircea mircea.fa -M 6e9
+
+which runs:
+
+    ./walk-dbg.py -k 31 -M 6e9 -o mircea mircea.fa --label
+    ./build-catlas.py mircea 3 --no-merge-mxt
+    ./merge-mxt-in-memory.py mircea 3
+
+We then also computed the catlas for radius 5, so:
+
+    ./build-catlas.py mircea 5 --no-merge-mxt
+    ./merge-mxt-in-memory.py mircea 5
+
+The signatures were computed with:
+
+    sourmash compute -k 31 --dna --singleton mircea.fa -o mircea/mircea.all.sig
+
 ## hu_catlas
 
 The `hu_catlas` contains the cDBG files (`hu_catlas.gxt` and
