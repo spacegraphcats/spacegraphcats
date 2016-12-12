@@ -4,6 +4,9 @@ from __future__ import print_function
 import argparse
 import os
 from sourmash_lib import MinHash
+from sourmash_lib import signature
+import sourmash_lib
+print(sourmash_lib)
 
 
 KSIZE=31
@@ -50,11 +53,6 @@ def main():
         node = int(node)
         if gxt_nodes and node not in gxt_nodes:
             continue
-        if args.level and 0:
-            fp = open(mxtfile + '.node%d.level%d.mh' % (node, args.level),
-                      'wt')
-            fp.write(hashes)
-            fp.close()
         hashes = [ int(h) for h in hashes.split(' ') ]
         mh = MinHash(len(hashes), KSIZE)
         for h in hashes:
@@ -64,11 +62,14 @@ def main():
 
     for filename in args.signature_txt_files:
         print('loading:', filename)
-        data = open(filename).read().strip()
-        hashes = list(map(int, data.split()))
-        mh = MinHash(len(hashes), KSIZE)
-        for h in hashes:
-            mh.add_hash(h)
+        siglist = signature.load_signatures(filename,
+                                            select_moltype='dna',
+                                            select_ksize=KSIZE)
+        siglist = list(siglist)
+
+        assert len(siglist) == 1, "need exactly one signature"
+        sig = siglist[0]
+        mh = sig.estimator.mh
 
         print('comparing!')
         print('')

@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 """
 """
 from __future__ import print_function
@@ -8,6 +8,7 @@ from spacegraphcats.catlas import CAtlas
 from spacegraphcats.graph import VertexDict
 from collections import defaultdict
 from sourmash_lib import MinHash
+import sourmash_lib.signature
 import os
 import sys
 import time
@@ -24,10 +25,13 @@ def load_orig_sizes_and_labels(original_graph_filename):
     orig_sizes = defaultdict(int)
     def parse_source_graph_labels(node_id, size, names, vals):
         assert names[0] == 'labels'
-        labels = vals[0]
         orig_sizes[node_id] = size
-        if labels:
-            orig_to_labels[node_id] = list(map(int, labels.strip().split(' ')))
+
+        if vals:
+            labels = vals[0]
+            if labels:
+                labels = list(map(int, labels.strip().split(' ')))
+                orig_to_labels[node_id] = labels
 
     def nop(*x):
         pass
@@ -67,17 +71,14 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('catlas_r', type=int, help='catlas radius to load')
-    p.add_argument('mh_files', nargs='+',
-                   help='files containing dumped MinHash signature')
+    p.add_argument('mh_file',
+                   help='file containing MinHash signatures')
     p.add_argument('--strategy', type=str, default='bestnode',
                    help='search strategy: bestnode, xxx')
     p.add_argument('--searchlevel', type=int, default=0)
     p.add_argument('-q', '--quiet', action='store_true')
     p.add_argument('--append-csv', type=str,
                    help='append results in CSV to this file')
-    p.add_argument('--label-list', type=str,
-                   help='list of labels that should correspond to MinHash; ' + \
-                        'defaults to index of mh_files.')
     args = p.parse_args()
 
     # load the CAtlas.
@@ -146,19 +147,34 @@ def main():
         all_labels.update(vv)
 
     # construct list of labels to search for
-    if args.label_list:
-        label_list = [ int(i) for i in args.label_list.split(',') ]
-    else:
-        label_list = [ i+1 for i in range(len(args.mh_files)) ]
-    assert len(label_list) == len(args.mh_files)
-    
-    print('starting searches!')
-    for (mh_file, label) in zip(args.mh_files, label_list):
-        ### load search mh
-        query_mh = load_mh_dump(mh_file)
+    siglist = sourmash_lib.signature.load_signatures(args.mh_file)
+    sigdict = dict( [ (sig.name(), sig) for sig in siglist ] )
+    print(list(sigdict.keys()))
 
-        prof = cProfile.Profile()
-        prof.enable()
+    labels_file = os.path.basename(args.catlas_prefix) + '.labels.txt'
+    labels_file = os.path.join(args.catlas_prefix, labels_file)
+    with open(labels_file, 'rt') as fp:
+        label_list = [ x.strip().split(' ', 1) for x in fp.readlines() ]
+        label_list = [ ((int(a), b)) for (a, b) in label_list ]
+        sigs_by_label_id = dict([ (int(x), sigdict.get(y))
+                              for (x, y) in label_list ])
+        for (label, name) in label_list:
+            print('got:', label, name, sigs_by_label_id[label])
+
+    print('starting searches!')
+    for (label, label_name) in label_list:
+        query_sig = sigs_by_label_id[label]
+        if not query_sig:
+            print('skipping label', label, ' -- no associated signature given')
+            print("(or can't find signature {})".format(label_name))
+            continue
+        print('searching for sequence {} / label {}'.format(query_sig.name(),
+                                                            label))
+
+        query_mh = query_sig.estimator.mh
+
+        #prof = cProfile.Profile()
+        #prof.enable()
         q_start = time.time()
 
         ### next, find the relevant catlas nodes using the MinHash.
@@ -251,7 +267,8 @@ def main():
             sens = (100.0 * tp / (tp + fn))
         if tn + fp:
             spec = (100.0 * tn / (tn + fp))
-        print('%s - sensitivity: %.1f / specificity / %.1f' % (mh_file, sens, spec))
+        print('%s - sensitivity: %.1f / specificity / %.1f' % \
+              (query_sig.name(), sens, spec))
 
         ## some double checks.
 
@@ -270,9 +287,9 @@ def main():
                 outfp.write('%.1f, %.1f, %d, %d, %d, %d, %s, %d\n' %\
                          (sens, spec, tp, fp, fn, tn, args.strategy,
                           args.searchlevel))
-        prof.disable()
-        ps = pstats.Stats(prof).sort_stats('time')
-        ps.print_stats()
+        #prof.disable()
+        #ps = pstats.Stats(prof).sort_stats('time')
+        #ps.print_stats()
 
     sys.exit(0)
 

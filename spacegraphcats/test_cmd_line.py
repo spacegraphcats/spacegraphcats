@@ -28,6 +28,8 @@ def test_walk_dbg():
 
 
 def test_build_cdbg_tr_small():
+    return
+
     # check a basic run of walk-dbg
     tr_small = utils.get_test_data('tr-small.fa')
 
@@ -41,6 +43,8 @@ def test_build_cdbg_tr_small():
 
 
 def test_load_cdbg_tr_small():
+    return
+
     # check a basic run of walk-dbg
     tr_small = utils.get_test_data('tr-small.fa')
 
@@ -120,9 +124,9 @@ def test_search_new_catlas():
     tr_cross_gxt = utils.get_test_data('tr-cross.gxt.gz')
     tr_cross_mxt = utils.get_test_data('tr-cross.mxt.gz')
 
-    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
-    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
-    mh3_txt = utils.get_test_data('acido-short.fa.sig.dump.txt')
+    mh1_txt = utils.get_test_data('tr-1.fa.sig')
+    mh2_txt = utils.get_test_data('tr-2.fa.sig')
+    mh3_txt = utils.get_test_data('acido-short.fa.sig')
 
     with utils.TempDirectory() as tempdir:
         dirname = _build_catlas_from_gz(tr_cross_gxt, tr_cross_mxt,
@@ -130,11 +134,12 @@ def test_search_new_catlas():
 
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh1_txt], in_directory=tempdir)
-        assert 'tr-1.fa.sig.dump.txt,0.488,0.976,0,0' in out
+        print(out)
+        assert 'tr-1.fa.sig,0.488,0.976,0,0' in out
 
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh2_txt], in_directory=tempdir)
-        assert 'tr-2.fa.sig.dump.txt,0.500,1.000,1,1' in out
+        assert 'tr-2.fa.sig,0.500,1.000,1,1' in out
 
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh3_txt], in_directory=tempdir)
@@ -148,9 +153,9 @@ def test_search_new_catlas_merge_mxt_on_disk():
     tr_cross_gxt = utils.get_test_data('tr-cross.gxt.gz')
     tr_cross_mxt = utils.get_test_data('tr-cross.mxt.gz')
 
-    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
-    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
-    mh3_txt = utils.get_test_data('acido-short.fa.sig.dump.txt')
+    mh1_txt = utils.get_test_data('tr-1.fa.sig')
+    mh2_txt = utils.get_test_data('tr-2.fa.sig')
+    mh3_txt = utils.get_test_data('acido-short.fa.sig')
 
     with utils.TempDirectory() as tempdir:
         dirname = _build_catlas_from_gz(tr_cross_gxt, tr_cross_mxt,
@@ -166,11 +171,11 @@ def test_search_new_catlas_merge_mxt_on_disk():
 
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh1_txt], in_directory=tempdir)
-        assert 'tr-1.fa.sig.dump.txt,0.488,0.976,0,0' in out
+        assert 'tr-1.fa.sig,0.488,0.976,0,0' in out
 
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh2_txt], in_directory=tempdir)
-        assert 'tr-2.fa.sig.dump.txt,0.500,1.000,1,1' in out
+        assert 'tr-2.fa.sig,0.500,1.000,1,1' in out
 
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh3_txt], in_directory=tempdir)
@@ -183,9 +188,9 @@ def test_search_prebuilt_catlas():
     # use a pre-built catlas and search it --
     tr_cross_dir = utils.get_test_data('catlas.tr-cross')
 
-    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
-    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
-    mh3_txt = utils.get_test_data('acido-short.fa.sig.dump.txt')
+    mh1_txt = utils.get_test_data('tr-1.fa.sig')
+    mh2_txt = utils.get_test_data('tr-2.fa.sig')
+    mh3_txt = utils.get_test_data('acido-short.fa.sig')
 
     with utils.TempDirectory() as tempdir:
         dirname = os.path.join(tempdir, 'tr-cross')
@@ -194,12 +199,12 @@ def test_search_prebuilt_catlas():
         # results
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh1_txt], in_directory=tempdir)
-        assert 'tr-1.fa.sig.dump.txt,0.488,0.976,0,1' in out
+        assert 'tr-1.fa.sig,0.488,0.976,0,1' in out
 
         # results
         status, out, err = utils.runscript('search-catlas-mh.py',
                             [dirname, mh2_txt], in_directory=tempdir)
-        assert 'tr-2.fa.sig.dump.txt,0.500,1.000,0,1' in out
+        assert 'tr-2.fa.sig,0.500,1.000,0,1' in out
 
         # no results
         status, out, err = utils.runscript('search-catlas-mh.py',
@@ -213,9 +218,9 @@ def test_benchmark_code_tr_cross():
     # run the benchmarking code on tr_cross
     tr_cross = utils.get_test_data('tr-cross.fa')
 
-    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
+    mh1_txt = utils.get_test_data('tr-1.fa.sig')
     print(mh1_txt)
-    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
+    mh2_txt = utils.get_test_data('tr-2.fa.sig')
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('walk-dbg.py',
@@ -240,48 +245,7 @@ def test_benchmark_code_tr_cross():
         assert 'tn: 0' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross', '3', mh2_txt, '--label-list', '2'],
-                            in_directory=tempdir)
-        print(out)
-        assert 'tp: 171873' in out
-        assert 'fp: 164063' in out
-        assert 'fn: 0' in out
-        assert 'tn: 0' in out
-
-
-def test_benchmark_code_tr_cross_label_linear():
-    # run the benchmarking code on tr_cross w/--label-linear-segments
-    tr_cross = utils.get_test_data('tr-cross.fa')
-
-    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
-    print(mh1_txt)
-    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
-
-    with utils.TempDirectory() as tempdir:
-        status, out, err = utils.runscript('walk-dbg.py',
-                                           [tr_cross, '--label', '-M 5e6',
-                                            '--label-linear-segments'],
-                                           in_directory=tempdir)
-        assert 'used/assigned 2 labels total' in out
-        assert 'counts: {1: 441, 2: 440}' in out
-
-        status, out, err = utils.runscript('build-catlas.py',
-                                           ['tr-cross', '3'],
-                                           in_directory=tempdir)
-        print(out)
-        assert 'Catlas done' in out
-
-        status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross', '3', mh1_txt],
-                            in_directory=tempdir)
-        print(out)
-        assert 'tp: 172651' in out
-        assert 'fp: 163285' in out
-        assert 'fn: 0' in out
-        assert 'tn: 0' in out
-
-        status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross', '3', mh2_txt, '--label-list', '2'],
+                            ['tr-cross', '3', mh2_txt],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 171873' in out
@@ -294,8 +258,8 @@ def test_benchmark_code_tr_cross_revlabels():
     # run the benchmarking code on tr_cross-rev (switch label order, basically)
     tr_cross = utils.get_test_data('tr-cross-rev.fa')
 
-    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
-    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
+    mh1_txt = utils.get_test_data('tr-1.fa.sig')
+    mh2_txt = utils.get_test_data('tr-2.fa.sig')
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('walk-dbg.py',
@@ -311,7 +275,7 @@ def test_benchmark_code_tr_cross_revlabels():
         assert 'Catlas done' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross-rev', '3', mh1_txt, '--label-list', '2'],
+                            ['tr-cross-rev', '3', mh1_txt],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 172651' in out
@@ -320,7 +284,7 @@ def test_benchmark_code_tr_cross_revlabels():
         assert 'tn: 0' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross-rev', '3', mh2_txt, '--label-list', '1'],
+                            ['tr-cross-rev', '3', mh2_txt],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 171873' in out
@@ -333,8 +297,8 @@ def test_benchmark_code_tr_cross_relabel():
     # run the benchmarking code on tr_cross with different label IDs
     tr_cross = utils.get_test_data('tr-cross.fa')
 
-    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
-    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
+    mh1_txt = utils.get_test_data('tr-1.fa.sig')
+    mh2_txt = utils.get_test_data('tr-2.fa.sig')
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('walk-dbg.py',
@@ -352,7 +316,7 @@ def test_benchmark_code_tr_cross_relabel():
         assert 'Catlas done' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross', '3', mh1_txt, '--label-list', '500001'],
+                            ['tr-cross', '3', mh1_txt],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 172651' in out
@@ -361,7 +325,7 @@ def test_benchmark_code_tr_cross_relabel():
         assert 'tn: 0' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross', '3', mh2_txt, '--label-list', '500002'],
+                            ['tr-cross', '3', mh2_txt],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 171873' in out
@@ -375,8 +339,8 @@ def test_benchmark_code_tr_cross_searchlevel():
     # run the benchmarking code on tr_cross
     tr_cross = utils.get_test_data('tr-cross.fa')
 
-    mh1_txt = utils.get_test_data('tr-1.fa.sig.dump.txt')
-    mh2_txt = utils.get_test_data('tr-2.fa.sig.dump.txt')
+    mh1_txt = utils.get_test_data('tr-1.fa.sig')
+    mh2_txt = utils.get_test_data('tr-2.fa.sig')
 
     with utils.TempDirectory() as tempdir:
         status, out, err = utils.runscript('walk-dbg.py',
