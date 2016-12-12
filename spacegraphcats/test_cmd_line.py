@@ -236,7 +236,8 @@ def test_benchmark_code_tr_cross():
         assert 'Catlas done' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross', '3', mh1_txt],
+                            ['tr-cross', '3', mh1_txt,
+                             '--strategy', 'bestnode'],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 172651' in out
@@ -245,7 +246,8 @@ def test_benchmark_code_tr_cross():
         assert 'tn: 0' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross', '3', mh2_txt],
+                            ['tr-cross', '3', mh2_txt,
+                             '--strategy', 'bestnode'],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 171873' in out
@@ -275,7 +277,8 @@ def test_benchmark_code_tr_cross_revlabels():
         assert 'Catlas done' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross-rev', '3', mh1_txt],
+                            ['tr-cross-rev', '3', mh1_txt,
+                             '--strategy', 'bestnode'],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 172651' in out
@@ -284,7 +287,8 @@ def test_benchmark_code_tr_cross_revlabels():
         assert 'tn: 0' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross-rev', '3', mh2_txt],
+                            ['tr-cross-rev', '3', mh2_txt,
+                             '--strategy', 'bestnode'],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 171873' in out
@@ -316,7 +320,8 @@ def test_benchmark_code_tr_cross_relabel():
         assert 'Catlas done' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross', '3', mh1_txt],
+                            ['tr-cross', '3', mh1_txt,
+                             '--strategy', 'bestnode'],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 172651' in out
@@ -325,7 +330,8 @@ def test_benchmark_code_tr_cross_relabel():
         assert 'tn: 0' in out
 
         status, out, err = utils.runscript('search-for-domgraph-nodes.py',
-                            ['tr-cross', '3', mh2_txt],
+                            ['tr-cross', '3', mh2_txt,
+                             '--strategy', 'bestnode'],
                             in_directory=tempdir)
         print(out)
         assert 'tp: 171873' in out
