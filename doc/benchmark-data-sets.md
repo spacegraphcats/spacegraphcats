@@ -7,7 +7,7 @@ the mock community in the
 [Shakya et al., 2014](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3665634/)
 paper.  This is a labeled data set - the cDBG components corresponding to
 each genome are labeled, and MinHash signatures are provided for use.
-k
+
 CTB TODO: provide full build instructions, including signature computation.
 
 The catlas, computed with r=3, is available for download

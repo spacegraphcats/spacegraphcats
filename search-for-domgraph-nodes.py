@@ -73,7 +73,7 @@ def main():
     p.add_argument('catlas_r', type=int, help='catlas radius to load')
     p.add_argument('mh_file',
                    help='file containing MinHash signatures')
-    p.add_argument('--strategy', type=str, default='bestnode',
+    p.add_argument('--strategy', type=str, default='frontier-jacc',
                    help='search strategy: bestnode, xxx')
     p.add_argument('--searchlevel', type=int, default=0)
     p.add_argument('-q', '--quiet', action='store_true')
@@ -149,7 +149,6 @@ def main():
     # construct list of labels to search for
     siglist = sourmash_lib.signature.load_signatures(args.mh_file)
     sigdict = dict( [ (sig.name(), sig) for sig in siglist ] )
-    print(list(sigdict.keys()))
 
     labels_file = os.path.basename(args.catlas_prefix) + '.labels.txt'
     labels_file = os.path.join(args.catlas_prefix, labels_file)
@@ -158,8 +157,6 @@ def main():
         label_list = [ ((int(a), b)) for (a, b) in label_list ]
         sigs_by_label_id = dict([ (int(x), sigdict.get(y))
                               for (x, y) in label_list ])
-        for (label, name) in label_list:
-            print('got:', label, name, sigs_by_label_id[label])
 
     print('starting searches!')
     for (label, label_name) in label_list:
