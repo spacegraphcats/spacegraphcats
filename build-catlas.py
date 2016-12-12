@@ -100,7 +100,7 @@ def main():
                                          as the directory.', type=str)
     parser.add_argument('r', help="The catlas' radius.", type=int )
     parser.add_argument('--min-id', help="Smallest id assigned to catlas nodes.", type=int, default=0)
-    parser.add_argument('--merge-mxt', help='merge MinHashes => catlas',
+    parser.add_argument('--no-merge-mxt', help='merge MinHashes => catlas',
                         action='store_true')
     args = parser.parse_args()
 
@@ -130,8 +130,8 @@ def main():
 
     report("Loaded graph with {} vertices, {} edges and {} components".format(len(project.graph),project.graph.num_edges(),project.graph.num_components()))
 
-    if args.merge_mxt:
-        report("Per --merge-mxt, loading minhashes for graph.")
+    if not args.no_merge_mxt:
+        report("By default, loading minhashes for graph.")
         file = read_project_file(project.path, project.name+".mxt")
         project.minhashes = VertexDict.from_mxt(file)
 
@@ -141,7 +141,7 @@ def main():
 
         report("Loaded minhashes for graph")
     else:
-        report("By default, NOT loading minhashes for graph.")
+        report("Per --no-merge-mxt, NOT loading minhashes for graph.")
         project.minhashes = None
 
 

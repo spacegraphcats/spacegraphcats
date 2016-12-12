@@ -117,8 +117,6 @@ def main():
     p.add_argument('--label', action='store_true')
     p.add_argument('--label-offset', type=int, default=0, help='for debug')
     p.add_argument('--node-offset', type=int, default=0, help='for debug')
-    p.add_argument('--label-linear-segments', action='store_true')
-    p.add_argument('--no-label-hdn', action='store_true')
     p.add_argument('-l', '--loadgraph', type=str, default=None)
     args = p.parse_args()
 
@@ -127,8 +125,6 @@ def main():
     graph_tablesize = int(args.memory * 8.0 / 4.0)
 
     assert args.ksize % 2, "ksize must be odd"
-    if args.label_linear_segments or args.no_label_hdn:
-        assert args.label
 
     if args.label:
         label_list = []
@@ -198,7 +194,7 @@ def main():
     pathy = Pathfinder(ksize, gxtfile, mxtfile, args.node_offset)
 
     print('finding high degree nodes')
-    if args.label and not args.no_label_hdn:
+    if args.label:
         print('(and labeling them, per request)')
     degree_nodes = khmer.HashSet(ksize)
     n = args.label_offset
@@ -214,9 +210,8 @@ def main():
             degree_nodes += these_hdn
             if args.label:
                 label_list.append(record.name)
-                if not args.no_label_hdn:
-                    for kmer in these_hdn:
-                        pathy.add_label(kmer, n)
+                for kmer in these_hdn:
+                    pathy.add_label(kmer, n)
 
     # get all of the degree > 2 kmers and give them IDs.
     for kmer in degree_nodes:
@@ -256,26 +251,6 @@ def main():
     print(len(pathy.nodes), 'segments, containing',
               sum(pathy.nodes.values()), 'nodes')
 
-    if args.label and args.label_linear_segments:
-        assert 0
-        print('...doing labeling of linear segments by request.')
-        n = args.label_offset
-        path_kmers = set(pathy.kmers_to_nodes)   # set of path identifiers
-
-        for seqfile in args.seqfiles:
-            for record in screed.open(seqfile):
-                if len(record.sequence) < ksize: continue
-                n += 1
-
-                # all k-mers in this sequence --
-                all_kmers = graph.get_kmer_hashes_as_hashset(record.sequence)
-                all_kmers = set(all_kmers)
-
-                # are any of these k-mers path identifers? -> attach label
-                all_kmers.intersection_update(path_kmers)
-                for kmer in all_kmers:
-                    pathy.add_label(kmer, n)
-
     del graph
     del stop_bf
 
@@ -312,7 +287,7 @@ def main():
         pathy.adjacencies[a].add(b)
 
     try:
-        os.path.unlink(gxtfile + '.adj')
+        os.unlink(gxtfile + '.adj')
     except:
         print('cannot remove', gxtfile + '.adj')
 
@@ -332,7 +307,7 @@ def main():
 
         with open(label_file, "wt") as fp:
             for n, label in enumerate(label_list):
-                fp.write("{} {}\n".format(n + 1, label))
+                fp.write("{} {}\n".format(n + 1 + args.label_offset, label))
 
 
 if __name__ == '__main__':

@@ -79,9 +79,6 @@ def main():
     p.add_argument('-q', '--quiet', action='store_true')
     p.add_argument('--append-csv', type=str,
                    help='append results in CSV to this file')
-    p.add_argument('--label-list', type=str,
-                   help='list of labels that should correspond to MinHash; ' + \
-                        'defaults to index of mh_files.')
     args = p.parse_args()
 
     # load the CAtlas.
@@ -152,23 +149,32 @@ def main():
     # construct list of labels to search for
     siglist = sourmash_lib.signature.load_signatures(args.mh_file)
     sigdict = dict( [ (sig.name(), sig) for sig in siglist ] )
+    print(list(sigdict.keys()))
 
     labels_file = os.path.basename(args.catlas_prefix) + '.labels.txt'
     labels_file = os.path.join(args.catlas_prefix, labels_file)
     with open(labels_file, 'rt') as fp:
-        labels_names = [ x.strip().split(' ', 1) for x in fp.readlines() ]
-        labels_names = dict([ (int(x), sigdict[y]) for (x, y) in labels_names ])
+        label_list = [ x.strip().split(' ', 1) for x in fp.readlines() ]
+        label_list = [ ((int(a), b)) for (a, b) in label_list ]
+        sigs_by_label_id = dict([ (int(x), sigdict.get(y))
+                              for (x, y) in label_list ])
+        for (label, name) in label_list:
+            print('got:', label, name, sigs_by_label_id[label])
 
     print('starting searches!')
-    for label in labels_names:
-        query_sig = labels_names[label]
+    for (label, label_name) in label_list:
+        query_sig = sigs_by_label_id[label]
+        if not query_sig:
+            print('skipping label', label, ' -- no associated signature given')
+            print("(or can't find signature {})".format(label_name))
+            continue
         print('searching for sequence {} / label {}'.format(query_sig.name(),
                                                             label))
 
         query_mh = query_sig.estimator.mh
 
-        prof = cProfile.Profile()
-        prof.enable()
+        #prof = cProfile.Profile()
+        #prof.enable()
         q_start = time.time()
 
         ### next, find the relevant catlas nodes using the MinHash.
@@ -281,9 +287,9 @@ def main():
                 outfp.write('%.1f, %.1f, %d, %d, %d, %d, %s, %d\n' %\
                          (sens, spec, tp, fp, fn, tn, args.strategy,
                           args.searchlevel))
-        prof.disable()
-        ps = pstats.Stats(prof).sort_stats('time')
-        ps.print_stats()
+        #prof.disable()
+        #ps = pstats.Stats(prof).sort_stats('time')
+        #ps.print_stats()
 
     sys.exit(0)
 
