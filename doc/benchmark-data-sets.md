@@ -70,8 +70,6 @@ We used the following commands:
     /home/ubuntu/spacegraphcats/walk-dbg.py -o hu_catlas -l hu_abundtrim.ng \
         SRR1976948.abundtrim.fq.gz SRR1977249.abundtrim.fq.gz
 
-    # Loaded graph with 54583987 vertices, 64166942 edges and 302412 components
-
 ## Appendices
 
 ### Appendix: Installing the requirements
