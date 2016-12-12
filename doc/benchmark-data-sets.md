@@ -1,5 +1,11 @@
 # Benchmark data sets
 
+Data sets listed below:
+
+* [15genome](#15genome) - small & low memory, laptop-tractable.
+* [mircea](#mircea) - requires ~10 GB of RAM, ~90 seconds to load.
+* [hu_catlas](#hu_catlas) - cannot compute catlas for this one.
+
 ## 15genome
 
 The `15genome` data set contains the first 15 genomes used to build
