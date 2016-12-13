@@ -2,9 +2,39 @@
 
 Data sets listed below:
 
+* [acido](benchmark-data-sets.md#acido) - small & low memory, laptop-tractable.
 * [15genome](benchmark-data-sets.md#15genome) - small & low memory, laptop-tractable.
 * [mircea](benchmark-data-sets.md#mircea) - requires ~12 GB of RAM, ~90 seconds to load.
+* [combined](benchmark-data-sets.md#combined)
 * [hu_catlas](benchmark-data-sets.md#hu_catlas) - cannot compute catlas for this one, even in 65 GB and 100 hours.
+
+## acido
+
+This is a small data set created by splitting the Acidobacterium
+capsulatum genome into 8 chunks.  You can construct and search the
+catlas quickly and in very small amounts of memory.
+
+### Building `acido`
+
+To construct, do the following:
+
+    # build compact De Bruijn graph, with labels
+    ./walk-dbg.py -o acido data/acido-chunk[12].fa.gz --label
+
+    # build catlas with MXTs
+    ./build-catlas.py acido 3
+
+    # build minhash signatures for input
+    sourmash compute -k 31 --singleton -o acido-chunks.sig \
+        data/acido-chunk[12].fa.gz
+
+### Searching `acido`
+
+To search, run:
+
+    ./search-for-domgraph-nodes.py acido 3 acido-chunks.sig
+
+Add `--append-csv` to get output suitable for parsing.
 
 ## 15genome
 
@@ -28,7 +58,7 @@ the directory as `15genome/15genome.fa.gz.sig`.
 To run against the entire set of signatures, do:
 
     ./search-for-domgraph-nodes.py 15genome 3 15genome/15genome.fa.gz.sig
-    
+
 Add `--append-csv out.csv` to get the output in spreadsheet form.
 
 ## mircea
@@ -71,6 +101,61 @@ We then also computed the catlas for radius 5, so:
 The signatures were computed with:
 
     sourmash compute -k 31 --dna --singleton mircea.fa -o mircea/mircea.all.sig
+
+## combined
+
+The `combined` data set comes from real sequence generated from a mock
+community - that is, known microbes were mixed together and sequenced.
+As such it has both known composition and the noise that comes from
+DNA sequencing technologies.  This data set is from
+[Shakya et al., 2014](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3665634/)
+paper, and it contains the same underlying genomes as the
+[mircea](benchmark-data-sets.md#mircea) data set.  The full collection
+of genomes is available for download in FASTA
+[here](http://spacegraphcats.ucdavis.edu.s3.amazonaws.com/mircea.fa.gz).
+
+To download and unpack,
+
+    curl -O http://spacegraphcats.ucdavis.edu.s3.amazonaws.com/combined.tar.gz
+    tar xzf combined.tar.gz
+
+The data set contains catlases at radius 5.  It cannot, however, be
+searched by the `search-for-domgraph-nodes.py` script because it does
+not have any labels.  CTB has a script that uses Sequence Bloom Trees
+(SBTs) to recover dominating nodes; see below.
+
+### Searching `combined` with an SBT.
+
+You can build an SBT to search the MinHash sketches of the domgraph like so:
+
+    make-sbt-of-mxt.py combined 5
+
+(You only need to do this once.)
+
+@CTB fix me with references to search-catlas.py.
+
+### Constructing `combined`
+
+We built `combined` like so:
+
+    # trim the raw reads
+    interleave-reads.py SRR606249_[12].fastq.gz | \
+        trim-low-abund.py -Z 20 -C 3 -M 14e9 - -o - | \
+        gzip -9c > SRR606249.combined.trim.fq.gz
+
+    # build De Bruijn graph
+    load-graph.py -M 4e9 -k 31 SRR606249.combined.ng \
+        SRR606249.combined.trim.fq.gz --no-build-tagset
+
+    # build compact De Bruijn graph
+    walk-dbg.py -l SRR606249.combined.ng -o combined \
+        SRR606249.combined.trim.fq.gz
+
+    # build catlas
+    build-catlas.py combined 5 --no-merge-mxt
+
+    # build catlas mxt
+    merge-mxt-in-memory.py combined 5
 
 ## hu_catlas
 
