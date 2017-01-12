@@ -201,7 +201,7 @@ class Graph:
         while len(removed) < n:
             while len(degbuckets[mindeg]) == 0:
                 mindeg += 1
-            v =degbuckets[mindeg].pop(v)
+            v = degbuckets[mindeg].pop()
             removed.add(v)
             degen = max(degen, mindeg)
 
