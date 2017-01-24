@@ -2,7 +2,7 @@
 
 import unittest
 
-from spacegraphcats.graph import Graph
+from spacegraphcats.graph import Graph, TFGraph
 
 class GraphTest(unittest.TestCase):
 
@@ -24,6 +24,27 @@ class GraphTest(unittest.TestCase):
 			union |= set(c)
 
 		self.assertTrue(len(union) == len(g))
+
+	def test_tfgraph(self):
+		tfgraph = TFGraph(list(range(5)))
+
+		# Query in-neighbourhood by weight
+		tfgraph.add_arc(1,0,1).add_arc(2,0,1).add_arc(3,0,1).add_arc(4,0,1)
+		N = set(tfgraph.in_neighbours_weight(0,1))
+		self.assertTrue(N == set([1,2,3,4]))
+
+		# There should be no transitive triples in the current graph:
+		# All arcs point to vertex zero which has not outgoing arc
+		for x in tfgraph:
+			trips = list(tfgraph.trans_trips(x))
+			self.assertTrue(len(trips) == 0)
+
+		# No vertex except zero should produce fraternal triples
+		for x in [1,2,3,4]:
+			trips = list(tfgraph.frat_trips(x))
+			self.assertTrue(len(trips) == 0)			
+
+
 
 	def test_ldo(self):
 		from spacegraphcats.rdomset import ldo
