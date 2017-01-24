@@ -69,7 +69,6 @@ class GraphTest(unittest.TestCase):
 		n = 100
 		d = 5
 		p = d / n
-		print(p)
 
 		g = Graph.on(list(range(n)))
 		for x,y in itertools.combinations(range(n),2):
