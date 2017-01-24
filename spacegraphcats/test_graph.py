@@ -25,5 +25,45 @@ class GraphTest(unittest.TestCase):
 
 		self.assertTrue(len(union) == len(g))
 
+	def test_ldo(self):
+		from spacegraphcats.rdomset import ldo
+		import itertools, random
+		
+		# Test on complete graph
+		n = 25
+		g = Graph.on(list(range(n)))
+		for x,y in itertools.combinations(range(n),2):
+			g.add_edge(x,y)
+		tfgraph = ldo(g)
+
+		for x,y in itertools.combinations(range(n),2):
+			# Every edge must be present as an arc
+			self.assertTrue( tfgraph.adjacent(x,y) or tfgraph.adjacent(y,x) )
+			# The low-degree orientation of a simple graph must be simple 
+			# and every arc has weight 1. 
+			self.assertTrue( tfgraph.weight(x,y) == 1 or tfgraph.weight(y,x) == 1 )
+			self.assertTrue( tfgraph.weight(x,y) == None or tfgraph.weight(y,x) == None )
+
+		# Test on (sparse) random graph
+		n = 100
+		d = 5
+		p = d / n
+		print(p)
+
+		g = Graph.on(list(range(n)))
+		for x,y in itertools.combinations(range(n),2):
+			if random.random() < p:
+				g.add_edge(x,y)
+		g.remove_loops()
+		tfgraph = ldo(g)
+
+		for x,y in g.edges():
+			# Every edge must be present as an arc
+			self.assertTrue( tfgraph.adjacent(x,y) or tfgraph.adjacent(y,x) )
+			# The low-degree orientation of a simple graph must be simple 
+			# and every arc has weight 1. 
+			self.assertTrue( tfgraph.weight(x,y) == 1 or tfgraph.weight(y,x) == 1 )
+			self.assertTrue( tfgraph.weight(x,y) == None or tfgraph.weight(y,x) == None )			
+
 if __name__ == '__main__':
     unittest.main()
