@@ -1,7 +1,7 @@
 all:
 
 test:
-	py.test
+	py.test tests spacegraphcats
 
 clean:
 	rm -fr acido_bench/
