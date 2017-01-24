@@ -34,16 +34,36 @@ class GraphTest(unittest.TestCase):
 		self.assertTrue(N == set([1,2,3,4]))
 
 		# There should be no transitive triples in the current graph:
-		# All arcs point to vertex zero which has not outgoing arc
+		# All arcs point to vertex 0 which has not outgoing arc
 		for x in tfgraph:
 			trips = list(tfgraph.trans_trips(x))
 			self.assertTrue(len(trips) == 0)
 
-		# No vertex except zero should produce fraternal triples
+		# No vertex except 0 should produce fraternal triples
 		for x in [1,2,3,4]:
 			trips = list(tfgraph.frat_trips(x))
 			self.assertTrue(len(trips) == 0)			
 
+		# Every pair of [1,2,3,4] is fraternal via vertex 0 with
+		# weight 2
+		trips = list(tfgraph.frat_trips(0))
+		self.assertTrue(len(trips) == 6)
+		for _,_,w in trips:
+			self.assertTrue(w == 2)
+
+		# Add an arc of weight 5 from 0 to 1. Now the vertices 
+		# [1,2,3,4] are in the second back-neighbourhood of 1 with 
+		# total weight 6
+		tfgraph.add_arc(0,1,5)
+		trips = list(tfgraph.trans_trips(1))
+		self.assertTrue(len(trips) == 4)
+		deplete = set([1,2,3,4]) 
+		for x,y,w in trips:
+			self.assertTrue(x in deplete)
+			deplete.remove(x)
+			self.assertTrue(y == 1)
+			self.assertTrue(w == 6)
+		self.assertTrue(len(deplete) == 0)
 
 
 	def test_ldo(self):
