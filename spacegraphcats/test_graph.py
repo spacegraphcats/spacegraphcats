@@ -65,7 +65,6 @@ class GraphTest(unittest.TestCase):
 			self.assertTrue(w == 6)
 		self.assertTrue(len(deplete) == 0)
 
-
 	def test_ldo(self):
 		from spacegraphcats.rdomset import ldo
 		import itertools, random

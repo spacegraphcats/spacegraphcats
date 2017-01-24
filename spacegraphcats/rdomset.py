@@ -368,10 +368,9 @@ def better_dvorak_reidl(augg,d):
     return domset
 
 #
-# Debugging/Test functiosn
+# Debugging/Test functions
 #
-
-def test_scattered(g, sc, d):
+def verify_scattered(g, sc, d):
     """ Verifies that a vertex set sc is d-scattered in a graph g, meaning
         that every pair of vertices in sc have distance at least d. """
     sc = set(sc)
@@ -382,7 +381,7 @@ def test_scattered(g, sc, d):
     return True
 
 
-def test_domset(g, ds, d):
+def verify_domset(g, ds, d):
     """ Verifies that a vertex set ds is a d-dominating set in g, meaning
         that every vertex of g lies within distance d of some vertex in ds. """
     dominated = set()
@@ -390,7 +389,7 @@ def test_domset(g, ds, d):
         dominated |= g.rneighbours(v,d)
     return len(dominated) == len(g)
 
-def test_dominators(g, domset, dominators, d):
+def verify_dominators(g, domset, dominators, d):
     for v in g:
         dN = g.rneighbours(v,d)
         candidates = dN & domset
@@ -401,7 +400,7 @@ def test_dominators(g, domset, dominators, d):
             return False
     return True
 
-def test_dominators_strict(g, domset, dominators, d):
+def verify_dominators_strict(g, domset, dominators, d):
     for v in g:
         dN = set([v])
         if dominators[v][0] != (dN & domset):
@@ -439,7 +438,7 @@ def main(inputgxt, outputgxt, d, test, domgraph):
 
     # Test domset
     if test:
-        print("Testing domset:", test_domset(g,domset,d))
+        print("Testing domset:", verify_domset(g,domset,d))
 
     # Annotate domset
     labelds = 'ds{}'.format(d)

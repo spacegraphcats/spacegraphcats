@@ -3,12 +3,12 @@
 import unittest
 
 from spacegraphcats.graph import Graph
-from spacegraphcats.rdomset import ldo, rdomset, test_domset
+from spacegraphcats.rdomset import ldo, rdomset, verify_domset
 import itertools, random
 
 class DomsetTest(unittest.TestCase):
 
-	def test_domset(self):
+	def test_rdomset(self):
 		n = 100
 		d = 5
 		p = d / n
@@ -30,12 +30,12 @@ class DomsetTest(unittest.TestCase):
 			self.assertTrue(dominated)
 
 		# Let's make sure the debug function in rdomset agrees
-		self.assertTrue(test_domset(g, domset, 1))
+		self.assertTrue(verify_domset(g, domset, 1))
 
 		# Test higher-radius dominating sets
 		for r in range(2,5):
 			domset, _ = rdomset(g, r)
-			self.assertTrue(test_domset(g, domset, r))
+			self.assertTrue(verify_domset(g, domset, r))
 
 if __name__ == '__main__':
     unittest.main()
