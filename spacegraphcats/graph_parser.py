@@ -7,62 +7,67 @@ def _parse_line(line):
     return list(map(str.strip, line.split(',')))
 
 
-def _mapstr(l):
-    return list(map(str, l))
+def _mapstr(items):
+    return list(map(str, items))
 
 
-def parse(file, add_vertex, add_edge):
+def parse(graph_file, add_vertex=None, add_edge=None):
     """Parse a graph and call provided methods with vertices and edges."""
     # read vertices
-    vertex_attributes = _parse_line(file.readline())[2:]
+    vertex_attributes = _parse_line(graph_file.readline())[2:]
 
-    next_line = file.readline()
+    next_line = graph_file.readline()
     while len(next_line) > 1:
-        parsed = _parse_line(next_line)
-        add_vertex(int(parsed[0]), int(parsed[1]),
-                   vertex_attributes, parsed[2:])
-        next_line = file.readline()
+        if add_vertex is not None:
+            parsed = _parse_line(next_line)
+            add_vertex(int(parsed[0]), int(parsed[1]),
+                       vertex_attributes, parsed[2:])
+        next_line = graph_file.readline()
+
+    if add_edge is None:
+        # we won't be doing anything with the edges anyway
+        return;
 
     # read edges
-    edge_attributes = _parse_line(file.readline())[2:]
+    edge_attributes = _parse_line(graph_file.readline())[2:]
 
-    next_line = file.readline()
+    next_line = graph_file.readline()
     while len(next_line) > 1:
         parsed = _parse_line(next_line)
         add_edge(int(parsed[0]), int(parsed[1]),
                  edge_attributes, parsed[2:])
-        next_line = file.readline()
+        next_line = graph_file.readline()
 
 
-def parse_minhash(file, add_minhash):
+def parse_minhash(minhash_file, add_minhash):
     """Parse minhash (.mxt) file."""
-    for line in file:
+    for line in minhash_file:
         if len(line) < 2:
             continue
         parsed = _parse_line(line)
-        add_minhash(parsed[0], list(map(int,map(str.strip, parsed[1].split()))))
+        add_minhash(parsed[0], list(map(int, map(str.strip, parsed[1].split()))))
 
-def _parse_edgelist(file, add_edge):
+def _parse_edgelist(graph_file, add_edge):
     """Parse and edgelist (.ext) file."""
-    for line in file:
+    for line in graph_file:
         parsed = _parse_line(line)
         add_edge(parsed[0], parsed[1])
 
-def write_edgelist(file, edges):
+def write_edgelist(graph_file, edges):
     """Write an edgelist into an .ext file."""
-    for u,v in edges:
-        file.write('{},{}\n'.format(u,v))
+    for u, v in edges:
+        graph_file.write('{},{}\n'.format(u, v))
 
-class Writer:
+class Writer(object):
     """Writer for the gxt graph format.
 
     You need to either pass the vertex and edge attributes (the names)
     when you initialize the writer or when you add a vertex or edge.
     """
 
-    def __init__(self, file, vertex_attributes=None, edge_attributes=None):
+    def __init__(self, graph_file, vertex_attributes=None, edge_attributes=None):
         """Initialize graph writer."""
-        self.file = file
+        self.file = graph_file
         self.vertex_header_written = False
         self.edge_header_written = False
 
@@ -72,8 +77,11 @@ class Writer:
         if edge_attributes is not None:
             self.edge_header = ','.join(['src', 'dest'] + edge_attributes)
 
-    def add_vertex(self, id, size, attribute_values=[], vertex_attributes=None):
+    def add_vertex(self, vertex_id, size, attribute_values=None, vertex_attributes=None):
         """Add a vertex to the output. Don't add edges after adding nodes."""
+        if attribute_values is None:
+            attribute_values = []
+
         assert not self.edge_header_written
 
         if not hasattr(self, 'vertex_header'):
@@ -82,10 +90,13 @@ class Writer:
         if not self.vertex_header_written:
             self.file.write(self.vertex_header + '\n')
             self.vertex_header_written = True
-        self.file.write(','.join(_mapstr([id, size] + attribute_values)) + '\n')
+        self.file.write(','.join(_mapstr([vertex_id, size] + attribute_values)) + '\n')
 
-    def add_edge(self, src, dest, attribute_values=[], edge_attributes=None):
+    def add_edge(self, src, dest, attribute_values=None, edge_attributes=None):
         """Add an edge to the output. Add all the nodes before you add edges."""
+        if attribute_values is None:
+            attribute_values = []
+
         assert self.vertex_header_written
 
         if not hasattr(self, 'edge_header'):
@@ -102,12 +113,12 @@ class Writer:
         pass
 
 
-class GmlWriter:
+class GmlWriter(object):
     """Similar to the writer for gxt above but for gml."""
 
-    def __init__(self, file, vertex_attributes=None, edge_attributes=None, directed=False):
+    def __init__(self, graph_file, vertex_attributes=None, edge_attributes=None, directed=False):
         """Initialize graph writer."""
-        self.file = file
+        self.file = graph_file
 
         if vertex_attributes is not None:
             self.vertex_attributes = vertex_attributes
@@ -125,25 +136,30 @@ class GmlWriter:
     def _quote(self, value):
         try:
             return int(value)
-            return float(value)
         except ValueError:
             pass
-        return '"{}"'.format(value)            
+        return '"{}"'.format(value)
 
-    def add_vertex(self, id, size, attribute_values=[], vertex_attributes=None):
+    def add_vertex(self, vertex_id, size, attribute_values=None, vertex_attributes=None):
         """Add a vertex to the output."""
+        if attribute_values is None:
+            attribute_values = []
+
         if not hasattr(self, 'vertex_attributes'):
             self.vertex_attributes = vertex_attributes
 
         self._write('  node [\n')
-        self._write('    id {}\n'.format(id))
+        self._write('    id {}\n'.format(vertex_id))
         self._write('    size {}\n'.format(size))
         for k, v in zip(self.vertex_attributes, attribute_values):
             self._write('    {} {}\n'.format(k, self._quote(v)))
         self._write('  ]\n')
 
-    def add_edge(self, src, dest, attribute_values=[], edge_attributes=None):
+    def add_edge(self, src, dest, attribute_values=None, edge_attributes=None):
         """Add an edge to the output."""
+        if attribute_values is None:
+            attribute_values = []
+
         if not hasattr(self, 'edge_attributes'):
             self.edge_attributes = edge_attributes
 
@@ -159,21 +175,21 @@ class GmlWriter:
         self._write(']\n')
 
 
-class DotWriter:
+class DotWriter(object):
     """Similar to the writer for gxt above but for dot."""
 
-    def __init__(self, file):
+    def __init__(self, graph_file):
         """Initialize graph writer."""
-        self.file = file
+        self.file = graph_file
 
         self._write('graph G {\n')
 
     def _write(self, string):
         self.file.write(string)
 
-    def add_vertex(self, id):
+    def add_vertex(self, vertex_id):
         """Add a vertex to the output."""
-        self._write('  {};\n'.format(id))
+        self._write('  {};\n'.format(vertex_id))
 
     def add_edge(self, src, dest):
         """Add an edge to the output."""
@@ -188,8 +204,8 @@ if __name__ == '__main__':
     import sys
     print('graph:')
 
-    def _add_vertex(id, size, attribute_names, attribute_values):
-        print('vertex:', id, size, attribute_names, attribute_values)
+    def _add_vertex(vertex_id, size, attribute_names, attribute_values):
+        print('vertex:', vertex_id, size, attribute_names, attribute_values)
 
     def _add_edge(src, dest, attribute_names, attribute_values):
         print('edge:', src, dest, attribute_names, attribute_values)
@@ -197,8 +213,8 @@ if __name__ == '__main__':
     with open('parser-examples/graph.gxt') as f:
         parse(f, _add_vertex, _add_edge)
 
-    def _add_minhash(id, hashes):
-        print('minhashes:', id, hashes)
+    def _add_minhash(vertex_id, hashes):
+        print('minhashes:', vertex_id, hashes)
 
     print()
     print('minhashes:')

@@ -33,11 +33,8 @@ def load_orig_sizes_and_labels(original_graph_filename):
                 labels = list(map(int, labels.strip().split(' ')))
                 orig_to_labels[node_id] = labels
 
-    def nop(*x):
-        pass
-
     with open(original_graph_filename) as fp:
-        graph_parser.parse(fp, parse_source_graph_labels, nop)
+        graph_parser.parse(fp, parse_source_graph_labels)
 
     return orig_sizes, orig_to_labels
 
