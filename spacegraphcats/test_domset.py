@@ -3,7 +3,7 @@
 import unittest
 
 from spacegraphcats.graph import Graph
-from spacegraphcats.rdomset import ldo, better_dvorak_reidl
+from spacegraphcats.rdomset import ldo, rdomset, test_domset
 import itertools, random
 
 class DomsetTest(unittest.TestCase):
@@ -18,9 +18,10 @@ class DomsetTest(unittest.TestCase):
 			if random.random() < p:
 				g.add_edge(x,y)
 		g.remove_loops()
-		tfgraph = ldo(g)
 
-		domset = better_dvorak_reidl(tfgraph,1)
+		# Test dominating set
+		domset, _ = rdomset(g,1)
+
 		# Test whether domset is indeed a domset
 		for x in g:
 			dominated = x in domset
@@ -28,8 +29,13 @@ class DomsetTest(unittest.TestCase):
 				dominated = dominated or y in domset
 			self.assertTrue(dominated)
 
+		# Let's make sure the debug function in rdomset agrees
+		self.assertTrue(test_domset(g, domset, 1))
 
-
+		# Test higher-radius dominating sets
+		for r in range(2,5):
+			domset, _ = rdomset(g, r)
+			self.assertTrue(test_domset(g, domset, r))
 
 if __name__ == '__main__':
     unittest.main()
