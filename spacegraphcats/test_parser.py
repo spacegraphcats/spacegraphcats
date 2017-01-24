@@ -9,7 +9,7 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 class ParserTest(unittest.TestCase):
-    def test_parsing(self):
+    def test_graph_parsing(self):
         all_ids = []
         all_sizes = []
         all_names_v = []
@@ -44,6 +44,21 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(all_dests, [2, 3])
         self.assertEqual(all_names_e, [['label'], ['label']])
         self.assertEqual(all_values_e, [['a'], ['b']])
+
+    def test_mxt_parsing(self):
+        minhashes = {}
+
+        def collect_minhashes(vertex_id, hashes):
+            minhashes[vertex_id] = hashes
+
+        with open(os.path.join(DIR, 'parser-examples/graph.gxt.mxt')) as f:
+            parser.parse_minhash(f, collect_minhashes)
+
+        self.assertEqual(minhashes, {
+            '1': [14891351629450783567, 8602412685556304666, 15005322196398795210],
+            '2': [17662871537941316484]
+        })
+
 
 if __name__ == '__main__':
     unittest.main()

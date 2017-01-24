@@ -21,12 +21,9 @@ def load_orig_to_labels(original_graph_filename):
         labels = vals[0]
         if labels:
             orig_to_labels[node_id] = list(map(int, labels.strip().split(' ')))
-        
-    def nop(*x):
-        pass
 
     with open(original_graph_filename) as fp:
-        graph_parser.parse(fp, parse_source_graph_labels, nop)
+        graph_parser.parse(fp, parse_source_graph_labels)
 
     return orig_to_labels
 
