@@ -6,8 +6,6 @@ Supercool stuff from DDD Barnraising.
 
 * See [INSTALL.txt](https://github.com/spacegraphcats/spacegraphcats/blob/master/INSTALL.txt) for blank-machine install instructions.
 * Install dependencies with `pip install -r requirements.txt`
-* [Set up git lfs](https://git-lfs.github.com/) and initialize it with
-  `git lfs install`
 
 ## Some big gxt/mxt files
 
