@@ -109,10 +109,8 @@ class LazyDomination:
         return auggraph
 
 
-
-""" Dtf functions """
-
 def dtf(g, r):
+    """ Computes the r-th dft-augmentation of g. """
     auggraph = ldo(g)
     num_arcs = auggraph.num_arcs()
 
@@ -121,36 +119,46 @@ def dtf(g, r):
     while changed and d <= r:
         dtf_step(auggraph, d+1)
 
+        # Small optimization: if no new arcs have been added we can stop.
         curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
         changed = num_arcs < curr_arcs
         num_arcs = curr_arcs
         d += 1
     return auggraph
 
-def dtf_step(g, dist):
-    fratGraph = Graph()
-    newTrans = {}
+def dtf_step(augg, dist):
+    """ Computes the d-th dtf-augmentation from a dtf-graph augg
+        (where d is provided by the argument dist). The input augg
+        must be a (d-1)-th dtf-augmentation. See dtf() for usage. 
+        This function adds arcs to augg. """
+    fratGraph = Graph() # Records fraternal edge, must be oriented at the end
+    newTrans = {} # Records transitive arcs
 
-    for v in g:
-        for x, y, _ in g.trans_trips_weight(v, dist):
+    for v in augg:
+        for x, y, _ in augg.trans_trips_weight(v, dist):
             assert x != y
             newTrans[(x, y)] = dist
-        for x, y, _ in g.frat_trips_weight(v, dist):
+        for x, y, _ in augg.frat_trips_weight(v, dist):
             assert x != y
             fratGraph.add_edge(x, y)
 
+    # Add transitive arcs to graph
     for (s, t) in newTrans:
         assert s != t
-        g.add_arc(s, t, dist)
+        augg.add_arc(s, t, dist)
         fratGraph.remove_edge(s,t)
 
+    # Orient fraternal edges and add them to the grah
     fratDigraph = ldo(fratGraph)
 
     for s, t, _ in fratDigraph.arcs():
         assert s != t
-        g.add_arc(s,t,dist)
+        augg.add_arc(s,t,dist)
 
 def ldo(g, weight=None):
+    """ Computes a low-in-degree orientation of a graph g
+        by iteratively removing a vertex of mimimum degree and orienting
+        the edges towards it. """
     res = TFGraph(g.nodes)
 
     if weight == None:
@@ -184,19 +192,23 @@ def ldo(g, weight=None):
         seen.add(v)
     return res
 
-""" Dvorak's algorithm with dtf-augs instead of weakly linked cols """
-
 def calc_distance(augg, X):
+    """ Computes the for every vertex in the graph underlying the
+        augmentation augg its distance to the set X """
     dist = defaultdict(lambda: float('inf'))
 
+    # Vertices in X have distance zero to X
     for v in X:
         dist[v] = 0
 
-    # We need two passes
+    # We need two passes in order to only every access the
+    # in-neighbourhoods (which are guaranteed to be small).
     for _ in range(2):
         for v in augg:
+            # Pull distances from in-neighbourhood
             for u, r in augg.in_neighbours(v):
                 dist[v] = min(dist[v],dist[u]+r)
+            # Push distances to in-neighbourhood                
             for u, r in augg.in_neighbours(v):
                 dist[u] = min(dist[u],dist[v]+r)
 
@@ -205,25 +217,30 @@ def calc_distance(augg, X):
 def calc_dominators(augg, domset, d):
     dominators = defaultdict(lambda: defaultdict(set))
 
+    # Every vertex in domset is a zero-dominator of itself
     for v in domset:
         dominators[v][0].add(v)
 
-    # We need two passes
+    # We need two passes in order to only every access the
+    # in-neighbourhoods (which are guaranteed to be small).
     for _ in range(2):
         for v in augg:
-            # Pull dominators
+            # Pull dominators from in-neighbourhood
             for u, r in augg.in_neighbours(v):
                 for r2 in dominators[u].keys():
                     domdist = r+r2
                     if domdist <= d:
                         dominators[v][domdist] |= dominators[u][r2]
-            # Push dominators
+            # Push dominators to in-neighbourhood
             for u, r in augg.in_neighbours(v):
                 for r2 in dominators[v].keys():
                     domdist = r+r2
                     if domdist <= d:
                         dominators[u][domdist] |= dominators[v][r2]
 
+    # Clean up: vertices might appear at multiple distances as dominators,
+    # we only want to store them for the _minimum_ distance at which they
+    # act as a dominator.
     for v in dominators:
         cumulated = set()
         for r in range(d+1):
@@ -239,6 +256,9 @@ def calc_dominator_sizes(g, domset, d):
     return res
 
 def calc_dominated(augg, domset, d):
+    """ Compute the union of d-neighbourhoods around 
+        the vertex set domset, that is, all vertices d-domainted
+        by it. """
     dist = calc_distance(augg, domset)
     return filter(lambda v: dist[v] <= d, dist)
 
@@ -308,7 +328,7 @@ def calc_domination_graph(g, augg, domset, dominators, d):
             else:
                 vc.add(v)
 
-    newdomset = domset | vc
+    newdomset = set(domset) | vc
     if len(newdomset) != len(domset):
         # print("  Recomputing domgraph")
         dominators = calc_dominators(augg, newdomset, d)
@@ -317,6 +337,9 @@ def calc_domination_graph(g, augg, domset, dominators, d):
     return h, newdomset, dominators, assignment
 
 def better_dvorak_reidl(augg,d):
+    """ Compute a d-dominating set using Dvorak's approximation algorithm 
+        for dtf-graphs (see `Structural Sparseness and Complex Networks').
+        Needs a distance-d dtf augmentation augg (see rdomset() for usage). """    
     domset = set()
     infinity = float('inf')
     domdistance = defaultdict(lambda: infinity)
@@ -344,7 +367,12 @@ def better_dvorak_reidl(augg,d):
 
     return domset
 
-def test_scattered(g, sc, d):
+#
+# Debugging/Test functions
+#
+def verify_scattered(g, sc, d):
+    """ Verifies that a vertex set sc is d-scattered in a graph g, meaning
+        that every pair of vertices in sc have distance at least d. """
     sc = set(sc)
     for v in sc:
         dN = g.rneighbours(v,d)
@@ -352,13 +380,16 @@ def test_scattered(g, sc, d):
             return False
     return True
 
-def test_domset(g, ds, d):
+
+def verify_domset(g, ds, d):
+    """ Verifies that a vertex set ds is a d-dominating set in g, meaning
+        that every vertex of g lies within distance d of some vertex in ds. """
     dominated = set()
     for v in ds:
         dominated |= g.rneighbours(v,d)
     return len(dominated) == len(g)
 
-def test_dominators(g, domset, dominators, d):
+def verify_dominators(g, domset, dominators, d):
     for v in g:
         dN = g.rneighbours(v,d)
         candidates = dN & domset
@@ -369,7 +400,7 @@ def test_dominators(g, domset, dominators, d):
             return False
     return True
 
-def test_dominators_strict(g, domset, dominators, d):
+def verify_dominators_strict(g, domset, dominators, d):
     for v in g:
         dN = set([v])
         if dominators[v][0] != (dN & domset):
@@ -383,6 +414,8 @@ def test_dominators_strict(g, domset, dominators, d):
     return True
 
 def rdomset(g, d):
+    """ Computes an d-dominating set for a given graph g
+        using dtf-augmentations. """
     augg = dtf(g, d)
     domset = better_dvorak_reidl(augg, d)
 
@@ -405,7 +438,7 @@ def main(inputgxt, outputgxt, d, test, domgraph):
 
     # Test domset
     if test:
-        print("Testing domset:", test_domset(g,domset,d))
+        print("Testing domset:", verify_domset(g,domset,d))
 
     # Annotate domset
     labelds = 'ds{}'.format(d)
