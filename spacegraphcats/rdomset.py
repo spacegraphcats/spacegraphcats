@@ -328,7 +328,7 @@ def calc_domination_graph(g, augg, domset, dominators, d):
             else:
                 vc.add(v)
 
-    newdomset = domset | vc
+    newdomset = set(domset) | vc
     if len(newdomset) != len(domset):
         # print("  Recomputing domgraph")
         dominators = calc_dominators(augg, newdomset, d)
