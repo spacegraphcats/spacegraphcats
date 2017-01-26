@@ -64,9 +64,10 @@ class EdgeSet(set):
 
 
 class Graph:
-    def __init__(self):
-        self.adj = defaultdict(set)
-        self.nodes = set()
+    def __init__(self,n=0):
+        self.adj = [set() for i in range(n)]
+        self.nodes = [i for i in range(n)]
+        self.n = n
 
     @staticmethod
     def from_gxt(file):
@@ -90,21 +91,20 @@ class Graph:
 
     @staticmethod
     def on(nodes):
-        res = Graph()
-        res.nodes = set(nodes)
+        res = Graph(max(nodes))
         return res
 
     def __contains__(self,u):
-        return u in self.nodes
+        return u < self.n
 
     def __iter__(self):
         return iter(self.nodes)
 
     def __len__(self):
-        return len(self.nodes)
+        return self.n
 
     def get_max_id(self):
-        return max(self.nodes)
+        return self.n
 
     def edges(self):
         for u in self:
@@ -116,7 +116,10 @@ class Graph:
         return sum(1 for _ in self.edges())
 
     def add_node(self,u):
-        self.nodes.add(u)
+        if u >= self.n:
+            self.nodes.extend(range(self.n, u))
+            self.adj.extend([list() for in range(self.n, u)])
+            self.n = u+1
         return self
 
     def add_edge(self,u,v):
@@ -132,10 +135,10 @@ class Graph:
         return self
 
     def remove_node(self, u):
-        self.nodes.remove(u)
+        #self.nodes.remove(u)
         for v in self.adj[u]:
             self.adj[v].remove(u)
-        del self.adj[u]
+        #del self.adj[u]
         return self        
 
     def remove_loops(self):
@@ -174,17 +177,17 @@ class Graph:
         return len(self.adj[u])
 
     def degree_sequence(self):
-        return [ self.degree(u) for u in self.nodes]
+        return [ self.degree(u) for u in self]
 
     def degree_dist(self):
         res = defaultdict(int)
-        for u in self.nodes:
+        for u in self:
             res[self.degree(u)] += 1
         return res
 
     def calc_average_degree(self):
         num_edges = len( [e for e in self.edges()] )
-        return 2.0*num_edges / len(self.nodes)
+        return 2.0*num_edges / len(self)
 
     def calc_degeneracy(self):
         degbuckets = defaultdict(set)
@@ -218,13 +221,13 @@ class Graph:
         return degen
 
     def copy(self):
-        res = Graph()
-        for v in self:
-            res.add_node(v)
+        res = Graph(len(self))
         for u,v in self.edges():
             res.add_edge(u,v)
         return res
 
+    """
+    TODO:  figure out if this is compatible with the new structures
     def subgraph(self, vertices):
         vertices = frozenset(vertices)
         res = Graph.on(vertices)
@@ -233,7 +236,10 @@ class Graph:
             for v in N:
                 res.add_edge(u,v)
         return res
+    """
 
+    """
+    TODO:  determine if this is necessary
     # Returns graph with node indices from 0 to n-1 and
     # a mapping dictionary to recover the original ids
     def normalize(self):
@@ -247,7 +253,7 @@ class Graph:
             res.add_edge( mapping[u], mapping[v] )
 
         return res, backmapping
-
+    """
     # For memoization
     def __str__(self):
         return graph_hash(self)
@@ -286,22 +292,28 @@ class Graph:
         return len(ids)        
 
 class TFGraph:
-    def __init__(self, nodes):
-        self.nodes = nodes
-        self.inarcs = defaultdict(dict)
-        self.inarcs_weight = defaultdict(lambda : defaultdict(set))
+    def __init__(self, n=0, r=0):
+        self.n = n
+        self.r = r
+        self.nodes = range(self.n)
+        self.inarcs = [dict() for i in range(self.n)]
+        self.inarcs_weight = [[set() for j in range(self.r)] for i in range(self.n)]
 
     def __contains__(self,u):
-        return u in self.nodes
+        return u < self.n
 
     def __len__(self):
-        return len(self.nodes)
+        return self.n
 
     def __iter__(self):
         return iter(self.nodes)
 
     def add_node(self,u):
-        self.nodes.add(u)
+        if u >= self.n:
+            self.nodes.extend(range(self.n, u+1))
+            self.inarcs.extend([list() for in range(self.n, u+1)])
+            self.inarcs_weight([[set() for j in range(self.r)] for i in range(self.n,u+1)])
+            self.n = u+1
         return self
 
     def add_arc(self, u, v, weight):
@@ -372,22 +384,22 @@ class TFGraph:
         return res
 
     def in_degree_sequence(self):
-        return [ self.in_degree(u) for u in self.nodes]
+        return [ self.in_degree(u) for u in self]
 
     def in_degree_dist(self):
         res = defaultdict(int)
-        for u in self.nodes:
+        for u in self:
             res[self.in_degree(u)] += 1
         return res
 
     def degree_dist(self):
         degrees = defaultdict(int)
-        for u in self.nodes:
+        for u in self:
             for w in self.inarcs[u]:
                 degrees[u] += 1
                 degrees[w] += 1
         res = defaultdict(int)
-        for u in self.nodes:
+        for u in self:
             res[degrees[u]] += 1
         return res
 
@@ -406,15 +418,15 @@ class TFGraph:
         return distance
 
     def copy(self):
-        res = TFGraph(self.nodes)
+        res = TFGraph(self.n, self.r)
         for u,v,d in self.arcs():
             res.add_arc(u,v,d)
         return res
 
     # Returns an undirected copy
     def undirected(self):
-        res = Graph()
-        for v in self.nodes:
+        res = Graph(self.n)
+        for v in self:
             res.nodes.add(v) # For degree-0 nodes!
         for u,v,_ in self.arcs():
             res.add_edge(u,v)

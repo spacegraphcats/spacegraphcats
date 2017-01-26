@@ -75,11 +75,11 @@ class LazyDomination:
             augs[d] = f
 
         if 0 in augs:
-            auggraph = TFGraph(self.graph)
+            auggraph = TFGraph(self.graph.n, self.radius)
             with open(augname.format("0"), 'r') as f:
                 auggraph.add_arcs(EdgeStream.from_ext(f), 1)
         else:
-            auggraph = ldo(self.graph)
+            auggraph = ldo(self.graph,self.radius)
             with open(augname.format("0"), 'w') as f:
                 EdgeSet(auggraph.arcs(weight=1)).write_ext(f)
 
@@ -159,7 +159,7 @@ def ldo(g, weight=None):
     """ Computes a low-in-degree orientation of a graph g
         by iteratively removing a vertex of mimimum degree and orienting
         the edges towards it. """
-    res = TFGraph(g.nodes)
+    res = TFGraph(g.n)
 
     if weight == None:
         weight = defaultdict(int)
