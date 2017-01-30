@@ -40,20 +40,25 @@ class CAtlasBuilder:
 
     def set_minhash_size(self, size):
         self.minhash_size = size
-        return self        
+        return self    
 
-    def _build_component_catlas(self, comp, vertices, start_id):
-        comp = set(comp)
-          # Build first level 
-        curr_level = {}
-        curr_domgraph = self.domgraph.subgraph(comp)
-
-        # Collect hashes of the assigned vertices 
+    def aggregate_minhashes(self, vertices):
+        """
+        Aggregate the minhashes of the shadow of the dominating set vertices
+        """
         leaf_hashes = defaultdict(lambda: MinHash(self.minhash_size, KSIZE))
         if self.minhashes:
             for u in vertices:
                 for v in self.assignment[u]:
                     leaf_hashes[v].merge(self.minhashes[u])
+        return leaf_hashes
+
+    def _build_component_catlas(self, comp, leaf_hashes, start_id):
+        comp = set(comp)
+          # Build first level 
+        curr_level = {}
+        curr_domgraph = self.domgraph.subgraph(comp)
+
 
         # Create level 0
         id = start_id
@@ -97,15 +102,19 @@ class CAtlasBuilder:
         comp_atlases = []
 
         # Compute data structure to handle components
+        
         comp_lookup = self.domgraph.component_index() # Maps vertices to component ids
         components = defaultdict(set)
         for v in self.domgraph:
             components[comp_lookup[v]].add(v)
         components = list(components.values())
-
         num_comps = len(components)
 
         # Collect vertices from g that belong to the respective components
+        # TODO:  if the domgraph respects the connectivity of the original graph
+        #        (i.e. if dominators u and v are in the same component in the 
+        #        original graph, they will be in the same component of the domgraph),
+        #        we can remove code here that ensures that.
         print("Mapping graph vertices to dominators")
         graph_comps = defaultdict(set)
         n = len(self.graph)
@@ -116,6 +125,7 @@ class CAtlasBuilder:
             dominator = next(iter(self.assignment[u]))
             graph_comps[comp_lookup[dominator]].add(u)
 
+
         print("\rProcessing node {}/{}".format(n,n), end="") # For my OCD
         sys.stdout.flush()
 
@@ -125,6 +135,8 @@ class CAtlasBuilder:
             print("\rProcessing component {}/{}".format(i,num_comps), end="")
             sys.stdout.flush()
             comp_id = comp_lookup[next(iter(comp))] 
+            leaf_hashes = self.aggregate_minhashes(self.graph.nodes)
+
             comp_atlases.append(self._build_component_catlas(comp, graph_comps[comp_id], id))
             id = comp_atlases[-1].id + 1
 
