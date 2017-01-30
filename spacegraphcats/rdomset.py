@@ -7,7 +7,7 @@ from operator import itemgetter
 from os import path
 
 from spacegraphcats.Eppstein import priorityDictionary
-from spacegraphcats.graph import Graph, TFGraph, EdgeSet, EdgeStream, VertexDict, write_gxt
+from spacegraphcats.graph import Graph, DictGraph, TFGraph, EdgeSet, EdgeStream, VertexDict, write_gxt
 
 
 class Domination:
@@ -75,7 +75,7 @@ class LazyDomination:
             augs[d] = f
 
         if 0 in augs:
-            auggraph = TFGraph(self.graph.n, self.radius)
+            auggraph = self.graph.to_TFGraph(self.radius)
             with open(augname.format("0"), 'r') as f:
                 auggraph.add_arcs(EdgeStream.from_ext(f), 1)
         else:
@@ -174,7 +174,7 @@ def ldo(g, weight=None, comp=None):
     else:
         nodes = comp
 
-    res = TFGraph()
+    res = g.to_TFGraph(keep_edges=False)
 
     if weight == None:
         weight = defaultdict(int)
@@ -284,7 +284,7 @@ def _calc_domset_graph(domset, dominators, d):
         its closest dominators. These dominators will be connected in the
         final graph.
     """
-    h = Graph.on(domset)
+    h = DictGraph(nodes=domset)
 
     assignment = defaultdict(set)
     for v in dominators:

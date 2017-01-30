@@ -39,7 +39,6 @@ class VertexDict(dict):
         for u, p in self.items():
             file.write('{},{}\n'.format(u, param_writer(p)))
 
-
 class EdgeStream:
     @staticmethod 
     def from_ext(file):
@@ -61,7 +60,6 @@ class EdgeSet(set):
     def write_ext(self, file):
         for u, v in self:
             file.write('{},{}\n'.format(u,v))
-
 
 class Graph:
     def __init__(self,n=0):
@@ -88,12 +86,12 @@ class Graph:
 
         parse(file, add_node, add_edge)
         return res, node_attr, edge_attr
-
+    """
     @staticmethod
     def on(nodes):
         res = Graph(max(nodes))
         return res
-
+    """
     def __contains__(self,u):
         return u < self.n
 
@@ -226,34 +224,6 @@ class Graph:
             res.add_edge(u,v)
         return res
 
-    """
-    TODO:  figure out if this is compatible with the new structures
-    def subgraph(self, vertices):
-        vertices = frozenset(vertices)
-        res = Graph.on(vertices)
-        for u in vertices:
-            N = self.neighbours(u) & vertices
-            for v in N:
-                res.add_edge(u,v)
-        return res
-    """
-
-    """
-    TODO:  determine if this is necessary
-    # Returns graph with node indices from 0 to n-1 and
-    # a mapping dictionary to recover the original ids
-    def normalize(self):
-        res = Graph()
-        backmapping = dict(enumerate(self))
-        mapping = dict( (k,v) for (v,k) in backmapping.items() )
-
-        for u in self:
-            res.nodes.add( mapping[u] )
-        for u,v in self.edges():
-            res.add_edge( mapping[u], mapping[v] )
-
-        return res, backmapping
-    """
     # For memoization
     def __str__(self):
         return graph_hash(self)
@@ -291,13 +261,70 @@ class Graph:
         ids = set([comps[v] for v in comps])
         return len(ids)        
 
+    def to_TFGraph(self, r, keep_edges=False):
+        """
+        Creates a TFGraph with the same vertex set as this one.
+        If keep_edges is True, this adds the arcs (u,v) and (v,u)
+        for each edge in the graph.  Otherwise, it returns an empty
+        graph.
+        """
+        TFG = TFGraph(r=r,n=self.n)
+        if keep_edges:
+            TFG.add_arcs(self.edges(), 1)
+        return TFG
+
+class DictGraph(Graph):
+    def __init__(self, nodes=None):
+        self.adj = defaultdict(set)
+        if nodes is None:
+            self.nodes = set()
+        else:
+            self.nodes = nodes
+
+    def __contains__(self,u):
+        return u in self.nodes
+
+    def __iter__(self):
+        return iter(self.nodes)
+
+    def __len__(self):
+        return len(self.nodes)
+
+    def get_max_id(self):
+        return max(self.nodes)
+
+    def add_node(self,u):
+        self.nodes.add(u)
+        return self
+
+    def remove_node(self, u):
+        self.nodes.remove(u)
+        for v in self.adj[u]:
+            self.adj[v].remove(u)
+        del self.adj[u]
+        return self        
+
+    # Returns graph with node indices from 0 to n-1 and
+    # a mapping dictionary to recover the original ids
+    def normalize(self):
+        res = Graph()
+        backmapping = dict(enumerate(self))
+        mapping = dict( (k,v) for (v,k) in backmapping.items() )
+
+        for u in self:
+            res.nodes.add( mapping[u] )
+        for u,v in self.edges():
+            res.add_edge( mapping[u], mapping[v] )
+
+        return res, backmapping
+
 class TFGraph:
-    def __init__(self, n=0, r=0):
-        self.n = n
+    def __init__(self, n=0, r=1):
         self.r = r
+        self.n = n
         self.nodes = range(self.n)
-        self.inarcs = [dict() for i in range(self.n)]
-        self.inarcs_weight = [[set() for j in range(self.r)] for i in range(self.n)]
+        self.inarcs = [dict() for i in self.nodes]
+        self.inarcs_weight = [[set() for j in range(self.r)] for i in self.nodes]
 
     def __contains__(self,u):
         return u < self.n
@@ -379,8 +406,8 @@ class TFGraph:
 
     def in_degree_weight(self,u):
         res = {}
-        for weight in self.inarcs_weight[u]:
-            res[weight] = len(self.inarcs_weight[u][weight])
+        for weight, nodes in enumerate(self.inarcs_weight[u]):
+            res[weight] = len(nodes)
         return res
 
     def in_degree_sequence(self):
@@ -425,16 +452,16 @@ class TFGraph:
 
     # Returns an undirected copy
     def undirected(self):
-        res = Graph(self.n)
-        for v in self:
-            res.nodes.add(v) # For degree-0 nodes!
+        res = Graph(n=self.n)
+        #for v in self:
+        #    res.nodes.add(v) # For degree-0 nodes!
         for u,v,_ in self.arcs():
             res.add_edge(u,v)
         return res
 
     # Returns transitive triples (x,u,weightsum)
     def trans_trips(self, u):
-        inbs = frozenset(self.inarcs[u].items())
+        inbs = frozenset(enumerate(self.inarcs[u]))
         for (y, wy) in inbs:
             assert y != u
             for x, wx in self.in_neighbours(y):
@@ -456,7 +483,7 @@ class TFGraph:
 
     # Returns fraternal triples (x,y,weightsum)
     def frat_trips(self,u):
-        inbs = frozenset(self.inarcs[u].items())
+        inbs = frozenset(enumerate(self.inarcs[u]))
         for (x, wx), (y, wy) in itertools.combinations(inbs, 2):
             assert x != u and y != u
             if not (self.adjacent(x, y) or self.adjacent(y, x)):
@@ -491,6 +518,43 @@ class TFGraph:
     # For memoization
     def __str__(self):
         return graph_hash(self)
+
+class DictTFGraph(TFGraph):
+    def __init__(self, nodes=None, self.r=0):
+        if nodes is None:
+            self.nodes = set()
+        else:
+            self.nodes = nodes
+        self.inarcs = defaultdict(dict)
+        self.inarcs_weight = defaultdict(lambda x:[set() for j in range(self.r)])
+
+    def __contains__(self,u):
+        return u in self.nodes
+
+    def __len__(self):
+        return len(self.nodes)
+
+    def __iter__(self):
+        return iter(self.nodes)
+
+    def add_node(self,u):
+        self.nodes.add(u)
+        return self
+  
+    def copy(self):
+        res = DictTFGraph(nodes=self.nodes)
+        for u,v,d in self.arcs():
+            res.add_arc(u,v,d)
+        return res
+
+    # Returns an undirected copy
+    def undirected(self):
+        res = DictGraph(nodes=self.nodes)
+        for v in self.nodes:
+            res.nodes.add(v) # For degree-0 nodes!
+        for u,v,_ in self.arcs():
+            res.add_edge(u,v)
+        return res
 
 
 def write_gxt(file, g, node_attrs=None, edge_attrs=None):
