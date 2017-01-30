@@ -33,17 +33,19 @@ class ParserTest(unittest.TestCase):
             all_values_e.append(values)
 
         with open(os.path.join(DIR, 'parser-examples/graph.gxt')) as f:
-            self.p = parser.parse(f, collect_vertex, collect_edge)
+            id_map = parser.parse(f, collect_vertex, collect_edge, True)
 
-        self.assertEqual(all_ids, [1, 2, 3])
+        self.assertEqual(all_ids, [0, 1, 2])
         self.assertEqual(all_sizes, [2, 3, 1])
         self.assertEqual(all_names_v, [['label', 'fill'], ['label', 'fill'], ['label', 'fill']])
         self.assertEqual(all_values_v, [['foo', 'red'], ['bar', 'green'], ['batman', 'black']])
 
-        self.assertEqual(all_srcs, [1, 2])
-        self.assertEqual(all_dests, [2, 3])
+        self.assertEqual(all_srcs, [0, 1])
+        self.assertEqual(all_dests, [1, 2])
         self.assertEqual(all_names_e, [['label'], ['label']])
         self.assertEqual(all_values_e, [['a'], ['b']])
+
+        self.assertEqual(id_map, [1, 2, 3])
 
     def test_mxt_parsing(self):
         minhashes = {}
