@@ -86,7 +86,7 @@ class Graph:
                 edge_attr[(u,v)][key] = value
 
         parse(file, add_node, add_edge)
-        return res, node_attr, edge_attr
+        return res, dict(node_attr), dict(edge_attr)
 
     @staticmethod
     def on(nodes):
@@ -180,7 +180,7 @@ class Graph:
         res = defaultdict(int)
         for u in self.nodes:
             res[self.degree(u)] += 1
-        return res
+        return dict(res)
 
     def calc_average_degree(self):
         num_edges = len( [e for e in self.edges()] )
@@ -378,7 +378,7 @@ class TFGraph:
         res = defaultdict(int)
         for u in self.nodes:
             res[self.in_degree(u)] += 1
-        return res
+        return dict(res)
 
     def degree_dist(self):
         degrees = defaultdict(int)
@@ -389,7 +389,7 @@ class TFGraph:
         res = defaultdict(int)
         for u in self.nodes:
             res[degrees[u]] += 1
-        return res
+        return dict(res)
 
     def distance(self,u,v):
         distance = float('inf')
