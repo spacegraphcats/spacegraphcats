@@ -109,15 +109,15 @@ class LazyDomination:
         return auggraph
 
 
-def dtf(g, r):
+def dtf(g, r, comp=None):
     """ Computes the r-th dft-augmentation of g. """
-    auggraph = ldo(g)
+    auggraph = ldo(g,comp)
     num_arcs = auggraph.num_arcs()
 
     changed = True
     d = 1
     while changed and d <= r:
-        dtf_step(auggraph, d+1)
+        dtf_step(auggraph, d+1, comp)
 
         # Small optimization: if no new arcs have been added we can stop.
         curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
@@ -126,7 +126,7 @@ def dtf(g, r):
         d += 1
     return auggraph
 
-def dtf_step(augg, dist):
+def dtf_step(augg, dist,comp=None):
     """ Computes the d-th dtf-augmentation from a dtf-graph augg
         (where d is provided by the argument dist). The input augg
         must be a (d-1)-th dtf-augmentation. See dtf() for usage. 
@@ -134,7 +134,14 @@ def dtf_step(augg, dist):
     fratGraph = Graph() # Records fraternal edge, must be oriented at the end
     newTrans = {} # Records transitive arcs
 
-    for v in augg:
+    # if a list of nodes in a component is supplied, we loop over that,
+    # otherwise we loop over all nodes in the graph.
+    if comp is not None:
+        nodes = augg
+    else:
+        nodes = comp
+
+    for v in nodes:
         for x, y, _ in augg.trans_trips_weight(v, dist):
             assert x != y
             newTrans[(x, y)] = dist
@@ -155,24 +162,32 @@ def dtf_step(augg, dist):
         assert s != t
         augg.add_arc(s,t,dist)
 
-def ldo(g, weight=None):
+def ldo(g, weight=None, comp=None):
     """ Computes a low-in-degree orientation of a graph g
         by iteratively removing a vertex of mimimum degree and orienting
         the edges towards it. """
-    res = TFGraph(g.n)
+
+    # if a list of nodes in a component is supplied, we loop over that,
+    # otherwise we loop over all nodes in the graph.
+    if comp is not None:
+        nodes = g
+    else:
+        nodes = comp
+
+    res = TFGraph()
 
     if weight == None:
         weight = defaultdict(int)
 
     degdict = {}
     buckets = defaultdict(set)
-    for v in g:
+    for v in nodes:
         d = g.degree(v) + weight[v]
         degdict[v] = d
         buckets[d].add(v)
 
     seen = set()
-    for i in range(0, len(g)):
+    for i in range(0, len(nodes)):
         d = 0
         while len(buckets[d]) == 0:
             d += 1
@@ -336,7 +351,7 @@ def calc_domination_graph(g, augg, domset, dominators, d):
 
     return h, newdomset, dominators, assignment
 
-def better_dvorak_reidl(augg,d):
+def better_dvorak_reidl(augg,d,comp=None):
     """ Compute a d-dominating set using Dvorak's approximation algorithm 
         for dtf-graphs (see `Structural Sparseness and Complex Networks').
         Needs a distance-d dtf augmentation augg (see rdomset() for usage). """    
@@ -344,8 +359,15 @@ def better_dvorak_reidl(augg,d):
     infinity = float('inf')
     domdistance = defaultdict(lambda: infinity)
 
+    # if a list of nodes in a component is supplied, we loop over that,
+    # otherwise we loop over all nodes in the graph.
+    if comp is not None:
+        nodes = augg
+    else:
+        nodes = comp
+
     #  low indegree first (reverse=False)
-    vprops = [(v,augg.in_degree(v)) for v in augg]
+    vprops = [(v,augg.in_degree(v)) for v in nodes]
     vprops.sort(key=itemgetter(1),reverse=False)
     order = map(itemgetter(0),vprops)
 
