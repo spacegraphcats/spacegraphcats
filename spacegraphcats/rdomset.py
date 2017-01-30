@@ -176,8 +176,7 @@ def ldo(g, weight=None):
         d = 0
         while len(buckets[d]) == 0:
             d += 1
-        v = next(iter(buckets[d]))
-        buckets[d].remove(v)
+        v = buckets[d].pop()
 
         for u in g.neighbours(v):
             if u in seen:

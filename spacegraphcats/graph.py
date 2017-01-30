@@ -1,7 +1,6 @@
 import sys, itertools, operator
 from collections import defaultdict as defaultdict
 import hashlib
-from sourmash_lib import MinHash
 
 from spacegraphcats.Eppstein import priorityDictionary, UnionFind
 
@@ -22,6 +21,7 @@ class VertexDict(dict):
     @classmethod
     def from_mxt(cls, file, ksize=31):
         from .graph_parser import _parse_line
+        from sourmash_lib import MinHash
         res = cls()
         for line in file:
             u, hashes = _parse_line(line)
@@ -201,8 +201,7 @@ class Graph:
         while len(removed) < n:
             while len(degbuckets[mindeg]) == 0:
                 mindeg += 1
-            v = next(iter(degbuckets[mindeg]))
-            degbuckets[mindeg].remove(v)
+            v = degbuckets[mindeg].pop()
             removed.add(v)
             degen = max(degen, mindeg)
 
