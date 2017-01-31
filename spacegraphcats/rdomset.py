@@ -276,7 +276,6 @@ def calc_dominated(augg, domset, d):
     dist = calc_distance(augg, domset)
     return filter(lambda v: dist[v] <= d, dist)
 
-
 def _calc_domset_graph(domset, dominators, d):
     """ 
         Builds up a 'domination graph' by assigning each vertex to 
@@ -401,7 +400,6 @@ def verify_scattered(g, sc, d):
             return False
     return True
 
-
 def verify_domset(g, ds, d):
     """ Verifies that a vertex set ds is a d-dominating set in g, meaning
         that every vertex of g lies within distance d of some vertex in ds. """
@@ -434,11 +432,11 @@ def verify_dominators_strict(g, domset, dominators, d):
             dN |= shell
     return True
 
-def rdomset(g, d):
+def rdomset(g, d, comp=None):
     """ Computes an d-dominating set for a given graph g
         using dtf-augmentations. """
-    augg = dtf(g, d)
-    domset = better_dvorak_reidl(augg, d)
+    augg = dtf(g, d, comp)
+    domset = better_dvorak_reidl(augg, d, comp)
 
     return domset, augg
 

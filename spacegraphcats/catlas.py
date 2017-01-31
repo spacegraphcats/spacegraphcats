@@ -19,11 +19,12 @@ def chunks(l, n):
         yield l[i:i+n]
 
 class CAtlasBuilder:
-    def __init__(self, graph, vsizes, domination, minhashes):
+    def __init__(self, graph, vsizes, domination, minhashes, id_map=lambda x:x):
         self.graph = graph
         self.domgraph = domination.domgraph
         self.domset = domination.domset
         self.minhashes = minhashes
+        self.id_map = id_map
 
         self.assignment = domination.assignment
         self.sizes = vsizes
@@ -50,26 +51,36 @@ class CAtlasBuilder:
         if self.minhashes:
             for u in vertices:
                 for v in self.assignment[u]:
-                    leaf_hashes[v].merge(self.minhashes[u])
+                    leaf_hashes[v].merge(self.minhashes[self.id_map[u]])
         return leaf_hashes
 
     def _build_component_catlas(self, comp, leaf_hashes, start_id):
-        comp = set(comp)
+        """
+        Builds a CAtlas for one component of the graph
+        Arguments:
+            comp:  An iterable containing the vertices in the component
+            leaf_hashes:  A dictionary mapping the cDBG nodes to minhash values
+            start_id:  Integer at which to start the sequential integer indexing
+                       of the nodes in this component
+        Returns:
+            A root CAtlas node whose shadow is exactly the vertices of comp
+        """
+        curr_comp = set(comp)
           # Build first level 
         curr_level = {}
-        curr_domgraph = self.domgraph.subgraph(comp)
+        curr_domgraph = self.domgraph#.subgraph(comp)
 
 
-        # Create level 0
+        # Create level 0 (the original cDBG)
         id = start_id
         for v in comp:
-            curr_level[v] = CAtlas.create_leaf(id, v, self.sizes[v], leaf_hashes.get(v))
+            curr_level[v] = CAtlas.create_leaf(id, v, self.sizes[v], leaf_hashes[v])
             id += 1
 
         # Build remaining levels
         level = 1 # Just for debugging
         while len(curr_level) > self.level_threshold:
-            domset, augg = rdomset(curr_domgraph,1)
+            domset, augg = rdomset(curr_domgraph, 1, curr_comp)
             dominators = calc_dominators(augg, domset, 1)
             next_domgraph, domset, dominators, next_assignment = calc_domination_graph(curr_domgraph, augg, domset, dominators, 1)
 
@@ -91,6 +102,7 @@ class CAtlasBuilder:
 
             curr_domgraph = next_domgraph
             curr_level = next_level
+            curr_comp = None # don't need the component mask past the first level
             level += 1
 
         # Add root
@@ -99,6 +111,11 @@ class CAtlasBuilder:
 
 
     def build(self):
+        """
+        Builds a CAtlas for the entire graph
+        Returns:
+            A root CAtlas node
+        """
         comp_atlases = []
 
         # Compute data structure to handle components
@@ -137,7 +154,7 @@ class CAtlasBuilder:
             comp_id = comp_lookup[next(iter(comp))] 
             leaf_hashes = self.aggregate_minhashes(self.graph.nodes)
 
-            comp_atlases.append(self._build_component_catlas(comp, graph_comps[comp_id], id))
+            comp_atlases.append(self._build_component_catlas(comp, leaf_hashes, id))
             id = comp_atlases[-1].id + 1
 
         if len(comp_atlases) == 1:
@@ -334,6 +351,18 @@ class CAtlas:
 
     # CAtlas.__init__
     def __init__(self, id, vertex, level, size, children, minhash):
+        """
+        Arguments:
+            id:  Integer identifier of the node.  A CAtlas with n nodes will
+                 have ids 0,1,...,n-1
+            vertex:  Name of vertex in the cDBG
+            level:  The height of the node in the hierarchy.  The leaves are at
+                    level 0, their parents at level 1, etc.
+            size:  Total number of kmers contained in the leaves under this node
+            children:  the CAtlas nodes for which this is a parent
+            minhash:  The minhash value for the shadow (leaves) of this 
+                      node
+        """
         self.id = id
         self.vertex = vertex
         self.children = children
@@ -561,7 +590,7 @@ class CAtlas:
                 next_level |= set(v.children)
             curr_level = next_level
 
-    def write(self, projectpath, projectname, radius, offset=0):
+    def write(self, projectpath, projectname, radius, id_map, offset=0):
         """
             Write catlas to file
         """
@@ -569,7 +598,11 @@ class CAtlas:
             writer = Writer(f, ['vertex', 'level'], [])
             for level in self.bfs():
                 for v in level:
-                    writer.add_vertex(v.id, v.size, [v.vertex, v.level])
+                    if v.vertex == "root":
+                        v_label=v.vertex
+                    else:
+                        v_label = id_map[v.vertex]
+                    writer.add_vertex(v.id, v.size, [v_label, v.level])
 
             for level in self.bfs():
                 for v in level:
@@ -590,7 +623,7 @@ class CAtlas:
 
     @staticmethod 
     def read(catlas_gxt, catlas_mxt, radius):
-        graph, node_attr, _ = Graph.from_gxt(open(catlas_gxt, 'r'))
+        graph, node_attr, _, __ = Graph.from_gxt(open(catlas_gxt, 'r'))
         if catlas_mxt:
             hashes = VertexDict.from_mxt(open(catlas_mxt, 'r'))
         else:

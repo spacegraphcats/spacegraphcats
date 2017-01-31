@@ -84,8 +84,8 @@ class Graph:
             for key,value in zip(prop_names,props):
                 edge_attr[(u,v)][key] = value
 
-        parse(file, add_node, add_edge)
-        return res, dict(node_attr), dict(edge_attr)
+        id_map = parse(file, add_node, add_edge, consecutive_ids=True)
+        return res, dict(node_attr), dict(edge_attr), id_map
 
     def __contains__(self,u):
         return u < self.n
