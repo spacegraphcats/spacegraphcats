@@ -26,7 +26,7 @@ class GraphTest(unittest.TestCase):
         self.assertTrue(len(union) == len(g))
 
     def test_tfgraph(self):
-        tfgraph = TFGraph(list(range(5)))
+        tfgraph = TFGraph(n=5,r=5)
 
         # Query in-neighbourhood by weight
         tfgraph.add_arc(1,0,1).add_arc(2,0,1).add_arc(3,0,1).add_arc(4,0,1)
@@ -71,10 +71,10 @@ class GraphTest(unittest.TestCase):
         
         # Test on complete graph
         n = 25
-        g = Graph.on(list(range(n)))
+        g = Graph(n=n)
         for x,y in itertools.combinations(range(n),2):
             g.add_edge(x,y)
-        tfgraph = ldo(g)
+        tfgraph = ldo(g,r=5)
 
         for x,y in itertools.combinations(range(n),2):
             # Every edge must be present as an arc
@@ -89,7 +89,7 @@ class GraphTest(unittest.TestCase):
         d = 5
         p = d / n
 
-        g = Graph.on(list(range(n)))
+        g = Graph(n=n)
         for x,y in itertools.combinations(range(n),2):
             if random.random() < p:
                 g.add_edge(x,y)

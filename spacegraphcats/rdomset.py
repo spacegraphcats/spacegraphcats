@@ -79,7 +79,7 @@ class LazyDomination:
             with open(augname.format("0"), 'r') as f:
                 auggraph.add_arcs(EdgeStream.from_ext(f), 1)
         else:
-            auggraph = ldo(self.graph,self.radius)
+            auggraph = ldo(self.graph,r=self.radius)
             with open(augname.format("0"), 'w') as f:
                 EdgeSet(auggraph.arcs(weight=1)).write_ext(f)
 
@@ -111,7 +111,7 @@ class LazyDomination:
 
 def dtf(g, r, comp=None):
     """ Computes the r-th dft-augmentation of g. """
-    auggraph = ldo(g,comp)
+    auggraph = ldo(g,r=r,comp=comp)
     num_arcs = auggraph.num_arcs()
 
     changed = True
@@ -136,7 +136,7 @@ def dtf_step(augg, dist,comp=None):
 
     # if a list of nodes in a component is supplied, we loop over that,
     # otherwise we loop over all nodes in the graph.
-    if comp is not None:
+    if comp is None:
         nodes = augg
     else:
         nodes = comp
@@ -148,7 +148,6 @@ def dtf_step(augg, dist,comp=None):
         for x, y, _ in augg.frat_trips_weight(v, dist):
             assert x != y
             fratGraph.add_edge(x, y)
-
     # Add transitive arcs to graph
     for (s, t) in newTrans:
         assert s != t
@@ -162,19 +161,19 @@ def dtf_step(augg, dist,comp=None):
         assert s != t
         augg.add_arc(s,t,dist)
 
-def ldo(g, weight=None, comp=None):
+def ldo(g, weight=None, comp=None, r=1):
     """ Computes a low-in-degree orientation of a graph g
         by iteratively removing a vertex of mimimum degree and orienting
         the edges towards it. """
 
     # if a list of nodes in a component is supplied, we loop over that,
     # otherwise we loop over all nodes in the graph.
-    if comp is not None:
+    if comp is None:
         nodes = g
     else:
         nodes = comp
 
-    res = g.to_TFGraph(keep_edges=False)
+    res = g.to_TFGraph(r,keep_edges=False)
 
     if weight == None:
         weight = defaultdict(int)
@@ -361,7 +360,7 @@ def better_dvorak_reidl(augg,d,comp=None):
 
     # if a list of nodes in a component is supplied, we loop over that,
     # otherwise we loop over all nodes in the graph.
-    if comp is not None:
+    if comp is None:
         nodes = augg
     else:
         nodes = comp

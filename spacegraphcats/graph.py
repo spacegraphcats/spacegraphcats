@@ -110,21 +110,24 @@ class Graph:
 
     def add_node(self,u):
         if u >= self.n:
-            self.nodes.extend(range(self.n, u))
-            self.adj.extend([list() for in range(self.n, u)])
+            self.nodes.extend(range(self.n, u+1))
+            self.adj.extend([set() for _ in range(self.n, u+1)])
             self.n = u+1
+            #assert len(self.nodes) == self.n
+            #assert len(self.adj) == self.n
         return self
 
     def add_edge(self,u,v):
-        self.nodes.add(u)
-        self.nodes.add(v)
+        self.add_node(u)
+        self.add_node(v)
         self.adj[u].add(v)
         self.adj[v].add(u)
         return self
 
     def remove_edge(self,u,v):
-        self.adj[u].discard(v)
-        self.adj[v].discard(u)
+        if u in self and v in self:
+            self.adj[u].discard(v)
+            self.adj[v].discard(u)
         return self
 
     def remove_node(self, u):
@@ -274,7 +277,7 @@ class DictGraph(Graph):
         if nodes is None:
             self.nodes = set()
         else:
-            self.nodes = nodes
+            self.nodes = set(nodes)
 
     def __contains__(self,u):
         return u in self.nodes
@@ -313,13 +316,26 @@ class DictGraph(Graph):
 
         return res, backmapping
 
+    def to_TFGraph(self, r, keep_edges=False):
+        """
+        Creates a TFGraph with the same vertex set as this one.
+        If keep_edges is True, this adds the arcs (u,v) and (v,u)
+        for each edge in the graph.  Otherwise, it returns an empty
+        graph.
+        """
+        TFG = DictTFGraph(r=r,nodes=self.nodes)
+        if keep_edges:
+            TFG.add_arcs(self.edges(), 1)
+        return TFG
+
 class TFGraph:
     def __init__(self, n=0, r=1):
         self.r = r
         self.n = n
         self.nodes = range(self.n)
         self.inarcs = [dict() for i in self.nodes]
-        self.inarcs_weight = [[set() for j in range(self.r)] for i in self.nodes]
+        #self.inarcs_weight = [[set() for j in range(self.r+1)] for i in self.nodes]
+        self.inarcs_weight = [defaultdict(set) for i in self.nodes]
 
     def __contains__(self,u):
         return u < self.n
@@ -333,13 +349,17 @@ class TFGraph:
     def add_node(self,u):
         if u >= self.n:
             self.nodes.extend(range(self.n, u+1))
-            self.inarcs.extend([list() for in range(self.n, u+1)])
-            self.inarcs_weight([[set() for j in range(self.r)] for i in range(self.n,u+1)])
+            self.inarcs.extend([list() for _ in range(self.n, u+1)])
+            #self.inarcs_weight([[set() for j in range(self.r+1)] for i in range(self.n,u+1)])
+            self.inarcs_weight([defaultdict(set) for i in range(self.n,u+1)])
             self.n = u+1
         return self
 
     def add_arc(self, u, v, weight):
         assert u != v
+        #assert u in self, "{} is not in this graph of size {}!".format(u,len(self))
+        #assert v in self, "{} is not in this graph of size {}!".format(v,len(self))
+        #assert weight <= self.r, "Why are you trying to add an arc of weight {} to a TFGraph with radius {} and length of array {}".format(weight,self.r, len(self.inarcs_weight[u]))
         self.inarcs[v][u] = weight
         self.inarcs_weight[v][weight].add(u)
         return self
@@ -456,7 +476,7 @@ class TFGraph:
 
     # Returns transitive triples (x,u,weightsum)
     def trans_trips(self, u):
-        inbs = frozenset(enumerate(self.inarcs[u]))
+        inbs = frozenset(self.inarcs[u].items())
         for (y, wy) in inbs:
             assert y != u
             for x, wx in self.in_neighbours(y):
@@ -478,7 +498,7 @@ class TFGraph:
 
     # Returns fraternal triples (x,y,weightsum)
     def frat_trips(self,u):
-        inbs = frozenset(enumerate(self.inarcs[u]))
+        inbs = frozenset(self.inarcs[u].items())
         for (x, wx), (y, wy) in itertools.combinations(inbs, 2):
             assert x != u and y != u
             if not (self.adjacent(x, y) or self.adjacent(y, x)):
@@ -515,13 +535,14 @@ class TFGraph:
         return graph_hash(self)
 
 class DictTFGraph(TFGraph):
-    def __init__(self, nodes=None, self.r=0):
+    def __init__(self, nodes=None, r=1):
         if nodes is None:
             self.nodes = set()
         else:
             self.nodes = nodes
+        self.r = 1
         self.inarcs = defaultdict(dict)
-        self.inarcs_weight = defaultdict(lambda x:[set() for j in range(self.r)])
+        self.inarcs_weight = defaultdict(lambda : defaultdict(set))
 
     def __contains__(self,u):
         return u in self.nodes
