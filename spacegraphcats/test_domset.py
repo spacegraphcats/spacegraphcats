@@ -47,11 +47,11 @@ class DomsetTest(unittest.TestCase):
 
         # The assignment map tells us for each vertex of g what its closest dominators are.
         # We expect [0,1] to belong to 0, [3,4] to belong to 4 and only 2 to belong to both 0 and 4.
-        self.assertTrue(assignment[0] == set([0])) 
-        self.assertTrue(assignment[1] == set([0])) 
-        self.assertTrue(assignment[2] == set([0,4])) 
-        self.assertTrue(assignment[3] == set([4])) 
-        self.assertTrue(assignment[4] == set([4])) 
+        self.assertTrue(assignment[0] == set([0]))
+        self.assertTrue(assignment[1] == set([0]))
+        self.assertTrue(assignment[2] == set([0,4]))
+        self.assertTrue(assignment[3] == set([4]))
+        self.assertTrue(assignment[4] == set([4]))
 
     def test_rdomset_augmentation(self):
         """ Covers a simple test case in which a dominating set must be modified
@@ -72,7 +72,7 @@ class DomsetTest(unittest.TestCase):
 
         # The domgraph computation now needs to add an additional vertex in order to make
         # it connected. The new domset might not be a superset of the old domset!
-        h, newdomset, dominators, assignment = calc_domination_graph(g, augg, [0,4], dominators, 2)
+        h, newdomset, dominators, assignment = calc_domination_graph(g, augg, [0,5],dominators, 2)
         self.assertTrue( len(newdomset) > 2 )
 
     def test_rdomset_random(self):
@@ -111,7 +111,7 @@ class DomsetTest(unittest.TestCase):
             covered = set(calc_dominated(augg, domset, r))
             self.assertTrue( covered == set(g.nodes) )
 
-            # Test assignment of dominators 
+            # Test assignment of dominators
             dominators = calc_dominators(augg, domset, r)
             self.assertTrue(verify_dominators(g, domset, dominators, r))
             self.assertTrue(verify_dominators_strict(g, domset, dominators, r))
