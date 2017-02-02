@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+class IdentityHash:
+    def __init__(self):
+        pass
+    def __getitem__(self, item):
+        return item
+
 """Parser for simple graph format."""
 
 
@@ -17,7 +23,10 @@ def parse(graph_file, add_vertex=None, add_edge=None, consecutive_ids=False):
     vertex_attributes = _parse_line(graph_file.readline())[2:]
 
     # consecutive id to original id
-    id_map = []
+    if consecutive_ids:
+        id_map = []
+    else:
+        id_map = IdentityHash()
     # original id to consecutive id
     id_map_reverse = {}
 
@@ -43,7 +52,7 @@ def parse(graph_file, add_vertex=None, add_edge=None, consecutive_ids=False):
 
     if add_edge is None:
         # we won't be doing anything with the edges anyway
-        return;
+        return id_map;
 
     # read edges
     edge_attributes = _parse_line(graph_file.readline())[2:]

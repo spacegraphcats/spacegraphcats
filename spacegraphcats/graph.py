@@ -278,6 +278,25 @@ class DictGraph(Graph):
             self.nodes = set()
         else:
             self.nodes = set(nodes)
+    @staticmethod
+    def from_gxt(file):
+        from .graph_parser import parse
+        res = DictGraph()
+        node_attr = defaultdict(dict)
+        edge_attr = defaultdict(dict)
+        def add_node(v, size, prop_names, props):
+            res.add_node(v)
+            node_attr[v]['size'] = size
+            for key,value in zip(prop_names,props):
+                node_attr[v][key] = value
+
+        def add_edge(u, v, prop_names, props):
+            res.add_edge(u,v)
+            for key,value in zip(prop_names,props):
+                edge_attr[(u,v)][key] = value
+
+        id_map = parse(file, add_node, add_edge, consecutive_ids=False)
+        return res, dict(node_attr), dict(edge_attr), id_map
 
     def __contains__(self,u):
         return u in self.nodes
