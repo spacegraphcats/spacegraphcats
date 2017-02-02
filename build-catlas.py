@@ -5,7 +5,7 @@ import gzip, glob
 from operator import itemgetter
 from os import path
 
-from spacegraphcats.graph import Graph, TFGraph, EdgeSet, VertexDict, write_gxt
+from spacegraphcats.graph import DictGraph, TFGraph, EdgeSet, VertexDict, write_gxt
 from spacegraphcats.graph_parser import parse_minhash
 from spacegraphcats.catlas import CAtlasBuilder, CAtlas
 from spacegraphcats.rdomset import LazyDomination
@@ -122,7 +122,7 @@ def main():
     """
 
     file = read_project_file(project.path, project.name+".gxt")
-    project.graph, project.node_attr, project.edge_attr, project.id_map = Graph.from_gxt(file)
+    project.graph, project.node_attr, project.edge_attr, project.id_map = DictGraph.from_gxt(file)
 
     if project.graph.has_loops():
         report("Graph contains loops. Removing loops for further processing.")
@@ -157,7 +157,10 @@ def main():
     #vsizes = dict( (i, project.node_attr[v]['size']) for i,v in enumerate(project.id_map))
     #print([(v, a['size']) for v,a in project.node_attr.items()])
     #print(project.id_map)
-    vsizes = [project.node_attr[v]['size'] for v in project.graph]
+    # TODO:  change back to list
+    vsizes = {v:project.node_attr[v]['size'] for v in project.graph}
+    assert len(set(vsizes.keys()) ^ set(project.graph.nodes)) == 0
+    #print(sorted(vsizes.items()))
     builder = CAtlasBuilder(project.graph, 
                             vsizes, 
                             project.domination, 
@@ -170,7 +173,7 @@ def main():
         print(i, len(level))
 
     catlas.write(project.path, project.name, project.radius, project.id_map, args.min_id)
-
+    catlas.write("/home/mike/Software/spacegraphcats/data/", project.name, project.radius, project.id_map, args.min_id)
     sys.exit(0)
 
 

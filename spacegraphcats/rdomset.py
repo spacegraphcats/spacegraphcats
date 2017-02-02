@@ -31,7 +31,7 @@ class Domination:
         fname = path.join(projectpath, projectname+".{name}.{radius}.{extension}")
 
         with open(fname.format(name="domgraph",extension="gxt",radius=radius), 'r') as f:
-            domgraph, _, _ = Graph.from_gxt(f)
+            domgraph, _, _, _ = DictGraph.from_gxt(f)
 
         with open(fname.format(name="assignment",extension="vxt",radius=radius), 'r') as f:
             assignment = VertexDict.from_vxt(f, lambda s: list(map(int,s[0].split())))
@@ -131,7 +131,7 @@ def dtf_step(augg, dist,comp=None):
         (where d is provided by the argument dist). The input augg
         must be a (d-1)-th dtf-augmentation. See dtf() for usage. 
         This function adds arcs to augg. """
-    fratGraph = Graph() # Records fraternal edge, must be oriented at the end
+    fratGraph = DictGraph() # Records fraternal edge, must be oriented at the end
     newTrans = {} # Records transitive arcs
 
     # if a list of nodes in a component is supplied, we loop over that,
@@ -206,10 +206,15 @@ def ldo(g, weight=None, comp=None, r=1):
         seen.add(v)
     return res
 
-def calc_distance(augg, X):
+def calc_distance(augg, X, comp=None):
     """ Computes the for every vertex in the graph underlying the
         augmentation augg its distance to the set X """
     dist = defaultdict(lambda: float('inf'))
+
+    if comp is None:
+        nodes = augg
+    else:
+        nodes = comp
 
     # Vertices in X have distance zero to X
     for v in X:
@@ -218,7 +223,7 @@ def calc_distance(augg, X):
     # We need two passes in order to only every access the
     # in-neighbourhoods (which are guaranteed to be small).
     for _ in range(2):
-        for v in augg:
+        for v in nodes:
             # Pull distances from in-neighbourhood
             for u, r in augg.in_neighbours(v):
                 dist[v] = min(dist[v],dist[u]+r)
@@ -228,8 +233,18 @@ def calc_distance(augg, X):
 
     return dist
 
-def calc_dominators(augg, domset, d):
+def calc_dominators(augg, domset, d,comp=None):
+    """
+    Computes for each vertex the subset of domset that dominates it at distance d
+    Returns a double level dictionary that maps vertices in the original graph to
+    integers 0 to d to sets of vertices that dominate at that distance
+    """
     dominators = defaultdict(lambda: defaultdict(set))
+
+    if comp is None:
+        nodes = augg
+    else:
+        nodes = comp
 
     # Every vertex in domset is a zero-dominator of itself
     for v in domset:
@@ -238,7 +253,7 @@ def calc_dominators(augg, domset, d):
     # We need two passes in order to only every access the
     # in-neighbourhoods (which are guaranteed to be small).
     for _ in range(2):
-        for v in augg:
+        for v in nodes:
             # Pull dominators from in-neighbourhood
             for u, r in augg.in_neighbours(v):
                 for r2 in dominators[u].keys():
@@ -282,6 +297,10 @@ def _calc_domset_graph(domset, dominators, d):
         its closest dominators. These dominators will be connected in the
         final graph.
     """
+    #print("orig domset", domset)
+    #print("orig dominators")
+    #for d, rset in dominators.items():
+    #    print(d, "\t",[_ for _ in rset.items()])
     h = DictGraph(nodes=domset)
 
     assignment = defaultdict(set)
@@ -306,23 +325,36 @@ def _calc_domset_graph(domset, dominators, d):
     return h, assignment
 
 def calc_domination_graph(g, augg, domset, dominators, d):
+    """ 
+        Builds up a 'domination graph' by assigning each vertex to 
+        its closest dominators. These dominators will be connected in the
+        final graph.
+    """
+    # Make the domination graph
     h, assignment = _calc_domset_graph(domset, dominators, d)
     hcomps = h.component_index()
 
+    #print("original assignment", assignment)
+
     # print("  First domgraph has {} components".format(h.num_components()))
 
+    # We want the domination graph to be connected.  If it isn't, we need to
+    # start adding edges between components that have vertices u and v
+    # respectively such that uv is an edge in g
     compmap = {}
-    for u in g:
+    for u in dominators.keys():
         candidates = [hcomps[v] for v in assignment[u]]
         assert len(candidates) > 0
         assert candidates.count(candidates[0]) == len(candidates) # Make sure all the comps. agree
         compmap[u] = candidates[0]
 
-    conn_graph = Graph()
+    conn_graph = DictGraph()
     for u,v in g.edges():
         if u in domset or v in domset:
             continue
-        # Check whether u,v 'connects' to components of h
+        if u not in dominators or v not in dominators:
+            continue
+        # Check whether u,v 'connects' two components of h
         if compmap[u] != compmap[v]:
             conn_graph.add_edge(u,v)
  

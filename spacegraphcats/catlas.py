@@ -8,7 +8,7 @@ from operator import itemgetter
 
 from spacegraphcats.graph import Graph, VertexDict
 from spacegraphcats.rdomset import rdomset, calc_domination_graph, calc_dominators
-from spacegraphcats.graph_parser import parse_minhash, Writer
+from spacegraphcats.graph_parser import parse_minhash, Writer, IdentityHash
 from sourmash_lib import MinHash
 
 KSIZE=31
@@ -19,12 +19,15 @@ def chunks(l, n):
         yield l[i:i+n]
 
 class CAtlasBuilder:
-    def __init__(self, graph, vsizes, domination, minhashes, id_map=lambda x:x):
+    def __init__(self, graph, vsizes, domination, minhashes, id_map=None):
         self.graph = graph
         self.domgraph = domination.domgraph
         self.domset = domination.domset
         self.minhashes = minhashes
-        self.id_map = id_map
+        if id_map is None:
+            self.id_map = IdentityHash()
+        else:
+            self.id_map = id_map
 
         self.assignment = domination.assignment
         self.sizes = vsizes
@@ -81,18 +84,33 @@ class CAtlasBuilder:
         level = 1 # Just for debugging
         while len(curr_level) > self.level_threshold:
             domset, augg = rdomset(curr_domgraph, 1, curr_comp)
-            dominators = calc_dominators(augg, domset, 1)
+            dominators = calc_dominators(augg, domset, 1, curr_comp)
             next_domgraph, domset, dominators, next_assignment = calc_domination_graph(curr_domgraph, augg, domset, dominators, 1)
 
+            assert next_domgraph.is_connected()
+
+            # next_assignment indicates the domset vertices that dominate each vertex.
+            # v dominating u indicates that u will be a child of v
             child_map = defaultdict(set)
             for u in curr_domgraph:
+                # make sure everyone got dominated
+                assert len(next_assignment[u])>0
                 for v in next_assignment[u]:
                     child_map[v].add(u)
 
             next_level = {}
             # Debugging stats
             maxdeg, degsum, mindeg = 0, 0, float('inf')
+            print("\nnext_domgraph.nodes", sorted(i for i in next_domgraph.nodes))
+            print("child_map", sorted(child_map.items()))
             for v in next_domgraph:
+                """
+                print("next_domgraph.nodes:{}",next_domgraph.nodes)
+                print("v:",v)
+                print("child map[v]:",child_map[v])
+                print("curr_level.keys():", curr_level.keys())
+                """
+
                 children = [curr_level[u] for u in child_map[v]]
                 deg = len(children)
                 maxdeg, mindeg = max(maxdeg, deg), min(mindeg, deg)
@@ -102,13 +120,12 @@ class CAtlasBuilder:
 
             curr_domgraph = next_domgraph
             curr_level = next_level
-            curr_comp = None # don't need the component mask past the first level
+            curr_comp = frozenset(curr_domgraph.nodes) & curr_comp # don't need the component mask past the first level
             level += 1
 
         # Add root
         root = CAtlas.create_node(id, 'root', curr_level.values(), self.minhash_size)
         return root
-
 
     def build(self):
         """
@@ -119,7 +136,11 @@ class CAtlasBuilder:
         comp_atlases = []
 
         # Compute data structure to handle components
-        
+        """
+        print(self.domgraph.nodes)
+        print(self.domset)
+        """
+        assert len(frozenset(self.domgraph.nodes) - frozenset(self.graph.nodes)) == 0
         comp_lookup = self.domgraph.component_index() # Maps vertices to component ids
         components = defaultdict(set)
         for v in self.domgraph:
@@ -145,15 +166,16 @@ class CAtlasBuilder:
 
         print("\rProcessing node {}/{}".format(n,n), end="") # For my OCD
         sys.stdout.flush()
+        #print("Components contains",components)
 
         print("\nBuilding catlasses for connected components")
         id = 0
         for i, comp in enumerate(components):
             print("\rProcessing component {}/{}".format(i,num_comps), end="")
+            print(comp)
             sys.stdout.flush()
             comp_id = comp_lookup[next(iter(comp))] 
             leaf_hashes = self.aggregate_minhashes(self.graph.nodes)
-
             comp_atlases.append(self._build_component_catlas(comp, leaf_hashes, id))
             id = comp_atlases[-1].id + 1
 
