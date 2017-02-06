@@ -5,7 +5,7 @@ import gzip, glob
 from operator import itemgetter
 from os import path
 
-from spacegraphcats.graph import DictGraph, TFGraph, EdgeSet, VertexDict, write_gxt
+from spacegraphcats.graph import Graph, DictGraph, TFGraph, EdgeSet, VertexDict, write_gxt
 from spacegraphcats.graph_parser import parse_minhash
 from spacegraphcats.catlas import CAtlasBuilder, CAtlas
 from spacegraphcats.rdomset import LazyDomination
@@ -122,7 +122,7 @@ def main():
     """
 
     file = read_project_file(project.path, project.name+".gxt")
-    project.graph, project.node_attr, project.edge_attr, project.id_map = DictGraph.from_gxt(file)
+    project.graph, project.node_attr, project.edge_attr, project.id_map = Graph.from_gxt(file)
 
     if project.graph.has_loops():
         report("Graph contains loops. Removing loops for further processing.")

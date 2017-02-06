@@ -6,7 +6,7 @@ from os import path
 from collections import deque, defaultdict
 from operator import itemgetter
 
-from spacegraphcats.graph import Graph, VertexDict
+from spacegraphcats.graph import Graph, DictGraph, VertexDict
 from spacegraphcats.rdomset import rdomset, calc_domination_graph, calc_dominators
 from spacegraphcats.graph_parser import parse_minhash, Writer, IdentityHash
 from sourmash_lib import MinHash
@@ -645,7 +645,7 @@ class CAtlas:
 
     @staticmethod 
     def read(catlas_gxt, catlas_mxt, radius):
-        graph, node_attr, _, __ = Graph.from_gxt(open(catlas_gxt, 'r'))
+        graph, node_attr, _, __ = DictGraph.from_gxt(open(catlas_gxt, 'r'))
         if catlas_mxt:
             hashes = VertexDict.from_mxt(open(catlas_mxt, 'r'))
         else:

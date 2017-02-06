@@ -40,7 +40,10 @@ def merge_nodes(child_dict, child_node_list):
     """Merge child_node_list from 'from_tablename' into parent_node in
     'to_tablename'."""
     minlist = []
-
+    print("child_node_list",child_node_list)
+    print("child_dict")
+    for i, h in child_dict.items():
+        print(i, len(h))
     for graph_node in child_node_list:
         mins = child_dict[graph_node]
         minlist.append(mins)
@@ -89,11 +92,14 @@ def main():
 
     catmxt_db = catmxt + '.db'
 
+
     # load mapping between dom nodes and cDBG/graph nodes:
     assignment_vxt = '%s.assignment.%d.vxt' % (basename, radius)
     assignment_vxt = os.path.join(args.catlas_prefix, assignment_vxt)
     dom_to_orig = load_dom_to_orig(assignment_vxt)
     
+    print("Dom_to_orig",dom_to_orig)
+
     # load MXT into dict
     graph_minhashes = import_graph_mxt(graphmxt)
     print('imported {} graph minhashes'.format(len(graph_minhashes)))
@@ -109,6 +115,23 @@ def main():
     # now, eliminate the assignment dict & go for the catlas structure.
     del dom_to_orig
     catlas = CAtlas.read(catgxt, None, args.catlas_r)
+
+    print("#################################################")
+    print("    CATLAS FILE:", catgxt)
+    print("#################################################")
+    with open(catgxt,'r') as infile:
+        for line in infile:
+            print(line)
+    print("#################################################")
+
+    print("#################################################")
+    print("    ASSIGNMENT FILE:", assignment_vxt)
+    print("#################################################")
+    with open(assignment_vxt,'r') as infile:
+        for line in infile:
+            print(line)        
+    print("#################################################")
+
 
     # for level 0, merge the shadows (domgraph nodes)
     print('merging level 0')

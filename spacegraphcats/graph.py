@@ -3,6 +3,7 @@ from collections import defaultdict as defaultdict
 import hashlib
 from sourmash_lib import MinHash
 
+from .graph_parser import IdentityHash
 from spacegraphcats.Eppstein import priorityDictionary, UnionFind
 
 class VertexDict(dict):
@@ -32,12 +33,17 @@ class VertexDict(dict):
             res[int(u)] = mh
         return res        
 
-    def write_vxt(self, file, param_writer=None):
+    def write_vxt(self, file, param_writer=None, id_map=None):
         if param_writer == None:
             param_writer = lambda p: p
 
+        if id_map is None:
+            id_map = IdentityHash()
+            print("id_map was None when writing vxt")
+
         for u, p in self.items():
-            file.write('{},{}\n'.format(u, param_writer(p)))
+            file.write('{},{}\n'.format(id_map[u], param_writer(p)))
+
 
 class EdgeStream:
     @staticmethod 
@@ -592,7 +598,7 @@ class DictTFGraph(TFGraph):
         return res
 
 
-def write_gxt(file, g, node_attrs=None, edge_attrs=None):
+def write_gxt(file, g, node_attrs=None, edge_attrs=None, id_map=None):
     from .graph_parser import Writer
 
     node_keys = set()

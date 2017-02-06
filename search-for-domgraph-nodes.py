@@ -266,6 +266,10 @@ def main():
 
         ## some double checks.
 
+        print("\npos_nodes", pos_nodes)
+        print("dom_to_orig", sorted(dom_to_orig.keys()))
+        print('difference',pos_nodes - set(dom_to_orig.keys()))
+
         # all/pos/neg nodes at the end are dominating set members.
         assert not pos_nodes - set(dom_to_orig.keys())
         assert not neg_nodes - set(dom_to_orig.keys())

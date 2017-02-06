@@ -8,6 +8,7 @@ from os import path
 
 from spacegraphcats.Eppstein import priorityDictionary
 from spacegraphcats.graph import Graph, DictGraph, TFGraph, EdgeSet, EdgeStream, VertexDict, write_gxt
+from spacegraphcats.graph_parser import IdentityHash
 
 
 class Domination:
@@ -17,14 +18,17 @@ class Domination:
         self.assignment = VertexDict(assignment)
         self.radius = radius
 
-    def write(self, projectpath, projectname):
+    def write(self, projectpath, projectname, id_map=None):
         fname = path.join(projectpath, projectname+".{name}.{radius}.{extension}")
 
+        if id_map is None:
+            id_map = IdentityHash()
+
         with open(fname.format(name="domgraph",extension="gxt",radius=self.radius), 'w') as f:
-            write_gxt(f, self.domgraph)
+            write_gxt(f, self.domgraph, id_map=id_map)
 
         with open(fname.format(name="assignment",extension="vxt",radius=self.radius), 'w') as f:
-            self.assignment.write_vxt(f, param_writer=lambda s: ' '.join(map(str,s)))
+            self.assignment.write_vxt(f, param_writer=lambda s: ' '.join(map(lambda x:str(id_map[x]),s)), id_map=id_map)
 
     @staticmethod
     def read(projectpath, projectname, radius):
@@ -47,6 +51,7 @@ class LazyDomination:
         self.projectpath = project.path
         self.projectname = project.name
         self.graph = project.graph
+        self.id_map = project.id_map
 
     def compute(self):
         try:
@@ -59,7 +64,7 @@ class LazyDomination:
             domgraph, domset, dominators, assignment = calc_domination_graph(self.graph, augg, domset, dominators, self.radius)
 
             res = Domination(domset, domgraph, assignment, self.radius)
-            res.write(self.projectpath, self.projectname)
+            res.write(self.projectpath, self.projectname, self.id_map)
 
         return res
 
