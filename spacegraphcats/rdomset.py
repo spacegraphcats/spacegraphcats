@@ -31,8 +31,11 @@ class Domination:
             self.assignment.write_vxt(f, param_writer=lambda s: ' '.join(map(lambda x:str(id_map[x]),s)), id_map=id_map)
 
     @staticmethod
-    def read(projectpath, projectname, radius):
+    def read(projectpath, projectname, radius, id_map = None):
         fname = path.join(projectpath, projectname+".{name}.{radius}.{extension}")
+
+        if id_map is None:
+            id_map = IdentityHash()
 
         with open(fname.format(name="domgraph",extension="gxt",radius=radius), 'r') as f:
             domgraph, _, _, _ = DictGraph.from_gxt(f)
@@ -55,7 +58,7 @@ class LazyDomination:
 
     def compute(self):
         try:
-            res = Domination.read(self.projectpath, self.projectname, self.radius)
+            res = Domination.read(self.projectpath, self.projectname, self.radius, self.id_map)
             print("Loaded {}-domination from project folder".format(self.radius))
         except IOError:
             augg = self._compute_augg()
@@ -82,11 +85,11 @@ class LazyDomination:
         if 0 in augs:
             auggraph = self.graph.to_TFGraph(self.radius)
             with open(augname.format("0"), 'r') as f:
-                auggraph.add_arcs(EdgeStream.from_ext(f), 1)
+                auggraph.add_arcs(EdgeStream.from_ext(f, self.id_map), 1)
         else:
             auggraph = ldo(self.graph,r=self.radius)
             with open(augname.format("0"), 'w') as f:
-                EdgeSet(auggraph.arcs(weight=1)).write_ext(f)
+                EdgeSet(auggraph.arcs(weight=1)).write_ext(f,self.id_map)
 
         num_arcs = auggraph.num_arcs()
         changed = True
@@ -98,13 +101,13 @@ class LazyDomination:
                 print("({})".format(d), end=" ")
                 sys.stdout.flush()
                 with open(augname.format(d), 'r') as f:
-                    auggraph.add_arcs(EdgeStream.from_ext(f), d+1)
+                    auggraph.add_arcs(EdgeStream.from_ext(f,self.id_map), d+1)
             else:
                 print(d, end=" ")
                 sys.stdout.flush()
                 dtf_step(auggraph, d+1)
                 with open(augname.format(d), 'w') as f:
-                    EdgeSet(auggraph.arcs(weight=d+1)).write_ext(f)            
+                    EdgeSet(auggraph.arcs(weight=d+1)).write_ext(f,self.id_map)            
 
             curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
             changed = num_arcs < curr_arcs
@@ -148,14 +151,14 @@ def dtf_step(augg, dist,comp=None):
 
     for v in nodes:
         for x, y, _ in augg.trans_trips_weight(v, dist):
-            assert x != y
+            #assert x != y
             newTrans[(x, y)] = dist
         for x, y, _ in augg.frat_trips_weight(v, dist):
-            assert x != y
+            #assert x != y
             fratGraph.add_edge(x, y)
     # Add transitive arcs to graph
     for (s, t) in newTrans:
-        assert s != t
+        #assert s != t
         augg.add_arc(s, t, dist)
         fratGraph.remove_edge(s,t)
 
@@ -163,7 +166,7 @@ def dtf_step(augg, dist,comp=None):
     fratDigraph = ldo(fratGraph)
 
     for s, t, _ in fratDigraph.arcs():
-        assert s != t
+        #assert s != t
         augg.add_arc(s,t,dist)
 
 def ldo(g, weight=None, comp=None, r=1):
@@ -349,8 +352,8 @@ def calc_domination_graph(g, augg, domset, dominators, d):
     compmap = {}
     for u in dominators.keys():
         candidates = [hcomps[v] for v in assignment[u]]
-        assert len(candidates) > 0
-        assert candidates.count(candidates[0]) == len(candidates) # Make sure all the comps. agree
+        #assert len(candidates) > 0
+        #assert candidates.count(candidates[0]) == len(candidates) # Make sure all the comps. agree
         compmap[u] = candidates[0]
 
     conn_graph = DictGraph()

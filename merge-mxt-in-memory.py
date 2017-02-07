@@ -40,10 +40,6 @@ def merge_nodes(child_dict, child_node_list):
     """Merge child_node_list from 'from_tablename' into parent_node in
     'to_tablename'."""
     minlist = []
-    print("child_node_list",child_node_list)
-    print("child_dict")
-    for i, h in child_dict.items():
-        print(i, len(h))
     for graph_node in child_node_list:
         mins = child_dict[graph_node]
         minlist.append(mins)
@@ -115,22 +111,6 @@ def main():
     # now, eliminate the assignment dict & go for the catlas structure.
     del dom_to_orig
     catlas = CAtlas.read(catgxt, None, args.catlas_r)
-
-    print("#################################################")
-    print("    CATLAS FILE:", catgxt)
-    print("#################################################")
-    with open(catgxt,'r') as infile:
-        for line in infile:
-            print(line)
-    print("#################################################")
-
-    print("#################################################")
-    print("    ASSIGNMENT FILE:", assignment_vxt)
-    print("#################################################")
-    with open(assignment_vxt,'r') as infile:
-        for line in infile:
-            print(line)        
-    print("#################################################")
 
 
     # for level 0, merge the shadows (domgraph nodes)

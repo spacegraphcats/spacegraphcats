@@ -87,7 +87,7 @@ class CAtlasBuilder:
             dominators = calc_dominators(augg, domset, 1, curr_comp)
             next_domgraph, domset, dominators, next_assignment = calc_domination_graph(curr_domgraph, augg, domset, dominators, 1)
 
-            assert next_domgraph.is_connected()
+            #assert next_domgraph.is_connected()
 
             # next_assignment indicates the domset vertices that dominate each vertex.
             # v dominating u indicates that u will be a child of v
@@ -101,8 +101,10 @@ class CAtlasBuilder:
             next_level = {}
             # Debugging stats
             maxdeg, degsum, mindeg = 0, 0, float('inf')
+            """
             print("\nnext_domgraph.nodes", sorted(i for i in next_domgraph.nodes))
             print("child_map", sorted(child_map.items()))
+            """
             for v in next_domgraph:
                 """
                 print("next_domgraph.nodes:{}",next_domgraph.nodes)
@@ -156,11 +158,12 @@ class CAtlasBuilder:
         print("Mapping graph vertices to dominators")
         graph_comps = defaultdict(set)
         n = len(self.graph)
-        for i, u in enumerate(self.graph):
+        for i, assign in enumerate(self.assignment.items()):
+            u, u_doms = assign
             if i % 10 == 0:
                 print("\rProcessing node {}/{}".format(i,n), end="")
                 sys.stdout.flush()
-            dominator = next(iter(self.assignment[u]))
+            dominator = next(iter(u_doms))
             graph_comps[comp_lookup[dominator]].add(u)
 
 
@@ -172,7 +175,7 @@ class CAtlasBuilder:
         id = 0
         for i, comp in enumerate(components):
             print("\rProcessing component {}/{}".format(i,num_comps), end="")
-            print(comp)
+            #print(comp)
             sys.stdout.flush()
             comp_id = comp_lookup[next(iter(comp))] 
             leaf_hashes = self.aggregate_minhashes(self.graph.nodes)

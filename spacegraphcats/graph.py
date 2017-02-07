@@ -39,7 +39,7 @@ class VertexDict(dict):
 
         if id_map is None:
             id_map = IdentityHash()
-            print("id_map was None when writing vxt")
+            #print("id_map was None when writing vxt")
 
         for u, p in self.items():
             file.write('{},{}\n'.format(id_map[u], param_writer(p)))
@@ -47,25 +47,31 @@ class VertexDict(dict):
 
 class EdgeStream:
     @staticmethod 
-    def from_ext(file):
-        from .graph_parser import _parse_line
+    def from_ext(file, id_map=None):
+        from .graph_parser import _parse_line, IdentityHash
+        if id_map is None:
+            reverse_id_map = IdentityHash()
+        else:
+            reverse_id_map = {v:i for i,v in enumerate(id_map)}
         for line in file:
             u, v = list(map(int, _parse_line(line)))
-            yield (u,v)
+            yield (reverse_id_map[u], reverse_id_map[v])
 
 class EdgeSet(set):
     @classmethod 
-    def from_ext(cls, file):
+    def from_ext(cls, file, id_map=None):
         from .graph_parser import _parse_line
         res = cls()
-        for u, v in EdgeStream.from_ext(file):
+        for u, v in EdgeStream.from_ext(file, id_map):
             res.add((u, v))
 
         return res
 
-    def write_ext(self, file):
+    def write_ext(self, file, id_map=None):
+        if id_map is None:
+            id_map = IdentityHash()
         for u, v in self:
-            file.write('{},{}\n'.format(u,v))
+            file.write('{},{}\n'.format(id_map[u],id_map[v]))
 
 class Graph:
     def __init__(self,n=0):

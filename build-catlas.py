@@ -65,11 +65,11 @@ def load_and_compute_augg(project):
     if 0 in augs:
         auggraph = TFGraph(project.graph)
         with open(augname.format("0"), 'r') as f:
-            auggraph.add_arcs(EdgeSet.from_ext(f), 1)
+            auggraph.add_arcs(EdgeSet.from_ext(f, self.id_map), 1)
     else:
         auggraph = ldo(project.graph)
         with open(augname.format("0"), 'w') as f:
-            EdgeSet(auggraph.arcs(weight=1)).write_ext(f)
+            EdgeSet(auggraph.arcs(weight=1)).write_ext(f, self.id_map)
 
     num_arcs = auggraph.num_arcs()
     changed = True
@@ -79,12 +79,12 @@ def load_and_compute_augg(project):
         if d in augs:
             print("({})".format(d), end=" ", flush=True)                        
             with open(augname.format(d), 'r') as f:
-                auggraph.add_arcs(EdgeSet.from_ext(f), d+1)
+                auggraph.add_arcs(EdgeSet.from_ext(f,self.id_map), d+1)
         else:
             print(d, end=" ", flush=True)            
             dtf_step(auggraph, d+1)
             with open(augname.format(d), 'w') as f:
-                EdgeSet(auggraph.arcs(weight=d+1)).write_ext(f)            
+                EdgeSet(auggraph.arcs(weight=d+1)).write_ext(f,self.id_map)            
 
         curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
         changed = num_arcs < curr_arcs
