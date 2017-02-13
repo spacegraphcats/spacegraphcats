@@ -85,7 +85,7 @@ class CAtlasBuilder:
         while len(curr_level) > self.level_threshold:
             domset, augg = rdomset(curr_domgraph, 1, curr_comp)
             dominators = calc_dominators(augg, domset, 1, curr_comp)
-            next_domgraph, domset, dominators, next_assignment = calc_domination_graph(curr_domgraph, augg, domset, dominators, 1)
+            next_domgraph, next_assignment = calc_domination_graph(curr_domgraph, augg, domset, dominators, 1)
 
             #assert next_domgraph.is_connected()
 

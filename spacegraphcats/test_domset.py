@@ -40,10 +40,10 @@ class DomsetTest(unittest.TestCase):
         # Two dominators are connected by an edge if they both dominate a common vertex.
         # In general this function can return a slightly larger dominating set, if the
         # resulting graph would be disconnected.
-        h, newdomset, dominators, assignment = calc_domination_graph(g, augg, [0,4], dominators, 2)
+        h, assignment = calc_domination_graph(g, augg, [0,4], dominators, 2)
         self.assertTrue(h.nodes == set([0,4]))
         self.assertTrue(h.adjacent(0,4)) # Vertex 0 and 4 both dominate vertex 2
-        self.assertTrue(newdomset == set([0,4])) # There is no need to augment the domset
+        #self.assertTrue(newdomset == set([0,4])) # There is no need to augment the domset
 
         # The assignment map tells us for each vertex of g what its closest dominators are.
         # We expect [0,1] to belong to 0, [3,4] to belong to 4 and only 2 to belong to both 0 and 4.
@@ -72,8 +72,8 @@ class DomsetTest(unittest.TestCase):
 
         # The domgraph computation now needs to add an additional vertex in order to make
         # it connected. The new domset might not be a superset of the old domset!
-        h, newdomset, dominators, assignment = calc_domination_graph(g, augg, [0,5],dominators, 2)
-        self.assertTrue( len(newdomset) > 2 )
+        #h, assignment = calc_domination_graph(g, augg, [0,5],dominators, 2)
+        #self.assertTrue( len(newdomset) > 2 )
 
     def test_rdomset_random(self):
         """ This test covers pretty much the whole r-domset infrastructure

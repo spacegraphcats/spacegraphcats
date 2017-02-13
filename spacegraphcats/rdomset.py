@@ -64,7 +64,7 @@ class LazyDomination:
             augg = self._compute_augg()
             domset = better_dvorak_reidl(augg, self.radius)
             dominators = calc_dominators(augg, domset, self.radius)
-            domgraph, domset, dominators, assignment = calc_domination_graph(self.graph, augg, domset, dominators, self.radius)
+            domgraph, assignment = calc_domination_graph(self.graph, augg, domset, dominators, self.radius)
 
             res = Domination(domset, domgraph, assignment, self.radius)
             res.write(self.projectpath, self.projectname, self.id_map)
@@ -305,30 +305,24 @@ def _calc_domset_graph(domset, dominators, d):
         its closest dominators. These dominators will be connected in the
         final graph.
     """
-    #print("orig domset", domset)
-    #print("orig dominators")
-    #for d, rset in dominators.items():
-    #    print(d, "\t",[_ for _ in rset.items()])
+
     h = DictGraph(nodes=domset)
 
+    # dictionary mapping vertices from the graph to closest dominators to it
     assignment = defaultdict(set)
+    # the keys of dominators should all belong to the same component, so this
+    # should implicitly only operate on the vertices we care about
     for v in dominators:
-        # Collect closest pairs
-        sorted_doms = list(filter(lambda s: len(s) > 0, [dominators[v][r] for r in range(d+1)]))
-        if len(sorted_doms[0]) >= 2:
-            for x in sorted_doms[0]:
-                assignment[v].add(x)
-
-            for x,y in itertools.combinations(sorted_doms[0],2):
-                h.add_edge(x,y)
-        else:
-            assert len(sorted_doms[0]) == 1
-            x = next(iter(sorted_doms[0]))
+        # Find the domset vertices closest to v
+        sorted_doms = [dominators[v][r] for r in range(d+1) if len(dominators[v][r])>0]
+        # sorted_doms[0] contains the closest dominators (we don't care about what radius it is at)
+        closest = sorted_doms[0]
+        # Assign each of those closest dominating nodes to v
+        for x in closest:
             assignment[v].add(x)
-            if len(sorted_doms) >= 2:
-                for y in sorted_doms[1]:
-                    assignment[v].add(y)
-                    h.add_edge(x,y)
+        # all closest dominating nodes should form a clique, since they optimally dominate a common vertex (namely, v)
+        for x,y in itertools.combinations(closest,2):
+            h.add_edge(x,y)
 
     return h, assignment
 
@@ -349,45 +343,33 @@ def calc_domination_graph(g, augg, domset, dominators, d):
     # We want the domination graph to be connected.  If it isn't, we need to
     # start adding edges between components that have vertices u and v
     # respectively such that uv is an edge in g
-    compmap = {}
-    for u in dominators.keys():
-        candidates = [hcomps[v] for v in assignment[u]]
-        #assert len(candidates) > 0
-        #assert candidates.count(candidates[0]) == len(candidates) # Make sure all the comps. agree
-        compmap[u] = candidates[0]
+    if len(set([hcomps[v] for v in hcomps])) > 1:
+        # map original graph vertices to domgraph components
+        compmap = {}
+        for u in dominators.keys():
+            # find components of the domgraph that contain dominators of u
+            candidates = [hcomps[v] for v in assignment[u]]
+            #assert len(candidates) > 0
+            # the components should all be the same so we can pick the first one
+            assert candidates.count(candidates[0]) == len(candidates) # Make sure all the comps. agree
+            compmap[u] = candidates[0]
 
-    conn_graph = DictGraph()
-    for u,v in g.edges():
-        if u in domset or v in domset:
-            continue
-        if u not in dominators or v not in dominators:
-            continue
-        # Check whether u,v 'connects' two components of h
-        if compmap[u] != compmap[v]:
-            conn_graph.add_edge(u,v)
- 
-    # Compute vertex cover for conn_graph
-    vc = set()
-    for u in conn_graph: # Add neighbours of deg-1 vertices
-        if conn_graph.degree(u) == 1 and u not in vc:
-            vc.add(next(iter(conn_graph.neighbours(u))))
+        # look at the edges of the graph
+        for u,v in g.edges():
+            # domset nodes optimally dominate their neighbors
+            if u in domset or v in domset:
+                continue
+            # vertices outside of dominators are not considered here
+            if u not in dominators or v not in dominators:
+                continue
+            # Check whether u,v 'connects' two components of h
+            # if so, add all edges between their dominators
+            if compmap[u] != compmap[v]:
+                for x in assignment[u]:
+                    for y in assignment[v]:
+                        h.add_edge(x,y)
 
-    # We expect this to be mostly disjoint edges, so the following
-    # heuristic works well.
-    for u,v in conn_graph.edges():
-        if u not in vc and v not in vc:
-            if conn_graph.degree(u) > conn_graph.degree(v):
-                vc.add(u)
-            else:
-                vc.add(v)
-
-    newdomset = set(domset) | vc
-    if len(newdomset) != len(domset):
-        # print("  Recomputing domgraph")
-        dominators = calc_dominators(augg, newdomset, d)
-        h, assignment = _calc_domset_graph(newdomset, dominators, d)
-
-    return h, newdomset, dominators, assignment
+    return h, assignment
 
 def better_dvorak_reidl(augg,d,comp=None):
     """ Compute a d-dominating set using Dvorak's approximation algorithm 
