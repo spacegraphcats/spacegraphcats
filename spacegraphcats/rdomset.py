@@ -463,7 +463,7 @@ def rdomset(g, d, comp=None):
     return domset, augg
 
 def main(inputgxt, outputgxt, d, test, domgraph):
-    g, node_attrs, edge_attrs = Graph.from_gxt(inputgxt)
+    g, node_attrs, edge_attrs, _ = Graph.from_gxt(inputgxt)
     g.remove_loops()
 
     domset, augg = rdomset(g,d)
@@ -490,13 +490,13 @@ def main(inputgxt, outputgxt, d, test, domgraph):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('input', help='gxt input file', nargs='?', type=argparse.FileType('r'),
+    parser.add_argument('--input', help='gxt input file', nargs='?', type=argparse.FileType('r'),
                         default=sys.stdin)
-    parser.add_argument('output', help='gxt output file', nargs='?', type=argparse.FileType('w'),
+    parser.add_argument('--output', help='gxt output file', nargs='?', type=argparse.FileType('w'),
                         default=sys.stdin)
     parser.add_argument('--domgraph', help='gxt output file', nargs='?', type=argparse.FileType('w'),
                         default=None)
-    parser.add_argument("d", help="domset distance", type=int )
+    parser.add_argument("d", help="domset distance", type=int)
     parser.add_argument('--test', action='store_true')
     args = parser.parse_args()
 

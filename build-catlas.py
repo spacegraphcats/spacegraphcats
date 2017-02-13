@@ -173,7 +173,6 @@ def main():
         print(i, len(level))
 
     catlas.write(project.path, project.name, project.radius, project.id_map, args.min_id)
-    catlas.write("/home/mike/Software/spacegraphcats/data/", project.name, project.radius, project.id_map, args.min_id)
     sys.exit(0)
 
 
