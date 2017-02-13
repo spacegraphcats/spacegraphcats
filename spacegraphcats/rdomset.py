@@ -314,21 +314,21 @@ def _calc_domset_graph(domset, dominators, d):
     assignment = defaultdict(set)
     for v in dominators:
         # Collect closest pairs
-        sorted_doms = list(filter(lambda s: len(s) > 0, [dominators[v][r] for r in range(d+1)]))
-        if len(sorted_doms[0]) >= 2:
-            for x in sorted_doms[0]:
-                assignment[v].add(x)
-
-            for x,y in itertools.combinations(sorted_doms[0],2):
-                h.add_edge(x,y)
-        else:
-            assert len(sorted_doms[0]) == 1
-            x = next(iter(sorted_doms[0]))
+        sorted_doms = [dominators[v][r] for r in range(d+1) if len(dominators[v][r]) > 0]
+        
+        for x in sorted_doms[0]:
             assignment[v].add(x)
-            if len(sorted_doms) >= 2:
-                for y in sorted_doms[1]:
-                    assignment[v].add(y)
-                    h.add_edge(x,y)
+
+        for x,y in itertools.combinations(sorted_doms[0],2):
+            h.add_edge(x,y)
+
+        # are dominated at a higher level
+        # guarantees that every node gets dominated by at least two nodes
+        if len(sorted_doms[0]) == 1 and  len(sorted_doms) >= 2:
+            x = next(iter(sorted_doms[0]))
+            for y in sorted_doms[1]:
+                assignment[v].add(y)
+                h.add_edge(x,y)
 
     return h, assignment
 
@@ -481,7 +481,7 @@ def rdomset(g, d, comp=None):
     return domset, augg
 
 def main(inputgxt, outputgxt, d, test, domgraph):
-    g, node_attrs, edge_attrs = Graph.from_gxt(inputgxt)
+    g, node_attrs, edge_attrs, _ = Graph.from_gxt(inputgxt)
     g.remove_loops()
 
     domset, augg = rdomset(g,d)
@@ -508,13 +508,13 @@ def main(inputgxt, outputgxt, d, test, domgraph):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('input', help='gxt input file', nargs='?', type=argparse.FileType('r'),
+    parser.add_argument('--input', help='gxt input file', nargs='?', type=argparse.FileType('r'),
                         default=sys.stdin)
-    parser.add_argument('output', help='gxt output file', nargs='?', type=argparse.FileType('w'),
+    parser.add_argument('--output', help='gxt output file', nargs='?', type=argparse.FileType('w'),
                         default=sys.stdin)
     parser.add_argument('--domgraph', help='gxt output file', nargs='?', type=argparse.FileType('w'),
                         default=None)
-    parser.add_argument("d", help="domset distance", type=int )
+    parser.add_argument("d", help="domset distance", type=int)
     parser.add_argument('--test', action='store_true')
     args = parser.parse_args()
 
