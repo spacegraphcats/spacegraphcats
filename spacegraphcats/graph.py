@@ -54,6 +54,14 @@ class Graph:
         """
         return u in self.inarcs[v] or v in self.inarcs[u]
 
+    def arcs(self,weight=None):
+        """
+        return all the arcs in the graph.  restrict to a given weight when provided
+        """
+        for u in self:
+            for edge in self.in_neighbors(u,weight):
+                yield edge
+
     def in_neighbors(self, v, weight=None):
         if weight is None:
             for u, w in self.inarcs[v].items():
@@ -66,7 +74,7 @@ class Graph:
         return sum(1 for _ self.in_neighbors(v, weight))
 
     def num_arcs(self):
-        return sum(self.in_degree(v) for v in self)
+        return sum(1 for _ in self.arcs())
 
     def transitive_pairs(self, u, w):
         """
