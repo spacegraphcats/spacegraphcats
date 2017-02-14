@@ -103,7 +103,7 @@ class Graph:
         return u < self.n
 
     def __iter__(self):
-        return iter(self.nodes)
+        return iter(range(self.n))
 
     def __len__(self):
         return self.n
@@ -363,10 +363,9 @@ class TFGraph:
     def __init__(self, n=0, r=1):
         self.r = r
         self.n = n
-        self.nodes = range(self.n)
-        self.inarcs = [dict() for i in self.nodes]
-        #self.inarcs_weight = [[set() for j in range(self.r+1)] for i in self.nodes]
-        self.inarcs_weight = [defaultdict(set) for i in self.nodes]
+        #self.nodes = range(self.n)
+        self.inarcs = [dict() for i in range(self.n)]
+        self.inarcs_weight = [[set() for i in range(self.n)] for j in range(self.r)]
 
     def __contains__(self,u):
         return u < self.n
@@ -375,14 +374,15 @@ class TFGraph:
         return self.n
 
     def __iter__(self):
-        return iter(self.nodes)
+        return iter(range(self.n))
 
     def add_node(self,u):
         if u >= self.n:
-            self.nodes.extend(range(self.n, u+1))
-            self.inarcs.extend([list() for _ in range(self.n, u+1)])
-            #self.inarcs_weight([[set() for j in range(self.r+1)] for i in range(self.n,u+1)])
-            self.inarcs_weight([defaultdict(set) for i in range(self.n,u+1)])
+            # add more space in arcs list
+            self.inarcs.extend([dict() for _ in range(self.n, u+1)])
+            # create new entries to index by weight
+            for j in range(self.r):    
+                self.inarcs_weight[j].extend([set() for _ in range(self.n,u+1)])
             self.n = u+1
         return self
 
@@ -390,9 +390,9 @@ class TFGraph:
         assert u != v
         #assert u in self, "{} is not in this graph of size {}!".format(u,len(self))
         #assert v in self, "{} is not in this graph of size {}!".format(v,len(self))
-        #assert weight <= self.r, "Why are you trying to add an arc of weight {} to a TFGraph with radius {} and length of array {}".format(weight,self.r, len(self.inarcs_weight[u]))
+        #assert weight <= self.r, "Why are you trying to add an arc of weight {} to a TFGraph with radius {}".format(weight,self.r)
         self.inarcs[v][u] = weight
-        self.inarcs_weight[v][weight].add(u)
+        self.inarcs_weight[weight-1][v].add(u)
         return self
 
     def add_arcs(self, arcs, weight):
@@ -405,7 +405,7 @@ class TFGraph:
             return
         weight = self.inarcs[v][u]
         del self.inarcs[v][u]
-        self.inarcs_weight[v][weight].remove(u)
+        self.inarcs_weight[weight-1][v].remove(u)
         assert not self.adjacent(u,v)
         return self
 
@@ -416,9 +416,8 @@ class TFGraph:
                     yield (v, u, w)
         else:
             for u in self:
-                for v, w in self.in_neighbours(u):
-                    if w == weight:
-                        yield (v, u)
+                for v in self.in_neighbours_weight(u,weight):
+                    yield (v, u)
 
     def num_arcs(self):
         return sum( 1 for _ in self.arcs() )
@@ -439,11 +438,11 @@ class TFGraph:
 
     def in_neighbours(self,u):
         inbs = self.inarcs[u]
-        for v in inbs:
-            yield v, inbs[v]
+        for v, weight in inbs.items():
+            yield v, weight
 
     def in_neighbours_weight(self,u,weight):
-        inbs = self.inarcs_weight[u][weight]
+        inbs = self.inarcs_weight[weight-1][u]
         for v in inbs:
             yield v
 
@@ -451,9 +450,12 @@ class TFGraph:
         return len(self.inarcs[u])
 
     def in_degree_weight(self,u):
+        """
+        Return a dictionary mapping weights to neighbors of u with that weight
+        """
         res = {}
-        for weight, nodes in enumerate(self.inarcs_weight[u]):
-            res[weight] = len(nodes)
+        for weight,nodes in enumerate(self.inarcs_weight):
+            res[weight+1] = len(nodes[u])
         return res
 
     def in_degree_sequence(self):
@@ -507,7 +509,7 @@ class TFGraph:
 
     # Returns transitive triples (x,u,weightsum)
     def trans_trips(self, u):
-        inbs = frozenset(self.inarcs[u].items())
+        inbs = frozenset(self.in_neighbours(u))
         for (y, wy) in inbs:
             assert y != u
             for x, wx in self.in_neighbours(y):
@@ -519,17 +521,17 @@ class TFGraph:
     def trans_trips_weight(self,u,weight):
         for wy in range(1, weight):
             wx = weight-wy
-            inbs = frozenset(self.inarcs_weight[u][wy])
+            inbs = frozenset(self.in_neighbours_weight(u,wy))
             for y in inbs:
                 assert y != u
                 for x in self.in_neighbours_weight(y, wx):
-                    if not self.adjacent(x, u) and x != u:
+                    if x != u and not self.adjacent(x, u):
                         yield (x, u, weight)
 
 
     # Returns fraternal triples (x,y,weightsum)
     def frat_trips(self,u):
-        inbs = frozenset(self.inarcs[u].items())
+        inbs = frozenset(self.in_neighbours(u))
         for (x, wx), (y, wy) in itertools.combinations(inbs, 2):
             assert x != u and y != u
             if not (self.adjacent(x, y) or self.adjacent(y, x)):
@@ -555,7 +557,7 @@ class TFGraph:
 
         if weight % 2 == 0:
             wy = wx = weight // 2
-            inbs = frozenset(self.inarcs_weight[u][wh])
+            inbs = frozenset(self.in_neighbours_weight(u,wh))
             for x, y in itertools.combinations(inbs, 2):
                 assert x != u and y != u
                 if not (self.adjacent(x,y) or self.adjacent(y,x)):
@@ -573,7 +575,7 @@ class DictTFGraph(TFGraph):
             self.nodes = nodes
         self.r = 1
         self.inarcs = defaultdict(dict)
-        self.inarcs_weight = defaultdict(lambda : defaultdict(set))
+        self.inarcs_weight = [defaultdict(set) for _ in range(self.r)]
 
     def __contains__(self,u):
         return u in self.nodes
