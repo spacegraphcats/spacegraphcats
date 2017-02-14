@@ -6,7 +6,7 @@ from os import path
 from collections import deque, defaultdict
 from operator import itemgetter
 
-from spacegraphcats.graph import Graph, DictGraph, VertexDict
+from spacegraphcats.graph import DictGraph, VertexDict
 from spacegraphcats.rdomset import rdomset, calc_domination_graph, calc_dominators
 from spacegraphcats.graph_parser import parse_minhash, Writer, IdentityHash
 from sourmash_lib import MinHash

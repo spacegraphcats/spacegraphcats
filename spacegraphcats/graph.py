@@ -363,10 +363,32 @@ class TFGraph:
     def __init__(self, n=0, r=1):
         self.r = r
         self.n = n
-        #self.nodes = range(self.n)
         self.inarcs = [dict() for i in range(self.n)]
         self.inarcs_weight = [[set() for i in range(self.n)] for j in range(self.r)]
 
+
+    @staticmethod
+    def from_gxt(file, r):
+        from .graph_parser import parse
+        res = TFGraph(r=r)
+        node_attr = defaultdict(dict)
+        edge_attr = defaultdict(dict)
+        def add_node(v, size, prop_names, props):
+            res.add_node(v)
+            node_attr[v]['size'] = size
+            for key,value in zip(prop_names,props):
+                node_attr[v][key] = value
+
+        def add_edge(u, v, prop_names, props):
+            # graph is undirected
+            res.add_arc(u, v, 1)
+            res.add_arc(v, u, 1)
+            for key,value in zip(prop_names,props):
+                edge_attr[(u,v)][key] = value
+
+        id_map = parse(file, add_node, add_edge, consecutive_ids=True)
+        return res, dict(node_attr), dict(edge_attr), id_map
+    
     def __contains__(self,u):
         return u < self.n
 
@@ -498,15 +520,6 @@ class TFGraph:
             res.add_arc(u,v,d)
         return res
 
-    # Returns an undirected copy
-    def undirected(self):
-        res = Graph(n=self.n)
-        #for v in self:
-        #    res.nodes.add(v) # For degree-0 nodes!
-        for u,v,_ in self.arcs():
-            res.add_edge(u,v)
-        return res
-
     # Returns transitive triples (x,u,weightsum)
     def trans_trips(self, u):
         inbs = frozenset(self.in_neighbours(u))
@@ -563,6 +576,42 @@ class TFGraph:
                 if not (self.adjacent(x,y) or self.adjacent(y,x)):
                     yield (x, y, weight)
 
+    def remove_loops(self):
+        for v in self:
+            self.remove_arc(v,v)
+        return self          
+
+    def has_loops(self):
+        for v in self:
+            if self.adjacent(v,v):
+                return True
+        return False
+
+    def component_index(self):
+        """
+        Returns a union-find data structure associating each vertex 
+        with an id (another vertex) the connected component it is contained in.
+        
+        This method assumes that we we have two directed edge for each edge.
+        """
+        comps = UnionFind()
+        for v in self:
+            N = self.in_neighbours(v) | set([v])
+            comps.union(*N)
+        return comps
+
+    def components(self):
+        comps = self.component_index()
+        res = defaultdict(set)
+        for v in self:
+            res[comps[v]].add(v)
+        return res.values()
+
+    def num_components(self):
+        comps = self.component_index()
+        ids = set([comps[v] for v in comps])
+        return len(ids) 
+
     # For memoization
     def __str__(self):
         return graph_hash(self)
@@ -594,15 +643,6 @@ class DictTFGraph(TFGraph):
         res = DictTFGraph(nodes=self.nodes)
         for u,v,d in self.arcs():
             res.add_arc(u,v,d)
-        return res
-
-    # Returns an undirected copy
-    def undirected(self):
-        res = DictGraph(nodes=self.nodes)
-        for v in self.nodes:
-            res.nodes.add(v) # For degree-0 nodes!
-        for u,v,_ in self.arcs():
-            res.add_edge(u,v)
         return res
 
 

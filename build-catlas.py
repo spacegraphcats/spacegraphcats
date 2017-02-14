@@ -122,7 +122,7 @@ def main():
     """
 
     file = read_project_file(project.path, project.name+".gxt")
-    project.graph, project.node_attr, project.edge_attr, project.id_map = Graph.from_gxt(file)
+    project.graph, project.node_attr, project.edge_attr, project.id_map = TFGraph.from_gxt(file)
 
     if project.graph.has_loops():
         report("Graph contains loops. Removing loops for further processing.")

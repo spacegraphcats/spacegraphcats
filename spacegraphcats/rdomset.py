@@ -83,13 +83,12 @@ class LazyDomination:
             augs[d] = f
 
         if 0 in augs:
-            auggraph = self.graph.to_TFGraph(self.radius)
             with open(augname.format("0"), 'r') as f:
-                auggraph.add_arcs(EdgeStream.from_ext(f, self.id_map), 1)
+                self.graph.add_arcs(EdgeStream.from_ext(f, self.id_map), 1)
         else:
-            auggraph = ldo(self.graph,r=self.radius)
+            ldo(self.graph)
             with open(augname.format("0"), 'w') as f:
-                EdgeSet(auggraph.arcs(weight=1)).write_ext(f,self.id_map)
+                EdgeSet(self.graph.arcs(weight=1)).write_ext(f,self.id_map)
 
         num_arcs = auggraph.num_arcs()
         changed = True
@@ -103,7 +102,7 @@ class LazyDomination:
                 with open(augname.format(d), 'r') as f:
                     auggraph.add_arcs(EdgeStream.from_ext(f,self.id_map), d+1)
             else:
-                print(d, end=" ")
+                print(radius, end=" ")
                 sys.stdout.flush()
                 dtf_step(auggraph, d+1)
                 with open(augname.format(d), 'w') as f:
@@ -117,14 +116,14 @@ class LazyDomination:
         return auggraph
 
 
-def dtf(g, r, comp=None):
+def dtf(g, radius, comp=None):
     """ Computes the r-th dft-augmentation of g. """
-    auggraph = ldo(g,r=r,comp=comp)
+    auggraph = ldo(g,comp=comp)
     num_arcs = auggraph.num_arcs()
 
     changed = True
     d = 1
-    while changed and d < r:
+    while changed and d < radius:
         dtf_step(auggraph, d+1, comp)
 
         # Small optimization: if no new arcs have been added we can stop.
@@ -139,7 +138,7 @@ def dtf_step(augg, dist,comp=None):
         (where d is provided by the argument dist). The input augg
         must be a (d-1)-th dtf-augmentation. See dtf() for usage. 
         This function adds arcs to augg. """
-    fratGraph = DictGraph() # Records fraternal edge, must be oriented at the end
+    fratGraph = DictTFGraph() # Records fraternal edge, must be oriented at the end
     newTrans = {} # Records transitive arcs
 
     # if a list of nodes in a component is supplied, we loop over that,
@@ -155,22 +154,24 @@ def dtf_step(augg, dist,comp=None):
             newTrans[(x, y)] = dist
         for x, y, _ in augg.frat_trips_weight(v, dist):
             #assert x != y
-            fratGraph.add_edge(x, y)
+            fratGraph.add_arc(x, y)
+            fratGraph.add_arc(y, x)
     # Add transitive arcs to graph
     for (s, t) in newTrans:
         #assert s != t
         augg.add_arc(s, t, dist)
-        fratGraph.remove_edge(s,t)
+        fratGraph.remove_arc(s,t)
+        fratGraph.remove_arc(t,s)
 
     # Orient fraternal edges and add them to the grah
-    fratDigraph = ldo(fratGraph)
+    ldo(fratGraph)
 
     for s, t, _ in fratDigraph.arcs():
         #assert s != t
         augg.add_arc(s,t,dist)
 
-def ldo(g, weight=None, comp=None, r=1):
-    """ Computes a low-in-degree orientation of a graph g
+def ldo(g, weight=None, comp=None):
+    """ Computes a low-in-degree orientation of a tf graph g in place
         by iteratively removing a vertex of mimimum degree and orienting
         the edges towards it. """
 
@@ -181,15 +182,13 @@ def ldo(g, weight=None, comp=None, r=1):
     else:
         nodes = comp
 
-    res = g.to_TFGraph(r,keep_edges=False)
-
     if weight == None:
         weight = defaultdict(int)
 
     degdict = {}
     buckets = defaultdict(set)
     for v in nodes:
-        d = g.degree(v) + weight[v]
+        d = g.in_degree(v) + weight[v]
         degdict[v] = d
         buckets[d].add(v)
 
@@ -198,21 +197,19 @@ def ldo(g, weight=None, comp=None, r=1):
         d = 0
         while len(buckets[d]) == 0:
             d += 1
-        v = next(iter(buckets[d]))
-        buckets[d].remove(v)
+        v = buckets[d].pop()
 
-        for u in g.neighbours(v):
+        for u, _ in g.in_neighbours(v):
             if u in seen:
                 continue
             d = degdict[u]
             buckets[d].remove(u)
             buckets[d-1].add(u)
             degdict[u] -= 1
-            # Orient edges towards v
-            res.add_arc(u,v,1)
+            # Orient edges towards v by removing the edge from v to u
+            g.remove_arc(v,u)
 
         seen.add(v)
-    return res
 
 def calc_distance(augg, X, comp=None):
     """ Computes the for every vertex in the graph underlying the
@@ -241,7 +238,7 @@ def calc_distance(augg, X, comp=None):
 
     return dist
 
-def calc_dominators(augg, domset, d,comp=None):
+def calc_dominators(augg, domset, radius,comp=None):
     """
     Computes for each vertex the subset of domset that dominates it at distance d
     Returns a double level dictionary that maps vertices in the original graph to
@@ -266,13 +263,13 @@ def calc_dominators(augg, domset, d,comp=None):
             for u, r in augg.in_neighbours(v):
                 for r2 in dominators[u].keys():
                     domdist = r+r2
-                    if domdist <= d:
+                    if domdist <= radius:
                         dominators[v][domdist] |= dominators[u][r2]
             # Push dominators to in-neighbourhood
             for u, r in augg.in_neighbours(v):
                 for r2 in dominators[v].keys():
                     domdist = r+r2
-                    if domdist <= d:
+                    if domdist <= radius:
                         dominators[u][domdist] |= dominators[v][r2]
 
     # Clean up: vertices might appear at multiple distances as dominators,
@@ -280,26 +277,26 @@ def calc_dominators(augg, domset, d,comp=None):
     # act as a dominator.
     for v in dominators:
         cumulated = set()
-        for r in range(d+1):
+        for r in range(radius+1):
             dominators[v][r] -= cumulated
             cumulated |= dominators[v][r]
 
     return dominators
 
-def calc_dominator_sizes(g, domset, d):
+def calc_dominator_sizes(g, domset, radius):
     res = {}
     for v in domset:
-        res[v] = len(g.rneighbours(v,d))
+        res[v] = len(g.rneighbours(v,radius))
     return res
 
-def calc_dominated(augg, domset, d):
+def calc_dominated(augg, domset, radius):
     """ Compute the union of d-neighbourhoods around 
         the vertex set domset, that is, all vertices d-domainted
         by it. """
     dist = calc_distance(augg, domset)
-    return filter(lambda v: dist[v] <= d, dist)
+    return filter(lambda v: dist[v] <= radius, dist)
 
-def _calc_domset_graph(domset, dominators, d):
+def _calc_domset_graph(domset, dominators, radius):
     """ 
         Builds up a 'domination graph' by assigning each vertex to 
         its closest dominators. These dominators will be connected in the
@@ -314,7 +311,7 @@ def _calc_domset_graph(domset, dominators, d):
     # should implicitly only operate on the vertices we care about
     for v in dominators:
         # Find the domset vertices closest to v
-        sorted_doms = [dominators[v][r] for r in range(d+1) if len(dominators[v][r])>0]
+        sorted_doms = [dominators[v][r] for r in range(radius+1) if len(dominators[v][r])>0]
         # sorted_doms[0] contains the closest dominators (we don't care about what radius it is at)
         closest = sorted_doms[0]
         # Assign each of those closest dominating nodes to v
@@ -326,14 +323,14 @@ def _calc_domset_graph(domset, dominators, d):
 
     return h, assignment
 
-def calc_domination_graph(g, augg, domset, dominators, d):
+def calc_domination_graph(g, augg, domset, dominators, radius):
     """ 
         Builds up a 'domination graph' by assigning each vertex to 
         its closest dominators. These dominators will be connected in the
         final graph.
     """
     # Make the domination graph
-    h, assignment = _calc_domset_graph(domset, dominators, d)
+    h, assignment = _calc_domset_graph(domset, dominators, radius)
     hcomps = h.component_index()
 
     #print("original assignment", assignment)
@@ -371,7 +368,7 @@ def calc_domination_graph(g, augg, domset, dominators, d):
 
     return h, assignment
 
-def better_dvorak_reidl(augg,d,comp=None):
+def better_dvorak_reidl(augg,radius,comp=None):
     """ Compute a d-dominating set using Dvorak's approximation algorithm 
         for dtf-graphs (see `Structural Sparseness and Complex Networks').
         Needs a distance-d dtf augmentation augg (see rdomset() for usage). """    
@@ -392,13 +389,13 @@ def better_dvorak_reidl(augg,d,comp=None):
     order = map(itemgetter(0),vprops)
 
     for v in order:
-        if domdistance[v] <= d:
+        if domdistance[v] <= radius:
             continue
 
         for u,r in augg.in_neighbours(v):
             domdistance[v] = min(domdistance[v],r+domdistance[u])
 
-        if domdistance[v] <= d:
+        if domdistance[v] <= radius:
             continue
 
         domset.add(v)
@@ -412,36 +409,36 @@ def better_dvorak_reidl(augg,d,comp=None):
 #
 # Debugging/Test functions
 #
-def verify_scattered(g, sc, d):
+def verify_scattered(g, sc, radius):
     """ Verifies that a vertex set sc is d-scattered in a graph g, meaning
         that every pair of vertices in sc have distance at least d. """
     sc = set(sc)
     for v in sc:
-        dN = g.rneighbours(v,d)
+        dN = g.rneighbours(v,radius)
         if len(dN & sc) > 1: # v is in dN but nothing else should
             return False
     return True
 
-def verify_domset(g, ds, d):
+def verify_domset(g, ds, radius):
     """ Verifies that a vertex set ds is a d-dominating set in g, meaning
         that every vertex of g lies within distance d of some vertex in ds. """
     dominated = set()
     for v in ds:
-        dominated |= g.rneighbours(v,d)
+        dominated |= g.rneighbours(v,radius)
     return len(dominated) == len(g)
 
-def verify_dominators(g, domset, dominators, d):
+def verify_dominators(g, domset, dominators, radius):
     for v in g:
-        dN = g.rneighbours(v,d)
+        dN = g.rneighbours(v,radius)
         candidates = dN & domset
-        for r in range(0,d+1):
+        for r in range(0,radius+1):
             candidates -= dominators[v][r]
         if len(candidates) > 0:
             print(v, candidates, dominators[v])
             return False
     return True
 
-def verify_dominators_strict(g, domset, dominators, d):
+def verify_dominators_strict(g, domset, dominators, radius):
     for v in g:
         dN = set([v])
         if dominators[v][0] != (dN & domset):
@@ -454,32 +451,32 @@ def verify_dominators_strict(g, domset, dominators, d):
             dN |= shell
     return True
 
-def rdomset(g, d, comp=None):
+def rdomset(g, radius, comp=None):
     """ Computes an d-dominating set for a given graph g
         using dtf-augmentations. """
-    augg = dtf(g, d, comp)
-    domset = better_dvorak_reidl(augg, d, comp)
+    augg = dtf(g, radius, comp)
+    domset = better_dvorak_reidl(augg, radius, comp)
 
     return domset, augg
 
-def main(inputgxt, outputgxt, d, test, domgraph):
-    g, node_attrs, edge_attrs, _ = Graph.from_gxt(inputgxt)
+def main(inputgxt, outputgxt, radius, test, domgraph):
+    g, node_attrs, edge_attrs, _ = TFGraph.from_gxt(inputgxt, radius)
     g.remove_loops()
 
-    domset, augg = rdomset(g,d)
-    print("Computed {}-domset of size {} in graph with {} vertices".format(d,len(domset),len(g)))
+    domset, augg = rdomset(g,radius)
+    print("Computed {}-domset of size {} in graph with {} vertices".format(radius,len(domset),len(g)))
 
-    dominators = calc_dominators(augg, domset, d)
+    dominators = calc_dominators(augg, domset, radius)
 
     # Compute domset graph
     if domgraph:
         print("Computing domgraph")
-        h = _calc_domset_graph(domset, dominators, d)
+        h = _calc_domset_graph(domset, dominators, radius)
         write_gxt(domgraph, h)
 
     # Test domset
     if test:
-        print("Testing domset:", verify_domset(g,domset,d))
+        print("Testing domset:", verify_domset(g,domset,radius))
 
     # Annotate domset
     labelds = 'ds{}'.format(d)
@@ -496,9 +493,9 @@ if __name__ == "__main__":
                         default=sys.stdin)
     parser.add_argument('--domgraph', help='gxt output file', nargs='?', type=argparse.FileType('w'),
                         default=None)
-    parser.add_argument("d", help="domset distance", type=int)
+    parser.add_argument("radius", help="domset distance", type=int)
     parser.add_argument('--test', action='store_true')
     args = parser.parse_args()
 
-    main(args.input, args.output, args.d, args.test, args.domgraph)
+    main(args.input, args.output, args.radius, args.test, args.domgraph)
 
