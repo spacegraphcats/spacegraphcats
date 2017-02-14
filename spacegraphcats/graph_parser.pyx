@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Parser and writer for simple graph format."""
 
 

@@ -1,23 +1,17 @@
-#! /usr/bin/env python
 from __future__ import print_function
 
 import sys
 import khmer
 from sourmash_lib import MinHash
 import screed
-import argparse
 from collections import OrderedDict, defaultdict
 import os, os.path
 from spacegraphcats import graph_parser
 
 
-# graph settings
-DEFAULT_KSIZE=31
-DEFAULT_MEMORY = 1e8
-
 # minhash settings
-MH_SIZE_DIVISOR=50
-MH_MIN_SIZE=5
+MH_SIZE_DIVISOR = 50
+MH_MIN_SIZE = 5
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
@@ -102,17 +96,7 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     pathy.add_minhash(path_id, mh)
 
 
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument('seqfiles', nargs='+')
-    p.add_argument('-o', '--output', default=None)
-    p.add_argument('-k', '--ksize', default=DEFAULT_KSIZE, type=int)
-    p.add_argument('-M', '--memory', default=DEFAULT_MEMORY,
-                            type=float)
-    p.add_argument('--force', action='store_true')
-    p.add_argument('--label', action='store_true')
-    p.add_argument('-l', '--loadgraph', type=str, default=None)
-    args = p.parse_args()
+def run(args):
 
     # @CTB this is kind of a hack - nothing tricky going on, just want to
     # specify memory on the command line rather than graph size...
@@ -291,7 +275,3 @@ def main():
         with open(label_file, "wt") as fp:
             for n, label in enumerate(label_list):
                 fp.write("{} {}\n".format(n + 0, label))
-
-
-if __name__ == '__main__':
-    main()
