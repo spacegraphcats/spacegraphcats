@@ -7,6 +7,6 @@ python:
 install:
   - "pip install -r requirements.txt"
   - "pip install codecov pytest-cov"
-script: py.test --cov=.
+script: py.test spacegraphcats --cov=.
 after_success:
   - codecov
