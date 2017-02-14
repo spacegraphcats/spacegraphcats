@@ -5,6 +5,7 @@ from Cython.Distutils import build_ext
 ext_modules=[
     Extension("graph_parser", ["spacegraphcats/graph_parser.pyx"]),
     Extension("walk_dbg", ["spacegraphcats/walk_dbg.pyx"]),
+    Extension("graph", ["spacegraphcats/graph.pyx"]),
 ]
 
 setup(

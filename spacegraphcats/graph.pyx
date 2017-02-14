@@ -64,14 +64,15 @@ class Graph:
 
     def in_neighbors(self, v, weight=None):
         if weight is None:
-            for u, w in self.inarcs[v].items():
-                yield u,w
+            return self.inarcs[v].items()
         else:
+            neighbors = []
             for u in self.inarcs_by_weight[weight][v]:
-                yield u
+                neighbors.append(u)
+            return neighbors
 
     def in_degree(self, v, weight=None):
-        return sum(1 for _ self.in_neighbors(v, weight))
+        return len(self.in_neighbors(v, weight))
 
     def num_arcs(self):
         return sum(1 for _ in self.arcs())
@@ -117,8 +118,6 @@ class Graph:
                 if not (self.adjacent(x,y) or self.adjacent(y,x)):
                     yield x, y 
 
-
-    # TODO:  make this compatible with unidirectional edges
     def component_index(self):
         """
         Returns a union-find data structure associating each vertex 
@@ -126,12 +125,8 @@ class Graph:
         
         This method assumes that we we have two directed edge for each edge.
         """
-        comps = UnionFind()
-        for v in self:
-            N = self.in_neighbors(v) | set([v])
-            comps.union(*N)
-        return comps
 
+        # TODO:  make this compatible with unidirectional edges
 
 
 class DictGraph(Graph):
@@ -141,8 +136,8 @@ class DictGraph(Graph):
         else:
             self.nodes = nodes
         self.r = r
-        self.inarcs = defaultdict(dict)
-        self.inarcs_by_weight = [defaultdict(set) for _ in range(self.r)]
+        self.inarcs = itertools.defaultdict(dict)
+        self.inarcs_by_weight = [itertools.defaultdict(set) for _ in range(self.r)]
 
     def __len__(self):
         return len(self.nodes)
