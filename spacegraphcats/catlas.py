@@ -448,6 +448,7 @@ class CAtlas:
             scoreAfter = scoring_strat(frontier, mhquery, threshold)            
 
             if scoreBefore > scoreAfter:
+                # assumes that the frontier has no overlap with the refinement before we union them
                 frontier -= refinement
                 frontier.add(bad_node)
                 break
