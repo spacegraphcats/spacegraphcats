@@ -96,7 +96,7 @@ class LazyDomination:
         d = 1
         print("Augmenting", end=" ")
         sys.stdout.flush()
-        while changed and d <= self.radius:
+        while changed and d < self.radius:
             if d in augs:
                 print("({})".format(d), end=" ")
                 sys.stdout.flush()
@@ -124,7 +124,7 @@ def dtf(g, r, comp=None):
 
     changed = True
     d = 1
-    while changed and d <= r:
+    while changed and d < r:
         dtf_step(auggraph, d+1, comp)
 
         # Small optimization: if no new arcs have been added we can stop.

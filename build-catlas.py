@@ -75,7 +75,7 @@ def load_and_compute_augg(project):
     changed = True
     d = 1
     print("Augmenting", end=" ", flush=True)
-    while changed and d <= project.radius:
+    while changed and d < project.radius:
         if d in augs:
             print("({})".format(d), end=" ", flush=True)                        
             with open(augname.format(d), 'r') as f:
