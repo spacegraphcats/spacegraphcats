@@ -1,39 +1,30 @@
 import itertools
 
-class Graph:
+class Graph(object):
     """
     Graph data structure.  Undirected edges are represented by bidirectional
      directed arcs
     """
-    def __init__(self, n=0, r=1):
-        self.n = n
-        self.r = r
+    def __init__(self, num_nodes, radius=1):
+        self.num_nodes = num_nodes
+        self.radius = radius
         # lookup the weight of the arc by its two endpoints
-        self.inarcs = [dict() for _ in range(self.n)]
+        self.inarcs = [dict() for _ in range(self.num_nodes)]
         # lookup the neighbors of a vertex with a given weight
-        self.inarcs_by_weight = [[set() for i in range(self.n)] 
-                                  for j in range(self.r)]
+        self.inarcs_by_weight = [[set() for i in range(self.num_nodes)] 
+                                  for j in range(self.radius)]
 
     def __iter__(self):
-        return iter(range(self.n))
+        return iter(range(self.num_nodes))
 
     def __len__(self):
-        return self.n
-
-    def add_node(self,u):
-        if u >= self.n:
-            # add more space in arcs list
-            self.inarcs.extend([dict() for _ in range(self.n, u+1)])
-            # create new entries to index by weight
-            for j in range(self.r):    
-                self.inarcs_by_weight[j].extend([set() for _ in range(self.n,u+1)])
-            self.n = u+1
-        return self
+        return self.num_nodes
 
     def add_arc(self, u, v, weight=1):
         self.inarcs[v][u] = weight
         # use weight-1 for 0 indexing
         self.inarcs_by_weight[weight-1][v].add(u)
+        return self
 
     def remove_arc(self, u, v):
         """
@@ -58,18 +49,16 @@ class Graph:
         """
         return all the arcs in the graph.  restrict to a given weight when provided
         """
-        for u in self:
-            for edge in self.in_neighbors(u,weight):
-                yield edge
+        if weight:
+            return self.inarcs_by_weight[weight]
+        else:
+            return self.inarcs
 
     def in_neighbors(self, v, weight=None):
         if weight is None:
             return self.inarcs[v].items()
         else:
-            neighbors = []
-            for u in self.inarcs_by_weight[weight][v]:
-                neighbors.append(u)
-            return neighbors
+            return self.inarcs_by_weight[weight-1][v]
 
     def in_degree(self, v, weight=None):
         return len(self.in_neighbors(v, weight))
@@ -135,9 +124,9 @@ class DictGraph(Graph):
             self.nodes = set()
         else:
             self.nodes = nodes
-        self.r = r
+        self.radius = r
         self.inarcs = itertools.defaultdict(dict)
-        self.inarcs_by_weight = [itertools.defaultdict(set) for _ in range(self.r)]
+        self.inarcs_by_weight = [itertools.defaultdict(set) for _ in range(self.radius)]
 
     def __len__(self):
         return len(self.nodes)
