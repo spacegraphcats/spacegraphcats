@@ -21,18 +21,16 @@ MH_MIN_SIZE=5
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
-    def __init__(self, ksize, gxtfile, mxtfile, node_offset=0):
+    def __init__(self, ksize, gxtfile, mxtfile):
         self.ksize = ksize
 
-        self.node_counter = 1 + node_offset
+        self.node_counter = 0
         self.nodes = {}                      # node IDs (int) to size
         self.nodes_to_kmers = {}             # node IDs (int) to kmers
         self.kmers_to_nodes = {}             # kmers to node IDs
         self.adjacencies = defaultdict(set)  # node to node
         self.labels = defaultdict(set)       # nodes to set of labels
         self.mxtfp = open(mxtfile, 'wt')
-        self.gxtfp = open(gxtfile, 'wt')
-        self.gxtwriter = graph_parser.Writer(self.gxtfp, ['labels'], [])
         self.adjfp = open(gxtfile + '.adj', 'wt')
 
     def new_hdn(self, kmer):
@@ -58,8 +56,6 @@ class Pathfinder(object):
         #self.nodes_to_kmers[node_id] = kmer
         #self.kmers_to_nodes[kmer] = node_id
 
-        self.gxtwriter.add_vertex(node_id, size, [])
-
         return node_id
 
     def add_adjacency(self, node_id, adj):
@@ -78,7 +74,7 @@ class Pathfinder(object):
     def add_minhash(self, path_id, mh):
         # save minhash info to disk
         mins = " ".join(map(str, mh.get_mins()))
-        self.mxtfp.write('{0},{1}\n'.format(path_id, mins))
+        self.mxtfp.write('{0} {1}\n'.format(path_id, mins))
 
 
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
@@ -115,8 +111,6 @@ def main():
                             type=float)
     p.add_argument('--force', action='store_true')
     p.add_argument('--label', action='store_true')
-    p.add_argument('--label-offset', type=int, default=0, help='for debug')
-    p.add_argument('--node-offset', type=int, default=0, help='for debug')
     p.add_argument('-l', '--loadgraph', type=str, default=None)
     args = p.parse_args()
 
@@ -191,13 +185,13 @@ def main():
     ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(ksize, gxtfile, mxtfile, args.node_offset)
+    pathy = Pathfinder(ksize, gxtfile, mxtfile)
 
     print('finding high degree nodes')
     if args.label:
         print('(and labeling them, per request)')
     degree_nodes = khmer.HashSet(ksize)
-    n = args.label_offset
+    n = 0
     for seqfile in args.seqfiles:
         for record in screed.open(seqfile):
             if len(record.sequence) < ksize: continue
@@ -260,22 +254,6 @@ def main():
     all_labels = set()
     label_counts = {}
 
-
-    w = pathy.gxtwriter
-
-    for k, v in pathy.nodes.items():
-        kmer = pathy.nodes_to_kmers[k]
-        l = ""
-        if kmer:
-            labels = pathy.labels.get(kmer)
-            if labels:
-                assert v == 1
-                for x in labels:
-                    label_counts[x] = label_counts.get(x, 0) + 1
-                all_labels.update(labels)
-                l = " ".join(map(str, labels))
-        w.add_vertex(k, v, [l])
-
     pathy.adjfp.close()
     adj_filename = open(gxtfile + '.adj', 'rt')
 
@@ -292,9 +270,14 @@ def main():
         print('cannot remove', gxtfile + '.adj')
 
     # ...and now print them out.
+    edges = []
     for k, v in pathy.adjacencies.items():
-        for edge in v:
-            w.add_edge(k, edge, [])
+        for dest in v:
+            # don't add loops
+            if (k != dest):
+                edges.append((k, dest))
+
+    graph_parser.write(open(gxtfile, 'wt'), pathy.node_counter, edges)
 
     if args.label:
         print('note: used/assigned %d labels total' % (len(set(all_labels)),))
@@ -307,7 +290,7 @@ def main():
 
         with open(label_file, "wt") as fp:
             for n, label in enumerate(label_list):
-                fp.write("{} {}\n".format(n + 1 + args.label_offset, label))
+                fp.write("{} {}\n".format(n + 0, label))
 
 
 if __name__ == '__main__':

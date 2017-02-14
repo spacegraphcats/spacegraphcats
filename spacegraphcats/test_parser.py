@@ -2,6 +2,7 @@
 
 import unittest
 import os
+from io import StringIO
 
 import spacegraphcats.graph_parser as parser
 
@@ -10,42 +11,26 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 
 class ParserTest(unittest.TestCase):
     def test_graph_parsing(self):
-        all_ids = []
-        all_sizes = []
-        all_names_v = []
-        all_values_v = []
+        num_vertices = []
+        def create_vertices(n):
+            num_vertices.append(n)
 
-        def collect_vertex(id, size, names, values):
-            all_ids.append(id)
-            all_sizes.append(size)
-            all_names_v.append(names)
-            all_values_v.append(values)
-
-        all_srcs = []
-        all_dests = []
-        all_names_e = []
-        all_values_e = []
-
-        def collect_edge(src, dest, names, values):
-            all_srcs.append(src)
-            all_dests.append(dest)
-            all_names_e.append(names)
-            all_values_e.append(values)
+        all_edges = []
+        def collect_edge(src, dest):
+            all_edges.append((src, dest))
 
         with open(os.path.join(DIR, 'parser-examples/graph.gxt')) as f:
-            id_map = parser.parse(f, collect_vertex, collect_edge, True)
+            id_map = parser.parse(f, create_vertices, collect_edge)
 
-        self.assertEqual(all_ids, [0, 1, 2])
-        self.assertEqual(all_sizes, [2, 3, 1])
-        self.assertEqual(all_names_v, [['label', 'fill'], ['label', 'fill'], ['label', 'fill']])
-        self.assertEqual(all_values_v, [['foo', 'red'], ['bar', 'green'], ['batman', 'black']])
+        self.assertEqual(num_vertices, [3])
+        self.assertEqual(all_edges, ([(0,1),(1,2)]))
 
-        self.assertEqual(all_srcs, [0, 1])
-        self.assertEqual(all_dests, [1, 2])
-        self.assertEqual(all_names_e, [['label'], ['label']])
-        self.assertEqual(all_values_e, [['a'], ['b']])
+    def test_graph_writing(self):
+        output = StringIO()
 
-        self.assertEqual(id_map, [1, 2, 3])
+        parser.write(output, 3, [(0, 1), (1, 2)])
+
+        self.assertEqual(output.getvalue(), '3\n0 1\n1 2\n')
 
     def test_mxt_parsing(self):
         minhashes = {}
@@ -57,8 +42,8 @@ class ParserTest(unittest.TestCase):
             parser.parse_minhash(f, collect_minhashes)
 
         self.assertEqual(minhashes, {
-            '1': [14891351629450783567, 8602412685556304666, 15005322196398795210],
-            '2': [17662871537941316484]
+            '0': [14891351629450783567, 8602412685556304666, 15005322196398795210],
+            '1': [17662871537941316484]
         })
 
 
