@@ -1,4 +1,5 @@
 import itertools
+from Eppstein import UnionFind
 
 class Graph(object):
     """
@@ -111,12 +112,12 @@ class Graph(object):
         """
         Returns a union-find data structure associating each vertex 
         with an id (another vertex) the connected component it is contained in.
-        
-        This method assumes that we we have two directed edge for each edge.
         """
-
-        # TODO:  make this compatible with unidirectional edges
-
+        comps = UnionFind()
+        for v in self:
+            N = self.in_neighbors(v) | set([v])
+            comps.union(*N)
+        return comps
 
 class DictGraph(Graph):
     def __init__(self, nodes=None, r=1):
