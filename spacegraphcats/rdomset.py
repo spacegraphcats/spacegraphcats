@@ -227,7 +227,7 @@ def assign_to_dominators(graph, domset, radius,comp=None):
 
     return dominated_at_radius
 
-def domination_graph(graph, domset, dominated_at_radius):
+def domination_graph(graph, domset, radius, comp=None):
     """ 
         Builds up a 'domination graph' by assigning each vertex to 
         its closest dominators. These dominators will be connected in the
@@ -236,7 +236,7 @@ def domination_graph(graph, domset, dominated_at_radius):
             The keys of dominated_at_radius are exactly one connected 
             component of graph
     """
-
+    dominated_at_radius = assign_to_dominators(graph, domset, radius, comp)
     domgraph = DictGraph(nodes=domset)
 
     # dictionary mapping vertices from the graph to closest dominators to it
