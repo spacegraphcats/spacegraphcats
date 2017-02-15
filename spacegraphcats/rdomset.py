@@ -31,7 +31,7 @@ def low_degree_orientation(graph, comp=None):
         degdict[v] = d
         buckets[d].add(v)
         if v == checkpoint:
-            print("bucketed {} of {} nodes", v, n)
+            print("bucketed {} of {} nodes".format(v, n))
             checkpoint += n//100
 
     checkpoint = 0
@@ -45,7 +45,7 @@ def low_degree_orientation(graph, comp=None):
         while len(buckets[d]) == 0:
             d += 1
         if d > max_d:
-            print("removed all vertices of degree {}", max_d)
+            print("removed all vertices of degree {}".format(max_d))
             max_d += 1
         # grab a vertex of minimum degree
         v = buckets[d].pop()
@@ -66,7 +66,7 @@ def low_degree_orientation(graph, comp=None):
 
         removed.add(v)
         if _ == checkpoint:
-            print("removed {} of {} nodes", _, n)
+            print("removed {} of {} nodes".format(_, n))
             checkpoint += n//100
 
 def dtf_step(graph, dist, comp=None):
