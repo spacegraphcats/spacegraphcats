@@ -137,4 +137,3 @@ class DictGraph(Graph):
 
     def add_node(self,u):
         self.nodes.add(u)
-        return self
