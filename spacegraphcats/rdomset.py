@@ -37,7 +37,7 @@ def low_degree_orientation(graph, comp=None):
 
         # decrement the degrees of the in neighbors not yet removed and orient
         # edges towards in neighbors already removed
-        for u,__ in graph.in_neighbors(v,1):
+        for u in graph.in_neighbors(v,1):
             # if we've removed u, we orient the arc towards u by deleting uv
             if u in removed:
                 graph.remove_arc(u,v)
