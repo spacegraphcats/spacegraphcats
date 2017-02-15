@@ -57,19 +57,20 @@ def load_and_compute_augg(project):
     augname = path.join(project.path, project.name + ".aug.{}.ext")
 
     augs = {}
-    # for f in glob.glob(augname.format("[0-9]*")):
-    #     d = int(f.split(".")[-2])
-    #     augs[d] = f
+    for f in glob.glob(augname.format("[0-9]*")):
+        d = int(f.split(".")[-2])
+        augs[d] = f
 
+    aug0 = augname.format('0')
     if 0 in augs:
-        with open(augname.format("0"), 'r') as f:
+        report('  Load cached augmentation from {}'.format(aug0))
+        with open(aug0, 'r') as f:
             parse(f, None, project.graph.add_arc)
     else:
+        report('  Running low degree orientation and cache it as {}'.format(aug0))
         low_degree_orientation(project.graph)
-        with open(augname.format("0"), 'w') as f:
+        with open(aug0, 'w') as f:
             write_to_gxt(f, project.graph, 1)
-
-    print("Augmenting", end=" ", flush=True)
 
 
 def main():
