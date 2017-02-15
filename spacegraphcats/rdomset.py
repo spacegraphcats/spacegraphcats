@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from graph import DictGraph
 
 def low_degree_orientation(graph, comp=None):
