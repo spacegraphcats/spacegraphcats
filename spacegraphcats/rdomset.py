@@ -14,9 +14,14 @@ def low_degree_orientation(graph, comp=None):
     # if a list of nodes in a component is supplied, we loop over that,
     # otherwise we loop over all nodes in the graph.
     if comp is None:
-        nodes = range(len(graph))
+        n = len(graph)
+        nodes = range(n)
     else:
+        n = len(comp)
         nodes = comp
+
+
+    checkpoint = 0
 
     # precompute the degrees of each vertex and make a bidirectional lookup
     degdict = {}
@@ -25,7 +30,12 @@ def low_degree_orientation(graph, comp=None):
         d = graph.in_degree(v)
         degdict[v] = d
         buckets[d].add(v)
+        if v == checkpoint:
+            print("bucketed {} of {} nodes", v, n)
+            checkpoint += n//100
 
+    checkpoint = 0
+    max_d = 0
     # keep track of "removed" vertices
     removed = set()
     # run the loop once per vertex
@@ -34,6 +44,9 @@ def low_degree_orientation(graph, comp=None):
         d = 0
         while len(buckets[d]) == 0:
             d += 1
+        if d > max_d:
+            print("removed all vertices of degree {}", max_d)
+            max_d += 1
         # grab a vertex of minimum degree
         v = buckets[d].pop()
 
@@ -52,6 +65,9 @@ def low_degree_orientation(graph, comp=None):
                 degdict[u] -= 1
 
         removed.add(v)
+        if _ == checkpoint:
+            print("removed {} of {} nodes", _, n)
+            checkpoint += n//100
 
 def dtf_step(graph, dist, comp=None):
     """ 
@@ -295,5 +311,6 @@ def make_connected(domgraph, domset, closest_dominators, graph):
 def rdomset(graph, radius, comp=None):
     dtf(graph, radius, comp)
     domset = compute_domset(graph, radius, comp)
+    return domset
 
 
