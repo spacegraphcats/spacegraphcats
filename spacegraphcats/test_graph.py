@@ -17,6 +17,10 @@ class GraphTest(unittest.TestCase):
         neighbors = set(graph.in_neighbors(0))
         self.assertEquals(neighbors, set([(1, 1), (2, 1), (3, 1), (4, 1)]))
 
+        self.assertEquals(graph.num_arcs(), 4)
+        self.assertEquals(graph.num_arcs(1), 4)
+        self.assertEquals(graph.num_arcs(2), 0)
+
     def test_components(self):
         g = Graph(num_nodes=12)
         g.add_arc(1,2)

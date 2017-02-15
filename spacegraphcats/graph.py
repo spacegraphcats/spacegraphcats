@@ -52,7 +52,7 @@ class Graph(object):
         return all the arcs in the graph.  restrict to a given weight when provided
         """
         if weight:
-            return self.inarcs_by_weight[weight]
+            return self.inarcs_by_weight[weight-1]
         else:
             return self.inarcs
 
