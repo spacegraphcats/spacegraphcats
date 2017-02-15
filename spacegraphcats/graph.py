@@ -65,8 +65,8 @@ class Graph(object):
     def in_degree(self, v, weight=None):
         return len(self.in_neighbors(v, weight))
 
-    def num_arcs(self):
-        return sum(1 for _ in self.arcs())
+    def num_arcs(self, weight=None):
+        return sum(1 for _ in self.arcs(weight))
 
     def transitive_pairs(self, u, w):
         """
