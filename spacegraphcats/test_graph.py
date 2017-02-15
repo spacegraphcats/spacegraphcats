@@ -16,6 +16,24 @@ class GraphTest(unittest.TestCase):
 
         neighbors = set(graph.in_neighbors(0))
         self.assertEquals(neighbors, set([(1, 1), (2, 1), (3, 1), (4, 1)]))
+
+    def test_components(self):
+        g = Graph(num_nodes=12)
+        g.add_arc(1,2)
+        g.add_arc(3,4)
+        g.add_arc(5,6).add_arc(6,7).add_arc(7,5)
+        g.add_arc(8,9).add_arc(8,10).add_arc(8,11)
+
+        self.assertEquals(g.num_components(), 5)
+
+        comps = g.components()
+        self.assertEquals(len(comps), 5)
+
+        union = set()
+        for c in comps:
+            union |= set(c)
+
+        self.assertEquals(len(union), len(g))
         
 
 if __name__ == '__main__':

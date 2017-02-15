@@ -1,5 +1,6 @@
 import itertools
-from Eppstein import UnionFind
+from spacegraphcats.Eppstein import UnionFind
+from collections import defaultdict
 
 class Graph(object):
     """
@@ -115,9 +116,21 @@ class Graph(object):
         """
         comps = UnionFind()
         for v in self:
-            N = self.in_neighbors(v) | set([v])
+            N = self.in_neighbors(v, 1) | set([v])
             comps.union(*N)
         return comps
+
+    def components(self):
+        comps = self.component_index()
+        res = defaultdict(set)
+        for v in self:
+            res[comps[v]].add(v)
+        return res.values()
+
+    def num_components(self):
+        comps = self.component_index()
+        ids = set([comps[v] for v in comps])
+        return len(ids)
 
 class DictGraph(Graph):
     def __init__(self, nodes=None, r=1):
@@ -126,8 +139,8 @@ class DictGraph(Graph):
         else:
             self.nodes = nodes
         self.radius = r
-        self.inarcs = itertools.defaultdict(dict)
-        self.inarcs_by_weight = [itertools.defaultdict(set) for _ in range(self.radius)]
+        self.inarcs = defaultdict(dict)
+        self.inarcs_by_weight = [defaultdict(set) for _ in range(self.radius)]
 
     def __len__(self):
         return len(self.nodes)
