@@ -8,6 +8,7 @@ from os import path
 from spacegraphcats.graph import Graph
 from spacegraphcats.graph_io import read_from_gxt, write_to_gxt
 from spacegraphcats.rdomset import low_degree_orientation
+from spacegraphcats.graph_parser import parse
 
 DEBUG = True
 
@@ -53,16 +54,16 @@ def load_and_compute_augg(project):
         Loads cached augmentations from the project directory and writes
         newly computed augmentations into it.
     """
-    augname = path.join(project.path,project.name+".aug.{}.ext")
+    augname = path.join(project.path, project.name + ".aug.{}.ext")
 
     augs = {}
-    for f in glob.glob(augname.format("[0-9]*")):
-        d = int(f.split(".")[-2])
-        augs[d] = f
+    # for f in glob.glob(augname.format("[0-9]*")):
+    #     d = int(f.split(".")[-2])
+    #     augs[d] = f
 
     if 0 in augs:
         with open(augname.format("0"), 'r') as f:
-            project.graph.add_arcs(EdgeSet.from_ext(f, self.id_map), 1)
+            parse(f, None, project.graph.add_arc)
     else:
         low_degree_orientation(project.graph)
         with open(augname.format("0"), 'w') as f:
@@ -96,7 +97,7 @@ def main():
     """
 
     file = read_project_file(project.path, project.name+".gxt")
-    project.graph = read_from_gxt(file, project.radius)
+    project.graph = read_from_gxt(file, project.radius, False)
 
     report("Loaded graph with {} vertices, {} arcs and {} components".format(
         len(project.graph),
@@ -108,7 +109,7 @@ def main():
 
     report("\nDomset computation\n")
 
-    low_degree_orientation(project.graph)
+    load_and_compute_augg(project)
 
     """ Compute catlas """
 

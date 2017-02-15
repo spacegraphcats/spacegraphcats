@@ -13,7 +13,8 @@ def parse(graph_file, create_vertices: Callable[[int], None] = None, add_edge: C
     # read vertices
     num_vertices = int(graph_file.readline().strip())
 
-    create_vertices(num_vertices)
+    if create_vertices is not None:
+        create_vertices(num_vertices)
 
     # read edges
     next_line = graph_file.readline()
