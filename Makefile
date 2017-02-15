@@ -1,7 +1,10 @@
 all:
 
+lint:
+	mypy spacegraphcats/*.py --ignore-missing-imports
+
 test:
-	py.test tests spacegraphcats
+	py.test spacegraphcats
 
 clean:
 	rm -fr acido_bench/
