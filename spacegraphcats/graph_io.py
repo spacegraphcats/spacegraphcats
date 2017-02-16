@@ -13,9 +13,10 @@ def read_from_gxt(gxtfile, radius: int, directed: bool):
         graph = Graph(num_nodes, radius)
 
     def add_edge(u, v):
-        graph.add_arc(u, v)
-        if not directed:
-            graph.add_arc(v, u)
+        if u != v:
+            graph.add_arc(u, v)
+            if not directed:
+                graph.add_arc(v, u)
 
     parse(gxtfile, create_graph, add_edge)
     
