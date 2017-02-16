@@ -45,7 +45,7 @@ def low_degree_orientation(graph, comp=None):
         while len(buckets[d]) == 0:
             d += 1
         if d > max_d:
-            print("removed all vertices of degree {} at iteration".format(max_d, _))
+            print("removed all vertices of degree {} at iteration {}".format(max_d, _))
             max_d += 1
         # grab a vertex of minimum degree
         v = buckets[d].pop()
@@ -75,6 +75,75 @@ def low_degree_orientation(graph, comp=None):
         removed.add(v)
         if _ == checkpoint:
             print("removed {} of {} nodes".format(_, n))
+            checkpoint += n//100
+
+def alt_ldo(graph):
+
+    n = len(graph)
+    # precompute the degrees of each vertex and make a bidirectional lookup
+    degrees = [graph.in_degree(v) for v in graph]
+    max_deg = max(degrees)
+    degree_counts = [0 for i in range(max_deg+1)]
+    for v in graph:
+        d = degrees[v]
+        degree_counts[d] += 1
+    # assign the cutoffs of bins
+    bin_starts = [sum(degree_counts[:i]) for i in range(max_deg+1)]
+    del degree_counts
+    bin_ptrs = list(bin_starts)
+    bins = [None for _ in graph]
+    location = [None for _ in graph]
+
+    checkpoint = 0
+    for v in graph:
+        loc = bin_ptrs[degrees[v]]
+        bins[loc] = v
+        location[v] = loc
+        bin_ptrs[degrees[v]] += 1
+        if v == checkpoint:
+            print("bucketed {} of {} nodes".format(v, n))
+            checkpoint += n//100
+    del bin_ptrs
+
+    checkpoint = 0
+    max_d = 0
+    # run the loop once per vertex
+    for curr in range(n):
+        # curr points the vertex of minimum degree
+        v = bins[curr]
+        d_v = degrees[v]
+        # "move" v into bin 0 if it isn't there
+        if d_v > 0:
+            for i in range(d_v,0,-1):
+                bin_starts[i] += 1
+        degrees[v] = 0
+        # decrement the degrees of the in neighbors not yet removed and orient
+        # edges towards in neighbors already removed
+        inbrs = list(graph.in_neighbors(v,1))
+        for u in inbrs:
+            d_u = degrees[u]
+            loc_u = location[u]
+            # if we've removed u, we orient the arc towards u by deleting uv
+            if location[u] < location[v]:
+                graph.remove_arc(u,v)
+            # otherwise, the effective degree of u should drop by 1
+            else:
+                # swap u with w, the first vertex with the same degree
+                # find where w is
+                loc_w = bin_starts[d_u]
+                w = bins[loc_w]
+                # swap their positions
+                if w != u:
+                    bins[loc_u] = w
+                    bins[loc_w] = u
+                    location[w] = loc_u
+                    location[u] = loc_w
+                # move the bin start one place over
+                bin_starts[d_u] += 1
+                # decrement u's degree
+                degrees[u] = d_u - 1         
+        if curr == checkpoint:
+            print("removed {} of {} nodes".format(curr, n))
             checkpoint += n//100
 
 def dtf_step(graph, dist, comp=None):
