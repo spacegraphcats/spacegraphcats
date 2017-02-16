@@ -28,13 +28,13 @@ def write_to_gxt(gxtfile, graph, weight: int = None):
     """
     if weight is None:
         arcs = []
-        for dest, incoming in enumerate(graph.arcs()):
+        for dest, incoming in graph.arcs():
             for src, _ in incoming.items():
                 arcs.append((src, dest))
         write(gxtfile, len(graph), arcs)
     else:
         arcs = []
-        for dest, incoming in enumerate(graph.arcs(weight)):
+        for dest, incoming in graph.arcs(weight):
             for src in incoming:
                 arcs.append((src, dest))
         write(gxtfile, len(graph), arcs)

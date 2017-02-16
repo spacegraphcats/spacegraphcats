@@ -10,8 +10,6 @@ class Graph(object):
     def __init__(self, num_nodes, radius=1):
         self.num_nodes = num_nodes
         self.radius = radius
-        # lookup the weight of the arc by its two endpoints
-        self.inarcs = [dict() for _ in range(self.num_nodes)]
         # lookup the neighbors of a vertex with a given weight
         self.inarcs_by_weight = [[set() for i in range(self.num_nodes)] 
                                   for j in range(self.radius)]
@@ -23,7 +21,6 @@ class Graph(object):
         return self.num_nodes
 
     def add_arc(self, u, v, weight=1):
-        self.inarcs[v][u] = weight
         # use weight-1 for 0 indexing
         self.inarcs_by_weight[weight-1][v].add(u)
         return self
@@ -33,32 +30,38 @@ class Graph(object):
         remove arc uv from the graph
         Precondition/assumption:  arc uv has a unique weight
         """
-        if u not in self.inarcs[v]:
-            return
-        # find the weight of the arc
-        weight = self.inarcs[v][u]
-        del self.inarcs[v][u]
-        self.inarcs_by_weight[weight-1][v].remove(u)
+        for arc_list in self.inarcs_by_weight:
+            if u in arc_list[v]:
+                arc_list[v].remove(u)
+                return self
         return self
 
     def adjacent(self, u, v):
         """
         check if uv or vu is an arc
         """
-        return u in self.inarcs[v] or v in self.inarcs[u]
+        for arc_list in self.inarcs_by_weight:
+            if u in arc_list[v] or v in arc_list[u]:
+                return True
+        return False
 
     def arcs(self,weight=None):
         """
         return all the arcs in the graph.  restrict to a given weight when provided
         """
         if weight:
-            return [(x,y) for x,N in enumerate(self.inarcs_by_weight[weight-1]) for y in N]
+            return [(x,y) for x,N in enumerate(self.inarcs_by_weight[weight-1]) 
+                for y in N]
         else:
-            return [(x,y,w) for x,N in enumerate(self.inarcs) for y, w in N.items()]
+            return [(x,y,w+1) for w,arc_list in enumerate(self.inarcs_by_weight) 
+                for x,N in enumerate(arc_list)
+                for y in N]
 
     def in_neighbors(self, v, weight=None):
         if weight is None:
-            return self.inarcs[v].items()
+            #return self.inarcs[v].items()
+            return [(u,w+1) for w,arc_list in enumerate(self.inarcs_by_weight) 
+                for u in arc_list[v]]
         else:
             return self.inarcs_by_weight[weight-1][v]
 
@@ -66,7 +69,7 @@ class Graph(object):
         return len(self.in_neighbors(v, weight))
 
     def num_arcs(self, weight=None):
-        return sum(len(v_arcs) for v_arcs in self.arcs(weight))
+        return sum(1 for _ in self.arcs(weight))
 
     def transitive_pairs(self, u, w):
         """
@@ -139,7 +142,6 @@ class DictGraph(Graph):
         else:
             self.nodes = nodes
         self.radius = r
-        self.inarcs = defaultdict(dict)
         self.inarcs_by_weight = [defaultdict(set) for _ in range(self.radius)]
 
     def __len__(self):
@@ -156,6 +158,9 @@ class DictGraph(Graph):
         return all the arcs in the graph.  restrict to a given weight when provided
         """
         if weight:
-            return [(x,y) for x,N in self.inarcs_by_weight[weight-1].items() for y in N]
+            return [(x,y) for x,N in self.inarcs_by_weight[weight-1].items() 
+                for y in N]
         else:
-            return [(x,y,w) for x,N in self.inarcs.items() for y, w in N.items()]
+            return [(x,y,w+1) for w,arc_list in enumerate(self.inarcs_by_weight) 
+                for x,N in arc_list.items()
+                for y in N]
