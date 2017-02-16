@@ -72,10 +72,7 @@ class Graph(object):
             return len(self.inarcs_by_weight[weight-1][v])
 
     def num_arcs(self, weight=None):
-        if weight is None:
-            return sum(sum(len(x) for x in w) for w in self.inarcs_by_weight)
-        else:
-            return sum(len(x) for x in  self.inarcs_by_weight[weight-1])
+        return sum(self.in_degree(v, weight) for v in self)
 
     def transitive_pairs(self, u, w):
         """
