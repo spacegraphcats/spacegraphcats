@@ -1,12 +1,9 @@
 import itertools
-<<<<<<< HEAD
 import sys
 import argparse
 from spacegraphcats.rdomset import rdomset, domination_graph
 from spacegraphcats.graph_io import read_from_gxt
-=======
-from spacegraphcats.rdomset import rdomset, domination_graph
->>>>>>> 7faa236d7043f7a18aab44e67a157bf9e11ffae6
+
 
 class CAtlas:
     LEVEL_THRESHOLD = 1000
