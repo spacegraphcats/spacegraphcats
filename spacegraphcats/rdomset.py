@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+import itertools
 from graph import DictGraph
 
 def low_degree_orientation(graph, comp=None):
@@ -78,7 +78,7 @@ def dtf_step(graph, dist, comp=None):
     """
 
     fratGraph = DictGraph() # Records fraternal edges, must be oriented at the end
-    newTrans = set() # Records transitive arcs
+    newTrans = [] # Records transitive arcs
 
     # if a list of nodes in a component is supplied, we loop over that,
     # otherwise we loop over all nodes in the graph.
@@ -91,7 +91,7 @@ def dtf_step(graph, dist, comp=None):
     for v in nodes:
         for x, y in graph.transitive_pairs(v, dist):
             #assert x != y
-            newTrans[(x, y)] = dist
+            newTrans.append((x, y))
         for x, y in graph.fraternal_pairs(v, dist):
             #assert x != y
             fratGraph.add_arc(x, y)
@@ -100,7 +100,7 @@ def dtf_step(graph, dist, comp=None):
     # Add transitive arcs to graph
     for (s, t) in newTrans:
         #assert s != t
-        augg.add_arc(s, t, dist)
+        graph.add_arc(s, t, dist)
         # if s,t is both a transitive and fraternal pair, don't add it twice!
         fratGraph.remove_arc(s,t)
         fratGraph.remove_arc(t,s)
@@ -108,7 +108,7 @@ def dtf_step(graph, dist, comp=None):
     # Orient fraternal edges and add them to the grah
     low_degree_orientation(fratGraph)
 
-    for s, t in fratDigraph.arcs(1):
+    for s, t in fratGraph.arcs(1):
         #assert s != t
         graph.add_arc(s,t,dist)
 
