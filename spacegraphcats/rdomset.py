@@ -1,6 +1,6 @@
 from collections import defaultdict
 import itertools
-from graph import DictGraph
+from spacegraphcats.graph import DictGraph
 
 def low_degree_orientation(graph, comp=None):
     """ 
