@@ -1,8 +1,12 @@
 import itertools
+<<<<<<< HEAD
 import sys
 import argparse
 from spacegraphcats.rdomset import rdomset, domination_graph
 from spacegraphcats.graph_io import read_from_gxt
+=======
+from spacegraphcats.rdomset import rdomset, domination_graph
+>>>>>>> 7faa236d7043f7a18aab44e67a157bf9e11ffae6
 
 class CAtlas:
     LEVEL_THRESHOLD = 1000
@@ -57,6 +61,7 @@ class CAtlas:
         # create Catlas nodes for the first domgraph
         idx = min_id
         curr_nodes = {v:CAtlas(idx+i, v, 0, []) for i,v in enumerate(curr_domset)}
+
         idx += len(curr_domset)
 
         level = 1
@@ -82,6 +87,7 @@ class CAtlas:
 
             # quit if our level is sufficiently small
             if len(next_domgraph) <= CAtlas.LEVEL_THRESHOLD:
+
                 return list(curr_nodes.values())
             
             # otherwise prep for the next iteration
@@ -107,7 +113,7 @@ class CAtlas:
             if c not in visited:
                 visited.add(c)
                 res |= c.leaves(visited)
-        return res      
+        return res
 
     def write(self, outfile):
         """
