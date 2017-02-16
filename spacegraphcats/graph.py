@@ -67,7 +67,7 @@ class Graph(object):
 
     def in_degree(self, v, weight=None):
         if weight is None:
-            return sum(len(x) for x in self.inarcs_by_weight[v])
+            return sum(len(x[v]) for x in self.inarcs_by_weight)
         else:
             return len(self.inarcs_by_weight[weight-1][v])
 
