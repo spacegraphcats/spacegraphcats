@@ -49,12 +49,12 @@ class Graph(object):
         """
         return all the arcs in the graph.  restrict to a given weight when provided
         """
-        if weight:
-            return [(x,y) for x,N in enumerate(self.inarcs_by_weight[weight-1]) 
+        if weight is None:
+            return [(y,x,w+1) for w,arc_list in enumerate(self.inarcs_by_weight) 
+                for x,N in enumerate(arc_list)
                 for y in N]
         else:
-            return [(x,y,w+1) for w,arc_list in enumerate(self.inarcs_by_weight) 
-                for x,N in enumerate(arc_list)
+            return [(y,x) for x,N in enumerate(self.inarcs_by_weight[weight-1]) 
                 for y in N]
 
     def in_neighbors(self, v, weight=None):
@@ -66,10 +66,16 @@ class Graph(object):
             return self.inarcs_by_weight[weight-1][v]
 
     def in_degree(self, v, weight=None):
-        return len(self.in_neighbors(v, weight))
+        if weight is None:
+            return sum(len(x) for x in self.inarcs_by_weight[v])
+        else:
+            return len(self.inarcs_by_weight[weight-1][v])
 
     def num_arcs(self, weight=None):
-        return sum(1 for _ in self.arcs(weight))
+        if weight is None:
+            return sum(sum(len(x) for x in w) for w in self.inarcs_by_weight)
+        else:
+            return sum(len(x) for x in  self.inarcs_by_weight[weight-1])
 
     def transitive_pairs(self, u, w):
         """

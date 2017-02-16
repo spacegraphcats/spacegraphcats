@@ -21,6 +21,9 @@ class GraphTest(unittest.TestCase):
         self.assertEquals(graph.num_arcs(1), 4)
         self.assertEquals(graph.num_arcs(2), 0)
 
+        self.assertEquals(graph.in_degree(0), 4)
+        self.assertEquals(graph.in_degree(1), 0)
+
     def test_components(self):
         g = Graph(num_nodes=12)
         g.add_arc(1,2)
