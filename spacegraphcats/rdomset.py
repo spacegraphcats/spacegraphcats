@@ -15,7 +15,7 @@ def low_degree_orientation(graph, comp=None):
     # otherwise we loop over all nodes in the graph.
     if comp is None:
         n = len(graph)
-        nodes = range(n)
+        nodes = graph
     else:
         n = len(comp)
         nodes = comp
@@ -45,7 +45,7 @@ def low_degree_orientation(graph, comp=None):
         while len(buckets[d]) == 0:
             d += 1
         if d > max_d:
-            print("removed all vertices of degree {}".format(max_d))
+            print("removed all vertices of degree {} at iteration".format(max_d, _))
             max_d += 1
         # grab a vertex of minimum degree
         v = buckets[d].pop()
@@ -59,9 +59,17 @@ def low_degree_orientation(graph, comp=None):
                 graph.remove_arc(u,v)
             # otherwise, the effective degree of u should drop by 1
             else:
-                d = degdict[u]
-                buckets[d].remove(u)
-                buckets[d-1].add(u)
+                d_u = degdict[u]
+                try:
+                    buckets[d_u].remove(u)
+                except KeyError:
+                    for i, buck in buckets.items():
+                        if u in buck:
+                            print("{} should be in bucket {} but is actually in bucket {}".format(u,d_u,i))
+                            raise
+                    print("{} is not in any buckets, but should be in bucket {}".format(u,d_u))
+                    raise
+                buckets[d_u-1].add(u)
                 degdict[u] -= 1
 
         removed.add(v)
