@@ -6,7 +6,7 @@ from spacegraphcats.graph_io import read_from_gxt
 
 
 class CAtlas:
-    LEVEL_THRESHOLD = 1000
+    LEVEL_THRESHOLD = 10
     def __init__(self, idx, vertex, level, children):
         """
         Arguments:
