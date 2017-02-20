@@ -30,7 +30,9 @@ class CAtlas:
         # each component will have a separate hierarchy to be merged at the end
         component_top_level = []
         idx = 0 # start index of the component
+        print("computing components")
         for comp in graph.components():
+            print("building catlas for a component with {} vertices".format(len(comp)))
             top_level = CAtlas._build_component(graph, comp, radius, idx)
             component_top_level.append(top_level)
             # adjust the node index so we don't get overlapping indices in different 
@@ -133,8 +135,11 @@ class CAtlas:
 
 def main(args):
     r = args.radius
+    print("loading graph from file")
     G = read_from_gxt(args.input, r, False)
+    print("graph loaded")
     cat = CAtlas.build(G, r)
+    print("writing graph")
     cat.write(args.output)
 
 

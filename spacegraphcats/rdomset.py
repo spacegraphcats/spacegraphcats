@@ -82,9 +82,9 @@ def ldo_setup(graph, comp):
     # dictionaries
     if len(comp) < len(graph) or isinstance(graph, DictGraph):
         # degree lookup
-        degrees = {v:graph.in_degree(v) for v in nodes}
+        degrees = {v:graph.in_degree(v) for v in comp}
         # pointer to place in vertex ordering
-        location = {v:None for v in graph}
+        location = {v:None for v in comp}
     else:
         degrees = [graph.in_degree(v) for v in comp]
         location = [None for _ in comp]
