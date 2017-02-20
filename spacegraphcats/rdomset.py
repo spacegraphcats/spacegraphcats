@@ -10,100 +10,22 @@ def low_degree_orientation(graph, comp=None):
     Precondition:  every edge in the component has a corresponding arc in the
     anti-parallel direction (i.e. uv and vu are in the graph)
     """
-
-    # if a list of nodes in a component is supplied, we loop over that,
-    # otherwise we loop over all nodes in the graph.
+    # number of vertices (needed for print statements)
     if comp is None:
         n = len(graph)
-        nodes = graph
     else:
         n = len(comp)
-        nodes = comp
-
-
-    checkpoint = 0
-
-    # precompute the degrees of each vertex and make a bidirectional lookup
-    degdict = {}
-    buckets = defaultdict(set)
-    for v in nodes:
-        d = graph.in_degree(v)
-        degdict[v] = d
-        buckets[d].add(v)
-        if v == checkpoint:
-            print("bucketed {} of {} nodes".format(v, n))
-            checkpoint += n//100
-
-    checkpoint = 0
-    max_d = 0
-    # keep track of "removed" vertices
-    removed = set()
-    # run the loop once per vertex
-    for _ in nodes:
-        # find the minimum degree of all vertices
-        d = 0
-        while len(buckets[d]) == 0:
-            d += 1
-        if d > max_d:
-            print("removed all vertices of degree {} at iteration {}".format(max_d, _))
-            max_d += 1
-        # grab a vertex of minimum degree
-        v = buckets[d].pop()
-
-        # decrement the degrees of the in neighbors not yet removed and orient
-        # edges towards in neighbors already removed
-        inbrs = list(graph.in_neighbors(v,1))
-        for u in inbrs:
-            # if we've removed u, we orient the arc towards u by deleting uv
-            if u in removed:
-                graph.remove_arc(u,v)
-            # otherwise, the effective degree of u should drop by 1
-            else:
-                d_u = degdict[u]
-                try:
-                    buckets[d_u].remove(u)
-                except KeyError:
-                    for i, buck in buckets.items():
-                        if u in buck:
-                            print("{} should be in bucket {} but is actually in bucket {}".format(u,d_u,i))
-                            raise
-                    print("{} is not in any buckets, but should be in bucket {}".format(u,d_u))
-                    raise
-                buckets[d_u-1].add(u)
-                degdict[u] -= 1
-
-        removed.add(v)
-        if _ == checkpoint:
-            print("removed {} of {} nodes".format(_, n))
-            checkpoint += n//100
-
-def alt_ldo(graph):
-
-    n = len(graph)
-    # precompute the degrees of each vertex and make a bidirectional lookup
-    degrees = [graph.in_degree(v) for v in graph]
-    max_deg = max(degrees)
-    degree_counts = [0 for i in range(max_deg+1)]
-    for v in graph:
-        d = degrees[v]
-        degree_counts[d] += 1
-    # assign the cutoffs of bins
-    bin_starts = [sum(degree_counts[:i]) for i in range(max_deg+1)]
-    del degree_counts
-    bin_ptrs = list(bin_starts)
-    bins = [None for _ in graph]
-    location = [None for _ in graph]
-
-    checkpoint = 0
-    for v in graph:
-        loc = bin_ptrs[degrees[v]]
-        bins[loc] = v
-        location[v] = loc
-        bin_ptrs[degrees[v]] += 1
-        if v == checkpoint:
-            print("bucketed {} of {} nodes".format(v, n))
-            checkpoint += n//100
-    del bin_ptrs
+    """
+    compute necessary data structures for low degree orientation
+    """
+    # array binning the vertices by remaining degree
+    (bins, 
+    # pointers to the first vertex with a given degree
+    bin_starts, 
+    # remaining degree of the vertex
+    degrees, 
+    # pointer to the location of a vertex in bins
+    location) = ldo_setup(graph,comp)
 
     checkpoint = 0
     max_d = 0
@@ -145,6 +67,53 @@ def alt_ldo(graph):
         if curr == checkpoint:
             print("removed {} of {} nodes".format(curr, n))
             checkpoint += n//100
+
+def ldo_setup(graph, comp):
+    # if a list of nodes in a component is supplied, we loop over that,
+    # otherwise we loop over all nodes in the graph.
+
+    # allows us to iterate over comp in all cases
+    if comp is None:
+        comp = graph
+
+    n = len(comp)
+
+    # hack-y way to know whether our location and degree lookups should be lists or 
+    # dictionaries
+    if len(comp) < len(graph) or isinstance(graph, DictGraph):
+        # degree lookup
+        degrees = {v:graph.in_degree(v) for v in nodes}
+        # pointer to place in vertex ordering
+        location = {v:None for v in graph}
+    else:
+        degrees = [graph.in_degree(v) for v in comp]
+        location = [None for _ in comp]
+
+    # precompute the degrees of each vertex and make a bidirectional lookup
+    max_deg = max(degrees)
+    degree_counts = [0 for i in range(max_deg+1)]
+    for v in comp:
+        d = degrees[v]
+        degree_counts[d] += 1
+    # assign the cutoffs of bins
+    bin_starts = [sum(degree_counts[:i]) for i in range(max_deg+1)]
+    del degree_counts
+    bin_ptrs = list(bin_starts)
+    bins = [None for _ in comp]
+
+    # assign the vertices to bins
+    checkpoint = 0
+    for v in comp:
+        loc = bin_ptrs[degrees[v]]
+        bins[loc] = v
+        location[v] = loc
+        bin_ptrs[degrees[v]] += 1
+        if v == checkpoint:
+            print("bucketed {} of {} nodes".format(v, n))
+            checkpoint += n//100
+    del bin_ptrs
+
+    return bins, bin_starts, degrees, location
 
 def dtf_step(graph, dist, comp=None):
     """ 

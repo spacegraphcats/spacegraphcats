@@ -7,7 +7,7 @@ from os import path
 
 from spacegraphcats.graph import Graph
 from spacegraphcats.graph_io import read_from_gxt, write_to_gxt
-from spacegraphcats.rdomset import low_degree_orientation, alt_ldo
+from spacegraphcats.rdomset import low_degree_orientation
 from spacegraphcats.graph_parser import parse
 
 DEBUG = True
@@ -68,7 +68,7 @@ def load_and_compute_augg(project):
             parse(f, None, project.graph.add_arc)
     else:
         report('  Running low degree orientation and cache it as {}'.format(aug0))
-        alt_ldo(project.graph)
+        low_degree_orientation(project.graph)
         with open(aug0, 'w') as f:
             write_to_gxt(f, project.graph, 1)
 
