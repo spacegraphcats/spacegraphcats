@@ -5,7 +5,7 @@ from spacegraphcats.graph import Graph
 from spacegraphcats.rdomset import low_degree_orientation
 
 class ParserRDomset(unittest.TestCase):
-    def test_ldo(self):
+    def test_ldo_random(self):
         # Test on complete graph
         n = 25
         g = Graph(num_nodes=n, radius=3)
@@ -42,6 +42,23 @@ class ParserRDomset(unittest.TestCase):
 
         self.assertEqual(g.arcs(2), [])
         self.assertEqual(len(g.arcs(1)), count)
+
+    def test_ldo_example(self):
+        g = Graph(num_nodes=10, radius=3)
+
+        edges = [(0,6), (6,7), (6,5), (6,8), (5,8), (8,9), (8,2), (2,1), (2,3), (3,4)]
+
+        for x,y in edges:
+            g.add_arc(x,y)
+            g.add_arc(y,x)
+
+        low_degree_orientation(g)
+
+        self.assertEqual(g.arcs(2), [])
+        self.assertEqual(len(g.arcs(1)), 10)
+
+        # unambiguous arcs
+        self.assertTrue(set([(6, 0), (2, 1), (8, 2), (2, 3), (3, 4), (6, 7), (8, 9)]).issubset(set(g.arcs(1))))
 
 
 if __name__ == '__main__':
