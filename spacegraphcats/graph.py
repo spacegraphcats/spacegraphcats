@@ -138,6 +138,7 @@ class Graph(object):
         ids = set([comps[v] for v in comps])
         return len(ids)
 
+
 class DictGraph(Graph):
     def __init__(self, nodes=None, r=1):
         if nodes is None:
