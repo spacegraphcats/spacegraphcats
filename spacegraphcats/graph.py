@@ -124,7 +124,7 @@ class Graph(object):
         for v in self:
             N = self.in_neighbors(v, 1) | set([v])
             comps.union(*N)
-        return comps
+        return {x:comps[x] for x in comps}
 
     def components(self):
         comps = self.component_index()
