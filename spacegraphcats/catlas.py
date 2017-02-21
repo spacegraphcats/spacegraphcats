@@ -1,6 +1,7 @@
 import itertools
 import sys
 import argparse
+import cProfile, pstats
 from spacegraphcats.rdomset import rdomset, domination_graph
 from spacegraphcats.graph_io import read_from_gxt
 
@@ -154,4 +155,4 @@ if __name__=="__main__":
     parser.add_argument("output", help="Output catlas file",type=argparse.FileType('w'))
     parser.add_argument("radius", help="Catlas radius",type=int)
     args = parser.parse_args()
-    main(args)
+    cProfile.run("main(args)")
