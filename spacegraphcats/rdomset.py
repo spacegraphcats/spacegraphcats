@@ -171,7 +171,7 @@ def dtf(graph, radius, comp=None):
     low_degree_orientation(graph ,comp=comp)
 
     # keep track of whether we are adding edges so we can quit early
-    num_arcs = graph.num_arcs()
+    #num_arcs = graph.num_arcs()
     changed = True
     d = 2
     while changed and d <= radius:
@@ -180,9 +180,9 @@ def dtf(graph, radius, comp=None):
         dtf_step(graph, d, comp)
 
         # Small optimization: if no new arcs have been added we can stop.
-        curr_arcs = graph.num_arcs() # This costs a bit so we store it
-        changed = num_arcs < curr_arcs
-        num_arcs = curr_arcs
+        #curr_arcs = graph.num_arcs() # This costs a bit so we store it
+        #changed = num_arcs < curr_arcs
+        #num_arcs = curr_arcs
         d += 1
 
 def compute_domset(graph,radius,comp=None):
