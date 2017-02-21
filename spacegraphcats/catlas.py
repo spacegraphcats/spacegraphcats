@@ -144,7 +144,7 @@ def main(args):
     print("reading complete")
     print("building catlas")
     cat = CAtlas.build(G, r)
-    print("catlas complete")
+    print("writing graph")
     cat.write(args.output)
 
 
