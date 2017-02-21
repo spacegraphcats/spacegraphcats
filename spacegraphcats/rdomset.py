@@ -129,7 +129,6 @@ def dtf_step(graph, dist, comp=None):
     """
 
     fratGraph = DictGraph() # Records fraternal edges, must be oriented at the end
-    newTrans = [] # Records transitive arcs
 
     # if a list of nodes in a component is supplied, we loop over that,
     # otherwise we loop over all nodes in the graph.
@@ -138,23 +137,18 @@ def dtf_step(graph, dist, comp=None):
     else:
         nodes = comp
 
-    # pick out the transitive and fraternal pairs from v
+    # pick out the transitive pairs from v and add them as new edges
     for v in nodes:
         for x, y in graph.transitive_pairs(v, dist):
-            #assert x != y
-            newTrans.append((x, y))
+            graph.add_arc(x,y, dist)
+    # pick out the fraternal pairs from v and store them.  We do this after adding 
+    # transitive edges to guarantee that no fraternal edge conflicts with a transitive 
+    # edge
+    for v in nodes:
         for x, y in graph.fraternal_pairs(v, dist):
             #assert x != y
             fratGraph.add_arc(x, y)
             fratGraph.add_arc(y, x)
-
-    # Add transitive arcs to graph
-    for (s, t) in newTrans:
-        #assert s != t
-        graph.add_arc(s, t, dist)
-        # if s,t is both a transitive and fraternal pair, don't add it twice!
-        fratGraph.remove_arc(s,t)
-        fratGraph.remove_arc(t,s)
 
     # Orient fraternal edges and add them to the graph
     low_degree_orientation(fratGraph)
