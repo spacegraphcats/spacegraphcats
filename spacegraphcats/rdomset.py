@@ -289,9 +289,11 @@ def domination_graph(graph, domset, radius, comp=None):
             The keys of dominated_at_radius are exactly one connected 
             component of graph
     """
+    print("assigning to dominators")
     dominated_at_radius = assign_to_dominators(graph, domset, radius, comp)
     domgraph = DictGraph(nodes=domset)
 
+    print("computing dominating edges")
     # dictionary mapping vertices from the graph to closest dominators to it
     closest_dominators = {v:list() for v in dominated_at_radius}
     # the keys of dominators should all belong to the same component, so this
@@ -320,6 +322,7 @@ def domination_graph(graph, domset, radius, comp=None):
             domgraph.add_arc(u,v)
             domgraph.add_arc(v,u)
 
+    print("Make the domset connected")
     # ensure domgraph is connected
     make_connected(domgraph, domset, closest_dominators, graph)
 
@@ -334,18 +337,21 @@ def make_connected(domgraph, domset, closest_dominators, graph):
     same distance.
     """
     # map vertices to indices of components
+    print("\tComputing components")
     dom_components = domgraph.component_index()
-    num_comps = len(set([dom_components[v] for v in domset]))
+    num_comps = len(set(dom_components.values()))
     # don't do anything it it's already connected!
     if num_comps == 1:
         return
     # find the components the non-dominating vertices' dominators belong to
+    print("\tComputing components for nondominators")
     nondom_components = {}
     for u in closest_dominators.keys():
         # since all of u's dominators are in the same component, we can pick 
         # an arbitrary one to look up
         nondom_components[u] = dom_components[closest_dominators[u][0]]
 
+    print("\tfinding arcs that bridge components")
     # look at arcs in graph and determine whether they bridge components
     for u in closest_dominators.keys():
         # the domset vertices optimally dominate their neighbors, so they 
