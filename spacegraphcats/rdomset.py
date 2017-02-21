@@ -15,6 +15,9 @@ def low_degree_orientation(graph, comp=None):
         n = len(graph)
     else:
         n = len(comp)
+    # most elegant way to handle possibly empty graph (from the frat graph in )
+    if n == 0:
+        return
     """
     compute necessary data structures for low degree orientation
     """
@@ -65,8 +68,9 @@ def low_degree_orientation(graph, comp=None):
                 # decrement u's degree
                 degrees[u] = d_u - 1         
         if curr == checkpoint:
-            print("removed {} of {} nodes".format(curr, n))
+            print("removed {} of {} nodes\r".format(curr+1, n),end="")
             checkpoint += n//100
+    print("removed {} of {} nodes".format(curr+1, n))
 
 def ldo_setup(graph, comp):
     # if a list of nodes in a component is supplied, we loop over that,
@@ -75,22 +79,23 @@ def ldo_setup(graph, comp):
     # allows us to iterate over comp in all cases
     if comp is None:
         comp = graph
-
     n = len(comp)
 
     # hack-y way to know whether our location and degree lookups should be lists or 
     # dictionaries
     if len(comp) < len(graph) or isinstance(graph, DictGraph):
         # degree lookup
-        degrees = {v:graph.in_degree(v) for v in nodes}
+        degrees = {v:graph.in_degree(v) for v in comp}
         # pointer to place in vertex ordering
-        location = {v:None for v in graph}
+        location = {v:None for v in comp}
+        max_deg = max(degrees.values())
+
     else:
         degrees = [graph.in_degree(v) for v in comp]
         location = [None for _ in comp]
+        max_deg = max(degrees)
 
     # precompute the degrees of each vertex and make a bidirectional lookup
-    max_deg = max(degrees)
     degree_counts = [0 for i in range(max_deg+1)]
     for v in comp:
         d = degrees[v]
@@ -103,16 +108,16 @@ def ldo_setup(graph, comp):
 
     # assign the vertices to bins
     checkpoint = 0
-    for v in comp:
+    for i,v in enumerate(comp):
         loc = bin_ptrs[degrees[v]]
         bins[loc] = v
         location[v] = loc
         bin_ptrs[degrees[v]] += 1
         if v == checkpoint:
-            print("bucketed {} of {} nodes".format(v, n))
+            print("bucketed {} of {} nodes\r".format(i+1, n),end="")
             checkpoint += n//100
     del bin_ptrs
-
+    print("bucketed {} of {} nodes".format(i+1, n))
     return bins, bin_starts, degrees, location
 
 def dtf_step(graph, dist, comp=None):
@@ -151,7 +156,7 @@ def dtf_step(graph, dist, comp=None):
         fratGraph.remove_arc(s,t)
         fratGraph.remove_arc(t,s)
 
-    # Orient fraternal edges and add them to the grah
+    # Orient fraternal edges and add them to the graph
     low_degree_orientation(fratGraph)
 
     for s, t in fratGraph.arcs(1):
@@ -168,6 +173,7 @@ def dtf(graph, radius, comp=None):
         distance.
     """
     # the 1st "augmentation" is simply acyclically orienting the edges
+    print("Computing low degree orientation (step 1)")
     low_degree_orientation(graph ,comp=comp)
 
     # keep track of whether we are adding edges so we can quit early
@@ -175,6 +181,7 @@ def dtf(graph, radius, comp=None):
     changed = True
     d = 2
     while changed and d <= radius:
+        print("Computing step {}".format(d))
         # shortcut paths of length d
         dtf_step(graph, d, comp)
 

@@ -30,7 +30,9 @@ class CAtlas:
         # each component will have a separate hierarchy to be merged at the end
         component_top_level = []
         idx = 0 # start index of the component
+        print("computing components")
         for comp in graph.components():
+            print("building catlas for a component with {} vertices".format(len(comp)))
             top_level = CAtlas._build_component(graph, comp, radius, idx)
             component_top_level.append(top_level)
             # adjust the node index so we don't get overlapping indices in different 
@@ -63,6 +65,7 @@ class CAtlas:
 
         level = 1
         # keep creating progressively smaller graphs until we hit the level threshold
+        print("Catlas level 1 complete\r", end="")
         while True:
             # find the domgraph of the current domgraph
             next_domset = rdomset(curr_domgraph, 1, curr_domset)
@@ -82,6 +85,8 @@ class CAtlas:
                 children = [curr_nodes[u] for u in dominated[v]]
                 next_nodes[v] = CAtlas(idx, v, level, children)
 
+            print("Catlas level {} complete\r".format(level), end="")
+
             # quit if our level is sufficiently small
             if len(next_domgraph) <= CAtlas.LEVEL_THRESHOLD:
 
@@ -92,6 +97,7 @@ class CAtlas:
             curr_domset = next_domset
             curr_nodes = next_nodes
             level += 1
+        print("\n")
 
     def leaves(self, visited=None):
         """
@@ -133,8 +139,12 @@ class CAtlas:
 
 def main(args):
     r = args.radius
+    print("reading graph")
     G = read_from_gxt(args.input, r, False)
+    print("reading complete")
+    print("building catlas")
     cat = CAtlas.build(G, r)
+    print("catlas complete")
     cat.write(args.output)
 
 
