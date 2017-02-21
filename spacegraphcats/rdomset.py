@@ -337,7 +337,7 @@ def make_connected(domgraph, domset, closest_dominators, graph):
     # map vertices to indices of components
     print("\tComputing components")
     dom_components = domgraph.component_index()
-    num_comps = len(set(dom_components.values()))
+    num_comps = len(set([dom_components[v] for v in domset]))
     # don't do anything it it's already connected!
     if num_comps == 1:
         return
