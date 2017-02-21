@@ -137,10 +137,13 @@ def dtf_step(graph, dist, comp=None):
     else:
         nodes = comp
 
+    trans_pairs = 0
     # pick out the transitive pairs from v and add them as new edges
     for v in nodes:
         for x, y in graph.transitive_pairs(v, dist):
             graph.add_arc(x,y, dist)
+            trans_pairs += 1
+    print("added {} transitive edges".format(trans_pairs))
     # pick out the fraternal pairs from v and store them.  We do this after adding 
     # transitive edges to guarantee that no fraternal edge conflicts with a transitive 
     # edge
@@ -149,6 +152,7 @@ def dtf_step(graph, dist, comp=None):
             #assert x != y
             fratGraph.add_arc(x, y)
             fratGraph.add_arc(y, x)
+    print("added {} fraternal edges".format(fratGraph.num_arcs()/2))
 
     # Orient fraternal edges and add them to the graph
     low_degree_orientation(fratGraph)
