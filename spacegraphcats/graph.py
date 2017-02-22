@@ -84,7 +84,8 @@ class Graph(object):
             for y in self.in_neighbors(u,wy):
                 #assert y != u
                 for x in self.in_neighbors(y, wx):
-                    # need to double check that the x,u edges isn't there already
+                    # need to double check that the x,u edges isn't there 
+                    # already
                     if x != u and not self.adjacent(x, u):
                         yield x, u
 
@@ -94,26 +95,23 @@ class Graph(object):
         Returns fraternal pairs of in_neighbors of u (x,y) whose weight sum is
         exactly w.  (x,y) are fraternal if they are not adjacent.
         """
-        # Since we draw all vertices from the same in-neighborhood,
-        # the considered sets have usually different weights and
-        # are thus disjoint. Only for even weights do we have to consider
-        # the slightly annoying case of (w/2, w/2).
-        wh = (w+1) // 2
-        for wx in range(1,wh):
-            wy = w-wx
-            for x in self.in_neighbors(u,wx):
-                #assert x != u
-                for y in self.in_neighbors(u,wy):
-                    #assert y != u
-                    if not (self.adjacent(x,y) or self.adjacent(y,x)):
-                        yield x, y
-        # slightly annoying case
-        if w % 2 == 0:
-            inbs = self.in_neighbors(u,wh)
+        # It is sufficient to consider pairs whose weights are 1,w-1.  When w 
+        # > 2, 1 and w-1 are distinct and their neighborhoods are thus 
+        # disjoint.  When w == 2, we need to ignore pairs of the form (x,x)
+        if w == 2:
+            inbs = self.in_neighbors(u,1)
             for x, y in itertools.combinations(inbs, 2):
                 assert x != u and y != u
-                if not (self.adjacent(x,y) or self.adjacent(y,x)):
-                    yield x, y 
+                if not self.adjacent(y,x):
+                    yield x, y
+        else:
+            for x in self.in_neighbors(u,1):
+                #assert x != u
+                for y in self.in_neighbors(u,w-1):
+                    #assert y != u
+                    if not self.adjacent(y,x):
+                        yield x, y
+
 
     def component_index(self):
         """
@@ -163,8 +161,9 @@ class DictGraph(Graph):
         """
         if weight:
             return [(x,y) for x,N in self.inarcs_by_weight[weight-1].items() 
-                for y in N]
+                    for y in N]
         else:
-            return [(x,y,w+1) for w,arc_list in enumerate(self.inarcs_by_weight) 
+            return [(x,y,w+1) for w,arc_list in 
+                    enumerate(self.inarcs_by_weight) 
                 for x,N in arc_list.items()
                 for y in N]
