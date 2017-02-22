@@ -237,9 +237,10 @@ def compute_domset(graph,radius,comp=None):
 
 def assign_to_dominators(graph, domset, radius,comp=None):
     """
-    Computes for each vertex the subset of domset that dominates it at distance radius
-    Returns a double level dictionary that maps vertices in the original graph to
-    integers 0 to radius to sets of vertices that dominate at that distance
+    Computes for each vertex the subset of domset that dominates it at 
+    distance radius.  Returns a double level dictionary that maps vertices in 
+    the original graph to integers 0 to radius to sets of vertices that 
+    dominate at that distance
     """
     dominated_at_radius = defaultdict(lambda: defaultdict(set))
 
@@ -261,13 +262,15 @@ def assign_to_dominators(graph, domset, radius,comp=None):
                 for r2 in dominated_at_radius[u].keys():
                     domdist = r+r2
                     if domdist <= radius:
-                        dominated_at_radius[v][domdist] |= dominated_at_radius[u][r2]
+                        dominated_at_radius[v][domdist] |= \
+                                        dominated_at_radius[u][r2]
             # Push dominators to in-neighbourhood
             for u, r in graph.in_neighbors(v):
                 for r2 in dominated_at_radius[v].keys():
                     domdist = r+r2
                     if domdist <= radius:
-                        dominated_at_radius[u][domdist] |= dominated_at_radius[v][r2]
+                        dominated_at_radius[u][domdist] |= \
+                                        dominated_at_radius[v][r2]
 
     # Clean up: vertices might appear at multiple distances as dominators,
     # we only want to store them for the _minimum_ distance at which they

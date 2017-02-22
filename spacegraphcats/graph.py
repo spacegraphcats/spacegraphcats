@@ -50,18 +50,21 @@ class Graph(object):
         return all the arcs in the graph.  restrict to a given weight when provided
         """
         if weight is None:
-            return [(y,x,w+1) for w,arc_list in enumerate(self.inarcs_by_weight) 
-                for x,N in enumerate(arc_list)
-                for y in N]
+            return [(y,x,w+1) 
+                    for w,arc_list in enumerate(self.inarcs_by_weight) 
+                    for x,N in enumerate(arc_list)
+                    for y in N]
         else:
-            return [(y,x) for x,N in enumerate(self.inarcs_by_weight[weight-1]) 
-                for y in N]
+            return [(y,x) 
+                    for x,N in enumerate(self.inarcs_by_weight[weight-1]) 
+                    for y in N]
 
     def in_neighbors(self, v, weight=None):
         if weight is None:
             #return self.inarcs[v].items()
-            return [(u,w+1) for w,arc_list in enumerate(self.inarcs_by_weight) 
-                for u in arc_list[v]]
+            return [(u,w+1) 
+                    for w,arc_list in enumerate(self.inarcs_by_weight) 
+                    for u in arc_list[v]]
         else:
             return self.inarcs_by_weight[weight-1][v]
 
@@ -157,7 +160,8 @@ class DictGraph(Graph):
 
     def arcs(self,weight=None):
         """
-        return all the arcs in the graph.  restrict to a given weight when provided
+        return all the arcs in the graph.  restrict to a given weight when 
+        provided
         """
         if weight:
             return [(x,y) for x,N in self.inarcs_by_weight[weight-1].items() 

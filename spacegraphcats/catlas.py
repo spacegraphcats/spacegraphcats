@@ -11,8 +11,8 @@ class CAtlas:
     def __init__(self, idx, vertex, level, children):
         """
         Arguments:
-           idx:  Integer identifier of the node.  A CAtlas with n nodes will have ids 
-                0,1,...,n-1
+            idx:  Integer identifier of the node.  A CAtlas with n nodes will 
+                  have ids 0,1,...,n-1
             vertex:  Name of vertex in the cDBG
             level:  The height of the node in the hierarchy.  The leaves are at
                     level 0, their parents at level 1, etc.
@@ -33,12 +33,13 @@ class CAtlas:
         idx = 0 # start index of the component
         print("computing components")
         for comp in graph.components():
-            print("building catlas for a component with {} vertices".format(len(comp)))
+            print("building catlas for a component with {} vertices".format(
+                len(comp)))
             top_level = CAtlas._build_component(graph, comp, radius, idx)
             component_top_level.append(top_level)
-            # adjust the node index so we don't get overlapping indices in different 
-            # components.  This assumes that the parent node indices always exceed that 
-            # of their children.
+            # adjust the node index so we don't get overlapping indices in 
+            # different components.  This assumes that the parent node indices 
+            # always exceed that of their children.
             idx = max(node.idx for node in top_level)+1
 
         # make a root node
@@ -60,21 +61,26 @@ class CAtlas:
             curr_domset, radius, comp)
         # create Catlas nodes for the first domgraph
         idx = min_id
-        curr_nodes = {v:CAtlas(idx+i, v, 0, []) for i,v in enumerate(curr_domset)}
+        curr_nodes = {v:CAtlas(idx+i, v, 0, []) for i,v in 
+                        enumerate(curr_domset)}
 
         idx += len(curr_domset)
 
         level = 1
-        # keep creating progressively smaller graphs until we hit the level threshold
+        # keep creating progressively smaller graphs until we hit the level 
+        # threshold
         print("Catlas level 1 complete\r", end="")
         while True:
             # find the domgraph of the current domgraph
             next_domset = rdomset(curr_domgraph, 1, curr_domset)
-            next_domgraph, closest_dominators = domination_graph(curr_domgraph, next_domset, 1, curr_domset)
+            next_domgraph, closest_dominators = domination_graph(curr_domgraph,
+                                                 next_domset, 1, curr_domset)
 
-            # closest_dominators indicates the domset vertices that dominate each vertex.
+            # closest_dominators indicates the domset vertices that dominate 
+            # each vertex.
             # v dominating u indicates that u will be a child of v
-            # we have the assignment from vertices to dominators, make the reverse
+            # we have the assignment from vertices to dominators, make the 
+            # reverse
             dominated = {v:list() for v in next_domset}
             for u, doms in closest_dominators.items():
                 for v in doms:
@@ -104,8 +110,8 @@ class CAtlas:
         """
         Find the descendants of this node with no children.
         """
-        # this function is recursive so we need to keep track of nodes we already 
-        # visited 
+        # this function is recursive so we need to keep track of nodes we 
+        # already visited 
         if visited is None:
             visited = set([self])
         # base case is level 0
@@ -132,7 +138,10 @@ class CAtlas:
             curr = stack.pop()
             # write node information
             child_str = " ".join(str(child.idx) for child in curr.children)
-            outfile.write("{},{},{},{}\n".format(curr.idx, curr.vertex, curr.level, child_str))
+            outfile.write("{},{},{},{}\n".format(curr.idx,
+                                                 curr.vertex, 
+                                                 curr.level, 
+                                                 child_str))
             # all nodes already seen don't get re-added
             seen.add(curr)
             stack.extend(filter(lambda x:x not in seen, curr.children))
