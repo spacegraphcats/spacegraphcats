@@ -150,9 +150,11 @@ def dtf_step(graph, dist, comp=None):
     for v in nodes:
         for x, y in graph.fraternal_pairs(v, dist):
             #assert x != y
+            fratGraph.add_node(x)
+            fratGraph.add_node(y)
             fratGraph.add_arc(x, y)
             fratGraph.add_arc(y, x)
-    print("added {} fraternal edges".format(fratGraph.num_arcs()/2))
+    print("added {} fraternal edges".format(fratGraph.num_arcs()//2))
 
     # Orient fraternal edges and add them to the graph
     low_degree_orientation(fratGraph)
