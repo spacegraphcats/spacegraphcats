@@ -1,5 +1,4 @@
 import itertools
-from spacegraphcats.Eppstein import UnionFind
 from collections import defaultdict
 
 class Graph(object):
@@ -114,31 +113,6 @@ class Graph(object):
                     #assert y != u
                     if not self.adjacent(y,x):
                         yield x, y
-
-
-    def component_index(self):
-        """
-        Returns a union-find data structure associating each vertex 
-        with an id (another vertex) the connected component it is contained in.
-        """
-        comps = UnionFind()
-        for v in self:
-            N = self.in_neighbors(v, 1) | set([v])
-            comps.union(*N)
-        return comps
-
-    def components(self):
-        comps = self.component_index()
-        res = defaultdict(set)
-        for v in self:
-            res[comps[v]].add(v)
-        return res.values()
-
-    def num_components(self):
-        comps = self.component_index()
-        ids = set([comps[v] for v in comps])
-        return len(ids)
-
 
 class DictGraph(Graph):
     def __init__(self, nodes=None, r=1):
