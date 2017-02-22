@@ -1,6 +1,7 @@
 from collections import defaultdict
 import itertools
 from spacegraphcats.graph import DictGraph
+from spacegraphcats.components import component_index
 
 def low_degree_orientation(graph, comp=None):
     """ 
@@ -341,7 +342,7 @@ def make_connected(domgraph, domset, closest_dominators, graph):
     """
     # map vertices to indices of components
     print("\tComputing components")
-    dom_components = domgraph.component_index()
+    dom_components = component_index(domgraph)
     num_comps = len(set([dom_components[v] for v in domset]))
     # don't do anything it it's already connected!
     if num_comps == 1:

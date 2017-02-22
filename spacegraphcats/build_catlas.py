@@ -9,6 +9,7 @@ from spacegraphcats.graph import Graph
 from spacegraphcats.graph_io import read_from_gxt, write_to_gxt
 from spacegraphcats.rdomset import low_degree_orientation
 from spacegraphcats.graph_parser import parse
+from spacegraphcats.components import num_components
 
 DEBUG = True
 
@@ -103,7 +104,7 @@ def main():
     report("Loaded graph with {} vertices, {} arcs and {} components".format(
         len(project.graph),
         project.graph.num_arcs(),
-        project.graph.num_components()))
+        num_components(project.graph)))
 
 
     """ Compute / load r-dominating set """

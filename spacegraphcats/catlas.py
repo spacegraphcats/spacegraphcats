@@ -4,6 +4,7 @@ import argparse
 import cProfile, pstats
 from spacegraphcats.rdomset import rdomset, domination_graph
 from spacegraphcats.graph_io import read_from_gxt
+from spacegraphcats.components import components
 
 
 class CAtlas:
@@ -32,7 +33,7 @@ class CAtlas:
         component_top_level = []
         idx = 0 # start index of the component
         print("computing components")
-        for comp in graph.components():
+        for comp in components(graph):
             print("building catlas for a component with {} vertices".format(
                 len(comp)))
             top_level = CAtlas._build_component(graph, comp, radius, idx)
