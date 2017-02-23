@@ -209,34 +209,42 @@ def compute_domset(graph,radius,comp=None):
         nodes = comp
 
     # Sort the vertices by indegree so we take fewer vertices
-    order = sorted([v for v in nodes],key=lambda x:graph.in_degree(x))
+    order = sorted([v for v in nodes], key=lambda x:graph.in_degree(x))
     # vprops = [(v,graph.in_degree(v)) for v in nodes]
     # vprops.sort(key=itemgetter(1),reverse=False)
     # order = map(itemgetter(0),vprops)
 
     for v in order:
         # if v is already dominated at radius, no need to work
-        if domdistance[v] <= radius:
+        v_distance = domdistance[v]
+        if v_distance <= radius:
             continue
 
         # look at the in neighbors to update the distance
-        for u,r in graph.in_neighbors(v):
-            domdistance[v] = min(domdistance[v],r+domdistance[u])
+        for r in range(1, radius + 1):
+            for u in graph.in_neighbors(v, r):
+                new_radius = r + domdistance[u]
+                if new_radius < v_distance:
+                    v_distance = new_radius
+                    domdistance[v] = new_radius
 
-        # if v is dominated at radius now, keep going
-        if domdistance[v] <= radius:
-            continue
-        # otherwise put v in the dominating set
+                # if v is dominated at radius, keep going
+                if new_radius <= radius:
+                    continue
+
+        # if v is not dominated at radius, put v in the dominating set
         domset.add(v)
         domdistance[v] = 0
 
         # update distances of neighbors of v if v is closer
-        for u,r in graph.in_neighbors(v):
-            domdistance[u] = min(domdistance[u],r)
+        for r in range(1, graph.radius + 1):
+            for u in graph.in_neighbors(v, r):
+                if r < domdistance[u]:
+                    domdistance[u] = r
 
     return domset
 
-def assign_to_dominators(graph, domset, radius,comp=None):
+def assign_to_dominators(graph, domset, radius, comp=None):
     """
     Computes for each vertex the subset of domset that dominates it at 
     distance radius.  Returns a double level dictionary that maps vertices in 
