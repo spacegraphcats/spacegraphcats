@@ -8,7 +8,7 @@ def component_index(graph):
     """
     comps = UnionFind()
     for v in graph:
-        N = graph.in_neighbors(v, 1) | set([v])
+        N = graph.in_neighbors(v, 1).union([v])
         comps.union(*N)
     return comps
 
@@ -20,7 +20,7 @@ def components(graph):
     return res.values()
 
 def num_components(graph) -> int:
-    """ COmpute the number of components """
+    """ Compute the number of components """
     comps = component_index(graph)
     ids = set([comps[v] for v in comps])
     return len(ids)
