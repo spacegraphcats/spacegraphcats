@@ -200,6 +200,13 @@ def compute_domset(graph,radius,comp=None):
     infinity = float('inf')
     # minimum distance to a dominating vertex, obviously infinite at start
     domdistance = defaultdict(lambda: infinity)
+    # counter that keeps track of how many neighbors have made it into the
+    # domset
+    domcounter = defaultdict(int)
+    # cutoff for how many times a vertex needs to have its neighbors added to
+    # the domset before it does.  We choose radius^2 as a convenient "large"
+    # number
+    c = (2*radius)**2
 
     # if a list of nodes in a component is supplied, we loop over that,
     # otherwise we loop over all nodes in the graph.
@@ -215,32 +222,32 @@ def compute_domset(graph,radius,comp=None):
     # order = map(itemgetter(0),vprops)
 
     for v in order:
-        # if v is already dominated at radius, no need to work
-        v_distance = domdistance[v]
-        if v_distance <= radius:
-            continue
-
         # look at the in neighbors to update the distance
         for r in range(1, radius + 1):
             for u in graph.in_neighbors(v, r):
-                new_radius = r + domdistance[u]
-                if new_radius < v_distance:
-                    v_distance = new_radius
-                    domdistance[v] = new_radius
+                domdistance[v] = min(domdistance[v], r+domdistance[u])
 
-                # if v is dominated at radius, keep going
-                if new_radius <= radius:
-                    continue
+        # if v is already dominated at radius, no need to work
+        if domdistance[v] <= radius:
+            continue
 
         # if v is not dominated at radius, put v in the dominating set
         domset.add(v)
         domdistance[v] = 0
 
-        # update distances of neighbors of v if v is closer
+        # update distances of neighbors of v if v is closer if u has had too many of its neighbors taken into the domset, include it too.
         for r in range(1, graph.radius + 1):
             for u in graph.in_neighbors(v, r):
+                domcounter[u] += 1
                 if r < domdistance[u]:
                     domdistance[u] = r
+                if domcounter[u] > c and u not in domset:
+                    # add u to domset
+                    domset.add(u)
+                    domdistance[u] = 0
+                    for x,rx in graph.in_neighbors(u):
+                        domdistance[x] = min(domdistance[x], rx)
+                # only need to update domdistance if u didn't get added
 
     return domset
 
