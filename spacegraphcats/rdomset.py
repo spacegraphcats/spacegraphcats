@@ -4,10 +4,10 @@ from spacegraphcats.graph import DictGraph
 from spacegraphcats.components import component_index
 
 def low_degree_orientation(graph, comp=None):
-    """ 
+    """
     Computes a low-in-degree orientation of a graph component in place
     by iteratively removing a vertex of mimimum degree and orienting
-    the edges towards it. 
+    the edges towards it.
     Precondition:  every edge in the component has a corresponding arc in the
     anti-parallel direction (i.e. uv and vu are in the graph)
     """
@@ -23,11 +23,11 @@ def low_degree_orientation(graph, comp=None):
     compute necessary data structures for low degree orientation
     """
     # array binning the vertices by remaining degree
-    (bins, 
+    (bins,
     # pointers to the first vertex with a given degree
-    bin_starts, 
+    bin_starts,
     # remaining degree of the vertex
-    degrees, 
+    degrees,
     # pointer to the location of a vertex in bins
     location) = ldo_setup(graph,comp)
 
@@ -67,7 +67,7 @@ def low_degree_orientation(graph, comp=None):
                 # move the bin start one place over
                 bin_starts[d_u] += 1
                 # decrement u's degree
-                degrees[u] = d_u - 1         
+                degrees[u] = d_u - 1
         if curr == checkpoint:
             print("removed {} of {} nodes\r".format(curr+1, n),end="")
             checkpoint += n//100
@@ -82,7 +82,7 @@ def ldo_setup(graph, comp):
         comp = graph
     n = len(comp)
 
-    # hack-y way to know whether our location and degree lookups should be lists or 
+    # hack-y way to know whether our location and degree lookups should be lists or
     # dictionaries
     if len(comp) < len(graph) or isinstance(graph, DictGraph):
         # degree lookup
@@ -122,10 +122,10 @@ def ldo_setup(graph, comp):
     return bins, bin_starts, degrees, location
 
 def dtf_step(graph, dist, comp=None):
-    """ 
-    Computes the d-th dtf-augmentation from a graph 
+    """
+    Computes the d-th dtf-augmentation from a graph
     (where d is provided by the argument dist). The input graph
-    must be a (d-1)-th dtf-augmentation. See dtf() for usage. 
+    must be a (d-1)-th dtf-augmentation. See dtf() for usage.
     This function adds arcs to graph.
     """
 
@@ -145,8 +145,8 @@ def dtf_step(graph, dist, comp=None):
             graph.add_arc(x,y, dist)
             trans_pairs += 1
     print("added {} transitive edges".format(trans_pairs))
-    # pick out the fraternal pairs from v and store them.  We do this after adding 
-    # transitive edges to guarantee that no fraternal edge conflicts with a transitive 
+    # pick out the fraternal pairs from v and store them.  We do this after adding
+    # transitive edges to guarantee that no fraternal edge conflicts with a transitive
     # edge
     for v in nodes:
         for x, y in graph.fraternal_pairs(v, dist):
@@ -193,9 +193,9 @@ def dtf(graph, radius, comp=None):
         d += 1
 
 def compute_domset(graph,radius,comp=None):
-    """ Compute a d-dominating set using Dvorak's approximation algorithm 
+    """ Compute a d-dominating set using Dvorak's approximation algorithm
         for dtf-graphs (see `Structural Sparseness and Complex Networks').
-        graph needs a distance-d dtf augmentation (see rdomset() for usage). """    
+        graph needs a distance-d dtf augmentation (see rdomset() for usage). """
     domset = set()
     infinity = float('inf')
     # minimum distance to a dominating vertex, obviously infinite at start
@@ -246,9 +246,9 @@ def compute_domset(graph,radius,comp=None):
 
 def assign_to_dominators(graph, domset, radius, comp=None):
     """
-    Computes for each vertex the subset of domset that dominates it at 
-    distance radius.  Returns a double level dictionary that maps vertices in 
-    the original graph to integers 0 to radius to sets of vertices that 
+    Computes for each vertex the subset of domset that dominates it at
+    distance radius.  Returns a double level dictionary that maps vertices in
+    the original graph to integers 0 to radius to sets of vertices that
     dominate at that distance
     """
     dominated_at_radius = defaultdict(lambda: defaultdict(set))
@@ -293,13 +293,10 @@ def assign_to_dominators(graph, domset, radius, comp=None):
     return dominated_at_radius
 
 def domination_graph(graph, domset, radius, comp=None):
-    """ 
-        Builds up a 'domination graph' by assigning each vertex to 
+    """
+        Builds up a 'domination graph' by assigning each vertex to
         its closest dominators. These dominators will be connected in the
         final graph.
-        Precondition:
-            The keys of dominated_at_radius are exactly one connected 
-            component of graph
     """
     print("assigning to dominators")
     dominated_at_radius = assign_to_dominators(graph, domset, radius, comp)
@@ -307,81 +304,30 @@ def domination_graph(graph, domset, radius, comp=None):
 
     print("computing dominating edges")
     # dictionary mapping vertices from the graph to closest dominators to it
-    closest_dominators = {v:list() for v in dominated_at_radius}
+    closest_dominators = {}#v:list() for v in dominated_at_radius}
     # the keys of dominators should all belong to the same component, so this
     # should implicitly only operate on the vertices we care about
     for v in dominated_at_radius:
         # Find the domset vertices closest to v
         sorted_doms = [dominated_at_radius[v][r] for r in range(radius+1) if len(dominated_at_radius[v][r])>0]
-        # sorted_doms[0] contains the closest dominators (we don't care about 
+        # sorted_doms[0] contains the closest dominators (we don't care about
         # what radius it is at)
         closest = sorted_doms[0]
         # Assign each of those closest dominating nodes to v
-        for x in closest:
-            closest_dominators[v].append(x)
-        # all closest dominating nodes should form a clique, since they 
-        # optimally dominate a common vertex (namely, v)
-        for x,y in itertools.combinations(closest,2):
-            domgraph.add_arc(x,y)
-            domgraph.add_arc(y,x)
-    # all adjacent vertices in the dominating set should also be adjacent in 
-    # the dominating graph.  If two dominators are adjacent, they probably 
-    # optimally a common vertex and are already connected anyway, but we want 
-    # to make sure we get all of them
+        #for x in closest:
+        #    closest_dominators[v].append(x)
+        closest_dominators[v] = frozenset(closest)
+
+    # Two vertices in the dominating graph should be adjacent if they optimally dominate a common vertex.  Note that this only includes dominators with odd length paths between them because even length paths have no midpoint that would be dominated at the same distance from both directions.  So we need to expand our criteria to include dominators that optimally dominate neighbors at the same distance.  Since the endpoints of each edge have to be optimally dominated at the same radius or at radii that differ by 1, it is sufficient to loop through all edges of the original graph and turn the set of dominators into a clique.  This will also catch and connect the dominators that were themselves adjacent in the original graph.
     for v in domset:
-        adj_doms = dominated_at_radius[v][1]
-        for u in adj_doms:
-            domgraph.add_arc(u,v)
-            domgraph.add_arc(v,u)
-
-    print("Make the domset connected")
-    # ensure domgraph is connected
-    make_connected(domgraph, domset, closest_dominators, graph)
-
+        for u in graph.in_neighbors(v,1):
+            combined_dominators = closest_dominators[v] | closest_dominators[u]
+            for x,y in itertools.combinations(combined_dominators,2):
+                domgraph.add_arc(x,y)
+                domgraph.add_arc(y,x)
     return domgraph, closest_dominators
-
-def make_connected(domgraph, domset, closest_dominators, graph):
-    """
-    Makes a domination graph connected.  If it isn't already connected, we 
-    need to start adding edges between components that have vertices u and v 
-    respectively such that uv is an edge in graph.  Note that this will only 
-    occur if u and v are optimally dominated by x and y respectively at the 
-    same distance.
-    """
-    # map vertices to indices of components
-    print("\tComputing components")
-    dom_components = component_index(domgraph)
-    num_comps = len(set([dom_components[v] for v in domset]))
-    # don't do anything it it's already connected!
-    if num_comps == 1:
-        return
-    # find the components the non-dominating vertices' dominators belong to
-    print("\tComputing components for nondominators")
-    nondom_components = {}
-    for u in closest_dominators.keys():
-        # since all of u's dominators are in the same component, we can pick 
-        # an arbitrary one to look up
-        nondom_components[u] = dom_components[closest_dominators[u][0]]
-
-    print("\tfinding arcs that bridge components")
-    # look at arcs in graph and determine whether they bridge components
-    for u in closest_dominators.keys():
-        # the domset vertices optimally dominate their neighbors, so they 
-        # can't help us merge components
-        if u in domset:
-            continue
-        for v in graph.in_neighbors(u,1):
-            # if this edge bridges components, connect all the optimal 
-            # dominators
-            if nondom_components[u] != nondom_components[v]:
-                for x in closest_dominators[u]:
-                    for y in closest_dominators[v]:
-                        domgraph.add_arc(x,y)
-                        domgraph.add_arc(y,x)
 
 def rdomset(graph, radius, comp=None):
     dtf(graph, radius, comp)
     domset = compute_domset(graph, radius, comp)
     return domset
-
-
