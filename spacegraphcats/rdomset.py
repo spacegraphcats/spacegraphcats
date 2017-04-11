@@ -216,7 +216,7 @@ def compute_domset(graph,radius,comp=None):
         nodes = comp
 
     # Sort the vertices by indegree so we take fewer vertices
-    order = sorted([v for v in nodes], key=lambda x:graph.in_degree(x))
+    order = sorted([v for v in nodes], key=lambda x:graph.in_degree(x), reverse=True)
     # vprops = [(v,graph.in_degree(v)) for v in nodes]
     # vprops.sort(key=itemgetter(1),reverse=False)
     # order = map(itemgetter(0),vprops)
@@ -239,8 +239,7 @@ def compute_domset(graph,radius,comp=None):
         for r in range(1, graph.radius + 1):
             for u in graph.in_neighbors(v, r):
                 domcounter[u] += 1
-                if r < domdistance[u]:
-                    domdistance[u] = r
+                domdistance[u] = min(domdistance[u], r)
                 if domcounter[u] > c and u not in domset:
                     # add u to domset
                     domset.add(u)
@@ -312,26 +311,42 @@ def domination_graph(graph, domset, radius, comp=None):
     print("computing dominating edges")
     # dictionary mapping vertices from the graph to closest dominators to it
     closest_dominators = {}#v:list() for v in dominated_at_radius}
+    domdistance = {v:0 for v in dominated_at_radius}
     # the keys of dominators should all belong to the same component, so this
     # should implicitly only operate on the vertices we care about
     for v in dominated_at_radius:
         # Find the domset vertices closest to v
-        sorted_doms = [dominated_at_radius[v][r] for r in range(radius+1) if len(dominated_at_radius[v][r])>0]
-        # sorted_doms[0] contains the closest dominators (we don't care about
-        # what radius it is at)
-        closest = sorted_doms[0]
-        # Assign each of those closest dominating nodes to v
-        #for x in closest:
-        #    closest_dominators[v].append(x)
-        closest_dominators[v] = frozenset(closest)
-
-    # Two vertices in the dominating graph should be adjacent if they optimally dominate a common vertex.  Note that this only includes dominators with odd length paths between them because even length paths have no midpoint that would be dominated at the same distance from both directions.  So we need to expand our criteria to include dominators that optimally dominate neighbors at the same distance.  Since the endpoints of each edge have to be optimally dominated at the same radius or at radii that differ by 1, it is sufficient to loop through all edges of the original graph and turn the set of dominators into a clique.  This will also catch and connect the dominators that were themselves adjacent in the original graph.
-    for v in domset:
-        for u in graph.in_neighbors(v,1):
-            combined_dominators = closest_dominators[v] | closest_dominators[u]
-            for x,y in itertools.combinations(combined_dominators,2):
+        for r in range(radius+1):
+            if len(dominated_at_radius[v][r]) > 0:
+                domdistance[v] = r
+                closest_dominators[v] = frozenset(dominated_at_radius[v][r])
+                break
+        # because they all dominate v, the closest dominators should form a clique
+        for x in closest_dominators[v]:
+            nonneighbors = closest_dominators[v] - \
+                            domgraph.in_neighbors(x, 1) - \
+                            set([x])
+            for y in nonneighbors:
                 domgraph.add_arc(x,y)
                 domgraph.add_arc(y,x)
+    print("Added edges between odd length optimal domination")
+    # Two vertices in the dominating graph should be adjacent if they optimally dominate a common vertex.  Note that this only includes dominators with odd length paths between them because even length paths have no midpoint that would be dominated at the same distance from both directions.  So we need to expand our criteria to include dominators that optimally dominate neighbors at the same distance.  Since the endpoints of each edge have to be optimally dominated at the same radius or at radii that differ by 1, it is sufficient to loop through all edges of the original graph and turn the set of dominators into a clique.  This will also catch and connect the dominators that were themselves adjacent in the original graph.
+    for v in graph:
+        for u in graph.in_neighbors(v,1):
+            if domdistance[u] != domdistance[v]:
+                continue
+            # since the edges within closest_dominators have been added above,
+            # we only need to look at the symmetric difference
+            difference = closest_dominators[u] ^ closest_dominators[v]
+            for x in difference:
+                nonneighbors = difference - \
+                                domgraph.in_neighbors(x,1) - \
+                                set([x])
+                for y in nonneighbors:
+                    domgraph.add_arc(x,y)
+                    domgraph.add_arc(y,x)
+
+    print("Added edges between even length optimal domination")
     return domgraph, closest_dominators
 
 def rdomset(graph, radius, comp=None):
