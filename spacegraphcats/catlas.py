@@ -12,7 +12,7 @@ class CAtlas:
     def __init__(self, idx, vertex, level, children):
         """
         Arguments:
-            idx:  Integer identifier of the node.  A CAtlas with n nodes will 
+            idx:  Integer identifier of the node.  A CAtlas with n nodes will
                   have ids 0,1,...,n-1
             vertex:  Name of vertex in the cDBG
             level:  The height of the node in the hierarchy.  The leaves are at
@@ -38,14 +38,14 @@ class CAtlas:
                 len(comp)))
             top_level = CAtlas._build_component(graph, comp, radius, idx)
             component_top_level.append(top_level)
-            # adjust the node index so we don't get overlapping indices in 
-            # different components.  This assumes that the parent node indices 
+            # adjust the node index so we don't get overlapping indices in
+            # different components.  This assumes that the parent node indices
             # always exceed that of their children.
             idx = max(node.idx for node in top_level)+1
 
         # make a root node
         root_children = list(itertools.chain(*component_top_level))
-        # pick a root vertex arbitrarily. 
+        # pick a root vertex arbitrarily.
         root_vertex = root_children[0].vertex
         root_level = max(node.level for node in root_children)
         return CAtlas(idx, root_vertex, root_level, root_children)
@@ -58,17 +58,17 @@ class CAtlas:
         # find the dominating set
         curr_domset = rdomset(graph, radius, comp)
         # create a dominating graph
-        curr_domgraph, closest_dominators = domination_graph(graph, 
+        curr_domgraph, closest_dominators = domination_graph(graph,
             curr_domset, radius, comp)
         # create Catlas nodes for the first domgraph
         idx = min_id
-        curr_nodes = {v:CAtlas(idx+i, v, 0, []) for i,v in 
+        curr_nodes = {v:CAtlas(idx+i, v, 0, []) for i,v in
                         enumerate(curr_domset)}
 
         idx += len(curr_domset)
 
         level = 1
-        # keep creating progressively smaller graphs until we hit the level 
+        # keep creating progressively smaller graphs until we hit the level
         # threshold
         print("Catlas level 1 complete\r", end="")
         while True:
@@ -77,10 +77,10 @@ class CAtlas:
             next_domgraph, closest_dominators = domination_graph(curr_domgraph,
                                                  next_domset, 1, curr_domset)
 
-            # closest_dominators indicates the domset vertices that dominate 
+            # closest_dominators indicates the domset vertices that dominate
             # each vertex.
             # v dominating u indicates that u will be a child of v
-            # we have the assignment from vertices to dominators, make the 
+            # we have the assignment from vertices to dominators, make the
             # reverse
             dominated = {v:list() for v in next_domset}
             for u, doms in closest_dominators.items():
@@ -98,8 +98,8 @@ class CAtlas:
             # quit if our level is sufficiently small
             if len(next_domgraph) <= CAtlas.LEVEL_THRESHOLD:
 
-                return list(curr_nodes.values())
-            
+                return list(next_nodes.values())
+
             # otherwise prep for the next iteration
             curr_domgraph = next_domgraph
             curr_domset = next_domset
@@ -111,8 +111,8 @@ class CAtlas:
         """
         Find the descendants of this node with no children.
         """
-        # this function is recursive so we need to keep track of nodes we 
-        # already visited 
+        # this function is recursive so we need to keep track of nodes we
+        # already visited
         if visited is None:
             visited = set([self])
         # base case is level 0
@@ -130,7 +130,7 @@ class CAtlas:
         """
         Write the connectivity of the CAtlas to file
         """
-        # doesn't matter how we traverse the graph, so we use DFS for ease of 
+        # doesn't matter how we traverse the graph, so we use DFS for ease of
         # implementation
         stack = [self]
         seen = set()
@@ -140,8 +140,8 @@ class CAtlas:
             # write node information
             child_str = " ".join(str(child.idx) for child in curr.children)
             outfile.write("{},{},{},{}\n".format(curr.idx,
-                                                 curr.vertex, 
-                                                 curr.level, 
+                                                 curr.vertex,
+                                                 curr.level,
                                                  child_str))
             # all nodes already seen don't get re-added
             seen.add(curr)
