@@ -25,87 +25,82 @@ class CAtlas:
         self.level = level
 
     @staticmethod
-    def build(graph, radius):
+    def build(graph, radius, domfile):
         """
         Build a CAtlas at a given radius
         """
-        # each component will have a separate hierarchy to be merged at the end
-        component_top_level = []
-        idx = 0 # start index of the component
-        print("computing components")
-        for comp in components(graph):
-            print("building catlas for a component with {} vertices".format(
-                len(comp)))
-            top_level = CAtlas._build_component(graph, comp, radius, idx)
-            component_top_level.append(top_level)
-            # adjust the node index so we don't get overlapping indices in
-            # different components.  This assumes that the parent node indices
-            # always exceed that of their children.
-            idx = max(node.idx for node in top_level)+1
-
-        # make a root node
-        root_children = list(itertools.chain(*component_top_level))
-        # pick a root vertex arbitrarily.
-        root_vertex = root_children[0].vertex
-        root_level = max(node.level for node in root_children)
-        return CAtlas(idx, root_vertex, root_level, root_children)
-
-    @staticmethod
-    def _build_component(graph, comp, radius, min_id):
-        """
-        Build catlas nodes for one component of the graph
-        """
-        # find the dominating set
-        curr_domset = rdomset(graph, radius, comp)
-        # create a dominating graph
-        curr_domgraph, closest_dominators = domination_graph(graph,
-            curr_domset, radius, comp)
-        # create Catlas nodes for the first domgraph
-        idx = min_id
-        curr_nodes = {v:CAtlas(idx+i, v, 0, []) for i,v in
-                        enumerate(curr_domset)}
-
-        idx += len(curr_domset)
-
-        level = 1
+        # set up values for the base level
+        curr_graph = graph
+        prev_nodes = None
+        level = 0
+        idx = 0
         # keep creating progressively smaller graphs until we hit the level
-        # threshold
-        print("Catlas level 1 complete\r", end="")
+        # threshold or steady state
         while True:
-            # find the domgraph of the current domgraph
-            next_domset = rdomset(curr_domgraph, 1, curr_domset)
-            next_domgraph, closest_dominators = domination_graph(curr_domgraph,
-                                                 next_domset, 1, curr_domset)
+            # the base level should have a large radius, others are just 1
+            if level == 0:
+                r = radius
+            else:
+                r = 1
+            # build the current level
+            nodes, domgraph, dominated = CAtlas._build_level(curr_graph, r, level, idx, prev_nodes)
 
-            # closest_dominators indicates the domset vertices that dominate
-            # each vertex.
-            # v dominating u indicates that u will be a child of v
-            # we have the assignment from vertices to dominators, make the
-            # reverse
-            dominated = {v:list() for v in next_domset}
-            for u, doms in closest_dominators.items():
-                for v in doms:
-                    dominated[v].append(u)
+            # adjust counters
+            idx += len(nodes)
+            level += 1
 
-            # create the CAtlas nodes for the next level
-            next_nodes = {}
-            for v in next_domset:
-                children = [curr_nodes[u] for u in dominated[v]]
-                next_nodes[v] = CAtlas(idx, v, level, children)
+            print("Catlas level {} complete".format(level))
 
-            print("Catlas level {} complete\r".format(level), end="")
+            # at the bottom level we need to write out the domination assignment
+            if level == 0:
+                for v, shadow in dominated.items():
+                    domstr = str(v)
+                    for u in shadow:
+                        domstr += " {}".format(u)
+                    domstr += "\n"
+                    domfile.write(domstr)
 
             # quit if our level is sufficiently small
-            if len(next_domgraph) <= CAtlas.LEVEL_THRESHOLD:
-
-                return list(next_nodes.values())
+            if len(domgraph) <= CAtlas.LEVEL_THRESHOLD or \
+                len(domgraph) == len(curr_graph):
+                break
 
             # otherwise prep for the next iteration
-            curr_domgraph = next_domgraph
-            curr_domset = next_domset
-            curr_nodes = next_nodes
-            level += 1
-        print("\n")
+            curr_graph = domgraph
+            prev_nodes = nodes
+        # create a single root over the top level
+        root_children = list(nodes.values())
+        root_vertex = root_children[0].vertex
+        return CAtlas(idx, root_vertex, level, root_children)
+
+    @staticmethod
+    def _build_level(graph, radius, level, min_id=0, prev_nodes=None):
+        # find the domgraph of the current domgraph
+        domset = rdomset(graph, radius)
+        domgraph, closest_dominators = domination_graph(graph, domset, radius)
+
+        # closest_dominators indicates the domset vertices that dominate
+        # each vertex.
+        # v dominating u indicates that u will be a child of v
+        # we have the assignment from vertices to dominators, make the
+        # reverse
+        dominated = {v:list() for v in domset}
+        for u, doms in closest_dominators.items():
+            for v in doms:
+                dominated[v].append(u)
+
+        # create the CAtlas nodes
+        nodes = {}
+        for idx, v in enumerate(domset):
+            # if no previous nodes were supplied, we assume we are on the
+            # bottom level and thus the children field is empty
+            if prev_nodes is None:
+                children = []
+            else:
+                children = [prev_nodes[u] for u in dominated[v]]
+            nodes[v] = CAtlas(min_id+idx, v, level, children)
+
+        return nodes, domgraph, dominated
 
     def leaves(self, visited=None):
         """
@@ -147,22 +142,22 @@ class CAtlas:
             seen.add(curr)
             stack.extend(filter(lambda x:x not in seen, curr.children))
 
-
 def main(args):
     r = args.radius
     print("reading graph")
     G = read_from_gxt(args.input, r, False)
     print("reading complete")
     print("building catlas")
-    cat = CAtlas.build(G, r)
+    cat = CAtlas.build(G, r, args.domfile)
     print("writing graph")
-    cat.write(args.output)
+    cat.write(args.catlas)
 
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="Input gxt file",type=argparse.FileType('r'))
-    parser.add_argument("output", help="Output catlas file",type=argparse.FileType('w'))
+    parser.add_argument("catlas", help="Output catlas file",type=argparse.FileType('w'))
+    parser.add_argument("domfile", help="file to write base domination set", type=argparse.FileType('w'))
     parser.add_argument("radius", help="Catlas radius",type=int)
     args = parser.parse_args()
     cProfile.run("main(args)")
