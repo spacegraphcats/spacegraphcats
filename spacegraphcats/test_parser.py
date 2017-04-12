@@ -10,10 +10,12 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 class ParserTest(unittest.TestCase):
     def test_graph_parsing(self):
         num_vertices = []
+
         def create_vertices(n):
             num_vertices.append(n)
 
         all_edges = []
+
         def collect_edge(src, dest):
             all_edges.append((src, dest))
 
@@ -21,7 +23,7 @@ class ParserTest(unittest.TestCase):
             id_map = parser.parse(f, create_vertices, collect_edge)
 
         self.assertEqual(num_vertices, [3])
-        self.assertEqual(all_edges, ([(0,1),(1,2)]))
+        self.assertEqual(all_edges, ([(0, 1), (1, 2)]))
 
     def test_graph_writing(self):
         output = StringIO()
@@ -40,7 +42,8 @@ class ParserTest(unittest.TestCase):
             parser.parse_minhash(f, collect_minhashes)
 
         self.assertEqual(minhashes, {
-            0: [14891351629450783567, 8602412685556304666, 15005322196398795210],
+            0: [14891351629450783567, 8602412685556304666,
+                15005322196398795210],
             2: [17662871537941316484]
         })
 

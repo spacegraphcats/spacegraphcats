@@ -1,32 +1,41 @@
+"""Graph data structure."""
 import itertools
 from collections import defaultdict
 
+
 class Graph(object):
     """
-    Graph data structure.  Undirected edges are represented by bidirectional
-     directed arcs
+    Graph data structure.
+
+    Undirected edges are represented by bidirectional directed arcs
     """
+
     def __init__(self, num_nodes, radius=1):
+        """Create a new graph."""
         self.num_nodes = num_nodes
         self.radius = radius
         # lookup the neighbors of a vertex with a given weight
-        self.inarcs_by_weight = [[set() for i in range(self.num_nodes)] 
-                                  for j in range(self.radius)]
+        self.inarcs_by_weight = [[set() for i in range(self.num_nodes)]
+                                 for j in range(self.radius)]
 
     def __iter__(self):
+        """Iteration support."""
         return iter(range(self.num_nodes))
 
     def __len__(self):
+        """len() support."""
         return self.num_nodes
 
     def add_arc(self, u, v, weight=1):
+        """Add the arc u,v at a given weight."""
         # use weight-1 for 0 indexing
         self.inarcs_by_weight[weight-1][v].add(u)
         return self
 
     def remove_arc(self, u, v):
         """
-        remove arc uv from the graph
+        Remove arc uv from the graph.
+
         Precondition/assumption:  arc uv has a unique weight
         """
         for arc_list in self.inarcs_by_weight:
@@ -36,86 +45,90 @@ class Graph(object):
         return self
 
     def adjacent(self, u, v):
-        """
-        check if uv or vu is an arc
-        """
+        """Check if uv or vu is an arc."""
         for arc_list in self.inarcs_by_weight:
             if u in arc_list[v] or v in arc_list[u]:
                 return True
         return False
 
-    def arcs(self,weight=None):
+    def arcs(self, weight=None):
         """
-        return all the arcs in the graph.  restrict to a given weight when provided
+        Return all the arcs in the graph.
+
+        Restrict to a given weight when provided
         """
         if weight is None:
-            return [(y,x,w+1) 
-                    for w,arc_list in enumerate(self.inarcs_by_weight) 
-                    for x,N in enumerate(arc_list)
+            return [(y, x, w+1)
+                    for w, arc_list in enumerate(self.inarcs_by_weight)
+                    for x, N in enumerate(arc_list)
                     for y in N]
         else:
-            return [(y,x) 
-                    for x,N in enumerate(self.inarcs_by_weight[weight-1]) 
+            return [(y, x)
+                    for x, N in enumerate(self.inarcs_by_weight[weight-1])
                     for y in N]
 
     def in_neighbors(self, v, weight=None):
+        """Return the inneighbors at a vertex."""
         if weight is None:
-            #return self.inarcs[v].items()
-            return [(u,w+1) 
-                    for w,arc_list in enumerate(self.inarcs_by_weight) 
+            # return self.inarcs[v].items()
+            return [(u, w+1)
+                    for w, arc_list in enumerate(self.inarcs_by_weight)
                     for u in arc_list[v]]
         else:
             return self.inarcs_by_weight[weight-1][v]
 
     def in_degree(self, v, weight=None):
+        """Return the number of in neighbors."""
         if weight is None:
             return sum(len(x[v]) for x in self.inarcs_by_weight)
         else:
             return len(self.inarcs_by_weight[weight-1][v])
 
     def num_arcs(self, weight=None):
+        """Return the total number of arcs in this graph."""
         return sum(self.in_degree(v, weight) for v in self)
 
     def transitive_pairs(self, u, w):
-        """
-        Returns transitive pairs (x,u) whose weight sum is exactly w
-        """
+        """Return transitive pairs (x,u) whose weight sum is exactly w."""
         # loop over all weights that sum to w
         for wy in range(1, w):
             wx = w-wy
-            for y in self.in_neighbors(u,wy):
-                #assert y != u
+            for y in self.in_neighbors(u, wy):
+                # assert y != u
                 for x in self.in_neighbors(y, wx):
-                    # need to double check that the x,u edges isn't there 
+                    # need to double check that the x,u edges isn't there
                     # already
                     if x != u and not self.adjacent(x, u):
                         yield x, u
 
-
-    def fraternal_pairs(self,u,w):
+    def fraternal_pairs(self, u, w):
         """
-        Returns fraternal pairs of in_neighbors of u (x,y) whose weight sum is
+        Return fraternal pairs of in_neighbors of u (x,y) whose weight sum is
         exactly w.  (x,y) are fraternal if they are not adjacent.
         """
-        # It is sufficient to consider pairs whose weights are 1,w-1.  When w 
-        # > 2, 1 and w-1 are distinct and their neighborhoods are thus 
+        # It is sufficient to consider pairs whose weights are 1,w-1.  When w
+        # > 2, 1 and w-1 are distinct and their neighborhoods are thus
         # disjoint.  When w == 2, we need to ignore pairs of the form (x,x)
         if w == 2:
-            inbs = self.in_neighbors(u,1)
+            inbs = self.in_neighbors(u, 1)
             for x, y in itertools.combinations(inbs, 2):
                 assert x != u and y != u
-                if not self.adjacent(y,x):
+                if not self.adjacent(y, x):
                     yield x, y
         else:
-            for x in self.in_neighbors(u,1):
-                #assert x != u
-                for y in self.in_neighbors(u,w-1):
-                    #assert y != u
-                    if not self.adjacent(y,x):
+            for x in self.in_neighbors(u, 1):
+                # assert x != u
+                for y in self.in_neighbors(u, w-1):
+                    # assert y != u
+                    if not self.adjacent(y, x):
                         yield x, y
 
+
 class DictGraph(Graph):
+    """Graph that supports nonconsecutive vertex ids."""
+
     def __init__(self, nodes=None, r=1):
+        """Make a new graph."""
         if nodes is None:
             self.nodes = set()
         else:
@@ -124,24 +137,28 @@ class DictGraph(Graph):
         self.inarcs_by_weight = [defaultdict(set) for _ in range(self.radius)]
 
     def __len__(self):
+        """len() support."""
         return len(self.nodes)
 
     def __iter__(self):
+        """Iteration support."""
         return iter(self.nodes)
 
-    def add_node(self,u):
+    def add_node(self, u):
+        """Add a new node."""
         self.nodes.add(u)
 
-    def arcs(self,weight=None):
+    def arcs(self, weight=None):
         """
-        return all the arcs in the graph.  restrict to a given weight when 
-        provided
+        Return all the arcs in the graph.
+
+        restrict to a given weight when provided
         """
         if weight:
-            return [(x,y) for x,N in self.inarcs_by_weight[weight-1].items() 
+            return [(x, y) for x, N in self.inarcs_by_weight[weight-1].items()
                     for y in N]
         else:
-            return [(x,y,w+1) for w,arc_list in 
-                    enumerate(self.inarcs_by_weight) 
-                for x,N in arc_list.items()
-                for y in N]
+            return [(x, y, w+1) for w, arc_list in
+                    enumerate(self.inarcs_by_weight)
+                    for x, N in arc_list.items()
+                    for y in N]

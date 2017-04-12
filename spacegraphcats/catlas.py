@@ -1,16 +1,20 @@
-import itertools
-import sys
+"""Data structure for CAtlas."""
+
 import argparse
-import cProfile, pstats
+import cProfile
 from spacegraphcats.rdomset import rdomset, domination_graph
 from spacegraphcats.graph_io import read_from_gxt
-from spacegraphcats.components import components
 
 
 class CAtlas:
+    """Hierarchical atlas for querying graphs."""
+
     LEVEL_THRESHOLD = 10
+
     def __init__(self, idx, vertex, level, children):
         """
+        Construct a CAtlas node.
+
         Arguments:
             idx:  Integer identifier of the node.  A CAtlas with n nodes will
                   have ids 0,1,...,n-1
@@ -26,9 +30,7 @@ class CAtlas:
 
     @staticmethod
     def build(graph, radius, domfile):
-        """
-        Build a CAtlas at a given radius
-        """
+        """Build a CAtlas at a given radius."""
         # set up values for the base level
         curr_graph = graph
         prev_nodes = None
@@ -43,7 +45,9 @@ class CAtlas:
             else:
                 r = 1
             # build the current level
-            nodes, domgraph, dominated = CAtlas._build_level(curr_graph, r, level, idx, prev_nodes)
+            nodes, domgraph, dominated = CAtlas._build_level(curr_graph, r,
+                                                             level, idx,
+                                                             prev_nodes)
 
             # adjust counters
             idx += len(nodes)
@@ -51,7 +55,8 @@ class CAtlas:
 
             print("Catlas level {} complete".format(level))
 
-            # at the bottom level we need to write out the domination assignment
+            # at the bottom level we need to write out the domination
+            # assignment
             if level == 0:
                 for v, shadow in dominated.items():
                     domstr = str(v)
@@ -62,7 +67,7 @@ class CAtlas:
 
             # quit if our level is sufficiently small
             if len(domgraph) <= CAtlas.LEVEL_THRESHOLD or \
-                len(domgraph) == len(curr_graph):
+                    len(domgraph) == len(curr_graph):
                 break
 
             # otherwise prep for the next iteration
@@ -84,7 +89,7 @@ class CAtlas:
         # v dominating u indicates that u will be a child of v
         # we have the assignment from vertices to dominators, make the
         # reverse
-        dominated = {v:list() for v in domset}
+        dominated = {v: list() for v in domset}
         for u, doms in closest_dominators.items():
             for v in doms:
                 dominated[v].append(u)
@@ -103,9 +108,7 @@ class CAtlas:
         return nodes, domgraph, dominated
 
     def leaves(self, visited=None):
-        """
-        Find the descendants of this node with no children.
-        """
+        """Find the descendants of this node with no children."""
         # this function is recursive so we need to keep track of nodes we
         # already visited
         if visited is None:
@@ -122,9 +125,7 @@ class CAtlas:
         return res
 
     def write(self, outfile):
-        """
-        Write the connectivity of the CAtlas to file
-        """
+        """Write the connectivity of the CAtlas to file."""
         # doesn't matter how we traverse the graph, so we use DFS for ease of
         # implementation
         stack = [self]
@@ -140,9 +141,11 @@ class CAtlas:
                                                  child_str))
             # all nodes already seen don't get re-added
             seen.add(curr)
-            stack.extend(filter(lambda x:x not in seen, curr.children))
+            stack.extend(filter(lambda x: x not in seen, curr.children))
+
 
 def main(args):
+    """Build a CAtlas for the provided input graph."""
     r = args.radius
     print("reading graph")
     G = read_from_gxt(args.input, r, False)
@@ -153,11 +156,14 @@ def main(args):
     cat.write(args.catlas)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", help="Input gxt file",type=argparse.FileType('r'))
-    parser.add_argument("catlas", help="Output catlas file",type=argparse.FileType('w'))
-    parser.add_argument("domfile", help="file to write base domination set", type=argparse.FileType('w'))
-    parser.add_argument("radius", help="Catlas radius",type=int)
+    parser.add_argument("input", help="Input gxt file",
+                        type=argparse.FileType('r'))
+    parser.add_argument("catlas", help="Output catlas file",
+                        type=argparse.FileType('w'))
+    parser.add_argument("domfile", help="file to write base domination set",
+                        type=argparse.FileType('w'))
+    parser.add_argument("radius", help="Catlas radius", type=int)
     args = parser.parse_args()
     cProfile.run("main(args)")

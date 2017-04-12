@@ -1,9 +1,12 @@
+"""Convert graph with nonconsecutive ids to have consecutive ids."""
 import sys
 
 from old.spacegraphcats.graph_parser import parse
 from spacegraphcats.graph_parser import write
 
+
 def main():
+    """Apply to graph."""
     edges = []
     num_vertices = 0
 

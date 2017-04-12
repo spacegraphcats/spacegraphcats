@@ -7,9 +7,9 @@ def _parse_line(line: str, split_on=' ') -> List[int]:
     return list(map(int, map(str.strip, line.split(split_on))))
 
 
-def parse(graph_file, create_vertices: Callable[[int], None] = None, add_edge: Callable[[int, int], None] = None):
+def parse(graph_file, create_vertices: Callable[[int], None] = None,
+          add_edge: Callable[[int, int], None] = None):
     """Parse a graph and call provided methods with vertices and edges."""
-    
     # read vertices
     num_vertices = int(graph_file.readline().strip())
 
@@ -31,6 +31,7 @@ def parse_minhash(minhash_file, add_minhash: Callable[[int, List[int]], None]):
             continue
         parsed = _parse_line(line)
         add_minhash(parsed[0], parsed[1:])
+
 
 def write(graph_file, num_vertices: int, edges: List[Tuple[int, int]]):
     """Write an edgelist into an .ext file."""

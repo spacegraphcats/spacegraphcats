@@ -1,9 +1,9 @@
 import unittest
-import os
 from io import StringIO
 
 from spacegraphcats.graph_io import read_from_gxt, write_to_gxt
 from spacegraphcats.graph import Graph
+
 
 class IOTest(unittest.TestCase):
     def test_writing_and_reading(self):
@@ -33,6 +33,7 @@ class IOTest(unittest.TestCase):
 
         self.assertEqual(parsed.arcs(), graph.arcs())
         self.assertEqual(len(parsed), len(graph))
+
 
 if __name__ == '__main__':
     unittest.main()
