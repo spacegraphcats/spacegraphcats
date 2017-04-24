@@ -50,9 +50,6 @@ class CAtlas:
                                                              prev_nodes)
 
             # adjust counters
-            idx += len(nodes)
-            level += 1
-
             print("Catlas level {} complete".format(level))
 
             # at the bottom level we need to write out the domination
@@ -64,6 +61,9 @@ class CAtlas:
                         domstr += " {}".format(u)
                     domstr += "\n"
                     domfile.write(domstr)
+
+            idx += len(nodes)
+            level += 1
 
             # quit if our level is sufficiently small
             if len(domgraph) <= CAtlas.LEVEL_THRESHOLD or \
