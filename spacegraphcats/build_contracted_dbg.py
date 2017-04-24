@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 import argparse
-from walk_dbg import run
+from .walk_dbg import run
 
 # graph settings
 DEFAULT_KSIZE = 31
