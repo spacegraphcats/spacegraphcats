@@ -66,8 +66,9 @@ def merge_nodes(child_dict, child_node_list):
     minlist = []
 
     for graph_node in child_node_list:
-        mins = child_dict[graph_node]
-        minlist.extend(mins)
+        if graph_node in child_dict:
+            mins = child_dict[graph_node]
+            minlist.extend(mins)
 
     # merge into a single minhash!
     merged_mh = MinHash(0, MINHASH_K,
@@ -131,6 +132,19 @@ def main():
     sbt_name = os.path.basename(args.catlas_prefix)
     tree.save(sbt_name)
     print('saved sbt "{}"'.format(sbt_name))
+
+    xxx_mh = MinHash(0, MINHASH_K,
+                        max_hash=round(sourmash_lib.MAX_HASH / SCALED))
+    n = 0
+    for minlist in graph_minhashes.values():
+        for hash in minlist:
+            xxx_mh.add_hash(hash)
+        n += 1
+    print('zzz', n, len(graph_minhashes))
+
+    xx = signature.SourmashSignature('', xxx_mh, name='all')
+    with open('all.sig', 'wt') as fp:
+        signature.save_signatures([xx], fp)
 
     sys.exit(0)
 
