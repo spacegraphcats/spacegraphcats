@@ -45,10 +45,6 @@ class Pathfinder(object):
         node_id = self.node_counter
         self.node_counter += 1
 
-        #kmer = min(visited)               # identify linear nodes by min(hash)
-        #self.nodes_to_kmers[node_id] = kmer
-        #self.kmers_to_nodes[kmer] = node_id
-
         return node_id
 
     def add_adjacency(self, node_id, adj):
@@ -57,9 +53,6 @@ class Pathfinder(object):
 
         self.adjfp.write('{},{}\n'.format(node_id, adj))
         
-        #x = self.adjacencies[node_id]
-        #x.add(adj)
-
     def add_label(self, kmer, label):
         x = self.labels[kmer]
         x.add(label)

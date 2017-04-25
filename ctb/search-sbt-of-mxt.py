@@ -13,7 +13,6 @@ from sourmash_lib.sbtmh import search_minhashes, SigLeaf
 from sourmash_lib import signature
 
 
-MINHASH_SIZE=1000
 MINHASH_K=31
 
 def import_graph_mxt(mxt):

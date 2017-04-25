@@ -4,7 +4,7 @@ clean:
 	rm -fr acido
 
 acido:
-	python -m spacegraphcats.build_contracted_dbg -k 31 -M 1e9 ../data/acido.fa
+	python -m spacegraphcats.build_contracted_dbg -k 31 -M 2e9 ../data/acido.fa.gz
 	python -m spacegraphcats.catlas acido/acido.gxt acido/acido.catlas acido/acido.domgraph 1
 
 acido-sbt:
