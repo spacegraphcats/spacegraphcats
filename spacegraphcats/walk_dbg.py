@@ -84,6 +84,8 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     for kmer in v:
         mh.add_sequence(kmer)
 
+    print('XXX', len(v), len(mh.get_mins()))
+
     pathy.add_minhash(path_id, mh)
 
 
