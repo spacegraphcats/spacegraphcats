@@ -11,7 +11,7 @@ from spacegraphcats import graph_parser
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
-    def __init__(self, ksize, scaled, gxtfile, mxtfile):
+    def __init__(self, ksize, scaled, gxtfile, mxtfile, assemble=False):
         self.ksize = ksize
         self.scaled = scaled
 
@@ -22,6 +22,9 @@ class Pathfinder(object):
         self.adjacencies = defaultdict(set)  # node to node
         self.labels = defaultdict(set)       # nodes to set of labels
         self.mxtfp = open(mxtfile, 'wt')
+        self.assemblyfp = None
+        if assemble:
+            self.assemblyfp = open(gxtfile + '.contigs', 'wt')
         self.adjfp = open(gxtfile + '.adj', 'wt')
 
         self.mxtfp.write('ksize={} scaled={}\n'.format(ksize, scaled))
@@ -62,6 +65,9 @@ class Pathfinder(object):
         mins = " ".join(map(str, mh.get_mins()))
         self.mxtfp.write('{0} {1}\n'.format(path_id, mins))
 
+    def add_assembly(self, path_id, contig):
+        self.assemblyfp.write('>{}\n{}\n'.format(path_id, contig))
+
 
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     size, adj_kmers, visited = graph.traverse_linear_path(nk, degree_nodes,
@@ -86,6 +92,13 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
         mh.add_sequence(kmer)
 
     pathy.add_minhash(path_id, mh)
+
+    ###
+
+    if pathy.assemblyfp:
+        asm = khmer.LinearAssembler(graph)
+        contig = asm.assemble(nk)
+        pathy.add_assembly(path_id, contig)
 
 
 def run(args):
@@ -161,7 +174,7 @@ def run(args):
     ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(ksize, args.scaled, gxtfile, mxtfile)
+    pathy = Pathfinder(ksize, args.scaled, gxtfile, mxtfile, args.assemble)
 
     print('finding high degree nodes')
     if args.label:
@@ -189,7 +202,7 @@ def run(args):
 
     print('traversing linear segments from', len(degree_nodes), 'nodes')
 
-    # now traverse from each high degree nodes into all neighboring nodes,
+    # now traverse from each high degree node into all neighboring nodes,
     # seeking adjacencies.  if neighbor is high degree node, add it to
     # adjacencies; if neighbor is not, then traverse the linear path.  also
     # track minhashes while we're at it.
