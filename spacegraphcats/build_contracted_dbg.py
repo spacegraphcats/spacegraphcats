@@ -19,7 +19,8 @@ if __name__ == '__main__':
     p.add_argument('--force', action='store_true')
     p.add_argument('--label', action='store_true')
     p.add_argument('-l', '--loadgraph', type=str, default=None)
-    p.add_argument('--assemble', help='output assembly', action='store_true')
+    p.add_argument('--no-assemble', help='do not output assembly',
+                   action='store_true')
     args = p.parse_args()
 
     run(args)

@@ -151,7 +151,7 @@ def run(args):
     ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(ksize, args.scaled, gxtfile, args.assemble)
+    pathy = Pathfinder(ksize, args.scaled, gxtfile, not args.no_assemble)
 
     print('finding high degree nodes')
     if args.label:
