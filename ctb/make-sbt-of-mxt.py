@@ -35,7 +35,7 @@ def load_layer1_to_cdbg(catlas_file):
     "Load the mapping between first layer catlas and the original DBG nodes."
     layer1_to_cdbg = defaultdict(set)
 
-    catlas_to_cdbg = defaultdict(int)
+    catlas_to_cdbg = {}
     for line in open(catlas_file, 'rt'):
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
         if int(level) != 0:
@@ -104,6 +104,11 @@ def main():
     for v in layer1_to_cdbg.values():
         x.update(v)
     print('...corresponding to {} cDBG nodes.'.format(len(x)))
+
+    #print(layer1_to_cdbg[1100])
+    #assert(1199 in layer1_to_cdbg[1100])
+    #assert(1201 in layer1_to_cdbg[1100])
+    #assert(1514 in layer1_to_cdbg[1100])
 
     # create minhashes for catlas leaf nodes.
     leaf_minhashes = {}
