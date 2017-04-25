@@ -9,13 +9,11 @@ import os, os.path
 from spacegraphcats import graph_parser
 
 
-# minhash settings
-SCALED=100.0
-
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
-    def __init__(self, ksize, gxtfile, mxtfile):
+    def __init__(self, ksize, scaled, gxtfile, mxtfile):
         self.ksize = ksize
+        self.scaled = scaled
 
         self.node_counter = 0
         self.nodes = {}                      # node IDs (int) to size
@@ -25,6 +23,8 @@ class Pathfinder(object):
         self.labels = defaultdict(set)       # nodes to set of labels
         self.mxtfp = open(mxtfile, 'wt')
         self.adjfp = open(gxtfile + '.adj', 'wt')
+
+        self.mxtfp.write('ksize={} scaled={}\n'.format(ksize, scaled))
 
     def new_hdn(self, kmer):
         "Add a new high-degree node to the cDBG."
@@ -80,11 +80,10 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     # next, calculate minhash from visited k-mers
     v = [ khmer.reverse_hash(i, graph.ksize()) for i in visited ]
 
-    mh = MinHash(n=0, ksize=graph.ksize(), max_hash=int(MAX_HASH / SCALED))
+    mh = MinHash(n=0, ksize=graph.ksize(),
+                 max_hash=int(MAX_HASH / pathy.scaled))
     for kmer in v:
         mh.add_sequence(kmer)
-
-    print('XXX', len(v), len(mh.get_mins()))
 
     pathy.add_minhash(path_id, mh)
 
@@ -162,7 +161,7 @@ def run(args):
     ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(ksize, gxtfile, mxtfile)
+    pathy = Pathfinder(ksize, args.scaled, gxtfile, mxtfile)
 
     print('finding high degree nodes')
     if args.label:
@@ -203,7 +202,7 @@ def run(args):
 
         # add its minhash value.
         k_str = khmer.reverse_hash(k, ksize)
-        mh = MinHash(n=0, ksize=ksize, max_hash=round(MAX_HASH / SCALED))
+        mh = MinHash(n=0, ksize=ksize, max_hash=round(MAX_HASH / pathy.scaled))
         mh.add_sequence(k_str)
         pathy.add_minhash(k_id, mh)
 
