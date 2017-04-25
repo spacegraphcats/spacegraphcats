@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import sys
 import khmer
-from sourmash_lib import MinHash
+from sourmash_lib import MinHash, MAX_HASH
 import screed
 from collections import OrderedDict, defaultdict
 import os, os.path
@@ -10,8 +10,7 @@ from spacegraphcats import graph_parser
 
 
 # minhash settings
-MH_SIZE_DIVISOR = 50
-MH_MIN_SIZE = 5
+SCALED=100.0
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and MinHashes"
@@ -87,9 +86,8 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
 
     # next, calculate minhash from visited k-mers
     v = [ khmer.reverse_hash(i, graph.ksize()) for i in visited ]
-    mh_size = max(len(visited) // MH_SIZE_DIVISOR, MH_MIN_SIZE)
 
-    mh = MinHash(mh_size, graph.ksize())
+    mh = MinHash(n=0, ksize=graph.ksize(), max_hash=int(MAX_HASH / SCALED))
     for kmer in v:
         mh.add_sequence(kmer)
 
@@ -210,7 +208,7 @@ def run(args):
 
         # add its minhash value.
         k_str = khmer.reverse_hash(k, ksize)
-        mh = MinHash(1, ksize)
+        mh = MinHash(n=0, ksize=ksize, max_hash=round(MAX_HASH / SCALED))
         mh.add_sequence(k_str)
         pathy.add_minhash(k_id, mh)
 
