@@ -5,7 +5,7 @@ import gzip, glob
 from operator import itemgetter
 from os import path
 
-from spacegraphcats.graph import Graph, TFGraph, EdgeSet, VertexDict, write_gxt
+from spacegraphcats.graph import Graph, DictGraph, TFGraph, EdgeSet, VertexDict, write_gxt
 from spacegraphcats.graph_parser import parse_minhash
 from spacegraphcats.catlas import CAtlasBuilder, CAtlas
 from spacegraphcats.rdomset import LazyDomination
@@ -65,26 +65,26 @@ def load_and_compute_augg(project):
     if 0 in augs:
         auggraph = TFGraph(project.graph)
         with open(augname.format("0"), 'r') as f:
-            auggraph.add_arcs(EdgeSet.from_ext(f), 1)
+            auggraph.add_arcs(EdgeSet.from_ext(f, self.id_map), 1)
     else:
         auggraph = ldo(project.graph)
         with open(augname.format("0"), 'w') as f:
-            EdgeSet(auggraph.arcs(weight=1)).write_ext(f)
+            EdgeSet(auggraph.arcs(weight=1)).write_ext(f, self.id_map)
 
     num_arcs = auggraph.num_arcs()
     changed = True
     d = 1
     print("Augmenting", end=" ", flush=True)
-    while changed and d <= project.radius:
+    while changed and d < project.radius:
         if d in augs:
             print("({})".format(d), end=" ", flush=True)                        
             with open(augname.format(d), 'r') as f:
-                auggraph.add_arcs(EdgeSet.from_ext(f), d+1)
+                auggraph.add_arcs(EdgeSet.from_ext(f,self.id_map), d+1)
         else:
             print(d, end=" ", flush=True)            
             dtf_step(auggraph, d+1)
             with open(augname.format(d), 'w') as f:
-                EdgeSet(auggraph.arcs(weight=d+1)).write_ext(f)            
+                EdgeSet(auggraph.arcs(weight=d+1)).write_ext(f,self.id_map)            
 
         curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
         changed = num_arcs < curr_arcs
@@ -122,7 +122,7 @@ def main():
     """
 
     file = read_project_file(project.path, project.name+".gxt")
-    project.graph, project.node_attr, project.edge_attr = Graph.from_gxt(file)
+    project.graph, project.node_attr, project.edge_attr, project.id_map = TFGraph.from_gxt(file)
 
     if project.graph.has_loops():
         report("Graph contains loops. Removing loops for further processing.")
@@ -154,16 +154,25 @@ def main():
     """ Compute catlas """
 
     report("\nCatlas computation\n")
-    vsizes = dict( (v, project.node_attr[v]['size']) for v in project.graph)
-    builder = CAtlasBuilder(project.graph, vsizes, project.domination, project.minhashes)
+    #vsizes = dict( (i, project.node_attr[v]['size']) for i,v in enumerate(project.id_map))
+    #print([(v, a['size']) for v,a in project.node_attr.items()])
+    #print(project.id_map)
+    # TODO:  change back to list
+    vsizes = {v:project.node_attr[v]['size'] for v in project.graph}
+    assert len(set(vsizes.keys()) ^ set(project.graph.nodes)) == 0
+    #print(sorted(vsizes.items()))
+    builder = CAtlasBuilder(project.graph, 
+                            vsizes, 
+                            project.domination, 
+                            project.minhashes,
+                            project.id_map)
     catlas = builder.build()
     report("\nCatlas done")
 
     for i,level in enumerate(catlas.bfs()):
         print(i, len(level))
 
-    catlas.write(project.path, project.name, project.radius, args.min_id)
-
+    catlas.write(project.path, project.name, project.radius, project.id_map, args.min_id)
     sys.exit(0)
 
 

@@ -68,13 +68,23 @@ with open(fname.format(name="assignment",extension="vxt",radius=radius), 'r') as
 
 ## Developer notes
 
+### Tests
+
 Explanations of testing are [in the wiki](https://github.com/spacegraphcats/spacegraphcats/wiki/Tests).
 
 To run the tests, execute:
 
-    py.test
+```bash
+py.test
+```
 
 in the main directory.
+
+### Compile Cython
+
+```bash
+python setup.py build_ext --inplace
+```
 
 ## References
 

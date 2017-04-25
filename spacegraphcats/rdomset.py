@@ -1,463 +1,353 @@
-#!/usr/bin/env python3
-from __future__ import print_function
-
-import itertools, sys, random, os, argparse, glob
-from collections import defaultdict, Counter
-from operator import itemgetter
-from os import path
-
-from spacegraphcats.Eppstein import priorityDictionary
-from spacegraphcats.graph import Graph, TFGraph, EdgeSet, EdgeStream, VertexDict, write_gxt
+"""Algorithms for r-dominating set computation."""
+from collections import defaultdict
+from spacegraphcats.graph import DictGraph
 
 
-class Domination:
-    def __init__(self, domset, domgraph, assignment, radius):
-        self.domset = domset
-        self.domgraph = domgraph
-        self.assignment = VertexDict(assignment)
-        self.radius = radius
+def low_degree_orientation(graph):
+    """
+    Compute a low-in-degree orientation of a graph.
 
-    def write(self, projectpath, projectname):
-        fname = path.join(projectpath, projectname+".{name}.{radius}.{extension}")
+    This occurs in place by iteratively removing a vertex of mimimum degree
+    and orienting the edges towards it.
 
-        with open(fname.format(name="domgraph",extension="gxt",radius=self.radius), 'w') as f:
-            write_gxt(f, self.domgraph)
+    Precondition:  every edge in the component has a corresponding arc in the
+    anti-parallel direction (i.e. uv and vu are in the graph)
+    """
+    # number of vertices (needed for print statements)
+    n = len(graph)
+    # most elegant way to handle possibly empty graph (from the frat graph)
+    if n == 0:
+        return
+    """
+    compute necessary data structures for low degree orientation
+    """
+    # array binning the vertices by remaining degree
+    (bins,
+        # pointers to the first vertex with a given degree
+        bin_starts,
+        # remaining degree of the vertex
+        degrees,
+        # pointer to the location of a vertex in bins
+        location) = ldo_setup(graph)
 
-        with open(fname.format(name="assignment",extension="vxt",radius=self.radius), 'w') as f:
-            self.assignment.write_vxt(f, param_writer=lambda s: ' '.join(map(str,s)))
-
-    @staticmethod
-    def read(projectpath, projectname, radius):
-        fname = path.join(projectpath, projectname+".{name}.{radius}.{extension}")
-
-        with open(fname.format(name="domgraph",extension="gxt",radius=radius), 'r') as f:
-            domgraph, _, _ = Graph.from_gxt(f)
-
-        with open(fname.format(name="assignment",extension="vxt",radius=radius), 'r') as f:
-            assignment = VertexDict.from_vxt(f, lambda s: list(map(int,s[0].split())))
-
-        domset = set([v for v in domgraph])
-
-        return Domination(domset, domgraph, assignment, radius)
-
-
-class LazyDomination:
-    def __init__(self, project):
-        self.radius = project.radius
-        self.projectpath = project.path
-        self.projectname = project.name
-        self.graph = project.graph
-
-    def compute(self):
-        try:
-            res = Domination.read(self.projectpath, self.projectname, self.radius)
-            print("Loaded {}-domination from project folder".format(self.radius))
-        except IOError:
-            augg = self._compute_augg()
-            domset = better_dvorak_reidl(augg, self.radius)
-            dominators = calc_dominators(augg, domset, self.radius)
-            domgraph, domset, dominators, assignment = calc_domination_graph(self.graph, augg, domset, dominators, self.radius)
-
-            res = Domination(domset, domgraph, assignment, self.radius)
-            res.write(self.projectpath, self.projectname)
-
-        return res
-
-    def _compute_augg(self):
-        """
-            Computes dtf augmentations or loads them from the project folder.
-        """
-        augname = path.join(self.projectpath,self.projectname+".aug.{}.ext")
-
-        augs = {}
-        for f in glob.glob(augname.format("[0-9]*")):
-            d = int(f.split(".")[-2])
-            augs[d] = f
-
-        if 0 in augs:
-            auggraph = TFGraph(self.graph)
-            with open(augname.format("0"), 'r') as f:
-                auggraph.add_arcs(EdgeStream.from_ext(f), 1)
-        else:
-            auggraph = ldo(self.graph)
-            with open(augname.format("0"), 'w') as f:
-                EdgeSet(auggraph.arcs(weight=1)).write_ext(f)
-
-        num_arcs = auggraph.num_arcs()
-        changed = True
-        d = 1
-        print("Augmenting", end=" ")
-        sys.stdout.flush()
-        while changed and d <= self.radius:
-            if d in augs:
-                print("({})".format(d), end=" ")
-                sys.stdout.flush()
-                with open(augname.format(d), 'r') as f:
-                    auggraph.add_arcs(EdgeStream.from_ext(f), d+1)
+    checkpoint = 0
+    # run the loop once per vertex
+    for curr in range(n):
+        # curr points the vertex of minimum degree
+        v = bins[curr]
+        d_v = degrees[v]
+        # "move" v into bin 0 if it isn't there
+        if d_v > 0:
+            for i in range(d_v, 0, -1):
+                bin_starts[i] += 1
+        degrees[v] = 0
+        # decrement the degrees of the in neighbors not yet removed and orient
+        # edges towards in neighbors already removed
+        inbrs = list(graph.in_neighbors(v, 1))
+        for u in inbrs:
+            d_u = degrees[u]
+            loc_u = location[u]
+            # if we've removed u, we orient the arc towards u by deleting uv
+            if location[u] < location[v]:
+                graph.remove_arc(u, v)
+            # otherwise, the effective degree of u should drop by 1
             else:
-                print(d, end=" ")
-                sys.stdout.flush()
-                dtf_step(auggraph, d+1)
-                with open(augname.format(d), 'w') as f:
-                    EdgeSet(auggraph.arcs(weight=d+1)).write_ext(f)            
+                # swap u with w, the first vertex with the same degree
+                # find where w is
+                loc_w = bin_starts[d_u]
+                w = bins[loc_w]
+                # swap their positions
+                if w != u:
+                    bins[loc_u] = w
+                    bins[loc_w] = u
+                    location[w] = loc_u
+                    location[u] = loc_w
+                # move the bin start one place over
+                bin_starts[d_u] += 1
+                # decrement u's degree
+                degrees[u] = d_u - 1
+        if curr == checkpoint:
+            print("removed {} of {} nodes\r".format(curr+1, n), end="")
+            checkpoint += n//100
+    print("removed {} of {} nodes".format(curr+1, n))
 
-            curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
-            changed = num_arcs < curr_arcs
-            num_arcs = curr_arcs
-            d += 1
-        print("")
-        return auggraph
+
+def ldo_setup(graph):
+    """Setup data structure for low degree orientation."""
+    n = len(graph)
+
+    # hack-y way to know whether our location and degree lookups should be
+    # lists or dictionaries
+    if isinstance(graph, DictGraph):
+        # degree lookup
+        degrees = {v: graph.in_degree(v) for v in graph}
+        # pointer to place in vertex ordering
+        location = {v: None for v in graph}
+        max_deg = max(degrees.values())
+
+    else:
+        degrees = [graph.in_degree(v) for v in graph]
+        location = [None for _ in graph]
+        max_deg = max(degrees)
+
+    # precompute the degrees of each vertex and make a bidirectional lookup
+    degree_counts = [0 for i in range(max_deg+1)]
+    for v in graph:
+        d = degrees[v]
+        degree_counts[d] += 1
+    # assign the cutoffs of bins
+    bin_starts = [sum(degree_counts[:i]) for i in range(max_deg+1)]
+    del degree_counts
+    bin_ptrs = list(bin_starts)
+    bins = [None for _ in graph]
+
+    # assign the vertices to bins
+    checkpoint = 0
+    for i, v in enumerate(graph):
+        loc = bin_ptrs[degrees[v]]
+        bins[loc] = v
+        location[v] = loc
+        bin_ptrs[degrees[v]] += 1
+        if v == checkpoint:
+            print("bucketed {} of {} nodes\r".format(i+1, n), end="")
+            checkpoint += n//100
+    del bin_ptrs
+    print("bucketed {} of {} nodes".format(i+1, n))
+    return bins, bin_starts, degrees, location
 
 
-def dtf(g, r):
-    """ Computes the r-th dft-augmentation of g. """
-    auggraph = ldo(g)
-    num_arcs = auggraph.num_arcs()
+def dtf_step(graph, dist):
+    """
+    Compute the d-th dtf-augmentation from a graph.
 
+    d is provided by the argument dist. The input graph
+    must be a (d-1)-th dtf-augmentation. See dtf() for usage.
+    This function adds arcs to graph.
+    """
+    fratGraph = DictGraph()
+    # Records fraternal edges, must be oriented at the end
+
+    trans_pairs = 0
+    # pick out the transitive pairs from v and add them as new edges
+    for v in graph:
+        for x, y in graph.transitive_pairs(v, dist):
+            graph.add_arc(x, y, dist)
+            trans_pairs += 1
+    print("added {} transitive edges".format(trans_pairs))
+    # pick out the fraternal pairs from v and store them.  We do this after
+    # adding transitive edges to guarantee that no fraternal edge conflicts
+    # with a transitive edge
+    for v in graph:
+        for x, y in graph.fraternal_pairs(v, dist):
+            # assert x != y
+            fratGraph.add_node(x)
+            fratGraph.add_node(y)
+            fratGraph.add_arc(x, y)
+            fratGraph.add_arc(y, x)
+    print("added {} fraternal edges".format(fratGraph.num_arcs()//2))
+
+    # Orient fraternal edges and add them to the graph
+    low_degree_orientation(fratGraph)
+
+    for s, t in fratGraph.arcs(1):
+        # assert s != t
+        graph.add_arc(s, t, dist)
+
+
+def dtf(graph, radius):
+    """
+    Compute dft-augmentations of a graph.
+
+    The number of augmentations is given by the argument radius.
+    Postcondition:
+        If the distance between each pair of vertices u,v is at most radius in
+        the original graph, uv or vu will be an arc with weight equal to that
+        distance.
+    """
+    # the 1st "augmentation" is simply acyclically orienting the edges
+    print("Computing low degree orientation (step 1)")
+    low_degree_orientation(graph)
+
+    # keep track of whether we are adding edges so we can quit early
+    # num_arcs = graph.num_arcs()
     changed = True
-    d = 1
-    while changed and d <= r:
-        dtf_step(auggraph, d+1)
+    d = 2
+    while changed and d <= radius:
+        print("Computing step {}".format(d))
+        # shortcut paths of length d
+        dtf_step(graph, d)
 
         # Small optimization: if no new arcs have been added we can stop.
-        curr_arcs = auggraph.num_arcs() # This costs a bit so we store it
-        changed = num_arcs < curr_arcs
-        num_arcs = curr_arcs
+        # curr_arcs = graph.num_arcs() # This costs a bit so we store it
+        # changed = num_arcs < curr_arcs
+        # num_arcs = curr_arcs
         d += 1
-    return auggraph
 
-def dtf_step(augg, dist):
-    """ Computes the d-th dtf-augmentation from a dtf-graph augg
-        (where d is provided by the argument dist). The input augg
-        must be a (d-1)-th dtf-augmentation. See dtf() for usage. 
-        This function adds arcs to augg. """
-    fratGraph = Graph() # Records fraternal edge, must be oriented at the end
-    newTrans = {} # Records transitive arcs
 
-    for v in augg:
-        for x, y, _ in augg.trans_trips_weight(v, dist):
-            assert x != y
-            newTrans[(x, y)] = dist
-        for x, y, _ in augg.frat_trips_weight(v, dist):
-            assert x != y
-            fratGraph.add_edge(x, y)
+def compute_domset(graph, radius):
+    """
+    Compute a d-dominating set using Dvorak's approximation algorithm
+    for dtf-graphs (see `Structural Sparseness and Complex Networks').
+    Graph needs a distance-d dtf augmentation (see rdomset() for usage).
+    """
+    domset = set()
+    infinity = float('inf')
+    # minimum distance to a dominating vertex, obviously infinite at start
+    domdistance = defaultdict(lambda: infinity)
+    # counter that keeps track of how many neighbors have made it into the
+    # domset
+    domcounter = defaultdict(int)
+    # cutoff for how many times a vertex needs to have its neighbors added to
+    # the domset before it does.  We choose radius^2 as a convenient "large"
+    # number
+    c = (2*radius)**2
 
-    # Add transitive arcs to graph
-    for (s, t) in newTrans:
-        assert s != t
-        augg.add_arc(s, t, dist)
-        fratGraph.remove_edge(s,t)
+    # Sort the vertices by indegree so we take fewer vertices
+    order = sorted([v for v in graph], key=lambda x: graph.in_degree(x),
+                   reverse=True)
+    # vprops = [(v,graph.in_degree(v)) for v in nodes]
+    # vprops.sort(key=itemgetter(1),reverse=False)
+    # order = map(itemgetter(0),vprops)
 
-    # Orient fraternal edges and add them to the grah
-    fratDigraph = ldo(fratGraph)
+    for v in order:
+        # look at the in neighbors to update the distance
+        for r in range(1, radius + 1):
+            for u in graph.in_neighbors(v, r):
+                domdistance[v] = min(domdistance[v], r+domdistance[u])
 
-    for s, t, _ in fratDigraph.arcs():
-        assert s != t
-        augg.add_arc(s,t,dist)
+        # if v is already dominated at radius, no need to work
+        if domdistance[v] <= radius:
+            continue
 
-def ldo(g, weight=None):
-    """ Computes a low-in-degree orientation of a graph g
-        by iteratively removing a vertex of mimimum degree and orienting
-        the edges towards it. """
-    res = TFGraph(g.nodes)
+        # if v is not dominated at radius, put v in the dominating set
+        domset.add(v)
+        domdistance[v] = 0
 
-    if weight == None:
-        weight = defaultdict(int)
+        # update distances of neighbors of v if v is closer if u has had too
+        # many of its neighbors taken into the domset, include it too.
+        for r in range(1, graph.radius + 1):
+            for u in graph.in_neighbors(v, r):
+                domcounter[u] += 1
+                domdistance[u] = min(domdistance[u], r)
+                if domcounter[u] > c and u not in domset:
+                    # add u to domset
+                    domset.add(u)
+                    domdistance[u] = 0
+                    for x, rx in graph.in_neighbors(u):
+                        domdistance[x] = min(domdistance[x], rx)
+                # only need to update domdistance if u didn't get added
 
-    degdict = {}
-    buckets = defaultdict(set)
-    for v in g:
-        d = g.degree(v) + weight[v]
-        degdict[v] = d
-        buckets[d].add(v)
+    return domset
 
-    seen = set()
-    for i in range(0, len(g)):
-        d = 0
-        while len(buckets[d]) == 0:
-            d += 1
-        v = next(iter(buckets[d]))
-        buckets[d].remove(v)
 
-        for u in g.neighbours(v):
-            if u in seen:
-                continue
-            d = degdict[u]
-            buckets[d].remove(u)
-            buckets[d-1].add(u)
-            degdict[u] -= 1
-            # Orient edges towards v
-            res.add_arc(u,v,1)
-
-        seen.add(v)
-    return res
-
-def calc_distance(augg, X):
-    """ Computes the for every vertex in the graph underlying the
-        augmentation augg its distance to the set X """
-    dist = defaultdict(lambda: float('inf'))
-
-    # Vertices in X have distance zero to X
-    for v in X:
-        dist[v] = 0
-
-    # We need two passes in order to only every access the
-    # in-neighbourhoods (which are guaranteed to be small).
-    for _ in range(2):
-        for v in augg:
-            # Pull distances from in-neighbourhood
-            for u, r in augg.in_neighbours(v):
-                dist[v] = min(dist[v],dist[u]+r)
-            # Push distances to in-neighbourhood                
-            for u, r in augg.in_neighbours(v):
-                dist[u] = min(dist[u],dist[v]+r)
-
-    return dist
-
-def calc_dominators(augg, domset, d):
-    dominators = defaultdict(lambda: defaultdict(set))
+def assign_to_dominators(graph, domset, radius):
+    """
+    Compute for each vertex the subset of domset that dominates it at
+    distance radius.  Returns a double level dictionary that maps vertices in
+    the original graph to integers 0 to radius to sets of vertices that
+    dominate at that distance
+    """
+    dominated_at_radius = defaultdict(lambda: defaultdict(set))
 
     # Every vertex in domset is a zero-dominator of itself
     for v in domset:
-        dominators[v][0].add(v)
+        dominated_at_radius[v][0].add(v)
 
     # We need two passes in order to only every access the
     # in-neighbourhoods (which are guaranteed to be small).
     for _ in range(2):
-        for v in augg:
+        for v in graph:
             # Pull dominators from in-neighbourhood
-            for u, r in augg.in_neighbours(v):
-                for r2 in dominators[u].keys():
+            for u, r in graph.in_neighbors(v):
+                for r2 in dominated_at_radius[u].keys():
                     domdist = r+r2
-                    if domdist <= d:
-                        dominators[v][domdist] |= dominators[u][r2]
+                    if domdist <= radius:
+                        dominated_at_radius[v][domdist] |= \
+                                        dominated_at_radius[u][r2]
             # Push dominators to in-neighbourhood
-            for u, r in augg.in_neighbours(v):
-                for r2 in dominators[v].keys():
+            for u, r in graph.in_neighbors(v):
+                for r2 in dominated_at_radius[v].keys():
                     domdist = r+r2
-                    if domdist <= d:
-                        dominators[u][domdist] |= dominators[v][r2]
+                    if domdist <= radius:
+                        dominated_at_radius[u][domdist] |= \
+                                        dominated_at_radius[v][r2]
 
     # Clean up: vertices might appear at multiple distances as dominators,
     # we only want to store them for the _minimum_ distance at which they
     # act as a dominator.
-    for v in dominators:
+    for v in dominated_at_radius:
         cumulated = set()
-        for r in range(d+1):
-            dominators[v][r] -= cumulated
-            cumulated |= dominators[v][r]
+        for r in range(radius+1):
+            dominated_at_radius[v][r] -= cumulated
+            cumulated |= dominated_at_radius[v][r]
 
-    return dominators
-
-def calc_dominator_sizes(g, domset, d):
-    res = {}
-    for v in domset:
-        res[v] = len(g.rneighbours(v,d))
-    return res
-
-def calc_dominated(augg, domset, d):
-    """ Compute the union of d-neighbourhoods around 
-        the vertex set domset, that is, all vertices d-domainted
-        by it. """
-    dist = calc_distance(augg, domset)
-    return filter(lambda v: dist[v] <= d, dist)
+    return dominated_at_radius
 
 
-def _calc_domset_graph(domset, dominators, d):
-    """ 
-        Builds up a 'domination graph' by assigning each vertex to 
-        its closest dominators. These dominators will be connected in the
-        final graph.
+def domination_graph(graph, domset, radius,):
     """
-    h = Graph.on(domset)
+    Build up a 'domination graph' by assigning each vertex to its closest
+    dominators. These dominators will be connected in the final graph.
+    """
+    print("assigning to dominators")
+    dominated_at_radius = assign_to_dominators(graph, domset, radius)
+    domgraph = DictGraph(nodes=domset)
 
-    assignment = defaultdict(set)
-    for v in dominators:
-        # Collect closest pairs
-        sorted_doms = list(filter(lambda s: len(s) > 0, [dominators[v][r] for r in range(d+1)]))
-        if len(sorted_doms[0]) >= 2:
-            for x in sorted_doms[0]:
-                assignment[v].add(x)
+    print("computing dominating edges")
+    # dictionary mapping vertices from the graph to closest dominators to it
+    closest_dominators = {}
+    domdistance = {v: 0 for v in dominated_at_radius}
+    # the keys of dominators should all belong to the same component, so this
+    # should implicitly only operate on the vertices we care about
+    for v in dominated_at_radius:
+        # Find the domset vertices closest to v
+        for r in range(radius+1):
+            if len(dominated_at_radius[v][r]) > 0:
+                domdistance[v] = r
+                closest_dominators[v] = frozenset(dominated_at_radius[v][r])
+                break
+        # because they all dominate v, the closest dominators should form a
+        # clique
+        for x in closest_dominators[v]:
+            nonneighbors = closest_dominators[v] - \
+                            domgraph.in_neighbors(x, 1) - \
+                            set([x])
+            for y in nonneighbors:
+                domgraph.add_arc(x, y)
+                domgraph.add_arc(y, x)
+    print("Added edges between odd length optimal domination")
+    # Two vertices in the dominating graph should be adjacent if they
+    # optimally dominate a common vertex.  Note that this only includes
+    # dominators with odd length paths between them because even length paths
+    # have no midpoint that would be dominated at the same distance from both
+    # directions.  So we need to expand our criteria to include dominators
+    # that optimally dominate neighbors at the same distance.  Since the
+    # endpoints of each edge have to be optimally dominated at the same radius
+    # or at radii that differ by 1, it is sufficient to loop through all edges
+    # of the original graph and turn the set of dominators into a clique.
+    # This will also catch and connect the dominators that were themselves
+    # adjacent in the original graph.
+    for v in graph:
+        for u in graph.in_neighbors(v, 1):
+            if domdistance[u] != domdistance[v]:
+                continue
+            # since the edges within closest_dominators have been added above,
+            # we only need to look at the symmetric difference
+            difference = closest_dominators[u] ^ closest_dominators[v]
+            for x in difference:
+                nonneighbors = difference - \
+                                domgraph.in_neighbors(x, 1) - \
+                                set([x])
+                for y in nonneighbors:
+                    domgraph.add_arc(x, y)
+                    domgraph.add_arc(y, x)
 
-            for x,y in itertools.combinations(sorted_doms[0],2):
-                h.add_edge(x,y)
-        else:
-            assert len(sorted_doms[0]) == 1
-            x = next(iter(sorted_doms[0]))
-            assignment[v].add(x)
-            if len(sorted_doms) >= 2:
-                for y in sorted_doms[1]:
-                    assignment[v].add(y)
-                    h.add_edge(x,y)
+    print("Added edges between even length optimal domination")
+    return domgraph, closest_dominators
 
-    return h, assignment
 
-def calc_domination_graph(g, augg, domset, dominators, d):
-    h, assignment = _calc_domset_graph(domset, dominators, d)
-    hcomps = h.component_index()
-
-    # print("  First domgraph has {} components".format(h.num_components()))
-
-    compmap = {}
-    for u in g:
-        candidates = [hcomps[v] for v in assignment[u]]
-        assert len(candidates) > 0
-        assert candidates.count(candidates[0]) == len(candidates) # Make sure all the comps. agree
-        compmap[u] = candidates[0]
-
-    conn_graph = Graph()
-    for u,v in g.edges():
-        if u in domset or v in domset:
-            continue
-        # Check whether u,v 'connects' to components of h
-        if compmap[u] != compmap[v]:
-            conn_graph.add_edge(u,v)
- 
-    # Compute vertex cover for conn_graph
-    vc = set()
-    for u in conn_graph: # Add neighbours of deg-1 vertices
-        if conn_graph.degree(u) == 1 and u not in vc:
-            vc.add(next(iter(conn_graph.neighbours(u))))
-
-    # We expect this to be mostly disjoint edges, so the following
-    # heuristic works well.
-    for u,v in conn_graph.edges():
-        if u not in vc and v not in vc:
-            if conn_graph.degree(u) > conn_graph.degree(v):
-                vc.add(u)
-            else:
-                vc.add(v)
-
-    newdomset = set(domset) | vc
-    if len(newdomset) != len(domset):
-        # print("  Recomputing domgraph")
-        dominators = calc_dominators(augg, newdomset, d)
-        h, assignment = _calc_domset_graph(newdomset, dominators, d)
-
-    return h, newdomset, dominators, assignment
-
-def better_dvorak_reidl(augg,d):
-    """ Compute a d-dominating set using Dvorak's approximation algorithm 
-        for dtf-graphs (see `Structural Sparseness and Complex Networks').
-        Needs a distance-d dtf augmentation augg (see rdomset() for usage). """    
-    domset = set()
-    infinity = float('inf')
-    domdistance = defaultdict(lambda: infinity)
-
-    #  low indegree first (reverse=False)
-    vprops = [(v,augg.in_degree(v)) for v in augg]
-    vprops.sort(key=itemgetter(1),reverse=False)
-    order = map(itemgetter(0),vprops)
-
-    for v in order:
-        if domdistance[v] <= d:
-            continue
-
-        for u,r in augg.in_neighbours(v):
-            domdistance[v] = min(domdistance[v],r+domdistance[u])
-
-        if domdistance[v] <= d:
-            continue
-
-        domset.add(v)
-        domdistance[v] = 0
-
-        for u,r in augg.in_neighbours(v):
-            domdistance[u] = min(domdistance[u],r+domdistance[v])
-
+def rdomset(graph, radius):
+    """Compute a dominating set of graph at radius radius."""
+    dtf(graph, radius)
+    domset = compute_domset(graph, radius)
     return domset
-
-#
-# Debugging/Test functions
-#
-def verify_scattered(g, sc, d):
-    """ Verifies that a vertex set sc is d-scattered in a graph g, meaning
-        that every pair of vertices in sc have distance at least d. """
-    sc = set(sc)
-    for v in sc:
-        dN = g.rneighbours(v,d)
-        if len(dN & sc) > 1: # v is in dN but nothing else should
-            return False
-    return True
-
-
-def verify_domset(g, ds, d):
-    """ Verifies that a vertex set ds is a d-dominating set in g, meaning
-        that every vertex of g lies within distance d of some vertex in ds. """
-    dominated = set()
-    for v in ds:
-        dominated |= g.rneighbours(v,d)
-    return len(dominated) == len(g)
-
-def verify_dominators(g, domset, dominators, d):
-    for v in g:
-        dN = g.rneighbours(v,d)
-        candidates = dN & domset
-        for r in range(0,d+1):
-            candidates -= dominators[v][r]
-        if len(candidates) > 0:
-            print(v, candidates, dominators[v])
-            return False
-    return True
-
-def verify_dominators_strict(g, domset, dominators, d):
-    for v in g:
-        dN = set([v])
-        if dominators[v][0] != (dN & domset):
-            return False
-
-        for r in range(1,d+1):
-            shell = g.neighbours_set(dN) - dN
-            if dominators[v][r] != (shell & domset):
-                return False
-            dN |= shell
-    return True
-
-def rdomset(g, d):
-    """ Computes an d-dominating set for a given graph g
-        using dtf-augmentations. """
-    augg = dtf(g, d)
-    domset = better_dvorak_reidl(augg, d)
-
-    return domset, augg
-
-def main(inputgxt, outputgxt, d, test, domgraph):
-    g, node_attrs, edge_attrs = Graph.from_gxt(inputgxt)
-    g.remove_loops()
-
-    domset, augg = rdomset(g,d)
-    print("Computed {}-domset of size {} in graph with {} vertices".format(d,len(domset),len(g)))
-
-    dominators = calc_dominators(augg, domset, d)
-
-    # Compute domset graph
-    if domgraph:
-        print("Computing domgraph")
-        h = _calc_domset_graph(domset, dominators, d)
-        write_gxt(domgraph, h)
-
-    # Test domset
-    if test:
-        print("Testing domset:", verify_domset(g,domset,d))
-
-    # Annotate domset
-    labelds = 'ds{}'.format(d)
-    for v in domset:
-        node_attrs[v][labelds] = 1
-
-    write_gxt(outputgxt, g, node_attrs, edge_attrs)
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('input', help='gxt input file', nargs='?', type=argparse.FileType('r'),
-                        default=sys.stdin)
-    parser.add_argument('output', help='gxt output file', nargs='?', type=argparse.FileType('w'),
-                        default=sys.stdin)
-    parser.add_argument('--domgraph', help='gxt output file', nargs='?', type=argparse.FileType('w'),
-                        default=None)
-    parser.add_argument("d", help="domset distance", type=int )
-    parser.add_argument('--test', action='store_true')
-    args = parser.parse_args()
-
-    main(args.input, args.output, args.d, args.test, args.domgraph)
-

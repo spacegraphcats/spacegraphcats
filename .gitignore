@@ -1,7 +1,8 @@
-*.gml
-*.gxt
-*.mxt
 *.pyc
+*.c
 .cache
 .coverage
 .ipynb_checkpoints
+acido
+15genome
+tr-cross

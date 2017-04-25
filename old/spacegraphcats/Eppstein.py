@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-"""UnionFind.py.
+"""UnionFind.py
 
 Union-find data structure. Based on Josiah Carlson's code,
 http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/215912
@@ -8,7 +8,6 @@ with significant additional changes by D. Eppstein.
 """
 
 from __future__ import generators
-
 
 class UnionFind(object):
     """Union-find data structure.
@@ -34,6 +33,7 @@ class UnionFind(object):
 
     def __getitem__(self, object):
         """Find and return the name of the set containing the object."""
+
         # check for previously unknown object
         if object not in self.parents:
             self.parents[object] = object
@@ -53,15 +53,13 @@ class UnionFind(object):
         return root
 
     def __iter__(self):
-        """
-        Iterate through all items ever found or unioned by this structure.
-        """
+        """Iterate through all items ever found or unioned by this structure."""
         return iter(self.parents)
 
     def union(self, *objects):
         """Find the sets containing the objects and merge them all."""
         roots = [self[x] for x in objects]
-        heaviest = max([(self.weights[r], r) for r in roots])[1]
+        heaviest = max([(self.weights[r],r) for r in roots])[1]
         for r in roots:
             if r != heaviest:
                 self.weights[heaviest] += self.weights[r]
@@ -134,17 +132,17 @@ until the heap is rebuilt.'''
                 del self[x]
         return iterfn()
 
-    def __setitem__(self, key, val):
+    def __setitem__(self,key,val):
         '''Change value stored in dictionary and add corresponding
 pair to heap.  Rebuilds the heap if the number of deleted items grows
 too large, to avoid memory leakage.'''
-        dict.__setitem__(self, key, val)
+        dict.__setitem__(self,key,val)
         heap = self.__heap
         if len(heap) > 2 * len(self):
-            self.__heap = [(v, k) for k, v in self.iteritems()]
+            self.__heap = [(v,k) for k,v in self.iteritems()]
             self.__heap.sort()  # builtin sort likely faster than O(n) heapify
         else:
-            newPair = (val, key)
+            newPair = (val,key)
             insertionPoint = len(heap)
             heap.append(None)
             while insertionPoint > 0 and \
@@ -153,7 +151,7 @@ too large, to avoid memory leakage.'''
                 insertionPoint = (insertionPoint-1)//2
             heap[insertionPoint] = newPair
 
-    def setdefault(self, key, val):
+    def setdefault(self,key,val):
         '''Reimplement setdefault to call our customized __setitem__.'''
         if key not in self:
             self[key] = val
