@@ -12,14 +12,19 @@ from sourmash_lib.sbtmh import search_minhashes, SigLeaf
 from sourmash_lib import signature
 
 
-MINHASH_K=31
-SCALED=100.0
-
 def import_graph_mxt(mxt):
     "Load all of the minhashes from an MXT file into a dict."
     d = defaultdict(list)
     allmins = 0
     with open(mxt, 'rt') as fp:
+        line = fp.readline()
+        ksize, scaled = line.strip().split()
+        assert ksize.startswith('ksize')
+        ksize = int(ksize.split('=')[1])
+
+        assert scaled.startswith('scaled')
+        scaled = float(scaled.split('=')[1])
+
         for line in fp:
             line = line.strip().split(' ')
             g_id = int(line[0])
@@ -30,11 +35,21 @@ def import_graph_mxt(mxt):
                 d[g_id] = mins
                 allmins += len(mins)
 
-    return d
+    return ksize, scaled, d
+\
 
-
-def load_layer1_to_cdbg(catlas_file):
+def load_layer1_to_cdbg(catlas_file, domfile):
     "Load the mapping between first layer catlas and the original DBG nodes."
+
+    domset = {}
+    for line in open(domfile, 'rt'):
+        dom_node, *beneath = line.strip().split(' ')
+
+        dom_node = int(dom_node)
+        beneath = map(int, beneath)
+
+        domset[dom_node] = set(beneath)
+
     layer1_to_cdbg = defaultdict(set)
 
     catlas_to_cdbg = {}
@@ -45,7 +60,7 @@ def load_layer1_to_cdbg(catlas_file):
 
         catlas_node = int(catlas_node)
         cdbg_node = int(cdbg_node)
-        catlas_to_cdbg[catlas_node] = cdbg_node
+        catlas_to_cdbg[catlas_node] = domset[cdbg_node]
 
     for line in open(catlas_file, 'rt'):
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
@@ -57,13 +72,38 @@ def load_layer1_to_cdbg(catlas_file):
         beneath = list(map(int, beneath))
 
         for catnode in beneath:
-            dbgnode = catlas_to_cdbg[catnode]
-            layer1_to_cdbg[catlas_node].add(dbgnode)
+            dbgnodes = catlas_to_cdbg[catnode]
+            layer1_to_cdbg[catlas_node].update(dbgnodes)
 
     return layer1_to_cdbg
 
 
-def merge_nodes(child_dict, child_node_list):
+def build_dag(catlas_file, leaf_minhashes, ksize, scaled):
+    catlas_to_cdbg = {}
+
+    x = []
+    for line in open(catlas_file, 'rt'):
+        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
+        if int(level) <= 1:
+            continue
+
+        beneath = beneath.split(' ')
+        beneath = list(map(int, beneath))
+
+        x.append((int(level), int(catlas_node), beneath))
+
+    x.sort()
+    for (level, catlas_node, beneath) in x:
+        merged_mh = MinHash(n=0, ksize=ksize,
+                            max_hash=round(sourmash_lib.MAX_HASH / scaled))
+
+        for subnode in beneath:
+            mh = leaf_minhashes[subnode]
+            merged_mh.add_many(mh.get_mins())
+        leaf_minhashes[catlas_node] = merged_mh
+
+
+def merge_nodes(child_dict, child_node_list, ksize, scaled):
     """Merge child nodes into a single minhash."""
     minlist = []
 
@@ -73,8 +113,8 @@ def merge_nodes(child_dict, child_node_list):
             minlist.extend(mins)
 
     # merge into a single minhash!
-    merged_mh = MinHash(0, MINHASH_K,
-                        max_hash=round(sourmash_lib.MAX_HASH / SCALED))
+    merged_mh = MinHash(n=0, ksize=ksize,
+                        max_hash=round(sourmash_lib.MAX_HASH / scaled))
     for h in minlist:
         merged_mh.add_hash(h)
 
@@ -95,13 +135,15 @@ def main():
     graphmxt = os.path.join(args.catlas_prefix, graphmxt)
 
     catlas = os.path.join(args.catlas_prefix, args.catlas_prefix + '.catlas')
+    domfile = os.path.join(args.catlas_prefix, args.catlas_prefix + '.domfile')
     
     # load MXT into dict
-    graph_minhashes = import_graph_mxt(graphmxt)
+    ksize, scaled, graph_minhashes = import_graph_mxt(graphmxt)
     print('imported {} graph minhashes'.format(len(graph_minhashes)))
+    print('ksize={} scaled={:.0f}'.format(ksize, scaled))
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = load_layer1_to_cdbg(catlas)
+    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
     x = set()
     for v in layer1_to_cdbg.values():
@@ -116,9 +158,11 @@ def main():
     # create minhashes for catlas leaf nodes.
     leaf_minhashes = {}
     for n, (catlas_node, cdbg_nodes) in enumerate(layer1_to_cdbg.items()):
-        mh = merge_nodes(graph_minhashes, cdbg_nodes)
+        mh = merge_nodes(graph_minhashes, cdbg_nodes, ksize, scaled)
         leaf_minhashes[catlas_node] = mh
     print('created {} leaf node MinHashes via merging'.format(n + 1))
+
+    build_dag(catlas, leaf_minhashes, ksize, scaled)
 
     factory = GraphFactory(1, args.bf_size, 4)
     tree = SBT(factory)
@@ -135,8 +179,8 @@ def main():
     tree.save(sbt_name)
     print('saved sbt "{}"'.format(sbt_name))
 
-    xxx_mh = MinHash(0, MINHASH_K,
-                        max_hash=round(sourmash_lib.MAX_HASH / SCALED))
+    xxx_mh = MinHash(n=0, ksize=ksize,
+                        max_hash=round(sourmash_lib.MAX_HASH / scaled))
     n = 0
     for minlist in graph_minhashes.values():
         for hash in minlist:
