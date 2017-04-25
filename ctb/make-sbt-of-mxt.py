@@ -18,15 +18,17 @@ SCALED=100.0
 def import_graph_mxt(mxt):
     "Load all of the minhashes from an MXT file into a dict."
     d = defaultdict(list)
+    allmins = 0
     with open(mxt, 'rt') as fp:
         for line in fp:
             line = line.strip().split(' ')
             g_id = int(line[0])
             if len(line) > 1:
-                mins = line[1]
+                mins = line[1:]
 
-                mins = list(map(int, mins.split(' ')))
+                mins = list(map(int, mins))
                 d[g_id] = mins
+                allmins += len(mins)
 
     return d
 
@@ -140,7 +142,6 @@ def main():
         for hash in minlist:
             xxx_mh.add_hash(hash)
         n += 1
-    print('zzz', n, len(graph_minhashes))
 
     xx = signature.SourmashSignature('', xxx_mh, name='all')
     with open('all.sig', 'wt') as fp:
