@@ -111,7 +111,8 @@ def main():
     p.add_argument('--leaves-only', action='store_true')
     p.add_argument('--scaled', default=100.0, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int)
-    p.add_argument('--no-sbt', default=None)
+    p.add_argument('--sbt', action='store_true')
+    p.add_argument('-o', '--output', default=None)
     args = p.parse_args()
 
     ksize = args.ksize
@@ -154,10 +155,16 @@ def main():
                                          name='node{}'.format(node_id))
         sigs.append(ss)
             
-    if args.no_sbt:
-        print('saving sigs to {}'.format(args.no_sbt))
+    if not args.sbt:
+        if args.output:
+            signame = args.output
+        else:
+            signame = os.path.basename(args.catlas_prefix) + '.sig'
+            signame = os.path.join(args.catlas_prefix, signame)
 
-        with open(args.no_sbt, 'wt') as fp:
+        print('saving sigs to "{}"'.format(signame))
+
+        with open(signame, 'wt') as fp:
             signature.save_signatures(sigs, fp)
     else:
         factory = GraphFactory(1, args.bf_size, 4)
@@ -169,7 +176,12 @@ def main():
             tree.add_node(leaf)
 
         print('...done with {} minhashes. saving!'.format(len(leaf_minhashes)))
-        sbt_name = os.path.basename(args.catlas_prefix)
+
+        if args.output:
+            sbt_name = args.output
+        else:
+            sbt_name = os.path.basename(args.catlas_prefix)
+            sbt_name = os.path.join(args.catlas_prefix, sbt_name)
         tree.save(sbt_name)
         print('saved sbt "{}"'.format(sbt_name))
 
