@@ -10,9 +10,8 @@ from spacegraphcats import graph_parser
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and assembled contigs."
-    def __init__(self, ksize, scaled, gxtfile, assemble=False):
+    def __init__(self, ksize, gxtfile, assemble=False):
         self.ksize = ksize
-        self.scaled = scaled
 
         self.node_counter = 0
         self.nodes = {}                      # node IDs (int) to size
@@ -151,7 +150,7 @@ def run(args):
     ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(ksize, args.scaled, gxtfile, not args.no_assemble)
+    pathy = Pathfinder(ksize, gxtfile, not args.no_assemble)
 
     print('finding high degree nodes')
     if args.label:
