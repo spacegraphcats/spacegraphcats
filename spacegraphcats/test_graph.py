@@ -53,7 +53,23 @@ class GraphTest(unittest.TestCase):
         self.assertEquals(set(frat_graph.fraternal_pairs(0, 2)), frat_pairs2)
         self.assertEquals(set(frat_graph.fraternal_pairs(0, 6)), frat_pairs6)
 
-        
+    def test_trans_pairs(self):
+        graph = Graph(num_nodes=9, radius=3)
+
+        graph.add_arc(1, 0, 2)
+        graph.add_arc(2, 0, 3)
+        graph.add_arc(3, 0, 1)
+        graph.add_arc(4, 1, 2)
+        graph.add_arc(5, 1, 2)
+        graph.add_arc(6, 0, 1)
+        graph.add_arc(6, 2, 1)
+        graph.add_arc(7, 3, 3)
+        graph.add_arc(8, 3, 2)
+
+        trans_pairs = set([(7, 0),
+                           (4, 0),
+                           (5, 0)])
+        self.assertEquals(set(graph.transitive_pairs(0, 4)), trans_pairs)
         
 
 if __name__ == '__main__':
