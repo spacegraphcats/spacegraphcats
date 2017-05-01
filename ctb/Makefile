@@ -11,7 +11,7 @@ acido/acido.minhashes:
 	python make-sbt-from-contigs.py acido -k 31 --scaled=1000 --sbt
 
 acido.fa.gz.sig:
-	~/dev/sourmash/sourmash compute -k 31 ../data/acido.fa.gz --scaled 1000 -f
+	sourmash compute -k 31 ../data/acido.fa.gz --scaled 1000 -f
 
 search: acido/acido.minhashes acido.fa.gz.sig
 	./search-catlas-with-minhash.py acido.fa.gz.sig acido
