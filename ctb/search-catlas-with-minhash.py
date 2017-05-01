@@ -43,6 +43,7 @@ def load_dag(catlas_file):
 
     return max_node, dag, dag_levels
 
+
 def load_minhash(node_id, minhash_dir):
     filename = 'node{}.pickle'.format(node_id)
     filename = os.path.join(minhash_dir, filename)
@@ -64,23 +65,31 @@ def main():
     basename = os.path.basename(args.catlas_prefix)
     catlas = os.path.join(args.catlas_prefix, basename + '.catlas')
 
+    # load catlas DAG
     top_node_id, dag, dag_levels = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
+    # load query MinHash
     query_sig = sourmash_lib.signature.load_signatures(args.query_sig)
     query_sig = list(query_sig)[0]
     print('loaded query sig {}'.format(query_sig.name()))
 
     minhash_dir = os.path.join(args.catlas_prefix, basename + '.minhashes')
 
+    # descend from top node, finding path through catlas by
+    # child with best similarity.
     cur_node_id = top_node_id
+    catlas_trail = [top_node_id]
+    max_best = 0.0
     while 1:
+        # get all children nodes & MinHashes
         children_ids = dag[cur_node_id]
         if not children_ids:
             break
         children_mhlist = [ (load_minhash(node_id, minhash_dir), node_id) for
                                 node_id in children_ids ]
 
+        # compute similarities and sort
         sims = []
         for node_mh, node_id in children_mhlist:
             max_hash_query = query_sig.minhash.max_hash
@@ -93,12 +102,28 @@ def main():
             sims.append((sim, node_id, against_mh))
 
         sims.sort(reverse=True)
+
+        # print out the best!
         best_sim, best_node_id, best_child_mh = sims[0]
         containment = query_mh.containment(best_child_mh)
         print("best_sim={:.3f} contain={:.3f} node_id={} level={}".format(\
             best_sim, containment, best_node_id, dag_levels[best_node_id]))
+        for nextsim, nextid, nextmh in sims[1:]:
+            if nextsim > 0.01:
+                containment = query_mh.containment(nextmh)
+                print("\tsim={:.3f} contain={:.3f} node_id={}".format(\
+                    nextsim, containment, nextid))
+            
+        print('---')
+
+        if max_best < best_sim:
+            max_best = best_sim
+        else:
+            print('similarity decreased; quitting.')
+            break
 
         cur_node_id = best_node_id
+        catlas_trail.append(cur_node_id)
 
     sys.exit(0)
 

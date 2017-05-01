@@ -179,57 +179,60 @@ def main():
     if not args.leaves_only:
         build_dag(catlas, leaf_minhashes, factory)
 
-    if 1:
-        path = os.path.basename(args.catlas_prefix) + '.minhashes'
-        path = os.path.join(args.catlas_prefix, path)
+    path = os.path.basename(args.catlas_prefix) + '.minhashes'
+    path = os.path.join(args.catlas_prefix, path)
 
+    try:
         os.mkdir(path)
+    except FileExistsError:
+        pass
 
-        for node_id, mh in leaf_minhashes.items():
-            name = 'node{}.pickle'.format(node_id)
-            name = os.path.join(path, name)
-            with open(name, 'wb') as fp:
-                pickle.dump(mh, fp)
-
-    sigs = []
     for node_id, mh in leaf_minhashes.items():
-        ss = signature.SourmashSignature('', mh,
-                                         name='node{}'.format(node_id))
-        sigs.append(ss)
+        name = 'node{}.pickle'.format(node_id)
+        name = os.path.join(path, name)
+        with open(name, 'wb') as fp:
+            pickle.dump(mh, fp)
 
-    # shall we output an SBT or just a file full of signatures?
-    if not args.sbt:
+    if 0:
+        sigs = []
+        for node_id, mh in leaf_minhashes.items():
+            ss = signature.SourmashSignature('', mh,
+                                             name='node{}'.format(node_id))
+            sigs.append(ss)
 
-        # just sigs - decide on output name
-        if args.output:
-            signame = args.output
+        # shall we output an SBT or just a file full of signatures?
+        if not args.sbt:
+
+            # just sigs - decide on output name
+            if args.output:
+                signame = args.output
+            else:
+                signame = os.path.basename(args.catlas_prefix) + '.sig'
+                signame = os.path.join(args.catlas_prefix, signame)
+
+            print('saving sigs to "{}"'.format(signame))
+
+            with open(signame, 'wt') as fp:
+                signature.save_signatures(sigs, fp)
         else:
-            signame = os.path.basename(args.catlas_prefix) + '.sig'
-            signame = os.path.join(args.catlas_prefix, signame)
+            # build an SBT!
+            factory = GraphFactory(1, args.bf_size, 4)
+            tree = SBT(factory)
 
-        print('saving sigs to "{}"'.format(signame))
+            print('building tree...')
+            for ss in sigs:
+                leaf = SigLeaf(ss.md5sum(), ss)
+                tree.add_node(leaf)
 
-        with open(signame, 'wt') as fp:
-            signature.save_signatures(sigs, fp)
-    else:
-        # build an SBT!
-        factory = GraphFactory(1, args.bf_size, 4)
-        tree = SBT(factory)
+            print('...done with {} minhashes. saving!'.format(len(leaf_minhashes)))
 
-        print('building tree...')
-        for ss in sigs:
-            leaf = SigLeaf(ss.md5sum(), ss)
-            tree.add_node(leaf)
-
-        print('...done with {} minhashes. saving!'.format(len(leaf_minhashes)))
-
-        if args.output:
-            sbt_name = args.output
-        else:
-            sbt_name = os.path.basename(args.catlas_prefix)
-            sbt_name = os.path.join(args.catlas_prefix, sbt_name)
-        tree.save(sbt_name)
-        print('saved sbt "{}"'.format(sbt_name))
+            if args.output:
+                sbt_name = args.output
+            else:
+                sbt_name = os.path.basename(args.catlas_prefix)
+                sbt_name = os.path.join(args.catlas_prefix, sbt_name)
+            tree.save(sbt_name)
+            print('saved sbt "{}"'.format(sbt_name))
 
     sys.exit(0)
 
