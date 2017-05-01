@@ -1,4 +1,4 @@
 screed
 pytest
-git+https://github.com/dib-lab/khmer.git
-git+https://github.com/dib-lab/sourmash.git
+https://github.com/dib-lab/khmer/archive/spacegraphcats.zip
+https://github.com/dib-lab/sourmash/archive/spacegraphcats.zip
