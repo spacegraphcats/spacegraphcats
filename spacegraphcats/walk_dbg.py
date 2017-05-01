@@ -2,20 +2,15 @@ from __future__ import print_function
 
 import sys
 import khmer
-from sourmash_lib import MinHash
 import screed
 from collections import OrderedDict, defaultdict
 import os, os.path
 from spacegraphcats import graph_parser
 
 
-# minhash settings
-MH_SIZE_DIVISOR = 50
-MH_MIN_SIZE = 5
-
 class Pathfinder(object):
-    "Track segment IDs, adjacency lists, and MinHashes"
-    def __init__(self, ksize, gxtfile, mxtfile):
+    "Track segment IDs, adjacency lists, and assembled contigs."
+    def __init__(self, ksize, gxtfile, assemble=False):
         self.ksize = ksize
 
         self.node_counter = 0
@@ -24,7 +19,9 @@ class Pathfinder(object):
         self.kmers_to_nodes = {}             # kmers to node IDs
         self.adjacencies = defaultdict(set)  # node to node
         self.labels = defaultdict(set)       # nodes to set of labels
-        self.mxtfp = open(mxtfile, 'wt')
+        self.assemblyfp = None
+        if assemble:
+            self.assemblyfp = open(gxtfile + '.contigs', 'wt')
         self.adjfp = open(gxtfile + '.adj', 'wt')
 
     def new_hdn(self, kmer):
@@ -46,10 +43,6 @@ class Pathfinder(object):
         node_id = self.node_counter
         self.node_counter += 1
 
-        #kmer = min(visited)               # identify linear nodes by min(hash)
-        #self.nodes_to_kmers[node_id] = kmer
-        #self.kmers_to_nodes[kmer] = node_id
-
         return node_id
 
     def add_adjacency(self, node_id, adj):
@@ -58,17 +51,12 @@ class Pathfinder(object):
 
         self.adjfp.write('{},{}\n'.format(node_id, adj))
         
-        #x = self.adjacencies[node_id]
-        #x.add(adj)
-
     def add_label(self, kmer, label):
         x = self.labels[kmer]
         x.add(label)
 
-    def add_minhash(self, path_id, mh):
-        # save minhash info to disk
-        mins = " ".join(map(str, mh.get_mins()))
-        self.mxtfp.write('{0} {1}\n'.format(path_id, mins))
+    def add_assembly(self, path_id, contig):
+        self.assemblyfp.write('>{}\n{}\n'.format(path_id, contig))
 
 
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
@@ -85,15 +73,11 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
         adj_node_id = pathy.kmers_to_nodes[kmer]
         pathy.add_adjacency(path_id, adj_node_id)
 
-    # next, calculate minhash from visited k-mers
-    v = [ khmer.reverse_hash(i, graph.ksize()) for i in visited ]
-    mh_size = max(len(visited) // MH_SIZE_DIVISOR, MH_MIN_SIZE)
-
-    mh = MinHash(mh_size, graph.ksize())
-    for kmer in v:
-        mh.add_sequence(kmer)
-
-    pathy.add_minhash(path_id, mh)
+    # output a contig if requested
+    if pathy.assemblyfp:
+        asm = khmer.LinearAssembler(graph)
+        contig = asm.assemble(nk)
+        pathy.add_assembly(path_id, contig)
 
 
 def run(args):
@@ -122,13 +106,10 @@ def run(args):
 
     gxtfile = os.path.basename(output_dir) + '.gxt'
     gxtfile = os.path.join(output_dir, gxtfile)
-    mxtfile = os.path.basename(output_dir) + '.mxt'
-    mxtfile = os.path.join(output_dir, mxtfile)
 
     print('')
     print('placing output in directory:', output_dir)
     print('gxt will be:', gxtfile)
-    print('mxt will be:', mxtfile)
     try:
         os.mkdir(output_dir)
     except FileExistsError:
@@ -169,7 +150,7 @@ def run(args):
     ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(ksize, gxtfile, mxtfile)
+    pathy = Pathfinder(ksize, gxtfile, not args.no_assemble)
 
     print('finding high degree nodes')
     if args.label:
@@ -197,10 +178,10 @@ def run(args):
 
     print('traversing linear segments from', len(degree_nodes), 'nodes')
 
-    # now traverse from each high degree nodes into all neighboring nodes,
+    # now traverse from each high degree node into all neighboring nodes,
     # seeking adjacencies.  if neighbor is high degree node, add it to
-    # adjacencies; if neighbor is not, then traverse the linear path.  also
-    # track minhashes while we're at it.
+    # adjacencies; if neighbor is not, then traverse the linear path &
+    # assemble if desired.
     for n, k in enumerate(degree_nodes):
         if n % 10000 == 0:
             print('...', n, 'of', len(degree_nodes))
@@ -208,11 +189,9 @@ def run(args):
         # retrieve the node ID of the primary segment.
         k_id = pathy.kmers_to_nodes[k]
 
-        # add its minhash value.
-        k_str = khmer.reverse_hash(k, ksize)
-        mh = MinHash(1, ksize)
-        mh.add_sequence(k_str)
-        pathy.add_minhash(k_id, mh)
+        # here is where we would output this k-mer to the contig file if we
+        # wanted to.
+        # k_str = khmer.reverse_hash(k, ksize)
 
         # find all the neighbors of this high-degree node.
         nbh = graph.neighbors(k)
@@ -232,7 +211,7 @@ def run(args):
     del graph
     del stop_bf
 
-    # save to GXT/MXT.
+    # save to GXT.
     print('saving gxtfile', gxtfile)
 
     all_labels = set()
