@@ -11,6 +11,7 @@ from sourmash_lib.sbt import SBT, GraphFactory
 from sourmash_lib.sbtmh import search_minhashes, SigLeaf
 from sourmash_lib import signature
 import screed
+import pickle
 
 
 class MinHashFactory(object):
@@ -147,8 +148,8 @@ def main():
     contigfile = '%s.gxt.contigs' % (basename,)
     contigfile = os.path.join(args.catlas_prefix, contigfile)
 
-    catlas = os.path.join(args.catlas_prefix, args.catlas_prefix + '.catlas')
-    domfile = os.path.join(args.catlas_prefix, args.catlas_prefix + '.domfile')
+    catlas = os.path.join(args.catlas_prefix, basename + '.catlas')
+    domfile = os.path.join(args.catlas_prefix, basename + '.domfile')
     
     # make minhashes from node contigs
     print('making contig minhashes...')
@@ -177,6 +178,18 @@ def main():
     # build minhashes for entire catlas, or just the leaves (dom nodes)?
     if not args.leaves_only:
         build_dag(catlas, leaf_minhashes, factory)
+
+    if 1:
+        path = os.path.basename(args.catlas_prefix) + '.minhashes'
+        path = os.path.join(args.catlas_prefix, path)
+
+        os.mkdir(path)
+
+        for node_id, mh in leaf_minhashes.items():
+            name = 'node{}.pickle'.format(node_id)
+            name = os.path.join(path, name)
+            with open(name, 'wb') as fp:
+                pickle.dump(mh, fp)
 
     sigs = []
     for node_id, mh in leaf_minhashes.items():
