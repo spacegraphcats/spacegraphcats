@@ -20,7 +20,10 @@ search: acido acido-sbt acido.fa.gz.sig
 	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 ../data/15genome.fa.gz -o 15genome
 
 15genome-catlas:
-	python -m spacegraphcats.catlas 15genome/15genome.gxt 15genome/15genome.catlas 15genome/15genome.domfile 15
+	python -m spacegraphcats.catlas 15genome/15genome.gxt 15genome/15genome.catlas 15genome/15genome.domfile 3
+
+15genome-sigs:
+	python make-sbt-from-contigs.py -k 31 --scaled=1000 --sbt 15genome
 
 15genome-tetra:
 	python make-sbt-from-contigs.py -k 4 --scaled=1 --leaves-only 15genome 

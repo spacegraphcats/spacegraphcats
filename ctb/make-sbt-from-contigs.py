@@ -22,11 +22,22 @@ class MinHashFactory(object):
 
 
 def make_contig_minhashes(contigfile, factory):
+    "Make the minhashes for each contig in the contigfile."
+
     d = {}
+    total_bp = 0
+    watermark = 1e7
     for record in screed.open(contigfile):
+        if total_bp >= watermark:
+            print('... {:.0e} bp thru contigs'.format(int(watermark)),
+                  file=sys.stderr)
+            watermark += 1e7
+
         mh = factory()
         mh.add_sequence(record.sequence)
         d[int(record.name)] = mh
+
+        total_bp += len(record.sequence)
 
     return d
 
@@ -72,8 +83,9 @@ def load_layer1_to_cdbg(catlas_file, domfile):
 
 
 def build_dag(catlas_file, leaf_minhashes, factory):
-    catlas_to_cdbg = {}
+    "Build MinHashes for all the internal nodes of the catlas DAG."
 
+    # create a list of all the nodes, sorted by level (increasing)
     x = []
     for line in open(catlas_file, 'rt'):
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
@@ -85,6 +97,8 @@ def build_dag(catlas_file, leaf_minhashes, factory):
 
         x.append((int(level), int(catlas_node), beneath))
 
+    # walk through, building the merged minhashes (which we can do in a
+    # single pass on the sorted list).
     x.sort()
     for (level, catlas_node, beneath) in x:
         merged_mh = factory()
@@ -153,10 +167,14 @@ def main():
     # create minhashes for catlas leaf nodes.
     leaf_minhashes = {}
     for n, (catlas_node, cdbg_nodes) in enumerate(layer1_to_cdbg.items()):
+        if n % 1000 == 0:
+            print('... built {} leaf node MinHashes...'.format(n),
+                  file=sys.stderr)
         mh = merge_nodes(graph_minhashes, cdbg_nodes, factory)
         leaf_minhashes[catlas_node] = mh
     print('created {} leaf node MinHashes via merging'.format(n + 1))
 
+    # build minhashes for entire catlas, or just the leaves (dom nodes)?
     if not args.leaves_only:
         build_dag(catlas, leaf_minhashes, factory)
 
@@ -165,8 +183,11 @@ def main():
         ss = signature.SourmashSignature('', mh,
                                          name='node{}'.format(node_id))
         sigs.append(ss)
-            
+
+    # shall we output an SBT or just a file full of signatures?
     if not args.sbt:
+
+        # just sigs - decide on output name
         if args.output:
             signame = args.output
         else:
@@ -178,6 +199,7 @@ def main():
         with open(signame, 'wt') as fp:
             signature.save_signatures(sigs, fp)
     else:
+        # build an SBT!
         factory = GraphFactory(1, args.bf_size, 4)
         tree = SBT(factory)
 
