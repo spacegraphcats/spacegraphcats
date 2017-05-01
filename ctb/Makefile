@@ -1,4 +1,4 @@
-all: acido acido-sbt
+all: search
 
 clean:
 	rm -fr acido
@@ -7,7 +7,7 @@ acido/acido.gxt:
 	python -m spacegraphcats.build_contracted_dbg -k 31 -M 1e9 ../data/acido.fa.gz
 	python -m spacegraphcats.catlas acido/acido.gxt acido/acido.catlas acido/acido.domfile 1
 
-acido/acido.minhashes:
+acido/acido.minhashes: acido/acido.gxt
 	python make-sbt-from-contigs.py acido -k 31 --scaled=1000 --sbt
 
 acido.fa.gz.sig:
@@ -17,7 +17,7 @@ search: acido/acido.minhashes acido.fa.gz.sig
 	./search-catlas-with-minhash.py acido.fa.gz.sig acido
 
 15genome-clean:
-	rm -fr 15genome/
+	rm -r 15genome/
 
 15genome/15genome.gxt:
 	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 ../data/15genome.fa.gz -o 15genome
