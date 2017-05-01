@@ -13,11 +13,18 @@ from sourmash_lib import signature
 import screed
 
 
-def make_contig_minhashes(contigfile, ksize, scaled):
+class MinHashFactory(object):
+    def __init__(self, **params):
+        self.params = params
+
+    def __call__(self):
+        return MinHash(**self.params)
+
+
+def make_contig_minhashes(contigfile, factory):
     d = {}
     for record in screed.open(contigfile):
-        mh = MinHash(n=0, ksize=ksize,
-                     max_hash=sourmash_lib.scaled_to_max_hash(scaled))
+        mh = factory()
         mh.add_sequence(record.sequence)
         d[int(record.name)] = mh
 
@@ -64,7 +71,7 @@ def load_layer1_to_cdbg(catlas_file, domfile):
     return layer1_to_cdbg
 
 
-def build_dag(catlas_file, leaf_minhashes, ksize, scaled):
+def build_dag(catlas_file, leaf_minhashes, factory):
     catlas_to_cdbg = {}
 
     x = []
@@ -80,8 +87,7 @@ def build_dag(catlas_file, leaf_minhashes, ksize, scaled):
 
     x.sort()
     for (level, catlas_node, beneath) in x:
-        merged_mh = MinHash(n=0, ksize=ksize,
-                            max_hash=sourmash_lib.scaled_to_max_hash(scaled))
+        merged_mh = factory()
 
         for subnode in beneath:
             mh = leaf_minhashes[subnode]
@@ -89,11 +95,10 @@ def build_dag(catlas_file, leaf_minhashes, ksize, scaled):
         leaf_minhashes[catlas_node] = merged_mh
 
 
-def merge_nodes(child_dict, child_node_list, ksize, scaled):
+def merge_nodes(child_dict, child_node_list, factory):
     """Merge child nodes into a single minhash."""
     # merge into a single minhash!
-    merged_mh = MinHash(n=0, ksize=ksize,
-                        max_hash=sourmash_lib.scaled_to_max_hash(scaled))
+    merged_mh = factory()
 
     for graph_node in child_node_list:
         if graph_node in child_dict:
@@ -113,10 +118,16 @@ def main():
     p.add_argument('-k', '--ksize', default=31, type=int)
     p.add_argument('--sbt', action='store_true')
     p.add_argument('-o', '--output', default=None)
+    p.add_argument('--track-abundance', action='store_true')
+
     args = p.parse_args()
 
     ksize = args.ksize
     scaled = args.scaled
+
+    factory = MinHashFactory(n=0, ksize=ksize,
+                             max_hash=sourmash_lib.scaled_to_max_hash(scaled),
+                             track_abundance=args.track_abundance)
     
     basename = os.path.basename(args.catlas_prefix)
     contigfile = '%s.gxt.contigs' % (basename,)
@@ -127,7 +138,7 @@ def main():
     
     # make minhashes from node contigs
     print('making contig minhashes...')
-    graph_minhashes = make_contig_minhashes(contigfile, ksize, scaled)
+    graph_minhashes = make_contig_minhashes(contigfile, factory)
     print('made {} minhashes'.format(len(graph_minhashes)))
     print('ksize={} scaled={:.0f}'.format(ksize, scaled))
 
@@ -142,12 +153,12 @@ def main():
     # create minhashes for catlas leaf nodes.
     leaf_minhashes = {}
     for n, (catlas_node, cdbg_nodes) in enumerate(layer1_to_cdbg.items()):
-        mh = merge_nodes(graph_minhashes, cdbg_nodes, ksize, scaled)
+        mh = merge_nodes(graph_minhashes, cdbg_nodes, factory)
         leaf_minhashes[catlas_node] = mh
     print('created {} leaf node MinHashes via merging'.format(n + 1))
 
     if not args.leaves_only:
-        build_dag(catlas, leaf_minhashes, ksize, scaled)
+        build_dag(catlas, leaf_minhashes, factory)
 
     sigs = []
     for node_id, mh in leaf_minhashes.items():
