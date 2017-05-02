@@ -131,6 +131,7 @@ def main():
     p.add_argument('--leaves-only', action='store_true')
     p.add_argument('--scaled', default=100.0, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int)
+    p.add_argument('--no-pickles', action='store_true', help="don't build catlas minhashes directory & pickles")
     p.add_argument('--sbt', action='store_true', help='build SBT for use with sourmash')
     p.add_argument('--sigs', action='store_true', help='save built minhashes for use with sourmash')
     p.add_argument('-o', '--output', default=None)
@@ -181,20 +182,23 @@ def main():
     if not args.leaves_only:
         build_dag(catlas, leaf_minhashes, factory)
 
-    path = os.path.basename(args.catlas_prefix) + '.minhashes'
-    path = os.path.join(args.catlas_prefix, path)
+    if args.no_pickles:
+        print('per --no-pickles, NOT building catlas .minhashes directory.')
+    else:
+        path = os.path.basename(args.catlas_prefix) + '.minhashes'
+        path = os.path.join(args.catlas_prefix, path)
 
-    try:
-        os.mkdir(path)
-    except FileExistsError:
-        pass
+        try:
+            os.mkdir(path)
+        except FileExistsError:
+            pass
 
-    print('saving individual minhashes in {}/node*.pickle'.format(path))
-    for node_id, mh in leaf_minhashes.items():
-        name = 'node{}.pickle'.format(node_id)
-        name = os.path.join(path, name)
-        with open(name, 'wb') as fp:
-            pickle.dump(mh, fp)
+        print('saving individual minhashes in {}/node*.pickle'.format(path))
+        for node_id, mh in leaf_minhashes.items():
+            name = 'node{}.pickle'.format(node_id)
+            name = os.path.join(path, name)
+            with open(name, 'wb') as fp:
+                pickle.dump(mh, fp)
 
     if args.sbt or args.sigs:
         print('')
