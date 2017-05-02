@@ -284,7 +284,7 @@ def assign_to_dominators(graph, domset, radius):
     return dominated_at_radius
 
 
-def domination_graph(graph, domset, radius,):
+def domination_graph(graph, domset, radius):
     """
     Build up a 'domination graph' by assigning each vertex to its closest
     dominators. These dominators will be connected in the final graph.
@@ -297,6 +297,8 @@ def domination_graph(graph, domset, radius,):
     # dictionary mapping vertices from the graph to closest dominators to it
     closest_dominators = {}
     domdistance = {v: 0 for v in dominated_at_radius}
+
+    print("Adding edges between odd length optimal domination")
     # the keys of dominators should all belong to the same component, so this
     # should implicitly only operate on the vertices we care about
     for v in dominated_at_radius:
@@ -315,7 +317,8 @@ def domination_graph(graph, domset, radius,):
             for y in nonneighbors:
                 domgraph.add_arc(x, y)
                 domgraph.add_arc(y, x)
-    print("Added edges between odd length optimal domination")
+
+    print("Adding edges between even length optimal domination")
     # Two vertices in the dominating graph should be adjacent if they
     # optimally dominate a common vertex.  Note that this only includes
     # dominators with odd length paths between them because even length paths
@@ -342,7 +345,6 @@ def domination_graph(graph, domset, radius,):
                     domgraph.add_arc(x, y)
                     domgraph.add_arc(y, x)
 
-    print("Added edges between even length optimal domination")
     return domgraph, closest_dominators
 
 
