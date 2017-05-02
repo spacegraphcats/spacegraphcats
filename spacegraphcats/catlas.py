@@ -166,4 +166,5 @@ if __name__ == "__main__":
                         type=argparse.FileType('w'))
     parser.add_argument("radius", help="Catlas radius", type=int)
     args = parser.parse_args()
-    cProfile.run("main(args)")
+    main(args)
+    #cProfile.run("main(args)")
