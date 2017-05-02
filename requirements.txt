@@ -1,3 +1,4 @@
+mypy
 screed
 pytest
 https://github.com/dib-lab/khmer/archive/spacegraphcats.zip

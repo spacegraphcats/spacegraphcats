@@ -2,7 +2,7 @@ import unittest
 import os
 from io import StringIO
 
-import spacegraphcats.graph_parser as parser
+from . import graph_parser as parser
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 

@@ -3,11 +3,15 @@
 import argparse
 import cProfile
 import os
-from spacegraphcats.rdomset import rdomset, domination_graph
-from spacegraphcats.graph_io import read_from_gxt
+from io import TextIOWrapper
+from typing import List, Dict, Set
+
+from .rdomset import rdomset, domination_graph
+from .graph_io import read_from_gxt
+from .graph import Graph
 
 
-class CAtlas:
+class CAtlas(object):
     """Hierarchical atlas for querying graphs."""
 
     LEVEL_THRESHOLD = 10
@@ -30,7 +34,7 @@ class CAtlas:
         self.level = level
 
     @staticmethod
-    def build(graph, radius, domfile):
+    def build(graph: Graph, radius: int, domfile: TextIOWrapper):
         """Build a CAtlas at a given radius."""
         # set up values for the base level
         curr_graph = graph
@@ -80,7 +84,7 @@ class CAtlas:
         return CAtlas(idx, root_vertex, level, root_children)
 
     @staticmethod
-    def _build_level(graph, radius, level, min_id=0, prev_nodes=None):
+    def _build_level(graph: Graph, radius: int, level: int, min_id: int=0, prev_nodes: List[int]=None):
         # find the domgraph of the current domgraph
         domset = rdomset(graph, radius)
         domgraph, closest_dominators = domination_graph(graph, domset, radius)
@@ -90,7 +94,7 @@ class CAtlas:
         # v dominating u indicates that u will be a child of v
         # we have the assignment from vertices to dominators, make the
         # reverse
-        dominated = {v: list() for v in domset}
+        dominated = {v: list() for v in domset}  # type: Dict[int, List[int]]
         for u, doms in closest_dominators.items():
             for v in doms:
                 dominated[v].append(u)
@@ -101,14 +105,14 @@ class CAtlas:
             # if no previous nodes were supplied, we assume we are on the
             # bottom level and thus the children field is empty
             if prev_nodes is None:
-                children = []
+                children = []  # type: List[int]
             else:
                 children = [prev_nodes[u] for u in dominated[v]]
             nodes[v] = CAtlas(min_id+idx, v, level, children)
 
         return nodes, domgraph, dominated
 
-    def leaves(self, visited=None):
+    def leaves(self, visited: Set[object]=None) -> Set[object]:
         """Find the descendants of this node with no children."""
         # this function is recursive so we need to keep track of nodes we
         # already visited
@@ -118,14 +122,14 @@ class CAtlas:
         if self.level == 0:
             return set([self])
         # otherwise gather the leaves of the children
-        res = set()
+        res = set()  # type: Set[object]
         for c in self.children:
             if c not in visited:
                 visited.add(c)
                 res |= c.leaves(visited)
         return res
 
-    def write(self, outfile):
+    def write(self, outfile: TextIOWrapper):
         """Write the connectivity of the CAtlas to file."""
         # doesn't matter how we traverse the graph, so we use DFS for ease of
         # implementation

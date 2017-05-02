@@ -1,6 +1,6 @@
 """Reading and writing functions."""
-from spacegraphcats.graph_parser import parse, write
-from spacegraphcats.graph import Graph
+from .graph_parser import parse, write
+from .graph import Graph
 
 
 def read_from_gxt(gxtfile, radius: int, directed: bool):

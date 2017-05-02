@@ -5,7 +5,7 @@ import khmer
 import screed
 from collections import OrderedDict, defaultdict
 import os, os.path
-from spacegraphcats import graph_parser
+from .graph_parser import write
 
 
 class Pathfinder(object):
@@ -240,7 +240,7 @@ def run(args):
             if (k != dest):
                 edges.append((k, dest))
 
-    graph_parser.write(open(gxtfile, 'wt'), pathy.node_counter, edges)
+    write(open(gxtfile, 'wt'), pathy.node_counter, edges)
 
     if args.label:
         print('note: used/assigned %d labels total' % (len(set(all_labels)),))
