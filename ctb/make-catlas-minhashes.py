@@ -30,7 +30,7 @@ def make_contig_minhashes(contigfile, factory):
     watermark = 1e7
     for record in screed.open(contigfile):
         if total_bp >= watermark:
-            print('... {:.0e} bp thru contigs'.format(int(watermark)),
+            print('... {:5.0e} bp thru contigs'.format(int(watermark)),
                   file=sys.stderr)
             watermark += 1e7
 
@@ -131,7 +131,9 @@ def main():
     p.add_argument('--leaves-only', action='store_true')
     p.add_argument('--scaled', default=100.0, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int)
-    p.add_argument('--sbt', action='store_true')
+    p.add_argument('--no-pickles', action='store_true', help="don't build catlas minhashes directory & pickles")
+    p.add_argument('--sbt', action='store_true', help='build SBT for use with sourmash')
+    p.add_argument('--sigs', action='store_true', help='save built minhashes for use with sourmash')
     p.add_argument('-o', '--output', default=None)
     p.add_argument('--track-abundance', action='store_true')
 
@@ -152,10 +154,10 @@ def main():
     domfile = os.path.join(args.catlas_prefix, basename + '.domfile')
     
     # make minhashes from node contigs
+    print('ksize={} scaled={:.0f}'.format(ksize, scaled))
     print('making contig minhashes...')
     graph_minhashes = make_contig_minhashes(contigfile, factory)
-    print('made {} minhashes'.format(len(graph_minhashes)))
-    print('ksize={} scaled={:.0f}'.format(ksize, scaled))
+    print('...made {} contig minhashes'.format(len(graph_minhashes)))
 
     # load mapping between dom nodes and cDBG/graph nodes:
     layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
@@ -168,32 +170,40 @@ def main():
     # create minhashes for catlas leaf nodes.
     leaf_minhashes = {}
     for n, (catlas_node, cdbg_nodes) in enumerate(layer1_to_cdbg.items()):
-        if n % 1000 == 0:
+        if n and n % 1000 == 0:
             print('... built {} leaf node MinHashes...'.format(n),
                   file=sys.stderr)
         mh = merge_nodes(graph_minhashes, cdbg_nodes, factory)
         leaf_minhashes[catlas_node] = mh
     print('created {} leaf node MinHashes via merging'.format(n + 1))
+    print('')
 
     # build minhashes for entire catlas, or just the leaves (dom nodes)?
     if not args.leaves_only:
         build_dag(catlas, leaf_minhashes, factory)
 
-    path = os.path.basename(args.catlas_prefix) + '.minhashes'
-    path = os.path.join(args.catlas_prefix, path)
+    if args.no_pickles:
+        print('per --no-pickles, NOT building catlas .minhashes directory.')
+    else:
+        path = os.path.basename(args.catlas_prefix) + '.minhashes'
+        path = os.path.join(args.catlas_prefix, path)
 
-    try:
-        os.mkdir(path)
-    except FileExistsError:
-        pass
+        try:
+            os.mkdir(path)
+        except FileExistsError:
+            pass
 
-    for node_id, mh in leaf_minhashes.items():
-        name = 'node{}.pickle'.format(node_id)
-        name = os.path.join(path, name)
-        with open(name, 'wb') as fp:
-            pickle.dump(mh, fp)
+        print('saving individual minhashes in {}/node*.pickle'.format(path))
+        for node_id, mh in leaf_minhashes.items():
+            name = 'node{}.pickle'.format(node_id)
+            name = os.path.join(path, name)
+            with open(name, 'wb') as fp:
+                pickle.dump(mh, fp)
 
-    if 0:
+    if args.sbt or args.sigs:
+        print('')
+        print('building signatures for use with sourmash')
+
         sigs = []
         for node_id, mh in leaf_minhashes.items():
             ss = signature.SourmashSignature('', mh,
@@ -201,8 +211,7 @@ def main():
             sigs.append(ss)
 
         # shall we output an SBT or just a file full of signatures?
-        if not args.sbt:
-
+        if args.sigs:
             # just sigs - decide on output name
             if args.output:
                 signame = args.output
@@ -214,12 +223,14 @@ def main():
 
             with open(signame, 'wt') as fp:
                 signature.save_signatures(sigs, fp)
-        else:
+
+        if args.sbt:
             # build an SBT!
             factory = GraphFactory(1, args.bf_size, 4)
             tree = SBT(factory)
 
-            print('building tree...')
+            print('')
+            print('building Sequence Bloom tree for signatures...')
             for ss in sigs:
                 leaf = SigLeaf(ss.md5sum(), ss)
                 tree.add_node(leaf)
@@ -232,7 +243,7 @@ def main():
                 sbt_name = os.path.basename(args.catlas_prefix)
                 sbt_name = os.path.join(args.catlas_prefix, sbt_name)
             tree.save(sbt_name)
-            print('saved sbt "{}"'.format(sbt_name))
+            print('saved sbt "{}.sbt.json"'.format(sbt_name))
 
     sys.exit(0)
 

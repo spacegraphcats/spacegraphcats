@@ -139,7 +139,7 @@ def run(args):
             for record in screed.open(seqfile):
                 if len(record.sequence) < graph.ksize(): continue
                 n += 1
-                if n % 10000 == 0:
+                if n % 100000 == 0:
                     print('...', seqfile, n)
                 graph.consume(record.sequence)
 
@@ -161,7 +161,7 @@ def run(args):
         for record in screed.open(seqfile):
             if len(record.sequence) < ksize: continue
             n += 1
-            if n % 10000 == 0:
+            if n % 100000 == 0:
                 print('...2', seqfile, n)
             # walk across sequences, find all high degree nodes,
             # name them and cherish them.
