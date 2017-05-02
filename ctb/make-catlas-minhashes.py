@@ -30,7 +30,7 @@ def make_contig_minhashes(contigfile, factory):
     watermark = 1e7
     for record in screed.open(contigfile):
         if total_bp >= watermark:
-            print('... {:.0e} bp thru contigs'.format(int(watermark)),
+            print('... {:5.0e} bp thru contigs'.format(int(watermark)),
                   file=sys.stderr)
             watermark += 1e7
 

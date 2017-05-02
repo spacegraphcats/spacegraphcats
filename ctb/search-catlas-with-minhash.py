@@ -15,27 +15,34 @@ import pickle
 
 
 def load_dag(catlas_file):
+    "Load the catlas Directed Acyclic Graph."
     dag = defaultdict(set)
     dag_levels = defaultdict(int)
-    
+
+    # track the root of the tree
     max_node = -1
     max_level = -1
 
+    # load everything from the catlas file
     for line in open(catlas_file, 'rt'):
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
 
+        # skip bottom (level 0) nodes / domset, as they have no children.
         if int(level) <= 1:
             continue
 
+        # parse out the children
         catlas_node = int(catlas_node)
         beneath = beneath.strip()
         if beneath:
             beneath = beneath.split(' ')
             beneath = set(map(int, beneath))
 
+            # save node -> children, and level
             dag[catlas_node] = beneath
             dag_levels[catlas_node] = level
 
+            # update max_node/max_level
             level = int(level)
             if level > max_level:
                 max_level = level
@@ -45,10 +52,10 @@ def load_dag(catlas_file):
 
 
 def load_minhash(node_id, minhash_dir):
+    "Load an individual node's MinHash via pickle."
     filename = 'node{}.pickle'.format(node_id)
     filename = os.path.join(minhash_dir, filename)
 
-    #print('loading {}'.format(filename))
     with open(filename, 'rb') as fp:
         node_mh = pickle.load(fp)
 
