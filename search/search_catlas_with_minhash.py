@@ -115,11 +115,16 @@ def main():
         containment = query_mh.containment(best_child_mh)
         print("best_sim={:.3f} contain={:.3f} node_id={} level={}".format(\
             best_sim, containment, best_node_id, dag_levels[best_node_id]))
+        remaining_nodes = len(sims) - 1
         for nextsim, nextid, nextmh in sims[1:]:
             if nextsim > 0.01:
                 containment = query_mh.containment(nextmh)
                 print("\tsim={:.3f} contain={:.3f} node_id={}".format(\
                     nextsim, containment, nextid))
+                remaining_nodes -= 1
+            elif remaining_nodes > 0:
+                print("\t{} more nodes...".format(remaining_nodes))
+                break
             
         print('---')
 
