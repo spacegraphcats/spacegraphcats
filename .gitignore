@@ -6,3 +6,6 @@
 acido
 15genome
 tr-cross
+build/
+dist/
+spacegraphcats.egg-info/
