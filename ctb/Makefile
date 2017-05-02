@@ -14,7 +14,7 @@ acido/acido.gxt: ../data/acido.fa.gz
 
 # build catlas
 acido/acido.catlas: acido/acido.gxt
-	python -m spacegraphcats.catlas acido/acido.gxt acido/acido.catlas acido/acido.domfile 1
+	python -m spacegraphcats.catlas acido 1
 
 # build minhashes
 acido/acido.minhashes: acido/acido.catlas
@@ -38,7 +38,7 @@ search: acido/acido.minhashes acido-chunk1.fa.gz.sig
 
 # build catlas
 15genome/15genome.catlas: 15genome/15genome.gxt
-	python -m spacegraphcats.catlas 15genome/15genome.gxt 15genome/15genome.catlas 15genome/15genome.domfile 3
+	python -m spacegraphcats.catlas 15genome 3
 
 # build minhashes
 15genome/15genome.minhashes: 15genome/15genome.catlas
