@@ -189,7 +189,7 @@ def main():
     except FileExistsError:
         pass
 
-    print('saving individual minhashes in {}/node*.pickle')
+    print('saving individual minhashes in {}/node*.pickle'.format(path))
     for node_id, mh in leaf_minhashes.items():
         name = 'node{}.pickle'.format(node_id)
         name = os.path.join(path, name)
