@@ -2,21 +2,22 @@
 import itertools
 from collections import defaultdict
 
+from typing import Callable, List, Tuple, Set, Iterable, Any, Sized
 
-class Graph(object):
+class Graph(Iterable, Sized):
     """
     Graph data structure.
 
     Undirected edges are represented by bidirectional directed arcs
     """
 
-    def __init__(self, num_nodes, radius=1):
+    def __init__(self, num_nodes: int, radius: int=1) -> None:
         """Create a new graph."""
         self.num_nodes = num_nodes
         self.radius = radius
         # lookup the neighbors of a vertex with a given weight
         self.inarcs_by_weight = [[set() for i in range(self.num_nodes)]
-                                 for j in range(self.radius)]
+                                 for j in range(self.radius)] # type: Any
 
     def __iter__(self):
         """Iteration support."""
@@ -26,13 +27,13 @@ class Graph(object):
         """len() support."""
         return self.num_nodes
 
-    def add_arc(self, u, v, weight=1):
+    def add_arc(self, u: int, v: int, weight: int=1):
         """Add the arc u,v at a given weight."""
         # use weight-1 for 0 indexing
         self.inarcs_by_weight[weight-1][v].add(u)
         return self
 
-    def remove_arc(self, u, v):
+    def remove_arc(self, u: int, v: int):
         """
         Remove arc uv from the graph.
 
@@ -44,14 +45,14 @@ class Graph(object):
                 return self
         return self
 
-    def adjacent(self, u, v):
+    def adjacent(self, u: int, v: int):
         """Check if uv or vu is an arc."""
         for arc_list in self.inarcs_by_weight:
             if u in arc_list[v] or v in arc_list[u]:
                 return True
         return False
 
-    def arcs(self, weight=None):
+    def arcs(self, weight: int=None):
         """
         Return all the arcs in the graph.
 
@@ -67,7 +68,7 @@ class Graph(object):
                     for x, N in enumerate(self.inarcs_by_weight[weight-1])
                     for y in N]
 
-    def in_neighbors(self, v, weight=None):
+    def in_neighbors(self, v: int, weight: int=None):
         """Return the inneighbors at a vertex."""
         if weight is None:
             # return self.inarcs[v].items()
@@ -77,18 +78,18 @@ class Graph(object):
         else:
             return self.inarcs_by_weight[weight-1][v]
 
-    def in_degree(self, v, weight=None):
+    def in_degree(self, v: int, weight: int=None):
         """Return the number of in neighbors."""
         if weight is None:
             return sum(len(x[v]) for x in self.inarcs_by_weight)
         else:
             return len(self.inarcs_by_weight[weight-1][v])
 
-    def num_arcs(self, weight=None):
+    def num_arcs(self, weight: int=None):
         """Return the total number of arcs in this graph."""
         return sum(self.in_degree(v, weight) for v in self)
 
-    def transitive_pairs(self, u, w):
+    def transitive_pairs(self, u: int, w: int):
         """Return transitive pairs (x,u) whose weight sum is exactly w."""
         # loop over all weights that sum to w
         for wy in range(1, w):
@@ -101,7 +102,7 @@ class Graph(object):
                     if x != u and not self.adjacent(x, u):
                         yield x, u
 
-    def fraternal_pairs(self, u, w):
+    def fraternal_pairs(self, u: int, w: int):
         """
         Return fraternal pairs of in_neighbors of u (x,y) whose weight sum is
         exactly w.  (x,y) are fraternal if they are not adjacent.
@@ -127,10 +128,10 @@ class Graph(object):
 class DictGraph(Graph):
     """Graph that supports nonconsecutive vertex ids."""
 
-    def __init__(self, nodes=None, r=1):
+    def __init__(self, nodes: Set[int]=None, r: int=1) -> None:
         """Make a new graph."""
         if nodes is None:
-            self.nodes = set()
+            self.nodes = set()  # type: Set[int]
         else:
             self.nodes = nodes
         self.radius = r
@@ -144,7 +145,7 @@ class DictGraph(Graph):
         """Iteration support."""
         return iter(self.nodes)
 
-    def add_node(self, u):
+    def add_node(self, u: int):
         """Add a new node."""
         self.nodes.add(u)
 
@@ -153,7 +154,7 @@ class DictGraph(Graph):
         self.add_node(v)
         return super().add_arc(u, v, weight)
 
-    def arcs(self, weight=None):
+    def arcs(self, weight: int=None):
         """
         Return all the arcs in the graph.
 

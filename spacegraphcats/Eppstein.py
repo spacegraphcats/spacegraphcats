@@ -9,8 +9,10 @@ with significant additional changes by D. Eppstein.
 
 from __future__ import generators
 
+from typing import Iterable
 
-class UnionFind(object):
+
+class UnionFind(Iterable):
     """Union-find data structure.
 
     Each unionFind instance X maintains a family of disjoint sets of

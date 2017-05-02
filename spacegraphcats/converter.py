@@ -3,7 +3,7 @@
 """Convert graph with nonconsecutive ids to have consecutive ids."""
 import sys
 
-from spacegraphcats.graph_parser import write
+from .graph_parser import write
 
 class IdentityHash:
     def __init__(self):

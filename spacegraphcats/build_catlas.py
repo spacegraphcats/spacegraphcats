@@ -5,11 +5,11 @@ import gzip, glob
 from operator import itemgetter
 from os import path
 
-from spacegraphcats.graph import Graph
-from spacegraphcats.graph_io import read_from_gxt, write_to_gxt
-from spacegraphcats.rdomset import low_degree_orientation
-from spacegraphcats.graph_parser import parse
-from spacegraphcats.components import num_components
+from .graph import Graph
+from .graph_io import read_from_gxt, write_to_gxt
+from .rdomset import low_degree_orientation
+from .graph_parser import parse
+from .components import num_components
 
 DEBUG = True
 
@@ -17,20 +17,20 @@ class AttributeDict(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
 
-def report(msg):
+def report(msg: str):
     print(msg)
 
-def debug(msg):
+def debug(msg: str):
     if DEBUG == True:
         print(msg)
 
-def warn(msg):
+def warn(msg: str):
     print("  Warning:",msg)
 
-def error(msg):
+def error(msg: str):
     raise RuntimeError(msg)
 
-def read_project_file(projectpath, filename):
+def read_project_file(projectpath: str, filename: str):
     """
         Attempts to read a project file. Checks whether compressed file (.gz)
         exists that otherwise matches the filename.

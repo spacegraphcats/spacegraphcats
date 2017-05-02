@@ -2,7 +2,7 @@
 
 import unittest
 import itertools
-from spacegraphcats.graph import Graph
+from .graph import Graph
 
 
 class GraphTest(unittest.TestCase):
