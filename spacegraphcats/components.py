@@ -1,9 +1,11 @@
 """Compute the components of a graph."""
-from spacegraphcats.Eppstein import UnionFind
 from collections import defaultdict
+from typing import Set, List, ValuesView
 
+from .Eppstein import UnionFind
+from .graph import Graph
 
-def component_index(graph):
+def component_index(graph: Graph) -> UnionFind:
     """
     Return a union-find data structure associating each vertex with an id
      (another vertex) the connected component it is contained in.
@@ -15,16 +17,16 @@ def component_index(graph):
     return comps
 
 
-def components(graph):
+def components(graph: Graph) -> ValuesView[Set[int]]:
     """Return the components."""
     comps = component_index(graph)
-    res = defaultdict(set)
+    res = defaultdict(set)  # type: defaultdict[int, Set[int]]
     for v in graph:
         res[comps[v]].add(v)
     return res.values()
 
 
-def num_components(graph) -> int:
+def num_components(graph: Graph) -> int:
     """Compute the number of components."""
     comps = component_index(graph)
     ids = set([comps[v] for v in comps])

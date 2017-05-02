@@ -1,9 +1,11 @@
 """Algorithms for r-dominating set computation."""
 from collections import defaultdict
-from spacegraphcats.graph import DictGraph
+from .graph import Graph, DictGraph
+
+from typing import List, Set, Dict, Any, Union
 
 
-def low_degree_orientation(graph):
+def low_degree_orientation(graph: Graph):
     """
     Compute a low-in-degree orientation of a graph.
 
@@ -72,9 +74,13 @@ def low_degree_orientation(graph):
     print("removed {} of {} nodes".format(curr+1, n))
 
 
-def ldo_setup(graph):
+def ldo_setup(graph: Graph):
     """Setup data structure for low degree orientation."""
     n = len(graph)
+
+    degrees = None  # type: Union[Dict[int, int], List[int]]
+    location = None  # type: Union[Dict[int, int], List[int]]
+    max_deg = 0
 
     # hack-y way to know whether our location and degree lookups should be
     # lists or dictionaries
@@ -99,7 +105,7 @@ def ldo_setup(graph):
     bin_starts = [sum(degree_counts[:i]) for i in range(max_deg+1)]
     del degree_counts
     bin_ptrs = list(bin_starts)
-    bins = [None for _ in graph]
+    bins = [None for _ in graph]  # type: List[int]
 
     # assign the vertices to bins
     checkpoint = 0
@@ -116,7 +122,7 @@ def ldo_setup(graph):
     return bins, bin_starts, degrees, location
 
 
-def dtf_step(graph, dist):
+def dtf_step(graph: Graph, dist):
     """
     Compute the d-th dtf-augmentation from a graph.
 
@@ -154,7 +160,7 @@ def dtf_step(graph, dist):
         graph.add_arc(s, t, dist)
 
 
-def dtf(graph, radius):
+def dtf(graph: Graph, radius: int):
     """
     Compute dft-augmentations of a graph.
 
@@ -184,7 +190,7 @@ def dtf(graph, radius):
         d += 1
 
 
-def compute_domset(graph, radius):
+def compute_domset(graph: Graph, radius: int):
     """
     Compute a d-dominating set using Dvorak's approximation algorithm
     for dtf-graphs (see `Structural Sparseness and Complex Networks').
@@ -193,10 +199,10 @@ def compute_domset(graph, radius):
     domset = set()
     infinity = float('inf')
     # minimum distance to a dominating vertex, obviously infinite at start
-    domdistance = defaultdict(lambda: infinity)
+    domdistance = defaultdict(lambda: infinity)  # type: defaultdict[int, float]
     # counter that keeps track of how many neighbors have made it into the
     # domset
-    domcounter = defaultdict(int)
+    domcounter = defaultdict(int)  # type: defaultdict[int, int]
     # cutoff for how many times a vertex needs to have its neighbors added to
     # the domset before it does.  We choose radius^2 as a convenient "large"
     # number
@@ -240,14 +246,14 @@ def compute_domset(graph, radius):
     return domset
 
 
-def assign_to_dominators(graph, domset, radius):
+def assign_to_dominators(graph: Graph, domset: Set[int], radius: int):
     """
     Compute for each vertex the subset of domset that dominates it at
     distance radius.  Returns a double level dictionary that maps vertices in
     the original graph to integers 0 to radius to sets of vertices that
     dominate at that distance
     """
-    dominated_at_radius = defaultdict(lambda: defaultdict(set))
+    dominated_at_radius = defaultdict(lambda: defaultdict(set))  # type: defaultdict[int, defaultdict[int, Set[int]]]
 
     # Every vertex in domset is a zero-dominator of itself
     for v in domset:
@@ -276,7 +282,7 @@ def assign_to_dominators(graph, domset, radius):
     # we only want to store them for the _minimum_ distance at which they
     # act as a dominator.
     for v in dominated_at_radius:
-        cumulated = set()
+        cumulated = set()  # type: Set[int]
         for r in range(radius+1):
             dominated_at_radius[v][r] -= cumulated
             cumulated |= dominated_at_radius[v][r]
@@ -284,7 +290,7 @@ def assign_to_dominators(graph, domset, radius):
     return dominated_at_radius
 
 
-def domination_graph(graph, domset, radius):
+def domination_graph(graph: Graph, domset: Set[int], radius: int):
     """
     Build up a 'domination graph' by assigning each vertex to its closest
     dominators. These dominators will be connected in the final graph.
@@ -348,7 +354,7 @@ def domination_graph(graph, domset, radius):
     return domgraph, closest_dominators
 
 
-def rdomset(graph, radius):
+def rdomset(graph: Graph, radius: int):
     """Compute a dominating set of graph at radius radius."""
     dtf(graph, radius)
     domset = compute_domset(graph, radius)

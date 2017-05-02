@@ -1,8 +1,8 @@
 import unittest
 from io import StringIO
 
-from spacegraphcats.graph_io import read_from_gxt, write_to_gxt
-from spacegraphcats.graph import Graph
+from .graph_io import read_from_gxt, write_to_gxt
+from .graph import Graph
 
 
 class IOTest(unittest.TestCase):
