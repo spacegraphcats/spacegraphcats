@@ -1,23 +1,35 @@
+## Targets:
+##
+##   search: execute a small build-and-search on the 'acido' data set.
+##   15genome: execute a medium build-and-search on 15 genomes.
+
 all: search
 
 clean:
-	rm -fr acido
+	-rm -r acido acido.fa.gz.sig
 
-acido/acido.gxt:
+# build cDBG
+acido/acido.gxt: ../data/acido.fa.gz
 	python -m spacegraphcats.build_contracted_dbg -k 31 -M 1e9 ../data/acido.fa.gz
+
+# build catlas
+acido/acido.catlas: acido/acido.gxt
 	python -m spacegraphcats.catlas acido/acido.gxt acido/acido.catlas acido/acido.domfile 1
 
-acido/acido.minhashes: acido/acido.gxt
-	python make-sbt-from-contigs.py acido -k 31 --scaled=1000 --sbt
+# build minhashes
+acido/acido.minhashes: acido/acido.catlas
+	python make-catlas-minhashes.py acido -k 31 --scaled=1000 --sbt --sigs
 
-acido.fa.gz.sig:
+acido.fa.gz.sig: ../data/acido.fa.gz
 	sourmash compute -k 31 ../data/acido.fa.gz --scaled 1000 -f
 
 search: acido/acido.minhashes acido.fa.gz.sig
 	./search-catlas-with-minhash.py acido.fa.gz.sig acido
 
+### 
+
 15genome-clean:
-	rm -r 15genome/
+	-rm -r 15genome/
 
 15genome/15genome.gxt:
 	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 ../data/15genome.fa.gz -o 15genome
