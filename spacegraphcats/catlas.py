@@ -2,6 +2,7 @@
 
 import argparse
 import cProfile
+import os
 from spacegraphcats.rdomset import rdomset, domination_graph
 from spacegraphcats.graph_io import read_from_gxt
 
@@ -147,23 +148,24 @@ class CAtlas:
 def main(args):
     """Build a CAtlas for the provided input graph."""
     r = args.radius
+    proj_dir = args.project
+    name = os.path.split(proj_dir)[-1]
+    graph_file = open(os.path.join(proj_dir, name+".gxt"), 'r')
+    catlas_file = open(os.path.join(proj_dir, name+".catlas"), 'w')
+    dom_file = open(os.path.join(proj_dir, name+".domfile"), 'w')
     print("reading graph")
-    G = read_from_gxt(args.input, r, False)
+    G = read_from_gxt(graph_file, r, False)
     print("reading complete")
     print("building catlas")
-    cat = CAtlas.build(G, r, args.domfile)
+    cat = CAtlas.build(G, r, dom_file)
     print("writing graph")
-    cat.write(args.catlas)
+    cat.write(catlas_file)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", help="Input gxt file",
-                        type=argparse.FileType('r'))
-    parser.add_argument("catlas", help="Output catlas file",
-                        type=argparse.FileType('w'))
-    parser.add_argument("domfile", help="file to write base domination set",
-                        type=argparse.FileType('w'))
+    parser.add_argument("project", help="Project directory",
+                        type=str)
     parser.add_argument("radius", help="Catlas radius", type=int)
     args = parser.parse_args()
     main(args)
