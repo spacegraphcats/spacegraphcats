@@ -225,7 +225,7 @@ class Checkpoint(object):
             print("Root has children {}".format([i.vertex for i in root.children]))
             nodes = {node.vertex: node for node in root.children}
             idx = root.idx
-            level = root.level - 1
+            level = root.level
 
             if set(graph.nodes) ^ set(nodes.keys()):
                 print(graph.nodes)
