@@ -3,12 +3,12 @@
 import argparse
 import cProfile
 import os
+import tempfile
+from .rdomset import rdomset, domination_graph
+from .graph_io import read_from_gxt, write_to_gxt
+from .graph import Graph
 from io import TextIOWrapper
 from typing import List, Dict, Set
-
-from .rdomset import rdomset, domination_graph
-from .graph_io import read_from_gxt
-from .graph import Graph
 
 
 class CAtlas(object):
@@ -34,13 +34,17 @@ class CAtlas(object):
         self.level = level
 
     @staticmethod
-    def build(graph: Graph, radius: int, domfile: TextIOWrapper):
+    def build(graph: Graph, radius: int, domfile: TextIOWrapper, 
+              checkpoint = None):
         """Build a CAtlas at a given radius."""
-        # set up values for the base level
-        curr_graph = graph
-        prev_nodes = None
-        level = 0
-        idx = 0
+        # set up values for the base level if we don't have a checkpoint saved
+        if checkpoint is None or not os.path.exists(checkpoint.infile):
+            curr_graph = graph
+            prev_nodes = None
+            level = 0
+            idx = 0
+        else:
+            prev_nodes, curr_graph, idx, level = checkpoint.load()
         # keep creating progressively smaller graphs until we hit the level
         # threshold or steady state
         while True:
@@ -54,7 +58,6 @@ class CAtlas(object):
                                                              level, idx,
                                                              prev_nodes)
 
-            # adjust counters
             print("Catlas level {} complete".format(level))
 
             # at the bottom level we need to write out the domination
@@ -67,17 +70,21 @@ class CAtlas(object):
                     domstr += "\n"
                     domfile.write(domstr)
 
-            idx += len(nodes)
-            level += 1
-
             # quit if our level is sufficiently small
             if len(domgraph) <= CAtlas.LEVEL_THRESHOLD or \
                     len(domgraph) == len(curr_graph):
                 break
 
-            # otherwise prep for the next iteration
+            # prep for the next iteration
             curr_graph = domgraph
             prev_nodes = nodes
+            idx += len(nodes)
+            level += 1
+            
+            # write level results to the checkpoint file if applicable
+            if checkpoint is not None:
+                checkpoint.save(prev_nodes, curr_graph, idx, level)
+
         # create a single root over the top level
         root_children = list(nodes.values())
         root_vertex = root_children[0].vertex
@@ -148,6 +155,94 @@ class CAtlas(object):
             seen.add(curr)
             stack.extend(filter(lambda x: x not in seen, curr.children))
 
+    @classmethod
+    def read(cls, catlas_file):
+        """Load the catlas Directed Acyclic Graph."""
+        children = []
+        nodes = []
+
+        # load everything from the catlas file
+        for line in catlas_file:
+            catlas_node, cdbg_node, level, beneath = line.strip().split(',')
+
+            level = int(level)
+            catlas_node = int(catlas_node)
+            cdbg_node = int(cdbg_node)
+
+            # extend arrays as necessary
+            if len(children) <= catlas_node:
+                for i in range(catlas_node - len(children) + 1):
+                    children.append([])
+                    nodes.append(None)
+
+            # parse out the children
+            beneath = beneath.strip()
+            if beneath:
+                beneath = beneath.split(' ')
+                children[catlas_node].extend(map(int, beneath))
+
+            # make the new node with empty children
+            node = cls(catlas_node, cdbg_node, level, [])
+            nodes[catlas_node] = node
+
+        # update the nodes with pointers to their children
+        for i, n in enumerate(nodes):
+            for child in children[n.idx]:
+               n.children.append(nodes[child])
+
+        return nodes[-1] 
+
+
+class Checkpoint(object):
+    """Checkpoints for partial catlas computation."""
+
+    def __init__(self, infile, outfile=None):
+        self.infile = infile
+        if outfile is None:
+            self.outfile = infile
+        else:
+            self.outfile = outfile
+
+    def load(self):
+        """Read cached information from a partial catlas computation."""
+        # the temp file contains catlas and graph information.  To use the
+        # readers for catlas and graph, we need to temporarily split them into
+        # separate files
+        tmpf = tempfile.TemporaryFile(mode='r+')
+        with open(self.infile, 'r') as f:
+            # read until the end of the catlas
+            for line in f:
+                if line == "###\n":
+                    break
+                tmpf.write(line)
+            # once we are at the graph section, start reading from there
+            graph = read_from_gxt(f, radius=1, directed=False, sequential=False)
+            # move back to the beginning of the temporary file and read the
+            # catlas
+            tmpf.seek(0)
+            root = CAtlas.read(tmpf)
+            tmpf.close()
+            print("Root has children {}".format([i.vertex for i in root.children]))
+            nodes = {node.vertex: node for node in root.children}
+            idx = root.idx
+            level = root.level
+
+            if set(graph.nodes) ^ set(nodes.keys()):
+                print(graph.nodes)
+                print(list(nodes.keys()))
+                raise ValueError("graph should have the same nodes as the previous level")
+
+            return nodes, graph, idx, level
+
+    def save(self, nodes, graph, idx, level):
+        """Write out a partial computation."""
+        with open(self.outfile, 'w') as f:
+            # make a dummy root to write the catlas using catlas.write method
+            root = CAtlas(idx, 0, level, nodes.values())
+            root.write(f)
+            f.write("###\n")
+            write_to_gxt(f, graph)
+
 
 def main(args):
     """Build a CAtlas for the provided input graph."""
@@ -161,7 +256,11 @@ def main(args):
     G = read_from_gxt(graph_file, r, False)
     print("reading complete")
     print("building catlas")
-    cat = CAtlas.build(G, r, dom_file)
+    if args.checkpoint is not None:
+        cp = Checkpoint(args.checkpoint, args.write_new)
+    else:
+        cp = None
+    cat = CAtlas.build(G, r, dom_file, cp)
     print("writing graph")
     cat.write(catlas_file)
 
@@ -171,6 +270,11 @@ if __name__ == "__main__":
     parser.add_argument("project", help="Project directory",
                         type=str)
     parser.add_argument("radius", help="Catlas radius", type=int)
+    parser.add_argument("-c", "--checkpoint", nargs='?', type=str,
+                        help="Filename of checkpoint")
+    parser.add_argument("-w", "--write_new", nargs='?', type=str,
+                        help="Filename to write new checkpoints"
+                        "If not invoked, old checkpoint will be overwritten")
     args = parser.parse_args()
     main(args)
     #cProfile.run("main(args)")

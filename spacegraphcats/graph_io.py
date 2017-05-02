@@ -1,9 +1,9 @@
 """Reading and writing functions."""
 from .graph_parser import parse, write
-from .graph import Graph
+from .graph import Graph, DictGraph
 
 
-def read_from_gxt(gxtfile, radius: int, directed: bool):
+def read_from_gxt(gxtfile, radius: int, directed: bool, sequential=True):
     """
     Read an gxt file and returns a graph with each edge in the mxt file.
 
@@ -14,7 +14,10 @@ def read_from_gxt(gxtfile, radius: int, directed: bool):
 
     def create_graph(num_nodes):
         nonlocal graph
-        graph = Graph(num_nodes, radius)
+        if sequential:
+            graph = Graph(num_nodes, radius)
+        else:
+            graph = DictGraph(r=radius)
 
     def add_edge(u, v):
         if u != v:

@@ -149,6 +149,11 @@ class DictGraph(Graph):
         """Add a new node."""
         self.nodes.add(u)
 
+    def add_arc(self, u, v, weight=1):
+        self.add_node(u)
+        self.add_node(v)
+        return super().add_arc(u, v, weight)
+
     def arcs(self, weight: int=None):
         """
         Return all the arcs in the graph.
