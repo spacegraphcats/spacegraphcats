@@ -55,8 +55,11 @@ def load_minhash(node_id, minhash_dir):
     filename = 'node{}.pickle'.format(node_id)
     filename = os.path.join(minhash_dir, filename)
 
-    with open(filename, 'rb') as fp:
-        node_mh = pickle.load(fp)
+    try:
+        with open(filename, 'rb') as fp:
+            node_mh = pickle.load(fp)
+    except FileNotFoundError:
+        return None
 
     return node_mh
 

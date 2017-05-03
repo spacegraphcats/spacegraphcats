@@ -30,13 +30,21 @@ def make_contig_minhashes(contigfile, factory):
     watermark = 1e7
     for record in screed.open(contigfile):
         if total_bp >= watermark:
-            print('... {:5.0e} bp thru contigs'.format(int(watermark)),
+            print('... {:5.2e} bp thru contigs'.format(int(watermark)),
                   file=sys.stderr)
             watermark += 1e7
 
+        # the FASTA header/record name is the cDBG node ID output by
+        # build_contracted_dbg.
+        cdbg_id = int(record.name)
+
+        # make a minhash!
         mh = factory()
         mh.add_sequence(record.sequence)
-        d[int(record.name)] = mh
+        if not mh.get_mins():
+            mh = None
+
+        d[cdbg_id] = mh
 
         total_bp += len(record.sequence)
 
@@ -94,7 +102,12 @@ def build_dag(catlas_file, leaf_minhashes, factory):
 
         for subnode in beneath:
             mh = leaf_minhashes[subnode]
-            merged_mh.add_many(mh.get_mins())
+            if mh:
+                merged_mh.add_many(mh.get_mins())
+
+        if not merged_mh.get_mins():
+            merged_mh = None
+
         leaf_minhashes[catlas_node] = merged_mh
 
 
@@ -106,7 +119,8 @@ def merge_nodes(child_dict, child_node_list, factory):
     for graph_node in child_node_list:
         if graph_node in child_dict:
             mh = child_dict[graph_node]
-            merged_mh.merge(mh)
+            if mh:
+                merged_mh.merge(mh)
 
     # add into merged minhashes table.
     return merged_mh
@@ -130,10 +144,12 @@ def main():
     ksize = args.ksize
     scaled = args.scaled
 
+    # build a factory to produce new MinHash objects.
     factory = MinHashFactory(n=0, ksize=ksize,
                              max_hash=sourmash_lib.scaled_to_max_hash(scaled),
                              track_abundance=args.track_abundance)
-    
+
+    # put together the basic catlas info --
     basename = os.path.basename(args.catlas_prefix)
     contigfile = '%s.gxt.contigs' % (basename,)
     contigfile = os.path.join(args.catlas_prefix, contigfile)
@@ -182,11 +198,18 @@ def main():
             pass
 
         print('saving individual minhashes in {}/node*.pickle'.format(path))
+        empty_mh = 0
         for node_id, mh in leaf_minhashes.items():
-            name = 'node{}.pickle'.format(node_id)
-            name = os.path.join(path, name)
-            with open(name, 'wb') as fp:
-                pickle.dump(mh, fp)
+            if mh:
+                name = 'node{}.pickle'.format(node_id)
+                name = os.path.join(path, name)
+                with open(name, 'wb') as fp:
+                    pickle.dump(mh, fp)
+            else:
+                empty_mh += 1
+        total_mh = len(leaf_minhashes)
+        print('saved {} minhashes ({} empty)'.format(total_mh - empty_mh,
+                                                     empty_mh))
 
     if args.sbt or args.sigs:
         print('')
@@ -194,9 +217,10 @@ def main():
 
         sigs = []
         for node_id, mh in leaf_minhashes.items():
-            ss = signature.SourmashSignature('', mh,
-                                             name='node{}'.format(node_id))
-            sigs.append(ss)
+            if mh:
+                ss = signature.SourmashSignature('', mh,
+                                                 name='node{}'.format(node_id))
+                sigs.append(ss)
 
         # shall we output an SBT or just a file full of signatures?
         if args.sigs:
