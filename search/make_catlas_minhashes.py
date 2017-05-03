@@ -93,7 +93,6 @@ def build_dag(catlas_file, leaf_minhashes, factory):
         merged_mh = factory()
 
         for subnode in beneath:
-            print(catlas_node, level, beneath)
             mh = leaf_minhashes[subnode]
             merged_mh.add_many(mh.get_mins())
         leaf_minhashes[catlas_node] = merged_mh
