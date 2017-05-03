@@ -32,6 +32,9 @@ acido/acido-chunk1.fa.gz.sig: data/acido-chunk1.fa.gz
 acido-search: acido/acido.minhashes acido/acido-chunk1.fa.gz.sig
 	python -m search.search_catlas_with_minhash acido/acido-chunk1.fa.gz.sig acido
 
+acido-frontier-search: acido/acido.minhashes acido/acido-chunk1.fa.gz.sig
+	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.05
+
 ### 
 
 15genome-clean:
