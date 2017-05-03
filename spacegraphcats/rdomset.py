@@ -303,6 +303,7 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     # dictionary mapping vertices from the graph to closest dominators to it
     closest_dominators = {}
     domdistance = {v: 0 for v in dominated_at_radius}
+    # map of dominators to vertices they dominate
     dominated = {x:set() for x in domset}
 
     # the keys of dominators should all belong to the same component, so this
@@ -317,58 +318,36 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
                     dominated[x].add(v)
                 break
 
+    # add edges to the domgraph.  Two dominators (x,y) should be adjacent if
+    # they optimally dominate a common vertex or if there are adjacent vertices
+    # (u,v) optimally dominated by (x,y), respectively, at the same radius.
+    # If v is optimally dominated by x at radius r, all of its neighbors are
+    # dominated at radius r-1, r, r+1.  If u is a neighbor of v not optimally 
+    # dominated by x, then either:
+    #    1) u is dominated at distance r OR 
+    #    2) u is dominated at distance r-1 and v's optimal dominators are a
+    #       superset of u's
+    # In either case x should be adjacent to all dominators of u.
     for x in domset:
-        graph_neighbors = set()
-        dom_neighbors = set()
+        # neighbors of vertices dominated by x that are not dominated by x
+        domination_boundary = set()
+        # vertices that need to be made adjacent to x
+        new_dom_neighbors = set()
+        # get all the boundary vertices.  We remove the vertices dominated by x
+        # at the end to only do it once
         for v in dominated[x]:
-            graph_neighbors |= graph.in_neighbors(v, 1)
-        graph_neighbors -= dominated[x]
-        for v in graph_neighbors:
-            dom_neighbors |= closest_dominators[v]
-        dom_neighbors -= domgraph.in_neighbors(x, 1)
-        for y in dom_neighbors:
+            domination_boundary |= graph.in_neighbors(v, 1)
+        domination_boundary -= dominated[x]
+        # get the dominators of the boundary.
+        for v in domination_boundary:
+            new_dom_neighbors |= closest_dominators[v]
+        # take out existing neighbors
+        new_dom_neighbors -= domgraph.in_neighbors(x, 1)
+        # add edges
+        for y in new_dom_neighbors:
             domgraph.add_arc(x, y)
             domgraph.add_arc(y, x)
-    """
-    print("Adding edges between odd length optimal domination")
-    for v in graph:
-        # because they all dominate v, the closest dominators should form a
-        # clique
-        for x in closest_dominators[v]:
-            nonneighbors = closest_dominators[v] - \
-                            domgraph.in_neighbors(x, 1) - \
-                            set([x])
-            for y in nonneighbors:
-                domgraph.add_arc(x, y)
-                domgraph.add_arc(y, x)
-
-    print("Adding edges between even length optimal domination")
-    # Two vertices in the dominating graph should be adjacent if they
-    # optimally dominate a common vertex.  Note that this only includes
-    # dominators with odd length paths between them because even length paths
-    # have no midpoint that would be dominated at the same distance from both
-    # directions.  So we need to expand our criteria to include dominators
-    # that optimally dominate neighbors at the same distance.  Since the
-    # endpoints of each edge have to be optimally dominated at the same radius
-    # or at radii that differ by 1, it is sufficient to loop through all edges
-    # of the original graph and turn the set of dominators into a clique.
-    # This will also catch and connect the dominators that were themselves
-    # adjacent in the original graph.
-    for v in graph:
-        for u in graph.in_neighbors(v, 1):
-            if domdistance[u] != domdistance[v]:
-                continue
-            # since the edges within closest_dominators have been added above,
-            # we only need to look at the symmetric difference
-            difference = closest_dominators[u] ^ closest_dominators[v]
-            for x in difference:
-                nonneighbors = difference - \
-                                domgraph.in_neighbors(x, 1) - \
-                                set([x])
-                for y in nonneighbors:
-                    domgraph.add_arc(x, y)
-                    domgraph.add_arc(y, x)
-    """
+    
     return domgraph, closest_dominators
 
 
