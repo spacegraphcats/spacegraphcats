@@ -41,28 +41,7 @@ def compute_overhead(node_minhash, query_minhash) -> float:
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument('query_sig', help='query minhash')
-    p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('overhead', help='\% of overhead', type=float)
-
-    args = p.parse_args()
-
-    basename = os.path.basename(args.catlas_prefix)
-    catlas = os.path.join(args.catlas_prefix, basename + '.catlas')
-
-    # load catlas DAG
-    top_node_id, dag, dag_levels = load_dag(catlas)
-    print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
-
-    # load query MinHash
-    query_sig = sourmash_lib.signature.load_signatures(args.query_sig)
-    query_sig = list(query_sig)[0]
-    print('loaded query sig {}'.format(query_sig.name()))
-
-    minhash_dir = os.path.join(args.catlas_prefix, basename + '.minhashes')
-
+def frontier_search(query_sig, top_node_id, dag, minhash_dir, max_overhead):
     # expand the frontier where the child nodes together have more than x% overhead
 
     frontier = []
@@ -105,7 +84,7 @@ def main():
 
         # print("{} Overhead {}".format(node_id, overhead))
  
-        if overhead > args.overhead:
+        if overhead > max_overhead:
             # greedily find the minimum number of children such that they together contain everything the node contains
 
             overheads = []
@@ -140,6 +119,32 @@ def main():
 
     add_to_frontier(top_node_id)
 
+    return frontier, num_leaves[0]
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument('query_sig', help='query minhash')
+    p.add_argument('catlas_prefix', help='catlas prefix')
+    p.add_argument('overhead', help='\% of overhead', type=float)
+
+    args = p.parse_args()
+
+    basename = os.path.basename(args.catlas_prefix)
+    catlas = os.path.join(args.catlas_prefix, basename + '.catlas')
+
+    # load catlas DAG
+    top_node_id, dag, dag_levels = load_dag(catlas)
+    print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
+
+    # load query MinHash
+    query_sig = sourmash_lib.signature.load_signatures(args.query_sig)
+    query_sig = list(query_sig)[0]
+    print('loaded query sig {}'.format(query_sig.name()))
+
+    minhash_dir = os.path.join(args.catlas_prefix, basename + '.minhashes')
+    frontier, num_leaves = frontier_search(query_sig, top_node_id, dag, minhash_dir, args.overhead)
+
     top_mh = load_minhash(top_node_id, minhash_dir)
     query_mh = query_sig.minhash.downsample_max_hash(top_mh)
     top_mh = top_mh.downsample_max_hash(query_sig.minhash)
@@ -158,7 +163,7 @@ def main():
     print("Containment of frontier: {}".format(query_mh.containment(union)))
     print("Similarity of frontier: {}".format(query_mh.similarity(union)))
     print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), len(dag), 100 * len(frontier) / len(dag)))
-    print("Number of leaves in the frontier: {}".format(num_leaves[0]))
+    print("Number of leaves in the frontier: {}".format(num_leaves))
 
     shadow = find_shadow(frontier, dag)
 
