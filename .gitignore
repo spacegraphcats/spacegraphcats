@@ -5,6 +5,7 @@ objectdb
 .cache
 .coverage
 .ipynb_checkpoints
+*.out
 acido
 15genome
 tr-cross
