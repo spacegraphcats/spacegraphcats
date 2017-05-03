@@ -70,6 +70,11 @@ class CAtlas(object):
                     domstr += "\n"
                     domfile.write(domstr)
 
+            # increment the index and level now so they are correctly adjusted
+            # if we happen to return
+            idx += len(nodes)
+            level += 1
+            
             # quit if our level is sufficiently small
             if len(domgraph) <= CAtlas.LEVEL_THRESHOLD or \
                     len(domgraph) == len(curr_graph):
@@ -78,8 +83,6 @@ class CAtlas(object):
             # prep for the next iteration
             curr_graph = domgraph
             prev_nodes = nodes
-            idx += len(nodes)
-            level += 1
             
             # write level results to the checkpoint file if applicable
             if checkpoint is not None:
