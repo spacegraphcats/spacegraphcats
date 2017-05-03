@@ -27,6 +27,10 @@ class Graph(Iterable, Sized):
         """len() support."""
         return self.num_nodes
 
+    def __contains__(self, v):
+        """Support for `if v in graph`."""
+        return v < self.num_nodes
+
     def add_arc(self, u: int, v: int, weight: int=1):
         """Add the arc u,v at a given weight."""
         # use weight-1 for 0 indexing
@@ -145,14 +149,13 @@ class DictGraph(Graph):
         """Iteration support."""
         return iter(self.nodes)
 
+    def __contains__(self, v):
+        """Support for `if v in graph`."""
+        return v in self.nodes
+
     def add_node(self, u: int):
         """Add a new node."""
         self.nodes.add(u)
-
-    def add_arc(self, u, v, weight=1):
-        self.add_node(u)
-        self.add_node(v)
-        return super().add_arc(u, v, weight)
 
     def arcs(self, weight: int=None):
         """
