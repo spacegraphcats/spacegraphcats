@@ -56,8 +56,7 @@ def load_layer0_to_cdbg(catlas_file, domfile):
 
         domset[dom_node] = set(beneath)
 
-    layer0_to_cdbg = defaultdict(set)
-    catlas_to_cdbg = {}
+    layer0_to_cdbg = {}
 
     # mapping from catlas node IDs to cdbg nodes
     for line in open(catlas_file, 'rt'):
@@ -67,20 +66,7 @@ def load_layer0_to_cdbg(catlas_file, domfile):
 
         catlas_node = int(catlas_node)
         cdbg_node = int(cdbg_node)
-        catlas_to_cdbg[catlas_node] = domset[cdbg_node]
-
-    # mapping from layer 0
-    for line in open(catlas_file, 'rt'):
-        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-        if int(level) != 0:
-            continue
-
-        assert not beneath, beneath
-
-        catlas_node = int(catlas_node)
-        cdbg_node = int(cdbg_node)
-
-        layer0_to_cdbg[catlas_node] = set([ cdbg_node ])
+        layer0_to_cdbg[catlas_node] = domset[cdbg_node]
 
     return layer0_to_cdbg
 
