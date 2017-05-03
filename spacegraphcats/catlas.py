@@ -279,5 +279,7 @@ if __name__ == "__main__":
                         help="Filename to write new checkpoints"
                         "If not invoked, old checkpoint will be overwritten")
     args = parser.parse_args()
-    main(args)
-    #cProfile.run("main(args)")
+    
+    prof = cProfile.Profile()
+    prof.run("main(args)")
+    prof.print_stats('tottime')

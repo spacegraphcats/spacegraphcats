@@ -303,8 +303,8 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     # dictionary mapping vertices from the graph to closest dominators to it
     closest_dominators = {}
     domdistance = {v: 0 for v in dominated_at_radius}
+    dominated = {x:set() for x in domset}
 
-    print("Adding edges between odd length optimal domination")
     # the keys of dominators should all belong to the same component, so this
     # should implicitly only operate on the vertices we care about
     for v in dominated_at_radius:
@@ -313,7 +313,25 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
             if len(dominated_at_radius[v][r]) > 0:
                 domdistance[v] = r
                 closest_dominators[v] = frozenset(dominated_at_radius[v][r])
+                for x in closest_dominators[v]:
+                    dominated[x].add(v)
                 break
+
+    for x in domset:
+        graph_neighbors = set()
+        dom_neighbors = set()
+        for v in dominated[x]:
+            graph_neighbors |= graph.in_neighbors(v, 1)
+        graph_neighbors -= dominated[x]
+        for v in graph_neighbors:
+            dom_neighbors |= closest_dominators[v]
+        dom_neighbors -= domgraph.in_neighbors(x, 1)
+        for y in dom_neighbors:
+            domgraph.add_arc(x, y)
+            domgraph.add_arc(y, x)
+    """
+    print("Adding edges between odd length optimal domination")
+    for v in graph:
         # because they all dominate v, the closest dominators should form a
         # clique
         for x in closest_dominators[v]:
@@ -350,7 +368,7 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
                 for y in nonneighbors:
                     domgraph.add_arc(x, y)
                     domgraph.add_arc(y, x)
-
+    """
     return domgraph, closest_dominators
 
 
