@@ -43,9 +43,10 @@ def make_contig_minhashes(contigfile, factory):
     return d
 
 
-def load_layer1_to_cdbg(catlas_file, domfile):
+def load_layer0_to_cdbg(catlas_file, domfile):
     "Load the mapping between first layer catlas and the original DBG nodes."
 
+    # mapping from cdbg dominators to dominated nodes.
     domset = {}
     for line in open(domfile, 'rt'):
         dom_node, *beneath = line.strip().split(' ')
@@ -55,9 +56,10 @@ def load_layer1_to_cdbg(catlas_file, domfile):
 
         domset[dom_node] = set(beneath)
 
-    layer1_to_cdbg = defaultdict(set)
-
+    layer0_to_cdbg = defaultdict(set)
     catlas_to_cdbg = {}
+
+    # mapping from catlas node IDs to cdbg nodes
     for line in open(catlas_file, 'rt'):
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
         if int(level) != 0:
@@ -67,20 +69,20 @@ def load_layer1_to_cdbg(catlas_file, domfile):
         cdbg_node = int(cdbg_node)
         catlas_to_cdbg[catlas_node] = domset[cdbg_node]
 
+    # mapping from layer 0
     for line in open(catlas_file, 'rt'):
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-        if int(level) != 1:
+        if int(level) != 0:
             continue
 
+        assert not beneath, beneath
+
         catlas_node = int(catlas_node)
-        beneath = beneath.split(' ')
-        beneath = list(map(int, beneath))
+        cdbg_node = int(cdbg_node)
 
-        for catnode in beneath:
-            dbgnodes = catlas_to_cdbg[catnode]
-            layer1_to_cdbg[catlas_node].update(dbgnodes)
+        layer0_to_cdbg[catlas_node] = set([ cdbg_node ])
 
-    return layer1_to_cdbg
+    return layer0_to_cdbg
 
 
 def build_dag(catlas_file, leaf_minhashes, factory):
@@ -90,7 +92,7 @@ def build_dag(catlas_file, leaf_minhashes, factory):
     x = []
     for line in open(catlas_file, 'rt'):
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-        if int(level) <= 1:
+        if int(level) == 0:
             continue
 
         beneath = beneath.split(' ')
@@ -105,6 +107,7 @@ def build_dag(catlas_file, leaf_minhashes, factory):
         merged_mh = factory()
 
         for subnode in beneath:
+            print(catlas_node, level, beneath)
             mh = leaf_minhashes[subnode]
             merged_mh.add_many(mh.get_mins())
         leaf_minhashes[catlas_node] = merged_mh
@@ -160,16 +163,16 @@ def main():
     print('...made {} contig minhashes'.format(len(graph_minhashes)))
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
-    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
+    layer0_to_cdbg = load_layer0_to_cdbg(catlas, domfile)
+    print('loaded {} layer 0 catlas nodes'.format(len(layer0_to_cdbg)))
     x = set()
-    for v in layer1_to_cdbg.values():
+    for v in layer0_to_cdbg.values():
         x.update(v)
     print('...corresponding to {} cDBG nodes.'.format(len(x)))
 
     # create minhashes for catlas leaf nodes.
     leaf_minhashes = {}
-    for n, (catlas_node, cdbg_nodes) in enumerate(layer1_to_cdbg.items()):
+    for n, (catlas_node, cdbg_nodes) in enumerate(layer0_to_cdbg.items()):
         if n and n % 1000 == 0:
             print('... built {} leaf node MinHashes...'.format(n),
                   file=sys.stderr)
