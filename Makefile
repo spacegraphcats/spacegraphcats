@@ -55,3 +55,7 @@ acido-frontier-search: acido/acido.minhashes acido/acido-chunk1.fa.gz.sig
 # run search!
 15genome-search: 15genome/15genome.minhashes
 	python -m search.search_catlas_with_minhash data/15genome.5.fa.sig 15genome
+
+15genome-frontier-search:
+	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1
+
