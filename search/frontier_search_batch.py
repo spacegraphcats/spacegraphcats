@@ -39,18 +39,10 @@ def main():
         query_sig = list(query_sig)[0]
         print('loaded query sig {}'.format(query_sig.name()), file=sys.stderr)
         
-        frontier, num_leaves = frontier_search(query_sig, top_node_id, dag, minhash_dir, args.overhead)
+        frontier, num_leaves, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_dir, args.overhead)
 
-        union = load_minhash(frontier.pop(), minhash_dir)
-        for node in frontier:
-            mh = load_minhash(node, minhash_dir)
-            union.merge(mh)
-
-        query_mh = query_sig.minhash.downsample_max_hash(union)
-        union_mh = union.downsample_max_hash(query_sig.minhash)
-
-        containment = query_mh.containment(union_mh)
-        similarity = query_mh.similarity(union_mh)
+        containment = query_mh.containment(frontier_mh)
+        similarity = query_mh.similarity(frontier_mh)
 
         print(filename, containment, similarity)
     
