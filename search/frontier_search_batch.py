@@ -1,21 +1,20 @@
 #! /usr/bin/env python
-import os
-import sys
 import argparse
-from sourmash_lib import MinHash
-from collections import defaultdict
-from spacegraphcats.catlas import CAtlas
-import time
-import sourmash_lib
-from sourmash_lib.sbt import SBT, GraphFactory
-from sourmash_lib.sbtmh import search_minhashes, SigLeaf
-from sourmash_lib import signature
-import screed
+import os
 import pickle
+import sys
+import time
+from collections import defaultdict
+
+import screed
+import sourmash_lib
+from sourmash_lib import MinHash, signature
+from sourmash_lib.sbt import SBT, GraphFactory
+from sourmash_lib.sbtmh import SigLeaf, search_minhashes
 from typing import List
 
-from .search_catlas_with_minhash import load_dag, load_minhash
 from .frontier_search import frontier_search
+from .search_catlas_with_minhash import load_dag, load_minhash
 
 
 def main():

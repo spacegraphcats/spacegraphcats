@@ -1,27 +1,25 @@
 #! /usr/bin/env python
+import argparse
 import os
 import sys
-import argparse
-from sourmash_lib import MinHash
-from collections import defaultdict
-from spacegraphcats.catlas import CAtlas
-import time
+
 import sourmash_lib
-from sourmash_lib.sbt import SBT, GraphFactory
-from sourmash_lib.sbtmh import search_minhashes, SigLeaf
-from sourmash_lib import signature
-import screed
-import pickle
-from typing import List
+from sourmash_lib import MinHash, signature
+from typing import Dict, List, Set
 
 from .memoize import memoize
 from .search_catlas_with_minhash import load_dag, load_minhash
 
 
-def find_shadow(nodes: List[int], dag) -> List[int]:
+def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> List[int]:
     shadow = []
 
-    def add_to_shadow(node_id):
+    seen_nodes = set()  # type: Set[int]
+
+    def add_to_shadow(node_id: int):
+        if node_id in seen_nodes:
+            return
+
         children_ids = dag[node_id]
 
         if len(children_ids) == 0:
@@ -35,24 +33,24 @@ def find_shadow(nodes: List[int], dag) -> List[int]:
 
     return shadow
 
-def compute_overhead(node_minhash, query_minhash) -> float:
+def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     """ Compute the relative overhead of minhashes. """
     node_length = len(node_minhash.get_mins())
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def frontier_search(query_sig, top_node_id, dag, minhash_dir, max_overhead):
+def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_overhead: float):
     # expand the frontier where the child nodes together have more than x% overhead
 
     query_mh = query_sig.minhash
     frontier = []
     frontier_minhash = None
-    seen_nodes = set()
+    seen_nodes = set()  # type: Set[int]
 
     num_leaves = 0
 
     @memoize
-    def load_and_downsample_minhash(node_id):
+    def load_and_downsample_minhash(node_id: int):
         nonlocal query_mh
         minhash = load_minhash(node_id, minhash_dir)
         if minhash:
@@ -68,7 +66,7 @@ def frontier_search(query_sig, top_node_id, dag, minhash_dir, max_overhead):
     def node_containment(minhash):
         return query_mh.containment(minhash)
 
-    def add_node(node_id, minhash):
+    def add_node(node_id: int, minhash):
         nonlocal frontier_minhash
         frontier.append(node_id)
         if frontier_minhash:
