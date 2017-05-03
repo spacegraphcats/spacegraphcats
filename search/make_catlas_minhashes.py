@@ -198,12 +198,18 @@ def main():
             pass
 
         print('saving individual minhashes in {}/node*.pickle'.format(path))
+        empty_mh = 0
         for node_id, mh in leaf_minhashes.items():
             if mh:
                 name = 'node{}.pickle'.format(node_id)
                 name = os.path.join(path, name)
                 with open(name, 'wb') as fp:
                     pickle.dump(mh, fp)
+            else:
+                empty_mh += 1
+        total_mh = len(leaf_minhashes)
+        print('saved {} minhashes ({} empty)'.format(total_mh - empty_mh,
+                                                     empty_mh))
 
     if args.sbt or args.sigs:
         print('')
