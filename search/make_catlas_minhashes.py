@@ -1,17 +1,16 @@
 #! /usr/bin/env python
-import os
-import sys
 import argparse
-from sourmash_lib import MinHash
-from collections import defaultdict
-from spacegraphcats.catlas import CAtlas
-import time
-import sourmash_lib
-from sourmash_lib.sbt import SBT, GraphFactory
-from sourmash_lib.sbtmh import search_minhashes, SigLeaf
-from sourmash_lib import signature
-import screed
+import os
 import pickle
+import sys
+import time
+from collections import defaultdict
+
+import screed
+import sourmash_lib
+from sourmash_lib import MinHash, signature
+from sourmash_lib.sbt import SBT, GraphFactory
+from sourmash_lib.sbtmh import SigLeaf, search_minhashes
 
 
 class MinHashFactory(object):
@@ -31,7 +30,7 @@ def make_contig_minhashes(contigfile, factory):
     for record in screed.open(contigfile):
         if total_bp >= watermark:
             print('... {:5.2e} bp thru contigs'.format(int(watermark)),
-                  file=sys.stderr)
+                file=sys.stderr)
             watermark += 1e7
 
         # the FASTA header/record name is the cDBG node ID output by
