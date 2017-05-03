@@ -58,4 +58,3 @@ acido-frontier-search: acido/acido.minhashes acido/acido-chunk1.fa.gz.sig
 
 15genome-frontier-search: 15genome/15genome.minhashes
 	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1
-

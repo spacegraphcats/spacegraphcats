@@ -92,6 +92,9 @@ def frontier_search(query_sig, top_node_id, dag, minhash_dir, max_overhead):
             for child in children_ids:
                 child_mh = load_minhash(child, minhash_dir)
 
+                child_mh = child_mh.downsample_max_hash(query_mh)
+                query_mh = query_mh.downsample_max_hash(child_mh)
+
                 # ignore children without any containment
                 if query_mh.containment(child_mh) == 0:
                     continue
@@ -137,12 +140,13 @@ def main():
     top_node_id, dag, dag_levels = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
+    minhash_dir = os.path.join(args.catlas_prefix, basename + '.minhashes')
+
     # load query MinHash
     query_sig = sourmash_lib.signature.load_signatures(args.query_sig)
     query_sig = list(query_sig)[0]
     print('loaded query sig {}'.format(query_sig.name()))
 
-    minhash_dir = os.path.join(args.catlas_prefix, basename + '.minhashes')
     frontier, num_leaves = frontier_search(query_sig, top_node_id, dag, minhash_dir, args.overhead)
 
     top_mh = load_minhash(top_node_id, minhash_dir)
@@ -160,8 +164,8 @@ def main():
     query_mh = query_sig.minhash.downsample_max_hash(union)
     union_mh = union.downsample_max_hash(query_sig.minhash)
 
-    print("Containment of frontier: {}".format(query_mh.containment(union)))
-    print("Similarity of frontier: {}".format(query_mh.similarity(union)))
+    print("Containment of frontier: {}".format(query_mh.containment(union_mh)))
+    print("Similarity of frontier: {}".format(query_mh.similarity(union_mh)))
     print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), len(dag), 100 * len(frontier) / len(dag)))
     print("Number of leaves in the frontier: {}".format(num_leaves))
 
