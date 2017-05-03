@@ -16,8 +16,8 @@ import pickle
 
 def load_dag(catlas_file):
     "Load the catlas Directed Acyclic Graph."
-    dag = defaultdict(set)
-    dag_levels = defaultdict(int)
+    dag = {}
+    dag_levels = {}
 
     # track the root of the tree
     max_node = -1
@@ -26,10 +26,6 @@ def load_dag(catlas_file):
     # load everything from the catlas file
     for line in open(catlas_file, 'rt'):
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-
-        # skip bottom (level 0) nodes / domset, as they have no children.
-        if int(level) <= 1:
-            continue
 
         # parse out the children
         catlas_node = int(catlas_node)
@@ -40,13 +36,16 @@ def load_dag(catlas_file):
 
             # save node -> children, and level
             dag[catlas_node] = beneath
-            dag_levels[catlas_node] = level
+        else:
+            dag[catlas_node] = set()
 
-            # update max_node/max_level
-            level = int(level)
-            if level > max_level:
-                max_level = level
-                max_node = catlas_node
+        dag_levels[catlas_node] = level
+
+        # update max_node/max_level
+        level = int(level)
+        if level > max_level:
+            max_level = level
+            max_node = catlas_node
 
     return max_node, dag, dag_levels
 
@@ -88,7 +87,7 @@ def main():
     cur_node_id = top_node_id
     catlas_trail = [top_node_id]
     max_best = 0.0
-    while 1:
+    while True:
         # get all children nodes & MinHashes
         children_ids = dag[cur_node_id]
         if not children_ids:
@@ -114,7 +113,7 @@ def main():
         best_sim, best_node_id, best_child_mh = sims[0]
         containment = query_mh.containment(best_child_mh)
         print("best_sim={:.3f} contain={:.3f} node_id={} level={}".format(\
-            best_sim, containment, best_node_id, dag_levels[best_node_id]))
+            best_sim, containment, best_node_id, dag_levels.get(best_node_id, 0)))
         remaining_nodes = len(sims) - 1
         for nextsim, nextid, nextmh in sims[1:]:
             if nextsim > 0.01:

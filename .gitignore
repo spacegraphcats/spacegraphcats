@@ -1,3 +1,5 @@
+config.py
+objectdb
 *.pyc
 *.c
 .cache
