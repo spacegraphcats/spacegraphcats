@@ -69,6 +69,8 @@ def frontier_search(query_sig, top_node_id, dag, minhash_dir, max_overhead):
 
         # check whether the node has more than x% overhead
         minhash = load_minhash(node_id, minhash_dir)
+        if not minhash:
+            return
 
         query_mh = query_sig.minhash.downsample_max_hash(minhash)
         against_mh = minhash.downsample_max_hash(query_sig.minhash)
@@ -91,6 +93,8 @@ def frontier_search(query_sig, top_node_id, dag, minhash_dir, max_overhead):
 
             for child in children_ids:
                 child_mh = load_minhash(child, minhash_dir)
+                if not child_mh:
+                    continue
 
                 child_mh = child_mh.downsample_max_hash(query_mh)
                 query_mh = query_mh.downsample_max_hash(child_mh)
