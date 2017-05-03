@@ -68,11 +68,13 @@ def main():
     frontier = []
     seen_nodes = set()
 
+    num_leaves = [0]
+
     def add_to_frontier(node_id: int):
         """
         Add a node or its children to the frontier.
         """
-        if (node_id in seen_nodes):
+        if node_id in seen_nodes:
             # we have added this node or its children to the frontier
             return
         
@@ -83,6 +85,7 @@ def main():
         if len(children_ids) == 0:
             # leaf
             frontier.append(node_id)
+            num_leaves[0] += 1
             return
 
         # check whether the node has more than x% overhead
@@ -100,7 +103,7 @@ def main():
 
         overhead = compute_overhead(against_mh, query_mh)
 
-        print("{} Overhead {}".format(node_id, overhead))
+        # print("{} Overhead {}".format(node_id, overhead))
  
         if overhead > args.overhead:
             # greedily find the minimum number of children such that they together contain everything the node contains
@@ -119,8 +122,6 @@ def main():
 
             overheads.sort()
 
-            print(overheads)
-
             first = overheads.pop()
             add_to_frontier(first[1])
             union = first[2]
@@ -134,24 +135,34 @@ def main():
                     return
 
         else:
-            print("low overhead")
+            # print("low overhead")
             frontier.append(node_id)
 
     add_to_frontier(top_node_id)
 
+    top_mh = load_minhash(top_node_id, minhash_dir)
+    query_mh = query_sig.minhash.downsample_max_hash(top_mh)
+    top_mh = top_mh.downsample_max_hash(query_sig.minhash)
+    print("Root containment: {}".format(query_mh.containment(top_mh)))
+    print("Root similarity: {}".format(query_mh.similarity(top_mh)))
     
+    # TODO: we can move this up into the frontier search if it's expensive
     union = load_minhash(frontier.pop(), minhash_dir)
     for node in frontier:
         mh = load_minhash(node, minhash_dir)
         union.merge(mh)
 
-    print(union.similarity(query_sig.minhash))
+    query_mh = query_sig.minhash.downsample_max_hash(union)
+    union_mh = union.downsample_max_hash(query_sig.minhash)
 
-    print("Size of frontier: {} of {} ({:.2}%)".format(len(frontier), len(dag), 100.0 * len(frontier) / len(dag)))
+    print("Containment of frontier: {}".format(query_mh.containment(union)))
+    print("Similarity of frontier: {}".format(query_mh.similarity(union)))
+    print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), len(dag), 100 * len(frontier) / len(dag)))
+    print("Number of leaves in the frontier: {}".format(num_leaves[0]))
 
     shadow = find_shadow(frontier, dag)
 
-    print("Size shadow: {}".format(len(shadow)))
+    print("Size of the shadow: {}".format(len(shadow)))
 
     sys.exit(0)
 
