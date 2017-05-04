@@ -193,12 +193,14 @@ def main():
     top_mh = load_minhash(top_node_id, minhash_db)
     query_mh = query_sig.minhash.downsample_max_hash(top_mh)
     top_mh = top_mh.downsample_max_hash(query_sig.minhash)
+
     print("Root containment: {}".format(query_mh.containment(top_mh)))
     print("Root similarity: {}".format(query_mh.similarity(top_mh)))
 
     print("Containment of frontier: {}".format(query_mh.containment(frontier_mh)))
     print("Similarity of frontier: {}".format(query_mh.similarity(frontier_mh)))
     print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), len(dag), 100 * len(frontier) / len(dag)))
+    print("Overhead of frontier: {}".format(compute_overhead(frontier_mh, query_mh)))
     print("Number of leaves in the frontier: {}".format(num_leaves))
     print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
 
