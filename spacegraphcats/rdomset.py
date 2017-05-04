@@ -256,7 +256,7 @@ def assign_to_dominators(graph: Graph, domset: Set[int], radius: int):
         domdistance:  dictionary mapping vertices to the distance to their
                       closest dominators
     """
-    closest_dominators = {v:set() for v in graph}  # type: dict[int,Set[int]]]
+    closest_dominators = {v:set() for v in graph}
     domdistance = {v:radius+1 for v in graph}
 
     # Every vertex in domset is a zero-dominator of itself

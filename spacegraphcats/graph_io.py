@@ -41,4 +41,4 @@ def write_to_gxt(gxtfile, graph, weight: int = None):
 
     If a weight is provided,only the arcs with a particular weight are stored.
     """
-    write(gxtfile, len(graph), [(x[0], x[1]) for x in graph.arcs(weight)])
+    write(gxtfile, len(graph), map(lambda x: (x[0], x[1]), graph.arcs(weight)))
