@@ -73,7 +73,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
     @memoize
     def node_containment(minhash: MinHash):
         query_mh = get_query_minhash(minhash.scaled)
-        return query_mh.containment(minhash)
+        return query_mh.contained_by(minhash)
 
     def add_node(node_id: int, minhash: MinHash):
         nonlocal frontier_minhash
@@ -151,7 +151,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
 
                 query_mh = get_query_minhash(union.scaled)
 
-                if query_mh.containment(union) >= containment:
+                if query_mh.contained_by(union) >= containment:
                     # early termination, all children already cover the node so we can stop
                     return
 
@@ -193,10 +193,10 @@ def main():
     top_mh = load_minhash(top_node_id, minhash_db)
     query_mh = query_sig.minhash.downsample_max_hash(top_mh)
     top_mh = top_mh.downsample_max_hash(query_sig.minhash)
-    print("Root containment: {}".format(query_mh.containment(top_mh)))
+    print("Root containment: {}".format(query_mh.contained_by(top_mh)))
     print("Root similarity: {}".format(query_mh.similarity(top_mh)))
 
-    print("Containment of frontier: {}".format(query_mh.containment(frontier_mh)))
+    print("Containment of frontier: {}".format(query_mh.contained_by(frontier_mh)))
     print("Similarity of frontier: {}".format(query_mh.similarity(frontier_mh)))
     print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), len(dag), 100 * len(frontier) / len(dag)))
     print("Number of leaves in the frontier: {}".format(num_leaves))

@@ -112,13 +112,13 @@ def main():
 
         # print out the best!
         best_sim, best_node_id, best_child_mh = sims[0]
-        containment = query_mh.containment(best_child_mh)
+        containment = query_mh.contained_by(best_child_mh)
         print("best_sim={:.3f} contain={:.3f} node_id={} level={}".format(\
             best_sim, containment, best_node_id, dag_levels.get(best_node_id, 0)))
         remaining_nodes = len(sims) - 1
         for nextsim, nextid, nextmh in sims[1:]:
             if nextsim > 0.01:
-                containment = query_mh.containment(nextmh)
+                containment = query_mh.contained_by(nextmh)
                 print("\tsim={:.3f} contain={:.3f} node_id={}".format(\
                     nextsim, containment, nextid))
                 remaining_nodes -= 1
