@@ -11,8 +11,8 @@ from .memoize import memoize
 from .search_catlas_with_minhash import load_dag, load_minhash
 
 
-def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> List[int]:
-    shadow = []
+def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> Set[int]:
+    shadow = set()  # type: Set[int]
 
     seen_nodes = set()  # type: Set[int]
 
@@ -23,7 +23,7 @@ def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> List[int]:
         children_ids = dag[node_id]
 
         if len(children_ids) == 0:
-            shadow.append(node_id)
+            shadow.add(node_id)
         else:
             for child in children_ids:
                 add_to_shadow(child)
