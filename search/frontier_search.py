@@ -154,6 +154,7 @@ def main():
     p.add_argument('query_sig', help='query minhash')
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('overhead', help='\% of overhead', type=float)
+    p.add_argument('-o', '--output', default=None)
 
     args = p.parse_args()
 
@@ -187,6 +188,13 @@ def main():
     shadow = find_shadow(frontier, dag)
 
     print("Size of the shadow: {}".format(len(shadow)))
+
+    if args.output:
+        print('saving frontier minhash as sourmash signature, into {}'.format(args.output))
+        with open(args.output, 'w') as fp:
+            sig = signature.SourmashSignature('', frontier_mh,
+                                              name='frontier')
+            sourmash_lib.signature.save_signatures([sig], fp)
 
     sys.exit(0)
 
