@@ -321,7 +321,8 @@ if __name__ == "__main__":
                         "Defaults to highest level saved when not invoked.")
     args = parser.parse_args()
     
-    prof = cProfile.Profile()
-    prof.run("main(args)")
-    prof.print_stats('tottime')
+    main(args)
+    # prof = cProfile.Profile()
+    # prof.run("main(args)")
+    # prof.print_stats('tottime')
 
