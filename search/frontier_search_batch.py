@@ -26,12 +26,12 @@ def main():
     args = p.parse_args()
 
     basename = os.path.basename(args.catlas_prefix)
-    catlas = os.path.join(args.catlas_prefix, basename + '.catlas')
+    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
 
     # load catlas DAG
     top_node_id, dag, dag_levels = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
-    db_path = os.path.basename(args.catlas_prefix) + '/{}.db'.format(basename)
+    db_path = os.path.join(args.catlas_prefix, 'minhashes.db')
 
     for filename in args.query_sigs:
         query_sig = sourmash_lib.signature.load_signatures(filename)

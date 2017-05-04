@@ -66,7 +66,7 @@ def main():
     args = p.parse_args()
 
     basename = os.path.basename(args.catlas_prefix)
-    catlas = os.path.join(args.catlas_prefix, basename + '.catlas')
+    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
 
     # load catlas DAG
     top_node_id, dag, dag_levels = load_dag(catlas)
@@ -77,7 +77,7 @@ def main():
     query_sig = list(query_sig)[0]
     print('loaded query sig {}'.format(query_sig.name()))
 
-    db_path = os.path.basename(args.catlas_prefix) + '/{}.db'.format(basename)
+    db_path = os.path.join(args.catlas_prefix, 'minhashes.db')
     minhash_db = leveldb.LevelDB(db_path)
 
     # descend from top node, finding path through catlas by
