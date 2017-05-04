@@ -150,11 +150,10 @@ def main():
 
     # put together the basic catlas info --
     basename = os.path.basename(args.catlas_prefix)
-    contigfile = '%s.gxt.contigs' % (basename,)
-    contigfile = os.path.join(args.catlas_prefix, contigfile)
+    contigfile = os.path.join(args.catlas_prefix, "contigs.txt")
 
-    catlas = os.path.join(args.catlas_prefix, basename + '.catlas')
-    domfile = os.path.join(args.catlas_prefix, basename + '.domfile')
+    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
+    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
     
     # make minhashes from node contigs
     print('ksize={} scaled={:.0f}'.format(ksize, scaled))
@@ -188,8 +187,7 @@ def main():
     if args.no_pickles:
         print('per --no-pickles, NOT building catlas .minhashes directory.')
     else:
-        path = os.path.basename(args.catlas_prefix) + '.minhashes'
-        path = os.path.join(args.catlas_prefix, path)
+        path = os.path.join(args.catlas_prefix, 'minhashes')
 
         try:
             os.mkdir(path)

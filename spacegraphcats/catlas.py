@@ -278,10 +278,10 @@ def main(args):
 
     # get io filenames
     proj_dir = args.project
-    name = os.path.split(proj_dir)[-1]
-    graph_file = open(os.path.join(proj_dir, name+".gxt"), 'r')
-    catlas_file = open(os.path.join(proj_dir, name+".catlas"), 'w')
-    dom_file = open(os.path.join(proj_dir, name+".domfile"), 'w')
+    # name = os.path.split(proj_dir)[-1]
+    graph_file = open(os.path.join(proj_dir, "cdbg.gxt"), 'r')
+    catlas_file = open(os.path.join(proj_dir, "catlas.csv"), 'w')
+    dom_file = open(os.path.join(proj_dir, "first_doms.txt"), 'w')
 
     # make checkpoint
     checkpoint = Checkpoint(proj_dir, r, args.no_checkpoint)

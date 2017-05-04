@@ -10,7 +10,7 @@ from .graph_parser import write
 
 class Pathfinder(object):
     "Track segment IDs, adjacency lists, and assembled contigs."
-    def __init__(self, ksize, gxtfile, assemble=False):
+    def __init__(self, ksize, gxtfile, contigfile=None, assemble=False):
         self.ksize = ksize
 
         self.node_counter = 0
@@ -21,7 +21,7 @@ class Pathfinder(object):
         self.labels = defaultdict(set)       # nodes to set of labels
         self.assemblyfp = None
         if assemble:
-            self.assemblyfp = open(gxtfile + '.contigs', 'wt')
+            self.assemblyfp = open(contigfile, 'wt')
         self.adjfp = open(gxtfile + '.adj', 'wt')
 
     def new_hdn(self, kmer):
@@ -104,8 +104,9 @@ def run(args):
         elif output_dir.endswith('.fa.gz'):
             output_dir = output_dir[:-6]
 
-    gxtfile = os.path.basename(output_dir) + '.gxt'
-    gxtfile = os.path.join(output_dir, gxtfile)
+    # gxtfile = os.path.basename(output_dir) + '.gxt'
+    gxtfile = os.path.join(output_dir, "cdbg.gxt")
+    contigfile = os.path.join(output_dir, "contigs.txt")
 
     print('')
     print('placing output in directory:', output_dir)
@@ -150,7 +151,7 @@ def run(args):
     ksize = graph.ksize()
 
     # initialize the object that will track information for us.
-    pathy = Pathfinder(ksize, gxtfile, not args.no_assemble)
+    pathy = Pathfinder(ksize, gxtfile, contigfile, not args.no_assemble)
 
     print('finding high degree nodes')
     if args.label:
