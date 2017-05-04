@@ -5,6 +5,7 @@ import pickle
 import sys
 import time
 from collections import defaultdict
+import leveldb
 
 import screed
 import sourmash_lib
@@ -47,18 +48,14 @@ def load_dag(catlas_file):
     return max_node, dag, dag_levels
 
 
-def load_minhash(node_id, minhash_dir):
-    "Load an individual node's MinHash via pickle."
-    filename = 'node{}.pickle'.format(node_id)
-    filename = os.path.join(minhash_dir, filename)
-
+def load_minhash(node_id: int, minhash_db: leveldb.LevelDB):
+    "Load an individual node's MinHash from the leveldb."
     try:
-        with open(filename, 'rb') as fp:
-            node_mh = pickle.load(fp)
-    except FileNotFoundError:
+        value = minhash_db.Get(node_id.to_bytes(2, byteorder='big'))
+    except KeyError:
         return None
 
-    return node_mh
+    return pickle.loads(value)
 
 
 def main():
@@ -80,7 +77,8 @@ def main():
     query_sig = list(query_sig)[0]
     print('loaded query sig {}'.format(query_sig.name()))
 
-    minhash_dir = os.path.join(args.catlas_prefix, basename + '.minhashes')
+    db_path = os.path.basename(args.catlas_prefix) + '/{}.db'.format(basename)
+    minhash_db = leveldb.LevelDB(db_path)
 
     # descend from top node, finding path through catlas by
     # child with best similarity.
@@ -92,12 +90,15 @@ def main():
         children_ids = dag[cur_node_id]
         if not children_ids:
             break
-        children_mhlist = [ (load_minhash(node_id, minhash_dir), node_id) for
+        children_mhlist = [ (load_minhash(node_id, minhash_db), node_id) for
                                 node_id in children_ids ]
 
         # compute similarities and sort
         sims = []
         for node_mh, node_id in children_mhlist:
+            if not node_mh:
+                continue
+                
             max_hash_query = query_sig.minhash.max_hash
             max_hash_against = node_mh.max_hash
 

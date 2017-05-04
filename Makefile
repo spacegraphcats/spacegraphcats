@@ -21,18 +21,18 @@ acido/acido.gxt: data/acido.fa.gz
 acido/acido.catlas: acido/acido.gxt
 	python -m spacegraphcats.catlas acido 1
 
-# build minhashes
-acido/acido.minhashes: acido/acido.catlas
+# build minhashes database
+acido/acido.db: acido/acido.catlas
 	python -m search.make_catlas_minhashes acido -k 31 --scaled=1000 --sbt --sigs
 
 # build a search signature
 acido/acido-chunk1.fa.gz.sig: data/acido-chunk1.fa.gz
 	sourmash compute -k 31 data/acido-chunk1.fa.gz --scaled 500 -f -o acido/acido-chunk1.fa.gz.sig
 
-acido-search: acido/acido.minhashes acido/acido-chunk1.fa.gz.sig
+acido-search: acido/acido.db acido/acido-chunk1.fa.gz.sig
 	python -m search.search_catlas_with_minhash acido/acido-chunk1.fa.gz.sig acido
 
-acido-frontier-search: acido/acido.minhashes acido/acido-chunk1.fa.gz.sig
+acido-frontier-search: acido/acido.db acido/acido-chunk1.fa.gz.sig
 	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1
 
 ### 
@@ -48,13 +48,13 @@ acido-frontier-search: acido/acido.minhashes acido/acido-chunk1.fa.gz.sig
 15genome/15genome.catlas: 15genome/15genome.gxt
 	python -m spacegraphcats.catlas 15genome 3
 
-# build minhashes
-15genome/15genome.minhashes: 15genome/15genome.catlas
+# build minhashes database
+15genome/15genome.db: 15genome/15genome.catlas
 	python -m search.make_catlas_minhashes -k 31 --scaled=5000 15genome
 
 # run search!
-15genome-search: 15genome/15genome.minhashes
+15genome-search: 15genome/15genome.db
 	python -m search.search_catlas_with_minhash data/15genome.5.fa.sig 15genome
 
-15genome-frontier-search: 15genome/15genome.minhashes
+15genome-frontier-search: 15genome/15genome.db
 	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1

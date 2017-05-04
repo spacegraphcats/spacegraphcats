@@ -31,14 +31,14 @@ def main():
     # load catlas DAG
     top_node_id, dag, dag_levels = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
-    minhash_dir = os.path.join(args.catlas_prefix, basename + '.minhashes')
+    db_path = os.path.basename(args.catlas_prefix) + '/{}.db'.format(basename)
 
     for filename in args.query_sigs:
         query_sig = sourmash_lib.signature.load_signatures(filename)
         query_sig = list(query_sig)[0]
         print('loaded query sig {}'.format(query_sig.name()), file=sys.stderr)
         
-        frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_dir, args.overhead)
+        frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, db_path, args.overhead)
 
         containment = query_mh.containment(frontier_mh)
         similarity = query_mh.similarity(frontier_mh)
