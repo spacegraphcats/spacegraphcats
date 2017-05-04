@@ -38,7 +38,7 @@ def main():
         query_sig = list(query_sig)[0]
         print('loaded query sig {}'.format(query_sig.name()), file=sys.stderr)
         
-        frontier, num_leaves, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_dir, args.overhead)
+        frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_dir, args.overhead)
 
         containment = query_mh.containment(frontier_mh)
         similarity = query_mh.similarity(frontier_mh)

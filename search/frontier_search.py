@@ -42,37 +42,40 @@ def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
 def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_overhead: float):
     # expand the frontier where the child nodes together have more than x% overhead
 
-    query_mh = query_sig.minhash
     frontier = []
     frontier_minhash = None
     seen_nodes = set()  # type: Set[int]
 
     num_leaves = 0
+    num_empty = 0
 
     @memoize
     def load_and_downsample_minhash(node_id: int):
-        nonlocal query_mh
         minhash = load_minhash(node_id, minhash_dir)
         if minhash:
-            minhash = minhash.downsample_max_hash(query_mh)
-            query_mh = query_mh.downsample_max_hash(minhash)
+            minhash = minhash.downsample_max_hash(query_sig.minhash)
         return minhash
 
     @memoize
     def node_overhead(minhash):
+        # TODO: memoize query minhash
+        query_mh = query_sig.minhash.downsample_max_hash(minhash)
         return compute_overhead(minhash, query_mh)
 
     @memoize
     def node_containment(minhash):
+        # TODO: memoize query minhash
+        query_mh = query_sig.minhash.downsample_max_hash(minhash)
         return query_mh.containment(minhash)
 
     def add_node(node_id: int, minhash):
         nonlocal frontier_minhash
         frontier.append(node_id)
-        if frontier_minhash:
-            frontier_minhash.merge(minhash)
-        else:
-            frontier_minhash = minhash
+        if minhash:
+            if frontier_minhash:
+                frontier_minhash.merge(minhash)
+            else:
+                frontier_minhash = minhash
 
 
     def add_to_frontier(node_id: int):
@@ -86,15 +89,14 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_over
             seen_nodes.add(node_id)
 
         children_ids = dag[node_id]
-
-        minhash = load_and_downsample_minhash(node_id)
-            
         if len(children_ids) == 0:
             # leaf
             nonlocal num_leaves
-            add_node(node_id, minhash)
+            add_node(node_id, load_minhash(node_id, minhash_dir))
             num_leaves += 1
             return
+
+        minhash = load_and_downsample_minhash(node_id)
 
         # check whether the node has more than x% overhead
 
@@ -114,9 +116,13 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_over
 
             overheads = []
 
-            for child in children_ids:
-                child_mh = load_and_downsample_minhash(child)
+            for child_id in children_ids:
+                child_mh = load_and_downsample_minhash(child_id)
                 if not child_mh:
+                    nonlocal num_empty
+                    # always add nodes without minhashes to frontier
+                    add_node(child_id, None)
+                    num_empty += 1
                     continue
 
                 # ignore children without any containment
@@ -124,7 +130,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_over
                     continue
 
                 child_oh = node_overhead(child_mh)
-                overheads.append((child_oh, child, child_mh))
+                overheads.append((child_oh, child_id, child_mh))
 
             overheads.sort()
 
@@ -136,17 +142,21 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_over
                 add_to_frontier(child_tuple[1])
 
                 union.merge(child_tuple[2])
-                if union.containment(query_mh) == containment:
+
+                # TODO: only necessary if union band size changed
+                query_mh = query_sig.minhash.downsample_max_hash(union)
+
+                if union.containment(query_mh) >= containment:
                     # early termination, all children already cover the node so we can stop
                     return
 
         else:
             # low overhead node
-            add_node(node_id, minhash)
+            add_node(node_id, load_minhash(node_id, minhash_dir))
 
     add_to_frontier(top_node_id)
 
-    return frontier, num_leaves, frontier_minhash
+    return frontier, num_leaves, num_empty, frontier_minhash
 
 
 def main():
@@ -171,7 +181,7 @@ def main():
     query_sig = list(query_sig)[0]
     print('loaded query sig {}'.format(query_sig.name()))
 
-    frontier, num_leaves, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_dir, args.overhead)
+    frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_dir, args.overhead)
 
     top_mh = load_minhash(top_node_id, minhash_dir)
     query_mh = query_sig.minhash.downsample_max_hash(top_mh)
@@ -183,6 +193,7 @@ def main():
     print("Similarity of frontier: {}".format(query_mh.similarity(frontier_mh)))
     print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), len(dag), 100 * len(frontier) / len(dag)))
     print("Number of leaves in the frontier: {}".format(num_leaves))
+    print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
 
     shadow = find_shadow(frontier, dag)
 
