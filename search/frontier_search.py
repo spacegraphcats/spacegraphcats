@@ -2,10 +2,11 @@
 import argparse
 import os
 import sys
+import leveldb
 
 import sourmash_lib
 from sourmash_lib import MinHash, signature
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Union
 
 from .memoize import memoize
 from .search_catlas_with_minhash import load_dag, load_minhash
@@ -39,8 +40,12 @@ def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_overhead: float):
+def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, leveldb.LevelDB], max_overhead: float):
     # expand the frontier where the child nodes together have more than x% overhead
+
+    # load the leveldb unless we get a path
+    if not isinstance(minhash_db, leveldb.LevelDB):
+        minhash_db = leveldb.LevelDB(minhash_db)
 
     frontier = []
     frontier_minhash = None
@@ -51,21 +56,23 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_over
 
     @memoize
     def load_and_downsample_minhash(node_id: int):
-        minhash = load_minhash(node_id, minhash_dir)
+        minhash = load_minhash(node_id, minhash_db)
         if minhash:
             minhash = minhash.downsample_max_hash(query_sig.minhash)
         return minhash
 
     @memoize
+    def get_query_minhash(scaled):
+        return query_sig.minhash.downsample_scaled(scaled)
+
+    @memoize
     def node_overhead(minhash):
-        # TODO: memoize query minhash
-        query_mh = query_sig.minhash.downsample_max_hash(minhash)
+        query_mh = get_query_minhash(minhash.scaled)
         return compute_overhead(minhash, query_mh)
 
     @memoize
     def node_containment(minhash):
-        # TODO: memoize query minhash
-        query_mh = query_sig.minhash.downsample_max_hash(minhash)
+        query_mh = get_query_minhash(minhash.scaled)
         return query_mh.containment(minhash)
 
     def add_node(node_id: int, minhash):
@@ -92,7 +99,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_over
         if len(children_ids) == 0:
             # leaf
             nonlocal num_leaves
-            add_node(node_id, load_minhash(node_id, minhash_dir))
+            add_node(node_id, load_minhash(node_id, minhash_db))
             num_leaves += 1
             return
 
@@ -143,8 +150,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_over
 
                 union.merge(child_tuple[2])
 
-                # TODO: only necessary if union band size changed
-                query_mh = query_sig.minhash.downsample_max_hash(union)
+                query_mh = get_query_minhash(union.scaled)
 
                 if union.containment(query_mh) >= containment:
                     # early termination, all children already cover the node so we can stop
@@ -152,7 +158,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_over
 
         else:
             # low overhead node
-            add_node(node_id, load_minhash(node_id, minhash_dir))
+            add_node(node_id, load_minhash(node_id, minhash_db))
 
     add_to_frontier(top_node_id)
 
@@ -175,16 +181,17 @@ def main():
     top_node_id, dag, dag_levels = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
-    minhash_dir = os.path.join(args.catlas_prefix, basename + '.minhashes')
+    db_path = os.path.basename(args.catlas_prefix) + '/{}.db'.format(basename)
+    minhash_db = leveldb.LevelDB(db_path)
 
     # load query MinHash
     query_sig = sourmash_lib.signature.load_signatures(args.query_sig)
     query_sig = list(query_sig)[0]
     print('loaded query sig {}'.format(query_sig.name()))
 
-    frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_dir, args.overhead)
+    frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead)
 
-    top_mh = load_minhash(top_node_id, minhash_dir)
+    top_mh = load_minhash(top_node_id, minhash_db)
     query_mh = query_sig.minhash.downsample_max_hash(top_mh)
     top_mh = top_mh.downsample_max_hash(query_sig.minhash)
     print("Root containment: {}".format(query_mh.containment(top_mh)))

@@ -5,6 +5,7 @@ import pickle
 import sys
 import time
 from collections import defaultdict
+import leveldb
 
 import screed
 import sourmash_lib
@@ -132,7 +133,7 @@ def main():
     p.add_argument('--leaves-only', action='store_true')
     p.add_argument('--scaled', default=100.0, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int)
-    p.add_argument('--no-pickles', action='store_true', help="don't build catlas minhashes directory & pickles")
+    p.add_argument('--no-minhashes', action='store_true', help="don't create catlas minhashes database")
     p.add_argument('--sbt', action='store_true', help='build SBT for use with sourmash')
     p.add_argument('--sigs', action='store_true', help='save built minhashes for use with sourmash')
     p.add_argument('-o', '--output', default=None)
@@ -184,26 +185,21 @@ def main():
     if not args.leaves_only:
         build_dag(catlas, leaf_minhashes, factory)
 
-    if args.no_pickles:
-        print('per --no-pickles, NOT building catlas .minhashes directory.')
+    if args.no_minhashes:
+        print('per --no-minhashes, NOT building minhashes database.')
     else:
-        path = os.path.join(args.catlas_prefix, 'minhashes')
+        path = os.path.join(args.catlas_prefix, 'minhashes.db')
+        db = leveldb.LevelDB(path)
 
-        try:
-            os.mkdir(path)
-        except FileExistsError:
-            pass
-
-        print('saving individual minhashes in {}/node*.pickle'.format(path))
+        print('saving minhashes in {}'.format(path))
         empty_mh = 0
+        batch = leveldb.WriteBatch()
         for node_id, mh in leaf_minhashes.items():
             if mh:
-                name = 'node{}.pickle'.format(node_id)
-                name = os.path.join(path, name)
-                with open(name, 'wb') as fp:
-                    pickle.dump(mh, fp)
+                db.Put(node_id.to_bytes(2, byteorder='big'), pickle.dumps(mh))
             else:
                 empty_mh += 1
+        db.Write(batch, sync = True)
         total_mh = len(leaf_minhashes)
         print('saved {} minhashes ({} empty)'.format(total_mh - empty_mh,
                                                      empty_mh))
