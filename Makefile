@@ -1,8 +1,8 @@
 lint:
-	mypy spacegraphcats/*.py --ignore-missing-imports
+	mypy spacegraphcats/*.py search/*.py --ignore-missing-imports
 
 test:
-	py.test spacegraphcats
+	py.test spacegraphcats search
 
 
 ## Targets:
