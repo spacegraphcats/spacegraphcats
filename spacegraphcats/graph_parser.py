@@ -1,6 +1,6 @@
 """Parser and writer for simple graph format."""
 
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Iterable
 
 
 def _parse_line(line: str, split_on=' ') -> List[int]:
@@ -33,7 +33,7 @@ def parse_minhash(minhash_file, add_minhash: Callable[[int, List[int]], None]):
         add_minhash(parsed[0], parsed[1:])
 
 
-def write(graph_file, num_vertices: int, edges: List[Tuple[int, int]]):
+def write(graph_file, num_vertices: int, edges: Iterable[Tuple[int, int]]):
     """Write an edgelist into an .ext file."""
     graph_file.write('{}\n'.format(num_vertices))
     for u, v in edges:

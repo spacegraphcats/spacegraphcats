@@ -21,6 +21,11 @@ def read_from_gxt(gxtfile, radius: int, directed: bool, sequential=True):
 
     def add_edge(u, v):
         if u != v:
+            if not sequential:
+                if u not in graph:
+                    graph.add_node(u)
+                if v not in graph:
+                    graph.add_node(v)
             graph.add_arc(u, v)
             if not directed:
                 graph.add_arc(v, u)
@@ -36,4 +41,4 @@ def write_to_gxt(gxtfile, graph, weight: int = None):
 
     If a weight is provided,only the arcs with a particular weight are stored.
     """
-    write(gxtfile, len(graph), [(x[0], x[1]) for x in graph.arcs(weight)])
+    write(gxtfile, len(graph), map(lambda x: (x[0], x[1]), graph.arcs(weight)))

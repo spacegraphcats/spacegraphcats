@@ -320,7 +320,9 @@ if __name__ == "__main__":
                         help="Level at which to load the checkpoint."
                         "Defaults to highest level saved when not invoked.")
     args = parser.parse_args()
+    
     main(args)
-    #cProfile.run("main(args)")
-
+    # prof = cProfile.Profile()
+    # prof.run("main(args)")
+    # prof.print_stats('tottime')
 

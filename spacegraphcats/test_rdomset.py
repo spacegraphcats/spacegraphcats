@@ -23,8 +23,8 @@ class ParserRDomset(unittest.TestCase):
 
         # The low-degree orientation of a simple graph must be simple
         # and every arc has weight 1.
-        self.assertEqual(g.arcs(2), [])
-        self.assertEqual(len(g.arcs(1)), 300)
+        self.assertEqual(len(list(g.arcs(2))), 0)
+        self.assertEqual(len(list(g.arcs(1))), 300)
 
         # Test on (sparse) random graph
         n = 100
@@ -42,8 +42,8 @@ class ParserRDomset(unittest.TestCase):
 
         low_degree_orientation(g)
 
-        self.assertEqual(g.arcs(2), [])
-        self.assertEqual(len(g.arcs(1)), count)
+        self.assertEqual(len(list(g.arcs(2))), 0)
+        self.assertEqual(len(list(g.arcs(1))), count)
 
     def test_ldo_example(self):
         g = Graph(num_nodes=10, radius=3)
@@ -57,8 +57,8 @@ class ParserRDomset(unittest.TestCase):
 
         low_degree_orientation(g)
 
-        self.assertEqual(g.arcs(2), [])
-        self.assertEqual(len(g.arcs(1)), 10)
+        self.assertEqual(len(list(g.arcs(2))), 0)
+        self.assertEqual(len(list(g.arcs(1))), 10)
 
         # unambiguous arcs
         self.assertTrue(set([(6, 0), (2, 1), (8, 2), (2, 3), (3, 4), (6, 7),

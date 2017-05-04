@@ -17,7 +17,7 @@ class IOTest(unittest.TestCase):
 
         parsed = read_from_gxt(f, 5, True)
 
-        self.assertEqual(parsed.arcs(), graph.arcs())
+        self.assertEqual(list(parsed.arcs()), list(graph.arcs()))
         self.assertEqual(len(parsed), len(graph))
 
     def test_writing_and_reading_no_weight(self):
@@ -31,7 +31,7 @@ class IOTest(unittest.TestCase):
 
         parsed = read_from_gxt(f, 5, True)
 
-        self.assertEqual(parsed.arcs(), graph.arcs())
+        self.assertEqual(list(parsed.arcs()), list(graph.arcs()))
         self.assertEqual(len(parsed), len(graph))
 
 
