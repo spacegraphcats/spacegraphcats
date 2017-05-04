@@ -11,3 +11,4 @@ tr-cross
 build/
 dist/
 spacegraphcats.egg-info/
+*~
