@@ -57,15 +57,17 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_over
         return minhash
 
     @memoize
+    def get_query_minhash(scaled):
+        return query_sig.minhash.downsample_scaled(scaled)
+
+    @memoize
     def node_overhead(minhash):
-        # TODO: memoize query minhash
-        query_mh = query_sig.minhash.downsample_max_hash(minhash)
+        query_mh = get_query_minhash(minhash.scaled)
         return compute_overhead(minhash, query_mh)
 
     @memoize
     def node_containment(minhash):
-        # TODO: memoize query minhash
-        query_mh = query_sig.minhash.downsample_max_hash(minhash)
+        query_mh = get_query_minhash(minhash.scaled)
         return query_mh.containment(minhash)
 
     def add_node(node_id: int, minhash):
@@ -143,8 +145,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_dir: str, max_over
 
                 union.merge(child_tuple[2])
 
-                # TODO: only necessary if union band size changed
-                query_mh = query_sig.minhash.downsample_max_hash(union)
+                query_mh = get_query_minhash(union.scaled)
 
                 if union.containment(query_mh) >= containment:
                     # early termination, all children already cover the node so we can stop
