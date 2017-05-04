@@ -256,8 +256,8 @@ def assign_to_dominators(graph: Graph, domset: Set[int], radius: int):
         domdistance:  dictionary mapping vertices to the distance to their
                       closest dominators
     """
-    closest_dominators = {v:set() for v in graph}
-    domdistance = {v:radius+1 for v in graph}
+    closest_dominators = {v:set() for v in graph} # type: Dict[int, Set[int]]
+    domdistance = {v:radius+1 for v in graph} # type: Dict[int, int]
 
     # Every vertex in domset is a zero-dominator of itself
     for v in domset:
@@ -305,7 +305,7 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
 
     print("computing dominating edges")
     # map of dominators to vertices they dominate
-    dominated = {x:set() for x in domset}
+    dominated = {x:set() for x in domset} # type: Dict[int, Set[int]]
     for v, doms in closest_dominators.items():
         for x in doms:
             dominated[x].add(v)
@@ -322,9 +322,9 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     # In either case x should be adjacent to all dominators of u.
     for x in domset:
         # neighbors of vertices dominated by x that are not dominated by x
-        domination_boundary = set()
+        domination_boundary = set() # type: Set[int]
         # vertices that need to be made adjacent to x
-        new_dom_neighbors = set()
+        new_dom_neighbors = set() # type: Set[int]
         # get all the boundary vertices.  We remove the vertices dominated by x
         # at the end to only do it once
         for v in dominated[x]:
