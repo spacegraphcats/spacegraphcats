@@ -58,24 +58,24 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
     def load_and_downsample_minhash(node_id: int):
         minhash = load_minhash(node_id, minhash_db)
         if minhash:
-            minhash = minhash.downsample_max_hash(query_sig.minhash)
+            return minhash.downsample_max_hash(query_sig.minhash)
         return minhash
 
     @memoize
-    def get_query_minhash(scaled):
+    def get_query_minhash(scaled: float):
         return query_sig.minhash.downsample_scaled(scaled)
 
     @memoize
-    def node_overhead(minhash):
+    def node_overhead(minhash: MinHash):
         query_mh = get_query_minhash(minhash.scaled)
         return compute_overhead(minhash, query_mh)
 
     @memoize
-    def node_containment(minhash):
+    def node_containment(minhash: MinHash):
         query_mh = get_query_minhash(minhash.scaled)
         return query_mh.containment(minhash)
 
-    def add_node(node_id: int, minhash):
+    def add_node(node_id: int, minhash: MinHash):
         nonlocal frontier_minhash
         frontier.append(node_id)
         if minhash:
@@ -141,18 +141,17 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
 
             overheads.sort()
 
-            first = overheads.pop()
-            add_to_frontier(first[1])
-            union = first[2]
-            for child_tuple in overheads:
+            _, first_node, union = overheads.pop()
+            add_to_frontier(first_node)
+            for _, child_id, child_mh in overheads:
                 # add children to frontier
-                add_to_frontier(child_tuple[1])
+                add_to_frontier(child_id)
 
-                union.merge(child_tuple[2])
+                union.merge(child_mh)
 
                 query_mh = get_query_minhash(union.scaled)
 
-                if union.containment(query_mh) >= containment:
+                if query_mh.containment(union) >= containment:
                     # early termination, all children already cover the node so we can stop
                     return
 
