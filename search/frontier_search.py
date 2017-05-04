@@ -204,7 +204,7 @@ def main():
         print('saving frontier minhash as sourmash signature, into {}'.format(args.output))
         with open(args.output, 'w') as fp:
             sig = signature.SourmashSignature('', frontier_mh,
-                                              name='frontier')
+                                              name='frontier o={:0.2f}'.format(args.overhead))
             sourmash_lib.signature.save_signatures([sig], fp)
 
     sys.exit(0)
