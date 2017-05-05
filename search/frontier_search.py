@@ -194,7 +194,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
     # now check whether the nodes in the purgatory are still necessary
     if len(purgatory):
         purgatory.sort()
-        required_query_minhashes = set(query_sig.minhash.get_mins()) - set(frontier_minhash.get_mins())
+        required_query_minhashes = query_sig.minhash.subtract_mins(frontier_minhash)
         for _, node_id, node_mh in purgatory:
             before = len(required_query_minhashes)
             required_query_minhashes -= set(node_mh.get_mins())
