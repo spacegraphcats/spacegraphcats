@@ -201,7 +201,7 @@ def main():
         batch = leveldb.WriteBatch()
         for node_id, mh in leaf_minhashes.items():
             if mh:
-                db.Put(node_id.to_bytes(2, byteorder='big'), pickle.dumps(mh))
+                db.Put(node_id.to_bytes(8, byteorder='big'), pickle.dumps(mh))
             else:
                 empty_mh += 1
         db.Write(batch, sync = True)
