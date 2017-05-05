@@ -6,6 +6,7 @@ import screed
 from collections import OrderedDict, defaultdict
 import os, os.path
 from .graph_parser import write
+import gzip
 
 
 class Pathfinder(object):
@@ -21,7 +22,7 @@ class Pathfinder(object):
         self.labels = defaultdict(set)       # nodes to set of labels
         self.assemblyfp = None
         if assemble:
-            self.assemblyfp = open(contigfile, 'wt')
+            self.assemblyfp = gzip.open(contigfile, 'wt')
         self.adjfp = open(gxtfile + '.adj', 'wt')
 
     def new_hdn(self, kmer):
@@ -108,7 +109,7 @@ def run(args):
 
     # gxtfile = os.path.basename(output_dir) + '.gxt'
     gxtfile = os.path.join(output_dir, "cdbg.gxt")
-    contigfile = os.path.join(output_dir, "contigs.txt")
+    contigfile = os.path.join(output_dir, "contigs.fa.gz")
 
     print('')
     print('placing output in directory:', output_dir)
