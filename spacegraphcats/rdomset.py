@@ -2,7 +2,7 @@
 from collections import defaultdict
 from .graph import Graph, DictGraph
 
-from typing import List, Set, Dict, Any, Union
+from typing import List, Set, Dict, Any, Union, DefaultDict
 
 
 def low_degree_orientation(graph: Graph):
@@ -199,10 +199,10 @@ def compute_domset(graph: Graph, radius: int):
     domset = set()
     infinity = float('inf')
     # minimum distance to a dominating vertex, obviously infinite at start
-    domdistance = defaultdict(lambda: infinity)  # type: defaultdict[int, float]
+    domdistance = defaultdict(lambda: infinity)  # type: DefaultDict[int, float]
     # counter that keeps track of how many neighbors have made it into the
     # domset
-    domcounter = defaultdict(int)  # type: defaultdict[int, int]
+    domcounter = defaultdict(int)  # type: DefaultDict[int, int]
     # cutoff for how many times a vertex needs to have its neighbors added to
     # the domset before it does.  We choose radius^2 as a convenient "large"
     # number
