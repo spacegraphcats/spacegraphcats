@@ -162,10 +162,10 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
 
             union_contain = get_query_minhash(union.scaled).contained_by(union)
             if union_contain < containment:
-                raise Exception('Children cannot cover node.')
+                raise Exception('Children cannot cover node: {} vs {}'.format(union_contain, containment))
 
             if union_contain > containment:
-                raise Exception('Children contain more than node.')
+                raise Exception('Children contain more than node: {} vs {}'.format(union_contain, containment))
 
         else:
             # low overhead node
