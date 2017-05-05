@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import leveldb
+from copy import copy
 
 import sourmash_lib
 from sourmash_lib import MinHash, signature
@@ -57,12 +58,12 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
     @memoize
     def load_and_downsample_minhash(node_id: int):
         minhash = load_minhash(node_id, minhash_db)
-        if minhash:
-            return minhash.downsample_max_hash(query_sig.minhash)
-        return minhash
+        if minhash is None:
+            return None
+        return minhash.downsample_max_hash(query_sig.minhash)
 
     @memoize
-    def get_query_minhash(scaled: float):
+    def get_query_minhash(scaled: int):
         return query_sig.minhash.downsample_scaled(scaled)
 
     @memoize
@@ -141,19 +142,29 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
 
             overheads.sort()
 
-            _, first_node, union = overheads.pop()
+            _, first_node, first_mh = overheads.pop()
+            
+            union = copy(first_mh)
+
             add_to_frontier(first_node)
+            query_mh = get_query_minhash(union.scaled)
+
             for _, child_id, child_mh in overheads:
                 # add children to frontier
                 add_to_frontier(child_id)
 
                 union.merge(child_mh)
 
-                query_mh = get_query_minhash(union.scaled)
-
-                if query_mh.contained_by(union) >= containment:
+                if query_mh.contained_by(union) == containment:
                     # early termination, all children already cover the node so we can stop
                     return
+
+            union_contain = get_query_minhash(union.scaled).contained_by(union)
+            if union_contain < containment:
+                raise Exception('Children cannot cover node.')
+
+            if union_contain > containment:
+                raise Exception('Children contain more than node.')
 
         else:
             # low overhead node
