@@ -41,7 +41,7 @@ def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, leveldb.LevelDB], max_overhead: float):
+def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, leveldb.LevelDB], max_overhead: float, include_empty = True):
     # expand the frontier where the child nodes together have more than x% overhead
 
     # load the leveldb unless we get a path
@@ -127,10 +127,11 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
             for child_id in children_ids:
                 child_mh = load_and_downsample_minhash(child_id)
                 if not child_mh:
-                    nonlocal num_empty
-                    # always add nodes without minhashes to frontier
-                    add_node(child_id, None)
-                    num_empty += 1
+                    if include_empty:
+                        nonlocal num_empty
+                        # always add nodes without minhashes to frontier
+                        add_node(child_id, None)
+                        num_empty += 1
                     continue
 
                 # ignore children without any containment
@@ -180,6 +181,7 @@ def main():
     p.add_argument('query_sig', help='query minhash')
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('overhead', help='\% of overhead', type=float)
+    p.add_argument('--no-empty', action='store_true')
     p.add_argument('-o', '--output', default=None)
 
     args = p.parse_args()
@@ -199,7 +201,7 @@ def main():
     query_sig = list(query_sig)[0]
     print('loaded query sig {}'.format(query_sig.name()))
 
-    frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead)
+    frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, not args.no_empty)
 
     top_mh = load_minhash(top_node_id, minhash_db)
     query_mh = query_sig.minhash.downsample_max_hash(top_mh)
