@@ -7,7 +7,7 @@ from copy import copy
 
 import sourmash_lib
 from sourmash_lib import MinHash, signature
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Set, Union, Tuple
 
 from .memoize import memoize
 from .search_catlas_with_minhash import load_dag, load_minhash
@@ -42,15 +42,24 @@ def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, leveldb.LevelDB], max_overhead: float, include_empty = True):
+def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, leveldb.LevelDB], max_overhead: float, include_empty = True, use_purgatory = False):
+    """
+        include_empty: Whether to include nodes with no minhases in the frontier
+        use_purgatory: put leaf nodes with large overhead into a purgatory and consider them after we have processes the whole frontier
+    """
     # expand the frontier where the child nodes together have more than x% overhead
 
     # load the leveldb unless we get a path
     if not isinstance(minhash_db, leveldb.LevelDB):
         minhash_db = leveldb.LevelDB(minhash_db)
 
-    frontier = []
+    # nodes and minhases that are in the frontier
+    frontier = []  # type: List[int]
     frontier_minhash = None
+
+    # nodes and minhashes for leaves with large overhead
+    purgatory = []  # type: List[Tuple[int, int, MinHash]]
+
     seen_nodes = set()  # type: Set[int]
 
     num_leaves = 0
@@ -86,7 +95,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
             else:
                 frontier_minhash = minhash
 
-
     def add_to_frontier(node_id: int):
         """
         Add a node or its children to the frontier.
@@ -103,8 +111,16 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
         if len(children_ids) == 0:
             # leaf
             nonlocal num_leaves
-            add_node(node_id, minhash)
-            num_leaves += 1
+            if use_purgatory:
+                overhead = node_overhead(minhash)
+                if overhead > max_overhead:
+                    purgatory.append((overhead, node_id, minhash))
+                else:
+                    add_node(node_id, minhash)
+                    num_leaves += 1
+            else:
+                add_node(node_id, minhash)
+                num_leaves += 1
             return
 
         # check whether the node has more than x% overhead
@@ -131,7 +147,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
                     if include_empty:
                         nonlocal num_empty
                         # always add nodes without minhashes to frontier
-                        add_node(child_id, None)
+                        add_node(node_id, None)
                         num_empty += 1
                     continue
 
@@ -174,6 +190,19 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
 
     add_to_frontier(top_node_id)
 
+    # now check whether the nodes in the purgatory are still necessary
+    if len(purgatory):
+        purgatory.sort()
+        required_query_minhashes = set(query_sig.minhash.get_mins()) - set(frontier_minhash.get_mins())
+        for _, node_id, node_mh in purgatory:
+            before = len(required_query_minhashes)
+            required_query_minhashes -= set(node_mh.get_mins())
+            after = len(required_query_minhashes)
+            if before > after:
+                frontier_minhash.merge(node_mh)
+                frontier.append(node_id)
+                num_leaves += 1
+
     return frontier, num_leaves, num_empty, frontier_minhash
 
 
@@ -183,6 +212,7 @@ def main():
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('overhead', help='\% of overhead', type=float)
     p.add_argument('--no-empty', action='store_true')
+    p.add_argument('--purgatory', action='store_true')
     p.add_argument('-o', '--output', default=None)
 
     args = p.parse_args()
@@ -202,7 +232,7 @@ def main():
     query_sig = list(query_sig)[0]
     print('loaded query sig {}'.format(query_sig.name()))
 
-    frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, not args.no_empty)
+    frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, not args.no_empty, args.purgatory)
 
     top_mh = load_minhash(top_node_id, minhash_db)
     query_mh = query_sig.minhash.downsample_max_hash(top_mh)

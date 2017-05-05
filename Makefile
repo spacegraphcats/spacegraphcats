@@ -58,3 +58,6 @@ acido-frontier-search: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
 
 15genome-frontier-search: 15genome/minhashes.db
 	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1
+
+15genome-frontier-search-optimized: 15genome/minhashes.db
+	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1 --purgatory
