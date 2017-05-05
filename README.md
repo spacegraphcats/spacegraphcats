@@ -5,4 +5,4 @@ in space, no one can hear you miao!
 
 This is a collaboration between the [Theory In Practice](https://github.com/TheoryInPractice/) lab at NC State and the [Lab for Data Intensive Biology](https://github.com/dib-lab/) at UC Davis, generously supported by the Moore Foundation's [Data Driven Discovery Initiative](https://www.moore.org/initiative-strategy-detail?initiativeId=data-driven-discovery).
 
-![pics/grabbed26913.png]
+![https://github.com/spacegraphcats/spacegraphcats/raw/master/pics/grabbed26913.png]
