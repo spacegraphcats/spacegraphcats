@@ -67,23 +67,23 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
     num_empty = 0
 
     @memoize
-    def load_and_downsample_minhash(node_id: int):
+    def load_and_downsample_minhash(node_id: int) -> MinHash:
         minhash = load_minhash(node_id, minhash_db)
         if minhash is None:
             return None
         return minhash.downsample_max_hash(query_sig.minhash)
 
     @memoize
-    def get_query_minhash(scaled: int):
+    def get_query_minhash(scaled: int) -> MinHash:
         return query_sig.minhash.downsample_scaled(scaled)
 
     @memoize
-    def node_overhead(minhash: MinHash):
+    def node_overhead(minhash: MinHash) -> float:
         query_mh = get_query_minhash(minhash.scaled)
         return compute_overhead(minhash, query_mh)
 
     @memoize
-    def node_containment(minhash: MinHash):
+    def node_containment(minhash: MinHash) -> float:
         query_mh = get_query_minhash(minhash.scaled)
         return query_mh.contained_by(minhash)
 
