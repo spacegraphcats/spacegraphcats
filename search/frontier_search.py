@@ -21,6 +21,7 @@ def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> Set[int]:
     def add_to_shadow(node_id: int):
         if node_id in seen_nodes:
             return
+        seen_nodes.add(node_id)
 
         children_ids = dag[node_id]
 
