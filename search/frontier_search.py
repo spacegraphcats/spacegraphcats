@@ -36,7 +36,8 @@ def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> Set[int]:
     return shadow
 
 def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
-    """ Compute the relative overhead of minhashes. """
+    """ Compute the relative overhead of minhashes.
+    That is, the number of minhashes that are also in the query divides by the number of minhashes. """
     node_length = len(node_minhash.get_mins())
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
@@ -96,15 +97,15 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
         else:
             seen_nodes.add(node_id)
 
+        minhash = load_and_downsample_minhash(node_id)
+
         children_ids = dag[node_id]
         if len(children_ids) == 0:
             # leaf
             nonlocal num_leaves
-            add_node(node_id, load_minhash(node_id, minhash_db))
+            add_node(node_id, minhash)
             num_leaves += 1
             return
-
-        minhash = load_and_downsample_minhash(node_id)
 
         # check whether the node has more than x% overhead
 
@@ -169,7 +170,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
 
         else:
             # low overhead node
-            add_node(node_id, load_minhash(node_id, minhash_db))
+            add_node(node_id, minhash)
 
     add_to_frontier(top_node_id)
 
