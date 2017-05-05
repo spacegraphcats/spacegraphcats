@@ -3,7 +3,7 @@ from collections import defaultdict
 from .graph import Graph, DictGraph
 
 from typing import List, Set, Dict, Any, Union
-
+import itertools
 
 def low_degree_orientation(graph: Graph):
     """
@@ -320,6 +320,10 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     #    2) u is dominated at distance r-1 and v's optimal dominators are a
     #       superset of u's
     # In either case x should be adjacent to all dominators of u.
+    for v in graph:
+        for u in list(graph.in_neighbors(v, 1)):
+            graph.add_arc(v, u)
+
     for x in domset:
         # neighbors of vertices dominated by x that are not dominated by x
         domination_boundary = set() # type: Set[int]
@@ -339,7 +343,22 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
         for y in new_dom_neighbors:
             domgraph.add_arc(x, y)
             domgraph.add_arc(y, x)
-    
+
+    for v in graph:
+        for x, y in itertools.combinations(closest_dominators[v], 2):
+            if domgraph.adjacent(x, y):
+                continue
+            print("{} is dominated by {}, looking at {}, {}".format(v, closest_dominators[v], x, y))
+            dom_bound_x = set()
+            dom_bound_y = set()
+            for u in dominated[x]:
+                dom_bound_x |= graph.in_neighbors(u, 1)
+            for u in dominated[y]:
+                dom_bound_y |= graph.in_neighbors(u, 1)
+            print("{} has dom boundary {} and dominates {}".format(x, dom_bound_x, dominated[x]))
+            print("{} has dom boundary {} and dominates {}".format(y, dom_bound_y, dominated[y]))
+            raise AssertionError
+
     return domgraph, closest_dominators
 
 
