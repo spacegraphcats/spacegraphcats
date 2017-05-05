@@ -2,7 +2,7 @@
 import argparse
 import os
 import sys
-import leveldb
+import plyvel
 
 import sourmash_lib
 from sourmash_lib import MinHash, signature
@@ -40,12 +40,12 @@ def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, leveldb.LevelDB], max_overhead: float):
+def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, plyvel.DB], max_overhead: float):
     # expand the frontier where the child nodes together have more than x% overhead
 
     # load the leveldb unless we get a path
-    if not isinstance(minhash_db, leveldb.LevelDB):
-        minhash_db = leveldb.LevelDB(minhash_db)
+    if not isinstance(minhash_db, plyvel.DB):
+        minhash_db = plyvel.DB(minhash_db)
 
     frontier = []
     frontier_minhash = None
@@ -181,7 +181,7 @@ def main():
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     db_path = os.path.join(args.catlas_prefix, 'minhashes.db')
-    minhash_db = leveldb.LevelDB(db_path)
+    minhash_db = plyvel.DB(db_path)
 
     # load query MinHash
     query_sig = sourmash_lib.signature.load_signatures(args.query_sig)

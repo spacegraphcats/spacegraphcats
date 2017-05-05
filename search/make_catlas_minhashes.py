@@ -5,7 +5,7 @@ import pickle
 import sys
 import time
 from collections import defaultdict
-import leveldb
+import plyvel
 
 import screed
 import sourmash_lib
@@ -189,17 +189,16 @@ def main():
         print('per --no-minhashes, NOT building minhashes database.')
     else:
         path = os.path.join(args.catlas_prefix, 'minhashes.db')
-        db = leveldb.LevelDB(path)
+        db = plyvel.DB(path, create_if_missing=True, error_if_exists=True)
 
         print('saving minhashes in {}'.format(path))
         empty_mh = 0
-        batch = leveldb.WriteBatch()
-        for node_id, mh in leaf_minhashes.items():
-            if mh:
-                db.Put(node_id.to_bytes(2, byteorder='big'), pickle.dumps(mh))
-            else:
-                empty_mh += 1
-        db.Write(batch, sync = True)
+        with db.write_batch() as b:
+            for node_id, mh in leaf_minhashes.items():
+                if mh:
+                    b.put(node_id.to_bytes(2, byteorder='big'), pickle.dumps(mh))
+                else:
+                    empty_mh += 1
         total_mh = len(leaf_minhashes)
         print('saved {} minhashes ({} empty)'.format(total_mh - empty_mh,
                                                      empty_mh))

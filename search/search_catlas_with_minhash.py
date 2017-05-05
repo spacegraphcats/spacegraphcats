@@ -5,7 +5,7 @@ import pickle
 import sys
 import time
 from collections import defaultdict
-import leveldb
+import plyvel
 
 import screed
 import sourmash_lib
@@ -48,14 +48,11 @@ def load_dag(catlas_file):
     return max_node, dag, dag_levels
 
 
-def load_minhash(node_id: int, minhash_db: leveldb.LevelDB) -> MinHash:
+def load_minhash(node_id: int, minhash_db: plyvel.DB) -> MinHash:
     "Load an individual node's MinHash from the leveldb."
-    try:
-        value = minhash_db.Get(node_id.to_bytes(2, byteorder='big'))
-    except KeyError:
-        return None
-
-    return pickle.loads(value)
+    value = minhash_db.get(node_id.to_bytes(2, byteorder='big'))
+    if value is not None:
+        return pickle.loads(value)
 
 
 def main():
