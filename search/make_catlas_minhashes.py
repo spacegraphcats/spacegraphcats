@@ -6,6 +6,7 @@ import sys
 import time
 from collections import defaultdict
 import leveldb
+import shutil
 
 import screed
 import sourmash_lib
@@ -189,6 +190,10 @@ def main():
         print('per --no-minhashes, NOT building minhashes database.')
     else:
         path = os.path.join(args.catlas_prefix, 'minhashes.db')
+        
+        if os.path.exists(path):
+            shutil.rmtree(path)
+
         db = leveldb.LevelDB(path)
 
         print('saving minhashes in {}'.format(path))
