@@ -36,9 +36,11 @@ class Pathfinder(object):
         self.nodes_to_kmers[this_id] = kmer
         self.kmers_to_nodes[kmer] = this_id
 
+        
+
         return this_id
 
-    def new_linear_node(self, visited, size):
+    def new_linear_node(self):
         "Add a new linear path to the cDBG."
         node_id = self.node_counter
         self.node_counter += 1
@@ -66,7 +68,7 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
         return
 
     # get an ID for the new path
-    path_id = pathy.new_linear_node(visited, size)
+    path_id = pathy.new_linear_node()
 
     # add all adjacencies
     for kmer in adj_kmers:
@@ -192,7 +194,9 @@ def run(args):
 
         # here is where we would output this k-mer to the contig file if we
         # wanted to.
-        # k_str = khmer.reverse_hash(k, ksize)
+        nk_id = pathy.kmers_to_nodes[k]
+        k_str = khmer.reverse_hash(k, ksize)
+        pathy.add_assembly(nk_id, k_str)
 
         # find all the neighbors of this high-degree node.
         nbh = graph.neighbors(k)
