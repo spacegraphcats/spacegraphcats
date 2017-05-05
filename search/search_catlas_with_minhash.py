@@ -51,7 +51,7 @@ def load_dag(catlas_file):
 def load_minhash(node_id: int, minhash_db: leveldb.LevelDB) -> MinHash:
     "Load an individual node's MinHash from the leveldb."
     try:
-        value = minhash_db.Get(node_id.to_bytes(2, byteorder='big'))
+        value = minhash_db.Get(node_id.to_bytes(8, byteorder='big'))
     except KeyError:
         return None
 
