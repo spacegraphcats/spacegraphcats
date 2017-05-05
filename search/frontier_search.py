@@ -59,7 +59,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
     frontier_minhash = None
 
     # nodes and minhashes for leaves with large overhead
-    purgatory = []  # type: List[Tuple[int, int, MinHash]]
+    purgatory = []  # type: List[Tuple[float, int, MinHash]]
 
     seen_nodes = set()  # type: Set[int]
 
@@ -94,7 +94,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
             if frontier_minhash:
                 frontier_minhash.merge(minhash)
             else:
-                frontier_minhash = minhash
+                frontier_minhash = copy(minhash)
 
     def add_to_frontier(node_id: int):
         """
@@ -178,7 +178,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
                     # early termination, all children already cover the node so we can stop
                     return
 
-            union_contain = get_query_minhash(union.scaled).contained_by(union)
+            union_contain = query_mh.contained_by(union)
             if union_contain < containment:
                 raise Exception('Children cannot cover node: {} vs {}'.format(union_contain, containment))
 
