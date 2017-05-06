@@ -166,7 +166,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
             add_to_frontier(first_node)
 
             query_mh = get_query_minhash(first_mh.scaled)
-            required_query_minhashes = query_mh.subtract_mins(first_mh)
+            required_query_minhashes = set(minhash.get_mins()).intersection(query_mh.get_mins()).difference(first_mh.get_mins())
 
             for _, child_id, child_mh in overheads:
                 if len(required_query_minhashes) == 0:
