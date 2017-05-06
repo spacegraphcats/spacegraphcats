@@ -97,6 +97,7 @@ shew-reads/minhashes.db: shew-reads/catlas.csv shew-reads/contigs.fa.gz
 
 # download the shewanella genome from OSF
 shew-reads/shewanella.fa.gz:
+	mkdir -p shew-reads
 	curl -L 'https://osf.io/fx4ew/?action=download' > shew-reads/shewanella.fa.gz
 
 # compute shewanella genome signature
