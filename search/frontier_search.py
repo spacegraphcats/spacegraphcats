@@ -201,6 +201,10 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
                 frontier.append(node_id)
                 num_leaves += 1
 
+            if len(required_query_minhashes) == 0:
+                # early termination, the full query is covered
+                break
+
     return frontier, num_leaves, num_empty, frontier_minhash
 
 
