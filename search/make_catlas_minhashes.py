@@ -152,7 +152,7 @@ def main():
 
     # put together the basic catlas info --
     basename = os.path.basename(args.catlas_prefix)
-    contigfile = os.path.join(args.catlas_prefix, "contigs.txt")
+    contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
