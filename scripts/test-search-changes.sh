@@ -2,6 +2,9 @@
 
 set -xe
 
+make acido-search
+make 15genome-search
+
 make acido-search > scripts/acidio-search.log
 make 15genome-search > scripts/15genome-search.log
 
