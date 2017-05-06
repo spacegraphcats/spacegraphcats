@@ -320,6 +320,10 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     #    2) u is dominated at distance r-1 and v's optimal dominators are a
     #       superset of u's
     # In either case x should be adjacent to all dominators of u.
+    
+    # We need to be able to query neighbors efficiently, but this is difficult
+    # when the graph edges are unidirectional.  A quick but unsatisfying fix
+    # is to make the edges bidirectional again.
     for v in graph:
         for u in list(graph.in_neighbors(v, 1)):
             graph.add_arc(v, u)
