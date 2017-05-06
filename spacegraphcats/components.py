@@ -20,7 +20,7 @@ def component_index(graph: Graph) -> UnionFind:
 def components(graph: Graph) -> ValuesView[Set[int]]:
     """Return the components."""
     comps = component_index(graph)
-    res = defaultdict(set)  # type: DefaultDict[int, Set[int]]
+    res = defaultdict(set)
     for v in graph:
         res[comps[v]].add(v)
     return res.values()
