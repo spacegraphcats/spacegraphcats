@@ -1,6 +1,6 @@
 """Compute the components of a graph."""
 from collections import defaultdict
-from typing import Set, List, ValuesView, DefaultDict
+from typing import Set, List, ValuesView
 
 from .Eppstein import UnionFind
 from .graph import Graph
