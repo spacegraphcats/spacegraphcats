@@ -10,6 +10,11 @@ test:
 ##   acido-search: execute a small build-and-search on the 'acido' data set.
 ##   15genome-search: execute a medium build-and-search on 15 genomes.
 ##   shew-search: execute a small build-and-search on a real read data set
+##
+##   podar-search: execute a search on the full podar data set
+##       (requires 8GB RAM)
+##   podar-download: download and set up a prebuilt podar catlas.
+##       (see https://osf.io/h79um/?show=revision)
 
 acido-clean:
 	-rm -r acido
@@ -123,6 +128,12 @@ shew-search: shew-reads/shewanella.fa.gz.sig shew-reads/minhashes.db
 # download the prepared reads - 5.3GB in size.
 SRR606249.keep.fq.gz:
 	curl -L https://osf.io/45xay/?action=download > SRR606249.keep.fq.gz
+
+# download the prepared catlas/minhashes: 415 MB.
+podar-download:
+	curl -L https://osf.io/h79um/?action=download > podar-2017.05.06.tar.gz
+	tar xzf podar-2017.05.06.tar.gz
+	touch podar.ng SRR606249.keep.fq.gz podar/*
 
 # load reads into a nodegraph (8 GB in size)
 podar.ng: SRR606249.keep.fq.gz
