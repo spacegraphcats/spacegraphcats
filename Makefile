@@ -137,3 +137,6 @@ podar/catlas.csv: podar/cdbg.gxt
 
 podar/minhashes.db: podar/cdbg.gxt podar/catlas.csv
 	python -m search.make_catlas_minhashes podar -k 31 --scaled=10000
+
+podar-search: podar/minhashes.db
+	time python -m search.frontier_search data/mircea-sigs/mircea-rm18.0.fa.sig podar 0.1
