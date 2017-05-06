@@ -2,7 +2,7 @@
 from collections import defaultdict
 from .graph import Graph, DictGraph
 
-from typing import List, Set, Dict, Any, Union
+from typing import List, Set, Dict, Any, Union, DefaultDict
 
 
 def low_degree_orientation(graph: Graph):
