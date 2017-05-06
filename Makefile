@@ -81,7 +81,7 @@ XXXshewanella.abundtrim.gz:
 
 # download the prepared reads (27 MB) from OSF
 shewanella.abundtrim.gz:
-	curl -L 'https://osf.io/7az9p/?action=download&version=1' > shewanella.abundtrim.gz
+	curl -L 'https://osf.io/7az9p/?action=download' > shewanella.abundtrim.gz
 
 # build cDBG
 shew-reads/cdbg.gxt: shewanella.abundtrim.gz
@@ -94,3 +94,15 @@ shew-reads/catlas.csv: shew-reads/cdbg.gxt
 # build minhashes
 shew-reads/minhashes.db: shew-reads/catlas.csv shew-reads/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 31 --scaled=1000 shew-reads
+
+# download the shewanella genome from OSF
+shew-reads/shewanella.fa.gz:
+	curl -L 'https://osf.io/fx4ew/?action=download' > shew-reads/shewanella.fa.gz
+
+# compute shewanella genome signature
+shew-reads/shewanella.fa.gz.sig: shew-reads/shewanella.fa.gz
+	sourmash compute -k 31 --scaled=1000 shew-reads/shewanella.fa.gz -o shew-reads/shewanella.fa.gz.sig
+
+# run frontier search
+shew-search: shew-reads/shewanella.fa.gz.sig shew-reads/minhashes.db
+	python -m search.frontier_search shew-reads/shewanella.fa.gz.sig shew-reads 0.1 --purgatory
