@@ -199,10 +199,10 @@ def compute_domset(graph: Graph, radius: int):
     domset = set()
     infinity = float('inf')
     # minimum distance to a dominating vertex, obviously infinite at start
-    domdistance = defaultdict(lambda: infinity)  # type: DefaultDict[int, float]
+    domdistance = defaultdict(lambda: infinity)  # type: Dict[int, float]
     # counter that keeps track of how many neighbors have made it into the
     # domset
-    domcounter = defaultdict(int)  # type: DefaultDict[int, int]
+    domcounter = defaultdict(int)  # type: Dict[int, int]
     # cutoff for how many times a vertex needs to have its neighbors added to
     # the domset before it does.  We choose radius^2 as a convenient "large"
     # number
@@ -353,8 +353,8 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
             if domgraph.adjacent(x, y):
                 continue
             print("{} is dominated by {}, looking at {}, {}".format(v, closest_dominators[v], x, y))
-            dom_bound_x = set()
-            dom_bound_y = set()
+            dom_bound_x = set() # type: Set[int]
+            dom_bound_y = set() # type: Set[int]
             for u in dominated[x]:
                 dom_bound_x |= graph.in_neighbors(u, 1)
             for u in dominated[y]:
