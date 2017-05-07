@@ -1,6 +1,6 @@
 """Compute the components of a graph."""
 from collections import defaultdict
-from typing import Set, List, ValuesView, DefaultDict
+from typing import Set, List, ValuesView, Dict
 
 from .Eppstein import UnionFind
 from .graph import Graph
@@ -20,7 +20,7 @@ def component_index(graph: Graph) -> UnionFind:
 def components(graph: Graph) -> ValuesView[Set[int]]:
     """Return the components."""
     comps = component_index(graph)
-    res = defaultdict(set)  # type: DefaultDict[int, Set[int]]
+    res = defaultdict(set)                # type: Dict[int, Set[int]]
     for v in graph:
         res[comps[v]].add(v)
     return res.values()

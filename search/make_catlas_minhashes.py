@@ -127,7 +127,7 @@ def merge_nodes(child_dict, child_node_list, factory):
     return merged_mh
 
 
-def main():
+def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('-x', '--bf-size', type=float, default=1e4)
@@ -140,7 +140,7 @@ def main():
     p.add_argument('-o', '--output', default=None)
     p.add_argument('--track-abundance', action='store_true')
 
-    args = p.parse_args()
+    args = p.parse_args(args)
 
     ksize = args.ksize
     scaled = args.scaled
@@ -255,7 +255,6 @@ def main():
             tree.save(sbt_name)
             print('saved sbt "{}.sbt.json"'.format(sbt_name))
 
-    sys.exit(0)
 
 if __name__ == '__main__':
     main()
