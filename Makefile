@@ -129,10 +129,10 @@ shew-search: shew-reads/shewanella.fa.gz.sig shew-reads/minhashes.db
 SRR606249.keep.fq.gz:
 	curl -L https://osf.io/45xay/?action=download > SRR606249.keep.fq.gz
 
-# download the prepared catlas/minhashes: 415 MB.
+# download the prepared catlas/minhashes: 250 MB.
 podar-download:
-	curl -L https://osf.io/h79um/?action=download > podar-2017.05.06.tar.gz
-	tar xzf podar-2017.05.06.tar.gz
+	curl -L https://osf.io/g6n4k/?action=download > podar-2017.05.06b.tar.gz
+	tar xzf podar-2017.05.06b.tar.gz
 	touch podar.ng SRR606249.keep.fq.gz podar/*
 
 # load reads into a nodegraph (8 GB in size)
