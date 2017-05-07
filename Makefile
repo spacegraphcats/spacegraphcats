@@ -7,8 +7,14 @@ test:
 
 ## Targets:
 ##
-##   search: execute a small build-and-search on the 'acido' data set.
+##   acido-search: execute a small build-and-search on the 'acido' data set.
 ##   15genome-search: execute a medium build-and-search on 15 genomes.
+##   shew-search: execute a small build-and-search on a real read data set
+##
+##   podar-search: execute a search on the full podar data set
+##       (requires 8GB RAM)
+##   podar-download: download and set up a prebuilt podar catlas.
+##       (see https://osf.io/h79um/?show=revision)
 
 acido-clean:
 	-rm -r acido
@@ -74,7 +80,7 @@ acido-frontier-search-optimized: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
 # with known answer.
 #
 
-# prepare reads -- # this is here only for record keeping - never
+# prepared reads -- this is here only for record keeping & never
 # needs to be done again.
 XXXshewanella.abundtrim.gz:
 	trim-low-abund.py --normalize 12 -V -Z 10 -M 2e9 -C 3 -k 21 shewanella.mappedreads.fa -o shewanella.abundtrim.gz --gzip
@@ -107,3 +113,41 @@ shew-reads/shewanella.fa.gz.sig: shew-reads/shewanella.fa.gz
 # run frontier search
 shew-search: shew-reads/shewanella.fa.gz.sig shew-reads/minhashes.db
 	python -m search.frontier_search shew-reads/shewanella.fa.gz.sig shew-reads 0.1 --purgatory
+
+###
+
+#
+# SRR606249.keep.fq.gz is the 'podar' data set in reads - from Shakya et al.,
+# 2013.  Here it has been prepared from reads that were first QCed as in
+# Awad et al. (unpublished), and then normalized and trimmed like so:
+#
+#    trim-low-abund.py -k 21 -M 8e9 -C 10 -V --normalize 10
+#			SRR606249.pe.qc.fq.gz --gzip -o SRR606249.keep.fq.gz
+#
+
+# download the prepared reads - 5.3GB in size.
+SRR606249.keep.fq.gz:
+	curl -L https://osf.io/45xay/?action=download > SRR606249.keep.fq.gz
+
+# download the prepared catlas/minhashes: 415 MB.
+podar-download:
+	curl -L https://osf.io/h79um/?action=download > podar-2017.05.06.tar.gz
+	tar xzf podar-2017.05.06.tar.gz
+	touch podar.ng SRR606249.keep.fq.gz podar/*
+
+# load reads into a nodegraph (8 GB in size)
+podar.ng: SRR606249.keep.fq.gz
+	load-graph.py -n -M 8e9 -k 31 podar.ng SRR606249.keep.fq.gz
+
+podar/cdbg.gxt: podar.ng SRR606249.keep.fq.gz
+	python -m spacegraphcats.build_contracted_dbg -l podar.ng \
+		SRR606249.keep.fq.gz -o podar
+
+podar/catlas.csv: podar/cdbg.gxt
+	python -m spacegraphcats.catlas podar 3
+
+podar/minhashes.db: podar/cdbg.gxt podar/catlas.csv
+	python -m search.make_catlas_minhashes podar -k 31 --scaled=10000
+
+podar-search: podar/minhashes.db
+	time python -m search.frontier_search data/mircea-sigs/mircea-rm18.0.fa.sig podar 0.1 --purgatory
