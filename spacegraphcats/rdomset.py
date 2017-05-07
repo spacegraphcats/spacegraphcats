@@ -5,6 +5,7 @@ from .graph import Graph, DictGraph
 from typing import List, Set, Dict, Any, Union
 import itertools
 
+
 def low_degree_orientation(graph: Graph):
     """
     Compute a low-in-degree orientation of a graph.
