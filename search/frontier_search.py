@@ -162,28 +162,25 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
             overheads.sort()
 
             _, first_node, first_mh = overheads.pop()
-            
-            union = copy(first_mh)
 
             add_to_frontier(first_node)
-            query_mh = get_query_minhash(union.scaled)
+
+            query_mh = get_query_minhash(first_mh.scaled)
+            required_query_minhashes = set(minhash.get_mins()).intersection(query_mh.get_mins()).difference(first_mh.get_mins())
 
             for _, child_id, child_mh in overheads:
-                # add children to frontier
-                add_to_frontier(child_id)
-
-                union.merge(child_mh)
-
-                if query_mh.contained_by(union) == containment:
+                if len(required_query_minhashes) == 0:
                     # early termination, all children already cover the node so we can stop
                     return
 
-            union_contain = query_mh.contained_by(union)
-            if union_contain < containment:
-                raise Exception('Children cannot cover node: {} vs {}'.format(union_contain, containment))
+                before = len(required_query_minhashes)
+                required_query_minhashes -= set(child_mh.get_mins())
+                after = len(required_query_minhashes)
+                if before > after:
+                    add_to_frontier(child_id)
 
-            if union_contain > containment:
-                raise Exception('Children contain more than node: {} vs {}'.format(union_contain, containment))
+            if len(required_query_minhashes) > 0:
+                raise Exception('Children cannot cover node.')
 
         else:
             # low overhead node
@@ -203,6 +200,10 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
                 frontier_minhash.merge(node_mh)
                 frontier.append(node_id)
                 num_leaves += 1
+
+            if len(required_query_minhashes) == 0:
+                # early termination, the full query is covered
+                break
 
     return frontier, num_leaves, num_empty, frontier_minhash
 
