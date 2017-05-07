@@ -1,12 +1,12 @@
 python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1  --purgatory
-loaded 40322 nodes from catlas 15genome/catlas.csv
+loaded 37621 nodes from catlas 15genome/catlas.csv
 loaded query sig 15genome.5.fa
 Root containment: 1.0
 Root similarity: 0.09282589676290463
 Containment of frontier: 1.0
-Similarity of frontier: 0.9498657117278424
-Size of frontier: 1095 of 40322 (2.72%)
-Overhead of frontier: 0.050134288272157566
-Number of leaves in the frontier: 232
-Number of empty catlas nodes in the frontier: 541
-Size of the shadow: 23965
+Similarity of frontier: 0.9584462511291779
+Size of frontier: 790 of 37621 (2.1%)
+Overhead of frontier: 0.04155374887082204
+Number of leaves in the frontier: 240
+Number of empty catlas nodes in the frontier: 256
+Size of the shadow: 21077
