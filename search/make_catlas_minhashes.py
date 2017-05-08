@@ -7,12 +7,11 @@ import time
 from collections import defaultdict
 import leveldb
 import shutil
+import json
 
 import screed
 import sourmash_lib
-from sourmash_lib import MinHash, signature
-from sourmash_lib.sbt import SBT, GraphFactory
-from sourmash_lib.sbtmh import SigLeaf, search_minhashes
+from sourmash_lib import MinHash
 
 
 class MinHashFactory(object):
@@ -173,7 +172,6 @@ def merge_nodes(child_dict, child_node_list, factory):
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('-x', '--bf-size', type=float, default=1e4)
     p.add_argument('--leaves-only', action='store_true')
     p.add_argument('--scaled', default=100.0, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int)
@@ -183,11 +181,12 @@ def main(args=sys.argv[1:]):
 
     ksize = args.ksize
     scaled = args.scaled
+    track_abundance = args.track_abundance
 
     # build a factory to produce new MinHash objects.
     factory = MinHashFactory(n=0, ksize=ksize,
                              max_hash=sourmash_lib.scaled_to_max_hash(scaled),
-                             track_abundance=args.track_abundance)
+                             track_abundance=track_abundance)
 
     # put together the basic catlas info --
     basename = os.path.basename(args.catlas_prefix)
@@ -251,6 +250,13 @@ def main(args=sys.argv[1:]):
     save_db.end()
     print('saved {} minhashes ({} empty)'.format(total_mh - empty_mh,
                                                  empty_mh))
+
+    # write out some metadata
+    infopath = os.path.join(args.catlas_prefix, 'minhashes_info.json')
+    with open(infopath, 'w') as fp:
+        info = [ dict(ksize=ksize, scaled=scaled,
+                      track_abundance=track_abundance) ]
+        fp.write(json.dumps(info))
 
 
 if __name__ == '__main__':
