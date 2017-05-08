@@ -120,13 +120,24 @@ def build_catlas_minhashes(catlas_file, catlas_minhashes, factory, save_db):
     # walk through, building the merged minhashes (which we can do in a
     # single pass on the sorted list).
     x.sort()
+    levels = defaultdict(set)
+    current_level = 0
     for (level, catlas_node, beneath) in x:
-        merged_mh = factory()
 
-        for subnode in beneath:
-            mh = catlas_minhashes[subnode]
-            if mh:
-                merged_mh.add_many(mh.get_mins())
+        # remove no-longer needed catlas minhashes to save on memory
+        if level > current_level:
+            if level > 2:
+                print('flushing catlas minhashes at level {}'.format(level-2))
+                for node in levels[level - 2]:
+                    del catlas_minhashes[node]
+
+            current_level = level
+
+        # track catlas nodes thus far for later deletion
+        levels[level].add(catlas_node)
+
+        # merge!
+        merged_mh = merge_nodes(catlas_minhashes, beneath, factory)
 
         if not merged_mh.get_mins():
             merged_mh = None
@@ -134,6 +145,7 @@ def build_catlas_minhashes(catlas_file, catlas_minhashes, factory, save_db):
         catlas_minhashes[catlas_node] = merged_mh
         total_mh += 1
 
+        # write!
         if merged_mh:
             if save_db:
                 save_db.put_minhash(catlas_node, merged_mh)
