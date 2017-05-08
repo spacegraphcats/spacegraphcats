@@ -103,7 +103,7 @@ def load_layer0_to_cdbg(catlas_file, domfile):
     return layer0_to_cdbg
 
 
-def build_dag(catlas_file, leaf_minhashes, factory):
+def build_dag(catlas_file, catlas_minhashes, factory):
     "Build MinHashes for all the internal nodes of the catlas DAG."
 
     # create a list of all the nodes, sorted by level (increasing)
@@ -125,14 +125,14 @@ def build_dag(catlas_file, leaf_minhashes, factory):
         merged_mh = factory()
 
         for subnode in beneath:
-            mh = leaf_minhashes[subnode]
+            mh = catlas_minhashes[subnode]
             if mh:
                 merged_mh.add_many(mh.get_mins())
 
         if not merged_mh.get_mins():
             merged_mh = None
 
-        leaf_minhashes[catlas_node] = merged_mh
+        catlas_minhashes[catlas_node] = merged_mh
 
 
 def merge_nodes(child_dict, child_node_list, factory):
@@ -195,19 +195,19 @@ def main(args=sys.argv[1:]):
     print('...corresponding to {} cDBG nodes.'.format(len(x)))
 
     # create minhashes for catlas leaf nodes.
-    leaf_minhashes = {}
+    catlas_minhashes = {}
     for n, (catlas_node, cdbg_nodes) in enumerate(layer0_to_cdbg.items()):
         if n and n % 1000 == 0:
             print('... built {} leaf node MinHashes...'.format(n),
                   file=sys.stderr)
         mh = merge_nodes(graph_minhashes, cdbg_nodes, factory)
-        leaf_minhashes[catlas_node] = mh
+        catlas_minhashes[catlas_node] = mh
     print('created {} leaf node MinHashes via merging'.format(n + 1))
     print('')
 
     # build minhashes for entire catlas, or just the leaves (dom nodes)?
     if not args.leaves_only:
-        build_dag(catlas, leaf_minhashes, factory)
+        build_dag(catlas, catlas_minhashes, factory)
 
     if args.no_minhashes:
         print('per --no-minhashes, NOT building minhashes database.')
@@ -221,13 +221,13 @@ def main(args=sys.argv[1:]):
         empty_mh = 0
 
         with LevelDBWriter(path) as db:
-            for node_id, mh in leaf_minhashes.items():
+            for node_id, mh in catlas_minhashes.items():
                 if mh:
                     db.put_minhash(node_id, mh)
                 else:
                     empty_mh += 1
 
-        total_mh = len(leaf_minhashes)
+        total_mh = len(catlas_minhashes)
         print('saved {} minhashes ({} empty)'.format(total_mh - empty_mh,
                                                      empty_mh))
 
@@ -236,7 +236,7 @@ def main(args=sys.argv[1:]):
         print('building signatures for use with sourmash')
 
         sigs = []
-        for node_id, mh in leaf_minhashes.items():
+        for node_id, mh in catlas_minhashes.items():
             if mh:
                 ss = signature.SourmashSignature('', mh,
                                                  name='node{}'.format(node_id))
@@ -267,7 +267,7 @@ def main(args=sys.argv[1:]):
                 leaf = SigLeaf(ss.md5sum(), ss)
                 tree.add_node(leaf)
 
-            print('...done with {} minhashes. saving!'.format(len(leaf_minhashes)))
+            print('...done with {} minhashes. saving!'.format(len(catlas_minhashes)))
 
             if args.output:
                 sbt_name = args.output
