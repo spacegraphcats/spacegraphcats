@@ -8,6 +8,7 @@ import gzip
 from .rdomset import rdomset, domination_graph
 from .graph_io import read_from_gxt, write_to_gxt
 from .graph import Graph
+from threading import Thread
 from io import TextIOWrapper
 from typing import List, Dict, Set
 
@@ -82,10 +83,8 @@ class Checkpoint(object):
                                  "previous level")
             return graph, nodes, idx, level
 
-    def save(self, graph, nodes, idx, level):
-        """Write out a partial computation."""
-        if self.ignore:
-            return
+    def _save(self, graph, nodes, idx, level):
+        """Method used by the thread to write out."""
         outfile = self.name(level)
         print("Writing to file {}".format(outfile))
         with gzip.open(outfile, 'wt') as f:
@@ -94,6 +93,14 @@ class Checkpoint(object):
             root.write(f)
             f.write("###\n")
             write_to_gxt(f, graph)
+
+    def save(self, graph, nodes, idx, level):
+        """Write out a partial computation."""
+        if self.ignore:
+            return
+        # run on a separate thread because the files can get large
+        thread = Thread(target=self._save, args=(graph, nodes, idx, level))
+        thread.run()
         return
 
 
