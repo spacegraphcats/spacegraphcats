@@ -13,9 +13,5 @@ build/
 dist/
 spacegraphcats.egg-info/
 *~
-<<<<<<< HEAD
-.mypy_cache
-=======
 .vscode
 .mypy_cache/
->>>>>>> 0a870eafbd21bb0e4327856728fe6d4caa87d171
