@@ -23,6 +23,29 @@ class MinHashFactory(object):
         return MinHash(**self.params)
 
 
+class LevelDBWriter(object):
+    def __init__(self, path):
+        self.db = leveldb.LevelDB(path)
+        self.batch = None
+
+    def __enter__(self):
+        self.batch = leveldb.WriteBatch()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        assert self.batch
+        self.db.Write(self.batch, sync=True)
+        self.batch = None
+
+        if exc_type:
+            return False
+
+    def put_minhash(self, node_id, mh):
+        b = node_id.to_bytes(8, byteorder='big')
+        p = pickle.dumps(mh)
+        self.batch.Put(b, p)
+
+
 def make_contig_minhashes(contigfile, factory):
     "Make the minhashes for each contig in the contigfile."
 
@@ -194,17 +217,16 @@ def main(args=sys.argv[1:]):
         if os.path.exists(path):
             shutil.rmtree(path)
 
-        db = leveldb.LevelDB(path)
-
         print('saving minhashes in {}'.format(path))
         empty_mh = 0
-        batch = leveldb.WriteBatch()
-        for node_id, mh in leaf_minhashes.items():
-            if mh:
-                db.Put(node_id.to_bytes(8, byteorder='big'), pickle.dumps(mh))
-            else:
-                empty_mh += 1
-        db.Write(batch, sync = True)
+
+        with LevelDBWriter(path) as db:
+            for node_id, mh in leaf_minhashes.items():
+                if mh:
+                    db.put_minhash(node_id, mh)
+                else:
+                    empty_mh += 1
+
         total_mh = len(leaf_minhashes)
         print('saved {} minhashes ({} empty)'.format(total_mh - empty_mh,
                                                      empty_mh))
