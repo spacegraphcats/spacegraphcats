@@ -29,7 +29,7 @@ acido/catlas.csv: acido/cdbg.gxt
 
 # build minhashes database
 acido/minhashes.db: acido/catlas.csv
-	python -m search.make_catlas_minhashes acido -k 31 --scaled=1000 --sbt --sigs
+	python -m search.make_catlas_minhashes acido -k 31 --scaled=1000
 
 # build a search signature
 acido/acido-chunk1.fa.gz.sig: data/acido-chunk1.fa.gz

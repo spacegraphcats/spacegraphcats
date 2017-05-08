@@ -28,17 +28,13 @@ class LevelDBWriter(object):
         self.db = leveldb.LevelDB(path)
         self.batch = None
 
-    def __enter__(self):
+    def start(self):
         self.batch = leveldb.WriteBatch()
-        return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def end(self):
         assert self.batch
         self.db.Write(self.batch, sync=True)
         self.batch = None
-
-        if exc_type:
-            return False
 
     def put_minhash(self, node_id, mh):
         b = node_id.to_bytes(8, byteorder='big')
@@ -103,8 +99,11 @@ def load_layer0_to_cdbg(catlas_file, domfile):
     return layer0_to_cdbg
 
 
-def build_dag(catlas_file, catlas_minhashes, factory):
+def build_catlas_minhashes(catlas_file, catlas_minhashes, factory, save_db):
     "Build MinHashes for all the internal nodes of the catlas DAG."
+
+    total_mh = 0
+    empty_mh = 0
 
     # create a list of all the nodes, sorted by level (increasing)
     x = []
@@ -133,6 +132,15 @@ def build_dag(catlas_file, catlas_minhashes, factory):
             merged_mh = None
 
         catlas_minhashes[catlas_node] = merged_mh
+        total_mh += 1
+
+        if merged_mh:
+            if save_db:
+                save_db.put_minhash(catlas_node, merged_mh)
+        else:
+            empty_mh += 1
+
+    return total_mh, empty_mh
 
 
 def merge_nodes(child_dict, child_node_list, factory):
@@ -157,10 +165,6 @@ def main(args=sys.argv[1:]):
     p.add_argument('--leaves-only', action='store_true')
     p.add_argument('--scaled', default=100.0, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int)
-    p.add_argument('--no-minhashes', action='store_true', help="don't create catlas minhashes database")
-    p.add_argument('--sbt', action='store_true', help='build SBT for use with sourmash')
-    p.add_argument('--sigs', action='store_true', help='save built minhashes for use with sourmash')
-    p.add_argument('-o', '--output', default=None)
     p.add_argument('--track-abundance', action='store_true')
 
     args = p.parse_args(args)
@@ -194,88 +198,47 @@ def main(args=sys.argv[1:]):
         x.update(v)
     print('...corresponding to {} cDBG nodes.'.format(len(x)))
 
+    # create the minhash db
+    path = os.path.join(args.catlas_prefix, 'minhashes.db')
+
+    if os.path.exists(path):
+        shutil.rmtree(path)
+
+    print('saving minhashes in {}'.format(path))
+    save_db = LevelDBWriter(path)
+    save_db.start()                       # batch mode writing
+
     # create minhashes for catlas leaf nodes.
     catlas_minhashes = {}
+    total_mh = 0
+    empty_mh = 0
     for n, (catlas_node, cdbg_nodes) in enumerate(layer0_to_cdbg.items()):
         if n and n % 1000 == 0:
             print('... built {} leaf node MinHashes...'.format(n),
                   file=sys.stderr)
         mh = merge_nodes(graph_minhashes, cdbg_nodes, factory)
         catlas_minhashes[catlas_node] = mh
+
+        total_mh += 1
+        if mh:
+            if save_db:
+                save_db.put_minhash(catlas_node, mh)
+        else:
+            empty_mh += 1                 # track empty
+
     print('created {} leaf node MinHashes via merging'.format(n + 1))
     print('')
 
     # build minhashes for entire catlas, or just the leaves (dom nodes)?
     if not args.leaves_only:
-        build_dag(catlas, catlas_minhashes, factory)
+        t, e = build_catlas_minhashes(catlas, catlas_minhashes, factory,
+                                      save_db)
+        total_mh += t
+        empty_mh += e
 
-    if args.no_minhashes:
-        print('per --no-minhashes, NOT building minhashes database.')
-    else:
-        path = os.path.join(args.catlas_prefix, 'minhashes.db')
-        
-        if os.path.exists(path):
-            shutil.rmtree(path)
-
-        print('saving minhashes in {}'.format(path))
-        empty_mh = 0
-
-        with LevelDBWriter(path) as db:
-            for node_id, mh in catlas_minhashes.items():
-                if mh:
-                    db.put_minhash(node_id, mh)
-                else:
-                    empty_mh += 1
-
-        total_mh = len(catlas_minhashes)
-        print('saved {} minhashes ({} empty)'.format(total_mh - empty_mh,
-                                                     empty_mh))
-
-    if args.sbt or args.sigs:
-        print('')
-        print('building signatures for use with sourmash')
-
-        sigs = []
-        for node_id, mh in catlas_minhashes.items():
-            if mh:
-                ss = signature.SourmashSignature('', mh,
-                                                 name='node{}'.format(node_id))
-                sigs.append(ss)
-
-        # shall we output an SBT or just a file full of signatures?
-        if args.sigs:
-            # just sigs - decide on output name
-            if args.output:
-                signame = args.output
-            else:
-                signame = os.path.basename(args.catlas_prefix) + '.sig'
-                signame = os.path.join(args.catlas_prefix, signame)
-
-            print('saving sigs to "{}"'.format(signame))
-
-            with open(signame, 'wt') as fp:
-                signature.save_signatures(sigs, fp)
-
-        if args.sbt:
-            # build an SBT!
-            factory = GraphFactory(1, args.bf_size, 4)
-            tree = SBT(factory)
-
-            print('')
-            print('building Sequence Bloom tree for signatures...')
-            for ss in sigs:
-                leaf = SigLeaf(ss.md5sum(), ss)
-                tree.add_node(leaf)
-
-            print('...done with {} minhashes. saving!'.format(len(catlas_minhashes)))
-
-            if args.output:
-                sbt_name = args.output
-            else:
-                sbt_name = os.path.basename(args.catlas_prefix)
-                sbt_name = os.path.join(args.catlas_prefix, sbt_name)
-            tree.save(sbt_name)
-            print('saved sbt "{}.sbt.json"'.format(sbt_name))
+    save_db.end()
+    print('saved {} minhashes ({} empty)'.format(total_mh - empty_mh,
+                                                 empty_mh))
 
 
 if __name__ == '__main__':
