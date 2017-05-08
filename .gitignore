@@ -13,3 +13,4 @@ build/
 dist/
 spacegraphcats.egg-info/
 *~
+.mypy_cache
