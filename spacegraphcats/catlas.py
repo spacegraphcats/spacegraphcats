@@ -4,6 +4,7 @@ import argparse
 import cProfile
 import os
 import tempfile
+import gzip
 from .rdomset import rdomset, domination_graph
 from .graph_io import read_from_gxt, write_to_gxt
 from .graph import Graph
@@ -54,20 +55,22 @@ class Checkpoint(object):
         tmpf = tempfile.TemporaryFile(mode='r+')
 
         infile = self.name(level)
-        with open(infile, 'r') as f:
+        with gzip.open(infile, 'rt') as f:
             # read until the end of the catlas
             for line in f:
                 if line == "###\n":
                     break
                 tmpf.write(line)
             # once we are at the graph section, start reading from there
-            graph = read_from_gxt(f, radius=1, directed=False, sequential=False)
+            graph = read_from_gxt(f, radius=1, directed=False,
+                                  sequential=False)
             # move back to the beginning of the temporary file and read the
             # catlas
             tmpf.seek(0)
             root = CAtlas.read(tmpf)
             tmpf.close()
-            print("Root has children {}".format([i.vertex for i in root.children]))
+            print("Root has children {}".format(
+                    [i.vertex for i in root.children]))
             nodes = {node.vertex: node for node in root.children}
             idx = root.idx
             level = root.level
@@ -75,7 +78,8 @@ class Checkpoint(object):
             if set(graph.nodes) ^ set(nodes.keys()):
                 print(graph.nodes)
                 print(list(nodes.keys()))
-                raise ValueError("graph should have the same nodes as the previous level")
+                raise ValueError("graph should have the same nodes as the"
+                                 "previous level")
             return graph, nodes, idx, level
 
     def save(self, graph, nodes, idx, level):
@@ -84,7 +88,7 @@ class Checkpoint(object):
             return
         outfile = self.name(level)
         print("Writing to file {}".format(outfile))
-        with open(outfile, 'w') as f:
+        with gzip.open(outfile, 'wt') as f:
             # make a dummy root to write the catlas using catlas.write method
             root = CAtlas(idx, 0, level+1, nodes.values())
             root.write(f)
@@ -116,8 +120,8 @@ class CAtlas(object):
         self.level = level
 
     @staticmethod
-    def build(graph: Graph, radius: int, domfile: TextIOWrapper, 
-              checkpoint = None, prev_nodes = None, level = 0, idx = 0):
+    def build(graph: Graph, radius: int, domfile: TextIOWrapper,
+              checkpoint=None, prev_nodes=None, level=0, idx=0):
         """Build a CAtlas at a given radius."""
         # keep creating progressively smaller graphs until we hit the level
         # threshold or steady state
@@ -149,7 +153,7 @@ class CAtlas(object):
             # if we happen to return
             idx += len(nodes)
             level += 1
-            
+
             # quit if our level is sufficiently small
             if len(domgraph) <= CAtlas.LEVEL_THRESHOLD or \
                     len(domgraph) == len(curr_graph):
@@ -158,7 +162,7 @@ class CAtlas(object):
             # prep for the next iteration
             curr_graph = domgraph
             prev_nodes = nodes
-            
+
             # write level results to the checkpoint file if applicable
             if checkpoint is not None:
                 checkpoint.save(curr_graph, prev_nodes, idx, level - 1)
@@ -170,7 +174,8 @@ class CAtlas(object):
         return CAtlas(idx, root_vertex, level, root_children)
 
     @staticmethod
-    def _build_level(graph: Graph, radius: int, level: int, min_id: int=0, prev_nodes: List[int]=None):
+    def _build_level(graph: Graph, radius: int, level: int, min_id: int=0,
+                     prev_nodes: List[int]=None):
         # find the domgraph of the current domgraph
         domset = rdomset(graph, radius)
         domgraph, closest_dominators = domination_graph(graph, domset, radius)
@@ -267,9 +272,9 @@ class CAtlas(object):
         # update the nodes with pointers to their children
         for i, n in enumerate(nodes):
             for child in children[n.idx]:
-               n.children.append(nodes[child])
+                n.children.append(nodes[child])
 
-        return nodes[-1] 
+        return nodes[-1]
 
 
 def main(args):
@@ -285,7 +290,7 @@ def main(args):
 
     # make checkpoint
     checkpoint = Checkpoint(proj_dir, r, args.no_checkpoint)
- 
+
     print("reading graph")
     try:
         if args.level:
@@ -300,10 +305,10 @@ def main(args):
     cat = CAtlas.build(G,
                        r,
                        dom_file,
-                       checkpoint = checkpoint,
-                       prev_nodes = prev_nodes,
-                       idx = idx,
-                       level = level)
+                       checkpoint=checkpoint,
+                       prev_nodes=prev_nodes,
+                       idx=idx,
+                       level=level)
     print("catlas built")
     print("writing graph")
     cat.write(catlas_file)
@@ -320,9 +325,8 @@ if __name__ == "__main__":
                         help="Level at which to load the checkpoint."
                         "Defaults to highest level saved when not invoked.")
     args = parser.parse_args()
-    
+
     main(args)
     # prof = cProfile.Profile()
     # prof.run("main(args)")
     # prof.print_stats('tottime')
-
