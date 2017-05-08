@@ -10,6 +10,7 @@ from .graph_io import read_from_gxt, write_to_gxt
 from .graph import Graph
 from threading import Thread
 from io import TextIOWrapper
+from collections import defaultdict
 from typing import List, Dict, Set
 
 
@@ -76,11 +77,25 @@ class Checkpoint(object):
             idx = root.idx
             level = root.level
 
+            # sanity check that the catlas nodes and graph vertices correspond
             if set(graph.nodes) ^ set(nodes.keys()):
-                print(graph.nodes)
-                print(list(nodes.keys()))
-                raise ValueError("graph should have the same nodes as the"
-                                 "previous level")
+                # they are not equal when there are isolated vertices, which
+                # cannot be represented in the edge list file format.  We need
+                # to make sure that these vertices are indeed isolated by
+                # checking that they are not dominated by multiple vertices.
+                #print(graph.nodes)
+                #print(list(nodes.keys()))
+                parent_count = defaultdict(int)
+                for _, node in nodes.items():
+                    for u in node.children:
+                        parent_count[u.vertex] += 1
+                for v in nodes:
+                    if v not in graph and parent_count[v] != 1:
+                        print("{} has {} parents".format(v, parent_count[v]))
+                        raise ValueError("graph should have the same nodes as"
+                                         " the previous level")
+                    else:
+                        graph.add_node(v)
             return graph, nodes, idx, level
 
     def _save(self, graph, nodes, idx, level):
