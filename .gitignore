@@ -13,3 +13,5 @@ build/
 dist/
 spacegraphcats.egg-info/
 *~
+.vscode
+.mypy_cache/
