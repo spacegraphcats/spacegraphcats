@@ -39,7 +39,7 @@ acido-search: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
 	python -m search.search_catlas_with_minhash acido/acido-chunk1.fa.gz.sig acido
 
 acido-frontier-search: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
-	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1
+	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1 --fullstats
 
 acido-frontier-search-optimized: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
 	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1  --purgatory
