@@ -10,6 +10,7 @@ install:
   - python setup.py build_ext --inplace
 script:
   - make lint
-  - py.test spacegraphcats --cov=.
+  - py.test spacegraphcats search --cov=.
+
 after_success:
   - codecov
