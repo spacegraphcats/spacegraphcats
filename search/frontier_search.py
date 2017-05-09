@@ -216,6 +216,7 @@ def main():
     p.add_argument('--no-empty', action='store_true')
     p.add_argument('--purgatory', action='store_true')
     p.add_argument('-o', '--output', default=None)
+    p.add_argument('--fullstats', action='store_true')
 
     args = p.parse_args()
 
@@ -248,10 +249,21 @@ def main():
     print("Overhead of frontier: {}".format(compute_overhead(frontier_mh, query_mh)))
     print("Number of leaves in the frontier: {}".format(num_leaves))
     print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
+    print("")
 
-    shadow = find_shadow(frontier, dag)
+    if args.fullstats:
+        shadow = find_shadow(frontier, dag)
 
-    print("Size of the shadow: {}".format(len(shadow)))
+        print("Size of the cDBG shadow: {}".format(len(shadow)))
+
+    query_size = len(query_sig.minhash.get_mins())
+    query_bp = query_size * query_sig.minhash.scaled
+    print("Size of query minhash: {} (est {:2.1e} bp)".\
+              format(query_size, query_bp))
+    minhash_size = len(frontier_mh.get_mins())
+    minhash_bp = minhash_size * frontier_mh.scaled
+    print("Size of frontier minhash: {} (est {:2.1e} bp); ratio {:.2f}".\
+              format(minhash_size, minhash_bp, minhash_bp / query_bp))
 
     if args.output:
         print('saving frontier minhash as sourmash signature, into {}'.format(args.output))
