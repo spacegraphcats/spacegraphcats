@@ -11,6 +11,7 @@ from typing import Dict, List, Set, Union, Tuple
 
 from .memoize import memoize
 from .search_catlas_with_minhash import load_dag, load_minhash
+from spacegraphcats.logging import log
 
 
 def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> Set[int]:
@@ -30,7 +31,7 @@ def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> Set[int]:
         else:
             for child in children_ids:
                 add_to_shadow(child)
-    
+
     for node in nodes:
         add_to_shadow(node)
 
@@ -136,7 +137,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
         overhead = node_overhead(minhash)
 
         # print("{} Overhead {}".format(node_id, overhead))
- 
+
         if overhead > max_overhead:
             # greedily find the minimum number of children such that they together contain everything the node contains
 
@@ -272,6 +273,7 @@ def main():
                                               name='frontier o={:0.2f}'.format(args.overhead))
             sourmash_lib.signature.save_signatures([sig], fp)
 
+    log(args.catlas_prefix, sys.argv)
     sys.exit(0)
 
 
