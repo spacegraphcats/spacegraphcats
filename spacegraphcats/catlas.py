@@ -10,7 +10,6 @@ from .rdomset import rdomset, domination_graph
 from .graph_io import read_from_gxt, write_to_gxt
 from .graph import Graph
 from .logging import log
-from threading import Thread
 from io import TextIOWrapper
 from collections import defaultdict
 from typing import List, Dict, Set
@@ -134,9 +133,8 @@ class Project(object):
         """Write out a partial computation."""
         if not self.checkpoint:
             return
-        # run on a separate thread because the files can get large
-        thread = Thread(target=self._save)
-        thread.run()
+        else:
+            self._save()
 
 
 class CAtlas(object):
