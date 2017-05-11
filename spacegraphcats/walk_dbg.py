@@ -71,10 +71,18 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     # get an ID for the new path
     path_id = pathy.new_linear_node()
 
-    # add all adjacencies
-    for kmer in adj_kmers:
-        adj_node_id = pathy.kmers_to_nodes[kmer]
-        pathy.add_adjacency(path_id, adj_node_id)
+    # add all adjacencies, if any
+    if adj_kmers:
+        for kmer in adj_kmers:
+            adj_node_id = pathy.kmers_to_nodes[kmer]
+            pathy.add_adjacency(path_id, adj_node_id)
+    # a purely linear path; add all the k-mers to stop bf to prevent
+    # traversing in both directions.
+    else:
+        for k in visited:
+            stop_bf.add(k)
+        # note: if you knew which k-mer was the other end,
+        # you could just add that; but we don't know.
 
     # output a contig if requested
     if pathy.assemblyfp:
@@ -134,6 +142,7 @@ def run(args):
         # traversing. Create them all here so that we can error out quickly
         # if memory is a problem.
 
+        # @CTB note that hardcoding '2' here is not nec a great idea.
         graph = khmer.Nodegraph(args.ksize, graph_tablesize, 2)
         stop_bf = khmer.Nodegraph(args.ksize, graph_tablesize, 2)
         n = 0
@@ -160,6 +169,7 @@ def run(args):
     if args.label:
         print('(and labeling them, per request)')
     degree_nodes = khmer.HashSet(ksize)
+    linear_starts = khmer.HashSet(ksize)
     n = 0
     for seqfile in args.seqfiles:
         for record in screed.open(seqfile):
@@ -170,7 +180,19 @@ def run(args):
             # walk across sequences, find all high degree nodes,
             # name them and cherish them.
             these_hdn = graph.find_high_degree_nodes(record.sequence)
-            degree_nodes += these_hdn
+            if these_hdn:
+                degree_nodes += these_hdn
+            else:
+                # possible linear node? check first and last k-mer.
+                first_kmer = record.sequence[:ksize]
+                last_kmer = record.sequence[-ksize:]
+                assert len(last_kmer) == ksize
+
+                if len(graph.neighbors(first_kmer)) == 1:
+                    linear_starts.add(graph.hash(first_kmer))
+                if len(graph.neighbors(last_kmer)) == 1:
+                    linear_starts.add(graph.hash(last_kmer))
+
             if args.label:
                 label_list.append(record.name)
                 for kmer in these_hdn:
@@ -211,8 +233,11 @@ def run(args):
                 traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy,
                                                degree_nodes)
 
-    print(len(pathy.nodes), 'segments, containing',
-              sum(pathy.nodes.values()), 'nodes')
+    for n, k in enumerate(linear_starts):
+        traverse_and_mark_linear_paths(graph, k, stop_bf, pathy, degree_nodes)
+
+    print('{} linear segments and {} high-degree nodes'.\
+              format(pathy.node_counter, len(pathy.nodes)))
 
     del graph
     del stop_bf
