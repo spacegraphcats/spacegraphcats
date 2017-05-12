@@ -37,7 +37,7 @@ class Pathfinder(object):
         self.nodes_to_kmers[this_id] = kmer
         self.kmers_to_nodes[kmer] = this_id
 
-        
+
 
         return this_id
 
@@ -53,7 +53,7 @@ class Pathfinder(object):
         node_id, adj = min(node_id, adj), max(node_id, adj)
 
         self.adjfp.write('{},{}\n'.format(node_id, adj))
-        
+
     def add_label(self, kmer, label):
         x = self.labels[kmer]
         x.add(label)
@@ -107,6 +107,8 @@ def run(args):
         elif output_dir.endswith('.fa.gz'):
             output_dir = output_dir[:-6]
 
+    # set this so we can read it for logging
+    args.output = output_dir
     # gxtfile = os.path.basename(output_dir) + '.gxt'
     gxtfile = os.path.join(output_dir, "cdbg.gxt")
     contigfile = os.path.join(output_dir, "contigs.fa.gz")

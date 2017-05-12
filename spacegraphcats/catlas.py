@@ -3,11 +3,13 @@
 import argparse
 import cProfile
 import os
+import sys
 import tempfile
 import gzip
 from .rdomset import rdomset, domination_graph
 from .graph_io import read_from_gxt, write_to_gxt
 from .graph import Graph
+from .logging import log
 from io import TextIOWrapper
 from collections import defaultdict
 from typing import List, Dict, Set
@@ -357,3 +359,4 @@ if __name__ == "__main__":
     # prof = cProfile.Profile()
     # prof.run("main(args)")
     # prof.print_stats('tottime')
+    log(args.project, sys.argv)

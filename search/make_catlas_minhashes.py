@@ -3,10 +3,10 @@ import argparse
 import os
 import pickle
 import sys
-import time
-from collections import defaultdict
 import leveldb
 import shutil
+
+from spacegraphcats.logging import log
 
 import screed
 import sourmash_lib
@@ -32,7 +32,7 @@ def make_contig_minhashes(contigfile, factory):
     for record in screed.open(contigfile):
         if total_bp >= watermark:
             print('... {:5.2e} bp thru contigs'.format(int(watermark)),
-                file=sys.stderr)
+                  file=sys.stderr)
             watermark += 1e7
 
         # the FASTA header/record name is the cDBG node ID output by
@@ -156,7 +156,7 @@ def main(args=sys.argv[1:]):
 
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
-    
+
     # make minhashes from node contigs
     print('ksize={} scaled={:.0f}'.format(ksize, scaled))
     print('making contig minhashes...')
@@ -190,7 +190,7 @@ def main(args=sys.argv[1:]):
         print('per --no-minhashes, NOT building minhashes database.')
     else:
         path = os.path.join(args.catlas_prefix, 'minhashes.db')
-        
+
         if os.path.exists(path):
             shutil.rmtree(path)
 
@@ -255,6 +255,8 @@ def main(args=sys.argv[1:]):
             tree.save(sbt_name)
             print('saved sbt "{}.sbt.json"'.format(sbt_name))
 
+    # log that this command was run
+    log(args.catlas_prefix, sys.argv)
 
 if __name__ == '__main__':
     main()
