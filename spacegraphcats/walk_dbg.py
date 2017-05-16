@@ -233,6 +233,7 @@ def run(args):
                 traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy,
                                                degree_nodes)
 
+    print('traversing from {} potential linear starts'.format(len(linear_starts)))
     for n, k in enumerate(linear_starts):
         traverse_and_mark_linear_paths(graph, k, stop_bf, pathy, degree_nodes)
 
