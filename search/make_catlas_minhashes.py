@@ -146,8 +146,11 @@ def main(args=sys.argv[1:]):
     scaled = args.scaled
 
     # build a factory to produce new MinHash objects.
+    max_hash = sourmash_lib.MAX_HASH / float(scaled)
+    max_hash = int(round(max_hash, 0))
+
     factory = MinHashFactory(n=0, ksize=ksize,
-                             max_hash=sourmash_lib.scaled_to_max_hash(scaled),
+                             max_hash=max_hash,
                              track_abundance=args.track_abundance)
 
     # put together the basic catlas info --
