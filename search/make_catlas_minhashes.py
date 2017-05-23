@@ -29,7 +29,9 @@ def make_contig_minhashes(contigfile, factory):
     d = {}
     total_bp = 0
     watermark = 1e7
-    for record in screed.open(contigfile):
+
+    fp = screed.open(contigfile)
+    for record in fp:
         if total_bp >= watermark:
             print('... {:5.2e} bp thru contigs'.format(int(watermark)),
                   file=sys.stderr)
@@ -49,6 +51,8 @@ def make_contig_minhashes(contigfile, factory):
 
         total_bp += len(record.sequence)
 
+    fp.close()
+
     return d
 
 
@@ -57,7 +61,9 @@ def load_layer0_to_cdbg(catlas_file, domfile):
 
     # mapping from cdbg dominators to dominated nodes.
     domset = {}
-    for line in open(domfile, 'rt'):
+
+    fp = open(domfile, 'rt')
+    for line in fp:
         dom_node, *beneath = line.strip().split(' ')
 
         dom_node = int(dom_node)
@@ -65,10 +71,13 @@ def load_layer0_to_cdbg(catlas_file, domfile):
 
         domset[dom_node] = set(beneath)
 
+    fp.close()
+
     layer0_to_cdbg = {}
 
     # mapping from catlas node IDs to cdbg nodes
-    for line in open(catlas_file, 'rt'):
+    fp = open(catlas_file, 'rt')
+    for line in fp:
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
         if int(level) != 0:
             continue
@@ -76,6 +85,8 @@ def load_layer0_to_cdbg(catlas_file, domfile):
         catlas_node = int(catlas_node)
         cdbg_node = int(cdbg_node)
         layer0_to_cdbg[catlas_node] = domset[cdbg_node]
+
+    fp.close()
 
     return layer0_to_cdbg
 
@@ -85,7 +96,8 @@ def build_dag(catlas_file, leaf_minhashes, factory):
 
     # create a list of all the nodes, sorted by level (increasing)
     x = []
-    for line in open(catlas_file, 'rt'):
+    fp = open(catlas_file, 'rt')
+    for line in fp:
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
         if int(level) == 0:
             continue
@@ -94,6 +106,7 @@ def build_dag(catlas_file, leaf_minhashes, factory):
         beneath = list(map(int, beneath))
 
         x.append((int(level), int(catlas_node), beneath))
+    fp.close()
 
     # walk through, building the merged minhashes (which we can do in a
     # single pass on the sorted list).

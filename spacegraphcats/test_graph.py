@@ -14,17 +14,17 @@ class GraphTest(unittest.TestCase):
         graph.add_arc(1, 0, 1).add_arc(2, 0, 1).add_arc(3, 0, 1).add_arc(4, 0,
                                                                          1)
         neighbors = set(graph.in_neighbors(0, 1))
-        self.assertEquals(neighbors, set([1, 2, 3, 4]))
+        self.assertEqual(neighbors, set([1, 2, 3, 4]))
 
         neighbors = set(graph.in_neighbors(0))
-        self.assertEquals(neighbors, set([(1, 1), (2, 1), (3, 1), (4, 1)]))
+        self.assertEqual(neighbors, set([(1, 1), (2, 1), (3, 1), (4, 1)]))
 
-        self.assertEquals(graph.num_arcs(), 4)
-        self.assertEquals(graph.num_arcs(1), 4)
-        self.assertEquals(graph.num_arcs(2), 0)
+        self.assertEqual(graph.num_arcs(), 4)
+        self.assertEqual(graph.num_arcs(1), 4)
+        self.assertEqual(graph.num_arcs(2), 0)
 
-        self.assertEquals(graph.in_degree(0), 4)
-        self.assertEquals(graph.in_degree(1), 0)
+        self.assertEqual(graph.in_degree(0), 4)
+        self.assertEqual(graph.in_degree(1), 0)
 
     def test_frat_pairs(self):
         frat_graph = Graph(num_nodes=9, radius=5)
@@ -50,8 +50,8 @@ class GraphTest(unittest.TestCase):
         frat_pairs6 = set(itertools.product(w1, w5))
         frat_pairs6.remove((1, 8))
 
-        self.assertEquals(set(frat_graph.fraternal_pairs(0, 2)), frat_pairs2)
-        self.assertEquals(set(frat_graph.fraternal_pairs(0, 6)), frat_pairs6)
+        self.assertEqual(set(frat_graph.fraternal_pairs(0, 2)), frat_pairs2)
+        self.assertEqual(set(frat_graph.fraternal_pairs(0, 6)), frat_pairs6)
 
     def test_trans_pairs(self):
         graph = Graph(num_nodes=9, radius=3)
@@ -69,7 +69,7 @@ class GraphTest(unittest.TestCase):
         trans_pairs = set([(7, 0),
                            (4, 0),
                            (5, 0)])
-        self.assertEquals(set(graph.transitive_pairs(0, 4)), trans_pairs)
+        self.assertEqual(set(graph.transitive_pairs(0, 4)), trans_pairs)
         
 
 if __name__ == '__main__':
