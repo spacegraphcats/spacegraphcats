@@ -250,15 +250,15 @@ def compute_domset(graph: Graph, radius: int):
 def assign_to_dominators(graph: Graph, domset: Set[int], radius: int):
     """
     Compute the closest dominators to each vertex.
-    
+
     Return values:
         closest_dominators:  dictionary mapping vertices in the original graph
                              to their closest_dominators
         domdistance:  dictionary mapping vertices to the distance to their
                       closest dominators
     """
-    closest_dominators = {v:set() for v in graph} # type: Dict[int, Set[int]]
-    domdistance = {v:radius+1 for v in graph} # type: Dict[int, int]
+    closest_dominators = {v: set() for v in graph}  # type: Dict[int, Set[int]]
+    domdistance = {v: radius+1 for v in graph}  # type: Dict[int, int]
 
     # Every vertex in domset is a zero-dominator of itself
     for v in domset:
@@ -301,12 +301,13 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     dominators. These dominators will be connected in the final graph.
     """
     print("assigning to dominators")
-    closest_dominators, domdistance = assign_to_dominators(graph, domset, radius)
+    closest_dominators, domdistance =\
+        assign_to_dominators(graph, domset, radius)
     domgraph = DictGraph(nodes=domset)
 
     print("computing dominating edges")
     # map of dominators to vertices they dominate
-    dominated = {x:set() for x in domset} # type: Dict[int, Set[int]]
+    dominated = {x: set() for x in domset}  # type: Dict[int, Set[int]]
     for v, doms in closest_dominators.items():
         for x in doms:
             dominated[x].add(v)
@@ -315,13 +316,13 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     # they optimally dominate a common vertex or if there are adjacent vertices
     # (u,v) optimally dominated by (x,y), respectively, at the same radius.
     # If v is optimally dominated by x at radius r, all of its neighbors are
-    # dominated at radius r-1, r, r+1.  If u is a neighbor of v not optimally 
+    # dominated at radius r-1, r, r+1.  If u is a neighbor of v not optimally
     # dominated by x, then either:
-    #    1) u is dominated at distance r OR 
+    #    1) u is dominated at distance r OR
     #    2) u is dominated at distance r-1 and v's optimal dominators are a
     #       superset of u's
     # In either case x should be adjacent to all dominators of u.
-    
+
     # We need to be able to query neighbors efficiently, but this is difficult
     # when the graph edges are unidirectional.  A quick but unsatisfying fix
     # is to make the edges bidirectional again.
@@ -331,9 +332,9 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
 
     for x in domset:
         # neighbors of vertices dominated by x that are not dominated by x
-        domination_boundary = set() # type: Set[int]
+        domination_boundary = set()  # type: Set[int]
         # vertices that need to be made adjacent to x
-        new_dom_neighbors = set() # type: Set[int]
+        new_dom_neighbors = set()  # type: Set[int]
         # get all the boundary vertices.  We remove the vertices dominated by x
         # at the end to only do it once
         for v in dominated[x]:
@@ -348,21 +349,6 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
         for y in new_dom_neighbors:
             domgraph.add_arc(x, y)
             domgraph.add_arc(y, x)
-
-    for v in graph:
-        for x, y in itertools.combinations(closest_dominators[v], 2):
-            if domgraph.adjacent(x, y):
-                continue
-            print("{} is dominated by {}, looking at {}, {}".format(v, closest_dominators[v], x, y))
-            dom_bound_x = set() # type: Set[int]
-            dom_bound_y = set() # type: Set[int]
-            for u in dominated[x]:
-                dom_bound_x |= graph.in_neighbors(u, 1)
-            for u in dominated[y]:
-                dom_bound_y |= graph.in_neighbors(u, 1)
-            print("{} has dom boundary {} and dominates {}".format(x, dom_bound_x, dominated[x]))
-            print("{} has dom boundary {} and dominates {}".format(y, dom_bound_y, dominated[y]))
-            raise AssertionError
 
     return domgraph, closest_dominators
 
