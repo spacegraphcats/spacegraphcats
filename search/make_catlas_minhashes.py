@@ -148,6 +148,8 @@ def main(args=sys.argv[1:]):
     p.add_argument('--scaled', default=100.0, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int)
     p.add_argument('--no-minhashes', action='store_true', help="don't create catlas minhashes database")
+    p.add_argument('--sbt', action='store_true', help='build SBT for use with sourmash')
+    p.add_argument('--sigs', action='store_true', help='save built minhashes for use with sourmash')
     p.add_argument('-o', '--output', default=None)
     p.add_argument('--track-abundance', action='store_true')
 
