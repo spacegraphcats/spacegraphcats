@@ -7,6 +7,7 @@ from copy import copy
 
 import sourmash_lib
 from sourmash_lib import MinHash, signature
+from sourmash_lib.sourmash_args import load_query_signature
 from typing import Dict, List, Set, Union, Tuple
 
 from .memoize import memoize
@@ -218,6 +219,8 @@ def main():
     p.add_argument('--purgatory', action='store_true')
     p.add_argument('-o', '--output', default=None)
     p.add_argument('--fullstats', action='store_true')
+    p.add_argument('-k', '--ksize', default=None, type=int,
+                        help='k-mer size (default: 31)')
 
     args = p.parse_args()
 
@@ -232,8 +235,8 @@ def main():
     minhash_db = leveldb.LevelDB(db_path)
 
     # load query MinHash
-    query_sig = sourmash_lib.signature.load_signatures(args.query_sig)
-    query_sig = list(query_sig)[0]
+    query_sig = load_query_signature(args.query_sig, select_ksize=args.ksize,
+                                     select_moltype='DNA')
     print('loaded query sig {}'.format(query_sig.name()))
 
     frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, not args.no_empty, args.purgatory)
