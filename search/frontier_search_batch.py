@@ -51,7 +51,7 @@ def main():
                                          select_moltype='DNA')
         print('loaded query sig {}'.format(query_sig.name()), file=sys.stderr)
         
-        frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, db, args.overhead, False, args.purgatory)
+        frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, db, args.overhead, True, args.purgatory)
 
         query_mh = query_sig.minhash
         query_mh = query_mh.downsample_max_hash(frontier_mh)
