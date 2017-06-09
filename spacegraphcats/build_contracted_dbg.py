@@ -8,7 +8,6 @@ from .logging import log
 # graph settings
 DEFAULT_KSIZE = 31
 DEFAULT_MEMORY = 1e8
-DEFAULT_SCALED=100
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
