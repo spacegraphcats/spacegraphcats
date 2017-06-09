@@ -55,7 +55,7 @@ def main():
 
         query_mh = query_sig.minhash
         query_mh = query_mh.downsample_max_hash(frontier_mh)
-        frontier_mh = query_mh.downsample_max_hash(query_mh)
+        frontier_mh = frontier_mh.downsample_max_hash(query_mh)
 
         containment = query_mh.contained_by(frontier_mh)
         similarity = query_mh.similarity(frontier_mh)
