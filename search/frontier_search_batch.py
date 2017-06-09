@@ -26,6 +26,7 @@ def main():
     p.add_argument('query_sigs', help='query minhash list', nargs='+')
     p.add_argument('--overhead', help='\% of overhead', type=float,
                    default=0.1)
+    p.add_argument('--purgatory', action='store_true')
     p.add_argument('-o', '--output', type=argparse.FileType('w'))
     p.add_argument('-k', '--ksize', default=None, type=int,
                         help='k-mer size (default: 31)')
@@ -50,7 +51,7 @@ def main():
                                          select_moltype='DNA')
         print('loaded query sig {}'.format(query_sig.name()), file=sys.stderr)
         
-        frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, db, args.overhead)
+        frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, db, args.overhead, False, args.purgatory)
 
         query_mh = query_sig.minhash
         query_mh = query_mh.downsample_max_hash(frontier_mh)
