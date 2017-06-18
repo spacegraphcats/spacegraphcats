@@ -150,7 +150,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
                     if include_empty:
                         nonlocal num_empty
                         # always add nodes without minhashes to frontier
-                        add_node(node_id, None)
+                        add_node(child_id, None)
                         num_empty += 1
                     continue
 
@@ -219,6 +219,7 @@ def main():
     p.add_argument('--purgatory', action='store_true')
     p.add_argument('-o', '--output', default=None)
     p.add_argument('--fullstats', action='store_true')
+    p.add_argument('--checkfrontier', action='store_true')
     p.add_argument('-k', '--ksize', default=None, type=int,
                         help='k-mer size (default: 31)')
 
@@ -260,6 +261,15 @@ def main():
 
         print("Size of the cDBG shadow: {}".format(len(shadow)))
 
+    if args.checkfrontier:
+        test_mh = top_mh.copy_and_clear()
+        for node_id in frontier:
+            mh = load_minhash(node_id, minhash_db)
+            if mh:
+                test_mh.merge(mh)
+
+        assert test_mh.similarity(frontier_mh) == 1.0
+
     query_size = len(query_sig.minhash.get_mins())
     query_bp = query_size * query_sig.minhash.scaled
     print("Size of query minhash: {} (est {:2.1e} bp)".\
@@ -273,7 +283,7 @@ def main():
         print('saving frontier minhash as sourmash signature, into {}'.format(args.output))
         with open(args.output, 'w') as fp:
             sig = signature.SourmashSignature('', frontier_mh,
-                                              name='frontier o={:0.2f}'.format(args.overhead))
+                                              name='frontier o={:1.2f} {}'.format(args.overhead, str(args.output)))
             sourmash_lib.signature.save_signatures([sig], fp)
 
     log(args.catlas_prefix, sys.argv)
