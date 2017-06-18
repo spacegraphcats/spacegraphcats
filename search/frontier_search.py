@@ -210,7 +210,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
     return frontier, num_leaves, num_empty, frontier_minhash
 
 
-def main():
+def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('query_sig', help='query minhash')
     p.add_argument('catlas_prefix', help='catlas prefix')
@@ -223,7 +223,7 @@ def main():
     p.add_argument('-k', '--ksize', default=None, type=int,
                         help='k-mer size (default: 31)')
 
-    args = p.parse_args()
+    args = p.parse_args(args)
 
     basename = os.path.basename(args.catlas_prefix)
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
@@ -287,7 +287,6 @@ def main():
             sourmash_lib.signature.save_signatures([sig], fp)
 
     log(args.catlas_prefix, sys.argv)
-    sys.exit(0)
 
 
 if __name__ == '__main__':
