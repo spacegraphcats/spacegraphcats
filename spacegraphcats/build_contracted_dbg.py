@@ -1,8 +1,9 @@
 #! /usr/bin/env python3
 
 import argparse
-
+import sys
 from .walk_dbg import run
+from .logging import log
 
 # graph settings
 DEFAULT_KSIZE = 31
@@ -22,5 +23,5 @@ if __name__ == '__main__':
     p.add_argument('--no-assemble', help='do not output assembly',
                    action='store_true')
     args = p.parse_args()
-
     run(args)
+    log(args.output, sys.argv)

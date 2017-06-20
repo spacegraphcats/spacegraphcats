@@ -35,11 +35,11 @@ acido/minhashes.db: acido/catlas.csv
 acido/acido-chunk1.fa.gz.sig: data/acido-chunk1.fa.gz
 	sourmash compute -k 31 data/acido-chunk1.fa.gz --scaled 500 -f -o acido/acido-chunk1.fa.gz.sig
 
-acido-search: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
+acido-simple-search: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
 	python -m search.search_catlas_with_minhash acido/acido-chunk1.fa.gz.sig acido
 
 acido-frontier-search: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
-	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1
+	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1 --fullstats
 
 acido-frontier-search-optimized: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
 	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1  --purgatory
@@ -63,14 +63,11 @@ acido-frontier-search-optimized: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
 	python -m search.make_catlas_minhashes -k 31 --scaled=5000 15genome
 
 # run search!
-15genome-search: 15genome/minhashes.db
+15genome-simple-search: 15genome/minhashes.db
 	python -m search.search_catlas_with_minhash data/15genome.5.fa.sig 15genome
 
-15genome-frontier-search: 15genome/minhashes.db
-	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1
-
-15genome-frontier-search-optimized: 15genome/minhashes.db
-	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1 --purgatory
+15genome-search: 15genome/minhashes.db
+	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1  --purgatory
 
 ####
 

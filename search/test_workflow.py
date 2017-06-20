@@ -62,5 +62,5 @@ def test_simple_tr():
 
         # build minhashes
         args = [projpath]
-        args += '-k 31 --scaled=1000 --sbt --sigs'.split(' ')
+        args += '-k 31 --scaled=1000'.split(' ')
         make_catlas_minhashes.main(args)

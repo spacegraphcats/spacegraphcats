@@ -3,10 +3,10 @@ import argparse
 import os
 import pickle
 import sys
-import time
-from collections import defaultdict
 import leveldb
 import shutil
+
+from spacegraphcats.logging import log
 
 import screed
 import sourmash_lib
@@ -29,10 +29,12 @@ def make_contig_minhashes(contigfile, factory):
     d = {}
     total_bp = 0
     watermark = 1e7
-    for record in screed.open(contigfile):
+
+    fp = screed.open(contigfile)
+    for record in fp:
         if total_bp >= watermark:
             print('... {:5.2e} bp thru contigs'.format(int(watermark)),
-                file=sys.stderr)
+                  file=sys.stderr)
             watermark += 1e7
 
         # the FASTA header/record name is the cDBG node ID output by
@@ -49,6 +51,8 @@ def make_contig_minhashes(contigfile, factory):
 
         total_bp += len(record.sequence)
 
+    fp.close()
+
     return d
 
 
@@ -57,7 +61,9 @@ def load_layer0_to_cdbg(catlas_file, domfile):
 
     # mapping from cdbg dominators to dominated nodes.
     domset = {}
-    for line in open(domfile, 'rt'):
+
+    fp = open(domfile, 'rt')
+    for line in fp:
         dom_node, *beneath = line.strip().split(' ')
 
         dom_node = int(dom_node)
@@ -65,10 +71,13 @@ def load_layer0_to_cdbg(catlas_file, domfile):
 
         domset[dom_node] = set(beneath)
 
+    fp.close()
+
     layer0_to_cdbg = {}
 
     # mapping from catlas node IDs to cdbg nodes
-    for line in open(catlas_file, 'rt'):
+    fp = open(catlas_file, 'rt')
+    for line in fp:
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
         if int(level) != 0:
             continue
@@ -76,6 +85,8 @@ def load_layer0_to_cdbg(catlas_file, domfile):
         catlas_node = int(catlas_node)
         cdbg_node = int(cdbg_node)
         layer0_to_cdbg[catlas_node] = domset[cdbg_node]
+
+    fp.close()
 
     return layer0_to_cdbg
 
@@ -85,7 +96,8 @@ def build_dag(catlas_file, leaf_minhashes, factory):
 
     # create a list of all the nodes, sorted by level (increasing)
     x = []
-    for line in open(catlas_file, 'rt'):
+    fp = open(catlas_file, 'rt')
+    for line in fp:
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
         if int(level) == 0:
             continue
@@ -94,6 +106,7 @@ def build_dag(catlas_file, leaf_minhashes, factory):
         beneath = list(map(int, beneath))
 
         x.append((int(level), int(catlas_node), beneath))
+    fp.close()
 
     # walk through, building the merged minhashes (which we can do in a
     # single pass on the sorted list).
@@ -146,8 +159,11 @@ def main(args=sys.argv[1:]):
     scaled = args.scaled
 
     # build a factory to produce new MinHash objects.
+    max_hash = sourmash_lib.MAX_HASH / float(scaled)
+    max_hash = int(round(max_hash, 0))
+
     factory = MinHashFactory(n=0, ksize=ksize,
-                             max_hash=sourmash_lib.scaled_to_max_hash(scaled),
+                             max_hash=max_hash,
                              track_abundance=args.track_abundance)
 
     # put together the basic catlas info --
@@ -156,7 +172,7 @@ def main(args=sys.argv[1:]):
 
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
-    
+
     # make minhashes from node contigs
     print('ksize={} scaled={:.0f}'.format(ksize, scaled))
     print('making contig minhashes...')
@@ -190,7 +206,7 @@ def main(args=sys.argv[1:]):
         print('per --no-minhashes, NOT building minhashes database.')
     else:
         path = os.path.join(args.catlas_prefix, 'minhashes.db')
-        
+
         if os.path.exists(path):
             shutil.rmtree(path)
 
@@ -255,6 +271,8 @@ def main(args=sys.argv[1:]):
             tree.save(sbt_name)
             print('saved sbt "{}.sbt.json"'.format(sbt_name))
 
+    # log that this command was run
+    log(args.catlas_prefix, sys.argv)
 
 if __name__ == '__main__':
     main()
