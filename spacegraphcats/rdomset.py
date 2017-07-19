@@ -328,22 +328,29 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     # We need to be able to query neighbors efficiently, but this is difficult
     # when the graph edges are unidirectional.  A quick but unsatisfying fix
     # is to make the edges bidirectional again.
-    if radius == 1:
-        for v in graph:
-            for u in list(graph.in_neighbors(v, 1)):
-                if len(closest_dominators[u] ^ closest_dominators[v]) == 0:
-                    graph.remove_arc(u, v)
-                else:
-                    graph.add_arc(v, u)
-    else:
-        for v in graph:
-            for u in list(graph.in_neighbors(v, 1)):
-                graph.add_arc(v, u)
+    for v in graph:
+        for u in list(graph.in_neighbors(v, 1)):
+            graph.add_arc(v, u)
     print("added bidirectional arcs")
 
+    #with open("/data/graph_info.txt",'w') as logfile:
+    #    for v in graph:
+    #        d = len(graph.in_neighbors(v,1))
+    #        num_doms = len(closest_dominators[v])
+    #        if v in domset:
+    #             num_dommed = dominated[v]
+    #        else:
+    #             num_dommed = 0
+    #        logfile.write("{},{},{}\n".format(d, num_doms, num_dommed))
+
     cutoff = len(domset)/100
+    next_print_point = 0
     for i, x in enumerate(domset):
-        pp = True  # (i % cutoff == 0)
+        if i == next_print_point:
+            pp = True
+            next_print_point += cutoff
+        else:
+            pp = False
         if pp:
             print("Analyzing the {}th dominator, {}".format(i, x))
         # neighbors of vertices dominated by x that are not dominated by x
@@ -364,22 +371,21 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
         # get the dominators of the boundary.
         for v in domination_boundary:
             new_dom_neighbors |= closest_dominators[v]
-        print("The boundary has {} dominators".format(len(new_dom_neighbors)))
+        if pp:
+            print("The boundary has {} dominators".format(
+                len(new_dom_neighbors)))
         # take out existing neighbors
         new_dom_neighbors -= domgraph.in_neighbors(x, 1)
-        print("Only {} of them weren't neighbors already".format(
-            len(new_dom_neighbors)))
+        if pp:
+            print("Only {} of them weren't neighbors already".format(
+                len(new_dom_neighbors)))
         # add edges
         for y in new_dom_neighbors:
             domgraph.add_arc(x, y)
             domgraph.add_arc(y, x)
-        print("added domination arcs")
-        # remove edges from dominator, since we have already added all of its
-        # neighbors in the domgraph
-        if radius == 1:
-            for v, w in graph.in_neighbors(x):
-                graph.remove_arc(x, v)
-                graph.remove_arc(v, x)
+        if pp:
+            print("added domination arcs")
+          
 
     return domgraph, closest_dominators
 
