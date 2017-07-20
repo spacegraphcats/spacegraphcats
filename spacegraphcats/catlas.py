@@ -14,6 +14,7 @@ from io import TextIOWrapper
 from collections import defaultdict
 from typing import List, Dict, Set
 
+UPPER_RADIUS = 2
 
 class Project(object):
     """Methods for coordinating whole projects."""
@@ -87,7 +88,7 @@ class Project(object):
                     break
                 tmpf.write(line)
             # once we are at the graph section, start reading from there
-            self.graph = read_from_gxt(f, radius=1, directed=False,
+            self.graph = read_from_gxt(f, radius=UPPER_RADIUS, directed=False,
                                        sequential=False)
             # move back to the beginning of the temporary file and read the
             # catlas
@@ -184,7 +185,7 @@ class CAtlas(object):
             if proj.level == 0:
                 r = proj.r
             else:
-                r = 1
+                r = UPPER_RADIUS
             # build the current level
             nodes, domgraph, dominated = CAtlas._build_level(proj.graph,
                                                              r,
