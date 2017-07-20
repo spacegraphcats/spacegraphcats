@@ -16,6 +16,7 @@ from typing import List, Dict, Set
 
 UPPER_RADIUS = 2
 
+
 class Project(object):
     """Methods for coordinating whole projects."""
 
@@ -234,17 +235,9 @@ class CAtlas(object):
                      prev_nodes: List[int]=None):
         # find the domgraph of the current domgraph
         domset = rdomset(graph, radius)
-        domgraph, closest_dominators = domination_graph(graph, domset, radius)
-
-        # closest_dominators indicates the domset vertices that dominate
-        # each vertex.
-        # v dominating u indicates that u will be a child of v
-        # we have the assignment from vertices to dominators, make the
-        # reverse
-        dominated = {v: list() for v in domset}  # type: Dict[int, List[int]]
-        for u, doms in closest_dominators.items():
-            for v in doms:
-                dominated[v].append(u)
+        # dominated maps dominating vertices to a list of the vertices they
+        # optimally dominate
+        domgraph, dominated = domination_graph(graph, domset, radius)
 
         # create the CAtlas nodes
         nodes = {}
