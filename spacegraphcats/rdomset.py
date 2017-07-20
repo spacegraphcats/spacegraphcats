@@ -333,17 +333,17 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
             graph.add_arc(v, u)
     print("added bidirectional arcs")
 
-    #with open("/data/graph_info.txt",'w') as logfile:
-    #    for v in graph:
-    #        d = len(graph.in_neighbors(v,1))
-    #        num_doms = len(closest_dominators[v])
-    #        if v in domset:
+    # with open("/data/graph_info.txt", 'w') as logfile:
+    #     for v in graph:
+    #         d = len(graph.in_neighbors(v, 1))
+    #         num_doms = len(closest_dominators[v])
+    #     if v in domset:
     #             num_dommed = dominated[v]
-    #        else:
-    #             num_dommed = 0
-    #        logfile.write("{},{},{}\n".format(d, num_doms, num_dommed))
+    #     else:
+    #         num_dommed = 0
+    #         logfile.write("{},{},{}\n".format(d, num_doms, num_dommed))
 
-    cutoff = len(domset)/100
+    cutoff = len(domset)//100
     next_print_point = 0
     for i, x in enumerate(domset):
         if i == next_print_point:
@@ -385,7 +385,7 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
             domgraph.add_arc(y, x)
         if pp:
             print("added domination arcs")
-          
+
 
     return domgraph, closest_dominators
 
