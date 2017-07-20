@@ -94,24 +94,39 @@ class Project(object):
             tmpf.seek(0)
             root = CAtlas.read(tmpf)
             tmpf.close()
-            #print("Root has children {}".format(
-            #        [i.vertex for i in root.children]))
+            # print("Root has children {}".format(
+            #         [i.vertex for i in root.children]))
             self.level_nodes = {node.vertex: node for node in root.children}
             self.idx = root.idx
             self.level = root.level
+            # if the graph has isolated vertices, they don't appear in the
+            # edge list, which means we need to infer them from the catlas
+            # nodes
+            self.__handle_missing_nodes()
 
-            # sanity check that the catlas nodes and graph vertices correspond
-            if set(self.graph.nodes) ^ set(self.level_nodes.keys()):
-                # they are not equal when there are isolated vertices, which
-                # cannot be represented in the edge list file format.  We need
-                # to make sure that these vertices are indeed isolated by
-                # checking that they are not dominated by multiple vertices.
+    def __handle_missing_nodes(self):
+        # sanity check that the catlas nodes and graph vertices correspond
+        num_missing = len(self.level_nodes.keys()) - len(self.graph.nodes)
+        if num_missing > 0:
+            missing = set(self.level_nodes.keys()) - set(self.graph.nodes)
+            # they are not equal when there are isolated vertices, which
+            # cannot be represented in the edge list file format.  We need
+            # to make sure that these vertices are indeed isolated by
+            # checking that they are not dominated by multiple vertices.
+            if self.level == 1:
+                # at level 1, the domination relationship is not captured by
+                # the children so we just assume the vertices are isolated.
+                #  We could check first_doms.txt but this is probably too much
+                # effort.
+                for v in missing:
+                    self.graph.add_node(v)
+            else:
                 parent_count = defaultdict(int)
                 for _, node in self.level_nodes.items():
                     for u in node.children:
                         parent_count[u.vertex] += 1
-                for v in self.level_nodes:
-                    if v not in self.graph and parent_count[v] != 1:
+                for v in missing:
+                    if parent_count[v] != 1:
                         print("{} has {} parents".format(v, parent_count[v]))
                         raise ValueError("graph should have the same nodes as"
                                          " the previous level")
