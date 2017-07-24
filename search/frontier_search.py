@@ -40,7 +40,7 @@ def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> Set[int]:
 
 def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     """ Compute the relative overhead of minhashes.
-    That is, the number of minhashes that are also in the query divides by the number of minhashes. """
+    That is, the number of minhashes that are also in the query divided by the number of minhashes. """
     node_length = len(node_minhash.get_mins())
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
