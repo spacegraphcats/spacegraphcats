@@ -166,7 +166,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
             # look at nodes one by one, starting with the smallest overhead and try to cover what the parent covered
             overheads.sort()
 
-            _, first_node, first_mh = overheads.pop()
+            _, first_node, first_mh = overheads.pop(0)
 
             add_to_frontier(first_node)
 
