@@ -166,7 +166,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
             # look at nodes one by one, starting with the smallest overhead and try to cover what the parent covered
             overheads.sort()
 
-            _, first_node, first_mh = overheads.pop()
+            _, first_node, first_mh = overheads[0]
 
             add_to_frontier(first_node)
 
@@ -175,7 +175,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
             required_query_minhashes = set(minhash.get_mins()).intersection(query_mh.get_mins()).difference(first_mh.get_mins())
 
             # Repeatedly remove hashes that are covered by nodes and add nodes to frontier until no more minhashes need to be covered.    
-            for _, child_id, child_mh in overheads:
+            for _, child_id, child_mh in overheads[1:]:
                 if len(required_query_minhashes) == 0:
                     # early termination, all children already cover the node so we can stop
                     return
