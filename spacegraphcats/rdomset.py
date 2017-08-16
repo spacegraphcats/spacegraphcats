@@ -295,6 +295,48 @@ def assign_to_dominators(graph: Graph, domset: Set[int], radius: int):
     return closest_dominators, domdistance
 
 
+def domination_minor(graph: Graph, domset: Set[int], radius: int):
+    """
+    Experimental variant of domination_graph: construct a (shallow) minor 
+    to keep the number of edges down.
+    """
+    print("assigning to dominators")
+    closest_dominators, domdistance = assign_to_dominators(graph, domset, radius)
+    domgraph = DictGraph(nodes=domset)
+
+    # TODO: grow region around each domination vertex
+    regions = [None] * len(domgraph)
+    for v in domset:
+        regions[v] = v
+
+    for _ in range(radius):
+        for v,value in enumerate(regions):
+            if value != None:
+                # Push value to unassigned in-neighbors
+                for u in graph.in_neighbors(v, 1):
+                    if regions[u] is None:
+                        regions[u] = value
+            else:                
+                # Pull value
+                for u in graph.in_neighbors(v, 1):
+                    # TODO: could instead use some min/max voting here
+                    if regions[u] != None:
+                        regions[v] = regions[u]
+                        break
+
+    # Sanity-check
+    for v, value in enumerate(regions):
+        assert(value != None)
+
+    # Compute domgraph edges
+    for u,v in graph.arcs(1):
+        du, dv = regions[u], regions[v]
+        domgraph.add_arc(du, dv)
+        domgraph.add_arc(dv, du)
+
+    return domgraph, closest_dominators
+
+
 def domination_graph(graph: Graph, domset: Set[int], radius: int):
     """
     Build up a 'domination graph' by assigning each vertex to its closest

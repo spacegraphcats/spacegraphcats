@@ -6,7 +6,8 @@ import os
 import sys
 import tempfile
 import gzip
-from .rdomset import rdomset, domination_graph
+from .rdomset import rdomset
+from .rdomset import domination_graph as domination_graph
 from .graph_io import read_from_gxt, write_to_gxt
 from .graph import Graph
 from .logging import log
@@ -101,7 +102,7 @@ class Project(object):
             self.level = root.level
 
             # sanity check that the catlas nodes and graph vertices correspond
-            if set(self.graph.nodes) ^ set(self.leve_nodes.keys()):
+            if set(self.graph.nodes) ^ set(self.level_nodes.keys()):
                 # they are not equal when there are isolated vertices, which
                 # cannot be represented in the edge list file format.  We need
                 # to make sure that these vertices are indeed isolated by
@@ -330,8 +331,10 @@ def main(args):
 
     print("reading graph")
     if level:
+        print("Loading checkpoint at level {}".format(level))
         proj.load(level)
     else:
+        print("Loading checkpoint")
         proj.load_furthest_checkpoint()
 
     print("reading complete")
