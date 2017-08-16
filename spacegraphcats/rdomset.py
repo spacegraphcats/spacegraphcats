@@ -304,18 +304,17 @@ def domination_minor(graph: Graph, domset: Set[int], radius: int):
     closest_dominators, domdistance = assign_to_dominators(graph, domset, radius)
     domgraph = DictGraph(nodes=domset)
 
-    # TODO: grow region around each domination vertex
-    regions = [None] * len(domgraph)
+    regions = {v: None for v in graph}
     for v in domset:
         regions[v] = v
 
     for _ in range(radius):
-        for v,value in enumerate(regions):
-            if value != None:
+        for v,label in regions.items():
+            if label != None:
                 # Push value to unassigned in-neighbors
                 for u in graph.in_neighbors(v, 1):
                     if regions[u] is None:
-                        regions[u] = value
+                        regions[u] = label
             else:                
                 # Pull value
                 for u in graph.in_neighbors(v, 1):
@@ -323,16 +322,19 @@ def domination_minor(graph: Graph, domset: Set[int], radius: int):
                     if regions[u] != None:
                         regions[v] = regions[u]
                         break
-
     # Sanity-check
     for v, value in enumerate(regions):
-        assert(value != None)
+        assert value != None
 
     # Compute domgraph edges
     for u,v in graph.arcs(1):
         du, dv = regions[u], regions[v]
+        assert du != None and dv != None
+        assert du in domset and dv in domset
         domgraph.add_arc(du, dv)
         domgraph.add_arc(dv, du)
+
+    print("DGraph:", len(domgraph), domgraph.num_arcs())
 
     return domgraph, closest_dominators
 
@@ -391,6 +393,8 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
         for y in new_dom_neighbors:
             domgraph.add_arc(x, y)
             domgraph.add_arc(y, x)
+
+    print("DGraph:", len(domgraph), domgraph.num_arcs())
 
     return domgraph, closest_dominators
 
