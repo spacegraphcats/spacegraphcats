@@ -40,7 +40,7 @@ def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> Set[int]:
 
 def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     """ Compute the relative overhead of minhashes.
-    That is, the number of minhashes that are also in the query divides by the number of minhashes. """
+    That is, the number of minhashes that are also in the query divided by the number of minhashes. """
     node_length = len(node_minhash.get_mins())
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
@@ -103,7 +103,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
         Add a node or its children to the frontier.
         """
         if node_id in seen_nodes:
-            # we have added this node or its children to the frontier
+            # we have already added this node or its children to the frontier
             return
         else:
             seen_nodes.add(node_id)
@@ -112,9 +112,11 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
 
         children_ids = dag[node_id]
         if len(children_ids) == 0:
-            # leaf
+            # the node is a leaf so let's add it to the frontier
             nonlocal num_leaves
             if use_purgatory:
+                # nodes with high overhead are added to the purgatory for later evaluation whether
+                # they are actually necessary to cover the query
                 overhead = node_overhead(minhash)
                 if overhead > max_overhead:
                     purgatory.append((overhead, node_id, minhash))
@@ -161,16 +163,19 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
                 child_oh = node_overhead(child_mh)
                 overheads.append((child_oh, child_id, child_mh))
 
+            # look at nodes one by one, starting with the smallest overhead and try to cover what the parent covered
             overheads.sort()
 
-            _, first_node, first_mh = overheads.pop()
+            _, first_node, first_mh = overheads[0]
 
             add_to_frontier(first_node)
 
+            # Get a list of the minhases that need to be covered because they are in the query and in the parent node.
             query_mh = get_query_minhash(first_mh.scaled)
             required_query_minhashes = set(minhash.get_mins()).intersection(query_mh.get_mins()).difference(first_mh.get_mins())
 
-            for _, child_id, child_mh in overheads:
+            # Repeatedly remove hashes that are covered by nodes and add nodes to frontier until no more minhashes need to be covered.    
+            for _, child_id, child_mh in overheads[1:]:
                 if len(required_query_minhashes) == 0:
                     # early termination, all children already cover the node so we can stop
                     return
@@ -185,7 +190,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
                 raise Exception('Children cannot cover node.')
 
         else:
-            # low overhead node
+            # low overhead node gets added to the frontier
             add_node(node_id, minhash)
 
     add_to_frontier(top_node_id)
