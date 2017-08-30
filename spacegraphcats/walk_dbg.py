@@ -78,8 +78,8 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
 
     # output a contig if requested
     if pathy.assemblyfp:
-        asm = khmer.LinearAssembler(graph)
-        contig = asm.assemble(nk)
+        asm = khmer.LinearAssembler(graph, stop_bf)
+        contig = asm.assemble(graph.reverse_hash(nk))
         pathy.add_assembly(path_id, contig)
 
 
@@ -185,6 +185,7 @@ def run(args):
     # get all of the degree > 2 kmers and give them IDs.
     for kmer in degree_nodes:
         pathy.new_hdn(kmer)
+        stop_bf.add(kmer)
 
     print('traversing linear segments from', len(degree_nodes), 'nodes')
 
