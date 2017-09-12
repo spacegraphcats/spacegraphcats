@@ -8,33 +8,6 @@ import collections
 from pickle import load, dump
 
 
-sys.path.insert(0, '/Users/t/dev/khmer')
-
-
-class HLLGroup(object):
-    def __init__(self, ksizes):
-        self.hlls = [khmer.HLLCounter(.01, k) for k in ksizes]
-
-    def consume_string(self, s):
-        for h in self.hlls:
-            h.consume_string(s)
-
-    def estimate_cardinality(self):
-        return [h.estimate_cardinality() for h in self.hlls]
-
-    def merge(self, other):
-        for (s, o) in zip(self.hlls, other.hlls):
-            s.merge(o)
-
-
-class HLLFactory(object):
-    def __init__(self, ksizes):
-        self.ksizes = ksizes
-
-    def __call__(self):
-        return HLLGroup(self.ksizes)
-
-
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('labelsname')
