@@ -1,4 +1,15 @@
 #! /usr/bin/env python
+"""
+Build an index that can be used to retrieve individual reads or contigs
+by cDBG node ID.
+
+Specifically,
+* walk through the contigs assembled from the cDBG;
+* build a DBG cover using khmer tags, such that every k-mer in the DBG
+  is within distance d=40 of a tag;
+* label each tag with the cDBG node ID from the contig;
+* save for later use.
+"""
 import sys
 import os
 import argparse
@@ -44,9 +55,10 @@ def main():
         for t in tags:
             tags_to_labels[t].add(cdbg_id)
 
-    ng.save(args.savename)
     ng.save_tagset(args.savename + '.tagset')
     dump(tags_to_labels, open(args.savename + '.labelsp', 'wb'))
+
+    print('saved {} tags, {} labels for {} bp'.format(ng.n_tags(), n, total_bp))
 
 
 if __name__ == '__main__':
