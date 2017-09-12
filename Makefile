@@ -186,13 +186,13 @@ twofoo-extract-sqlite: twofoo/minhashes.db twofoo.labels
 	python -m search.extract_reads_by_frontier_sqlite 2-akker.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.2.fq
 
 twofoo.frontier.63.fq.sig: twofoo.frontier.63.fq
-	sourmash compute -k 21,31,51 twofoo.frontier.63.fq --scaled=1000 -f
+	sourmash compute -k 21,31,51 twofoo.frontier.sql.63.fq --scaled=1000 -f
 
 twofoo.frontier.47.fq.sig: twofoo.frontier.47.fq
-	sourmash compute -k 21,31,51 twofoo.frontier.47.fq --scaled=1000 -f
+	sourmash compute -k 21,31,51 twofoo.frontier.sql.47.fq --scaled=1000 -f
 
 twofoo.frontier.2.fq.sig: twofoo.frontier.2.fq
-	sourmash compute -k 21,31,51 twofoo.frontier.2.fq --scaled=1000 -f
+	sourmash compute -k 21,31,51 twofoo.frontier.sql.2.fq --scaled=1000 -f
 
 twofoo-sigs: twofoo.frontier.63.fq.sig twofoo.frontier.2.fq.sig twofoo.frontier.47.fq.sig
 
