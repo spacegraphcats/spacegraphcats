@@ -217,6 +217,11 @@ def main(args=sys.argv[1:]):
     with open(args.outcover, 'wb') as outfp:
         pickle.dump(terminal, outfp)
 
+    with open(args.outcover + '.sig', 'wt') as outfp:
+        print('saving signature')
+        ss = signature.SourmashSignature('', merge_mh, name=args.catlas_prefix)
+        signature.save_signatures([ss], outfp)
+
     x.sort(reverse=True)
     for (k, v, a, b, c) in x:
         print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b, '/ level:', c)
