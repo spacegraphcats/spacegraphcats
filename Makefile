@@ -177,6 +177,11 @@ twofoo-extract: twofoo/minhashes.db twofoo.labels
 	python -m search.extract_reads_by_frontier 47-os185.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.47.fq
 	python -m search.extract_reads_by_frontier 2-akker.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.2.fq
 
+twofoo-extract-sqlite: twofoo/minhashes.db twofoo.labels
+	python -m search.extract_reads_by_frontier_sqlite 63-os223.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.63.fq
+	python -m search.extract_reads_by_frontier_sqlite 47-os185.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.47.fq
+	python -m search.extract_reads_by_frontier_sqlite 2-akker.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.2.fq
+
 twofoo.frontier.63.fq.sig: twofoo.frontier.63.fq
 	sourmash compute -k 21,31,51 twofoo.frontier.63.fq --scaled=1000 -f
 

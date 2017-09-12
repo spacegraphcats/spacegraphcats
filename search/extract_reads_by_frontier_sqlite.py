@@ -144,6 +144,9 @@ def main():
 
             outfp.write('>{}\n{}\n'.format(name, sequence))
 
+        print('')
+        print('fetched {} reads, {} bp matching frontier.'.format(total_seqs, total_bp))
+
     sys.exit(0)
 
 
