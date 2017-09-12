@@ -44,10 +44,8 @@ def main():
     db = sqlite3.connect(dbfilename)
     cursor = db.cursor()
     cursor.execute('CREATE TABLE sequences (id INTEGER PRIMARY KEY, name TEXT, sequence TEXT, quality TEXT)');
-    cursor.execute('CREATE TABLE tags (tag INTEGER PRIMARY KEY)');
-    cursor.execute('CREATE TABLE labels (label INTEGER PRIMARY KEY)');
-    cursor.execute('CREATE TABLE tags_to_sequences (tag INTEGER, seq_id INTEGER, FOREIGN KEY(tag) REFERENCES tags(tag), FOREIGN KEY(seq_id) REFERENCES sequences(id))');
-    cursor.execute('CREATE TABLE tags_and_labels(tag INTEGER, label INTEGER, FOREIGN KEY(tag) REFERENCES tags(tag), FOREIGN KEY(label) REFERENCES labels(label))');
+    cursor.execute('CREATE TABLE tags_to_sequences (tag INTEGER, seq_id INTEGER, FOREIGN KEY(seq_id) REFERENCES sequences(id))');
+    cursor.execute('CREATE TABLE tags_and_labels(tag INTEGER, label INTEGER)');
     db.commit()
 
     # @CTB support different sizes.
@@ -76,9 +74,7 @@ def main():
 
         tags = ng.get_tags_for_sequence(contig.sequence)
 
-        cursor.execute('INSERT INTO labels (label) VALUES (?)', (cdbg_id,))
         for t in tags:
-            cursor.execute('INSERT INTO tags (tag) VALUES (?)', (t,))
             cursor.execute('INSERT INTO tags_and_labels (tag, label) VALUES (?, ?)', (t, cdbg_id))
 
     db.commit()
