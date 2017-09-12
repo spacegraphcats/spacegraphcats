@@ -22,13 +22,18 @@ import shutil
 
 sys.path.insert(0, '/Users/t/dev/khmer')
 
+# graph settings
+DEFAULT_KSIZE = 31
+DEFAULT_MEMORY = 1e8
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('reads')
     p.add_argument('savename')
-    p.add_argument('-k', '--ksize', default=31, type=int)
+    p.add_argument('-k', '--ksize', default=DEFAULT_KSIZE, type=int)
+    p.add_argument('-M', '--memory', default=DEFAULT_MEMORY,
+                            type=float)
     args = p.parse_args()
 
     dbfilename = args.savename + '.sqlite'
@@ -46,7 +51,8 @@ def main():
     db.commit()
 
     # @CTB support different sizes.
-    ng = khmer.Nodegraph(args.ksize, 2e9, 4)
+    graph_tablesize = int(args.memory * 8.0 / 4.0)
+    ng = khmer.Nodegraph(args.ksize, graph_tablesize, 4)
 
     basename = os.path.basename(args.catlas_prefix)
     contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
