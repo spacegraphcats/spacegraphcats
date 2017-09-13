@@ -24,7 +24,7 @@ sys.path.insert(0, '/Users/t/dev/khmer')
 
 # graph settings
 DEFAULT_KSIZE = 31
-DEFAULT_MEMORY = 1e8
+DEFAULT_MEMORY = 1e9
 
 def main():
     p = argparse.ArgumentParser()
@@ -106,11 +106,6 @@ def main():
 
     db.commit()
             
-        
-    #ng.save(args.savename)
-    #ng.save_tagset(args.savename + '.tagset')
-    #dump(tags_to_labels, open(args.savename + '.labelsp', 'wb'))
-
     db.close()
 
 if __name__ == '__main__':
