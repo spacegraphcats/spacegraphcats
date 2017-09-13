@@ -37,10 +37,10 @@ def load_dag(catlas_file):
         else:
             dag[catlas_node] = set()
 
+        level = int(level)
         dag_levels[catlas_node] = level
 
         # update max_node/max_level
-        level = int(level)
         if level > max_level:
             max_level = level
             max_node = catlas_node

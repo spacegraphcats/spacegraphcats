@@ -190,7 +190,7 @@ def main(args=sys.argv[1:]):
     # create minhashes for catlas leaf nodes.
     leaf_minhashes = {}
     for n, (catlas_node, cdbg_nodes) in enumerate(layer0_to_cdbg.items()):
-        if n and n % 1000 == 0:
+        if n and n % 10000 == 0:
             print('... built {} leaf node MinHashes...'.format(n),
                   file=sys.stderr)
         mh = merge_nodes(graph_minhashes, cdbg_nodes, factory)
@@ -200,7 +200,9 @@ def main(args=sys.argv[1:]):
 
     # build minhashes for entire catlas, or just the leaves (dom nodes)?
     if not args.leaves_only:
+        print('now building catlas minhashes...')
         build_dag(catlas, leaf_minhashes, factory)
+        print('...done!')
 
     if args.no_minhashes:
         print('per --no-minhashes, NOT building minhashes database.')

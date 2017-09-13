@@ -21,7 +21,7 @@ acido-clean:
 
 # build cDBG
 acido/cdbg.gxt: data/acido.fa.gz
-	python -m spacegraphcats.build_contracted_dbg -k 31 -M 1e9 data/acido.fa.gz
+	python -m spacegraphcats.build_contracted_dbg -k 31 -M 2e9 data/acido.fa.gz
 
 # build catlas
 acido/catlas.csv: acido/cdbg.gxt
@@ -148,3 +148,76 @@ podar/minhashes.db: podar/cdbg.gxt podar/catlas.csv
 
 podar-search: podar/minhashes.db
 	time python -m search.frontier_search data/mircea-sigs/mircea-rm18.0.fa.sig podar 0.1 --purgatory
+
+####
+
+# build cDBG
+twofoo/cdbg.gxt:
+	python -m spacegraphcats.build_contracted_dbg -k 21 -M 4e9 shewanella.abundtrim.gz akker-reads.abundtrim.gz -o twofoo
+
+# build catlas
+twofoo/catlas.csv: twofoo/cdbg.gxt
+	python -m spacegraphcats.catlas twofoo 1
+
+# build minhashes
+twofoo/minhashes.db: twofoo/catlas.csv twofoo/contigs.fa.gz
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo
+
+twofoo.labels.sqlite:
+	python -m search.label_cdbg_sqlite twofoo twofoo.fq.gz twofoo.labels -k 21 -M 1e9
+
+twofoo.labels.tagset: twofoo/catlas.csv
+	python -m search.label_cdbg twofoo twofoo.labels -k 21
+
+twofoo-extract-1: twofoo/minhashes.db twofoo.labels
+	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.63.fq
+
+twofoo-extract-s: twofoo/minhashes.db twofoo.labels
+	python -m search.extract_reads_by_frontier_sqlite 63-os223.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.63.fq
+
+twofoo-extract: twofoo/minhashes.db twofoo.labels
+	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.63.fq
+	python -m search.extract_reads_by_frontier 47-os185.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.47.fq
+	python -m search.extract_reads_by_frontier 2-akker.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.2.fq
+
+twofoo-extract-sqlite: twofoo/minhashes.db twofoo.labels
+	python -m search.extract_reads_by_frontier_sqlite 63-os223.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.63.fq
+	python -m search.extract_reads_by_frontier_sqlite 47-os185.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.47.fq
+	python -m search.extract_reads_by_frontier_sqlite 2-akker.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.2.fq
+
+twofoo.frontier.63.fq.sig: twofoo.frontier.63.fq
+	sourmash compute -k 21,31,51 twofoo.frontier.sql.63.fq --scaled=1000 -f
+
+twofoo.frontier.47.fq.sig: twofoo.frontier.47.fq
+	sourmash compute -k 21,31,51 twofoo.frontier.sql.47.fq --scaled=1000 -f
+
+twofoo.frontier.2.fq.sig: twofoo.frontier.2.fq
+	sourmash compute -k 21,31,51 twofoo.frontier.sql.2.fq --scaled=1000 -f
+
+twofoo-sigs: twofoo.frontier.63.fq.sig twofoo.frontier.2.fq.sig twofoo.frontier.47.fq.sig
+
+twofoo-search: twofoo/minhashes.db
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.0 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.1 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.2 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.3 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.4 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.5 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.6 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.7 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.8 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.9 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 1.0 --purgatory -k 31 --fullstats
+	python -m search.frontier_search shewshew/63.fa.sig twofoo 2.0 --purgatory -k 31 --fullstats
+
+# build cDBG
+akker-reads/cdbg.gxt:
+	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 akker-reads.abundtrim.gz -o akker-reads
+
+# build catlas
+akker-reads/catlas.csv: akker-reads/cdbg.gxt
+	python -m spacegraphcats.catlas akker-reads 1
+
+# build minhashes
+akker-reads/minhashes.db: akker-reads/catlas.csv akker-reads/contigs.fa.gz
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 akker-reads
