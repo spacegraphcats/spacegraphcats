@@ -200,7 +200,9 @@ def main(args=sys.argv[1:]):
 
     # build minhashes for entire catlas, or just the leaves (dom nodes)?
     if not args.leaves_only:
+        print('now building catlas minhashes...')
         build_dag(catlas, leaf_minhashes, factory)
+        print('...done!')
 
     if args.no_minhashes:
         print('per --no-minhashes, NOT building minhashes database.')
