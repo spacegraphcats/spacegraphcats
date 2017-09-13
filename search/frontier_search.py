@@ -45,7 +45,7 @@ def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, leveldb.LevelDB], max_overhead: float, include_empty = True, use_purgatory = False):
+def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, leveldb.LevelDB], max_overhead: float, include_empty = False, use_purgatory = False):
     """
         include_empty: Whether to include nodes with no minhases in the frontier
         use_purgatory: put leaf nodes with large overhead into a purgatory and consider them after we have processes the whole frontier
