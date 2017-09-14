@@ -14,7 +14,7 @@ from io import TextIOWrapper
 from collections import defaultdict
 from typing import List, Dict, Set
 
-UPPER_RADIUS = 2
+UPPER_RADIUS = 1
 
 
 class Project(object):
