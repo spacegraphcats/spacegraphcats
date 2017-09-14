@@ -182,6 +182,7 @@ class CAtlas(object):
         # keep creating progressively smaller graphs until we hit the level
         # threshold or steady state
         while True:
+            print()
             # the base level should have a large radius, others are just 1
             if proj.level == 0:
                 r = proj.r
@@ -223,8 +224,6 @@ class CAtlas(object):
 
             # write level results to the checkpoint file if applicable
             proj.save_checkpoint()
-            print(len(proj.graph))
-
         # create a single root over the top level
         root_children = list(nodes.values())
         root_vertex = root_children[0].vertex
