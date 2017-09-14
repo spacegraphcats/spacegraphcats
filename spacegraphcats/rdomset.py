@@ -247,156 +247,62 @@ def compute_domset(graph: Graph, radius: int):
     return domset
 
 
-def assign_to_dominators(graph: Graph, domset: Set[int], radius: int):
+def domination_graph(graph: Graph, domset: Set[int], radius: int):
     """
-    Compute the closest dominators to each vertex.
-
-    Return values:
-        closest_dominators:  dictionary mapping vertices in the original graph
-                             to their closest_dominators
-        domdistance:  dictionary mapping vertices to the distance to their
-                      closest dominators
-    """
-    closest_dominators = {v: set() for v in graph}  # type: Dict[int, Set[int]]
-    domdistance = {v: radius+1 for v in graph}  # type: Dict[int, int]
-
-    # Every vertex in domset is a zero-dominator of itself
-    for v in domset:
-        closest_dominators[v] = set([v])
-        domdistance[v] = 0
-
-    # We need two passes in order to only every access the
-    # in-neighbourhoods (which are guaranteed to be small).
-    for _ in range(2):
-        for v in graph:
-            # Pull dominators from in-neighbourhood
-            for u, r in graph.in_neighbors(v):
-                dist = r + domdistance[u]
-                # we need to reset v's dominators when the path through u
-                # yields a closer dominator
-                if dist < domdistance[v]:
-                    closest_dominators[v] = set()
-                    domdistance[v] = dist
-                # add u's dominators to v's
-                if dist == domdistance[v]:
-                    closest_dominators[v] |= closest_dominators[u]
-            # Push dominators to in-neighbourhood
-            for u, r in graph.in_neighbors(v):
-                dist = r + domdistance[v]
-                # we need to reset u's dominators when the path through v
-                # yields a closer dominator
-                if dist < domdistance[u]:
-                    closest_dominators[u] = set()
-                    domdistance[u] = dist
-                # add v's dominators to u's
-                if dist == domdistance[u]:
-                    closest_dominators[u] |= closest_dominators[v]
-
-    return closest_dominators, domdistance
-
-
-def domination_minor(graph: Graph, domset: Set[int], radius: int):
-    """
-    Experimental variant of domination_graph: construct a (shallow) minor 
-    to keep the number of edges down.
+    Build up a 'domination graph' by assigning each vertex to one of its
+    closest dominators, then preserving edges between vertices assigned to
+    different dominators.  This means the domination graph is a shallow minor
+    (at radius radius) of the original graph.
     """
     print("assigning to dominators")
-    closest_dominators, domdistance = assign_to_dominators(graph, domset, radius)
     domgraph = DictGraph(nodes=domset)
 
-    regions = {v: None for v in graph}
+    # We need to assign each vertex to a unique closest dominator.  A value of
+    # -1 indicates this vertex has not yet been assigned to a dominator.
+    assigned_dominator = {v: -1 for v in graph}  # type: Dict[int, int]
+    # domset vertices are closest to themselves
     for v in domset:
-        regions[v] = v
+        assigned_dominator[v] = v
 
+    # If we compute all closest dominators and arbitrarily pick a unique one
+    # from the list, the vertices assigned to a particular dominator
+    # (including the dominator itself) might not induce a connected subgraph.
+    # Thus we need to propagate the domination assignments outwards so a
+    # vertex at distance d from a dominator has to wait until its neighbors at
+    # distance d-1 are assigned in order to pick an appropriate assignment (a
+    # dominator already found in its neighborhood).
     for _ in range(radius):
-        for v,label in regions.items():
-            if label != None:
+        for v, label in assigned_dominator.items():
+            if label >= 0:
                 # Push value to unassigned in-neighbors
                 for u in graph.in_neighbors(v, 1):
-                    if regions[u] is None:
-                        regions[u] = label
-            else:                
+                    if assigned_dominator[u] < 0:
+                        assigned_dominator[u] = label
+            else:
                 # Pull value
                 for u in graph.in_neighbors(v, 1):
                     # TODO: could instead use some min/max voting here
-                    if regions[u] != None:
-                        regions[v] = regions[u]
+                    if assigned_dominator[u] >= 0:
+                        assigned_dominator[v] = assigned_dominator[u]
                         break
     # Sanity-check
-    for v, value in enumerate(regions):
-        assert value != None
+    for v, value in enumerate(assigned_dominator):
+        assert value >= 0
 
     # Compute domgraph edges
-    for u,v in graph.arcs(1):
-        du, dv = regions[u], regions[v]
-        assert du != None and dv != None
+    print("computing domgraph edges")
+    for u, v in graph.arcs(1):
+        du, dv = assigned_dominator[u], assigned_dominator[v]
         assert du in domset and dv in domset
         domgraph.add_arc(du, dv)
         domgraph.add_arc(dv, du)
 
-    print("DGraph:", len(domgraph), domgraph.num_arcs())
-
-    return domgraph, closest_dominators
-
-
-def domination_graph(graph: Graph, domset: Set[int], radius: int):
-    """
-    Build up a 'domination graph' by assigning each vertex to its closest
-    dominators. These dominators will be connected in the final graph.
-    """
-    print("assigning to dominators")
-    closest_dominators, domdistance =\
-        assign_to_dominators(graph, domset, radius)
-    domgraph = DictGraph(nodes=domset)
-
-    print("computing dominating edges")
     # map of dominators to vertices they dominate
     dominated = {x: set() for x in domset}  # type: Dict[int, Set[int]]
-    for v, doms in closest_dominators.items():
-        for x in doms:
-            dominated[x].add(v)
+    for v, x in assigned_dominator.items():
+        dominated[x].add(v)
 
-    # Add edges to the domgraph.  Two dominators (x,y) should be adjacent if
-    # they optimally dominate a common vertex or if there are adjacent vertices
-    # (u,v) optimally dominated by (x,y), respectively, at the same radius.
-    # If v is optimally dominated by x at radius r, all of its neighbors are
-    # dominated at radius r-1, r, r+1.  If u is a neighbor of v not optimally
-    # dominated by x, then either:
-    #    1) u is dominated at distance r OR
-    #    2) u is dominated at distance r-1 and v's optimal dominators are a
-    #       superset of u's
-    # In either case x should be adjacent to all dominators of u.
-
-    # We need to be able to query neighbors efficiently, but this is difficult
-    # when the graph edges are unidirectional.  A quick but unsatisfying fix
-    # is to make the edges bidirectional again.
-    for v in graph:
-        for u in list(graph.in_neighbors(v, 1)):
-            graph.add_arc(v, u)
-
-    for x in domset:
-        # neighbors of vertices dominated by x that are not dominated by x
-        domination_boundary = set()  # type: Set[int]
-        # vertices that need to be made adjacent to x
-        new_dom_neighbors = set()  # type: Set[int]
-        # get all the boundary vertices.  We remove the vertices dominated by x
-        # at the end to only do it once
-        for v in dominated[x]:
-            domination_boundary |= graph.in_neighbors(v, 1)
-        domination_boundary -= dominated[x]
-        # get the dominators of the boundary.
-        for v in domination_boundary:
-            new_dom_neighbors |= closest_dominators[v]
-        # take out existing neighbors
-        new_dom_neighbors -= domgraph.in_neighbors(x, 1)
-        # add edges
-        for y in new_dom_neighbors:
-            domgraph.add_arc(x, y)
-            domgraph.add_arc(y, x)
-
-    print("DGraph:", len(domgraph), domgraph.num_arcs())
-
-    return domgraph, closest_dominators
+    return domgraph, dominated
 
 
 def rdomset(graph: Graph, radius: int):
