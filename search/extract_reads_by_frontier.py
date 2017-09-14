@@ -77,6 +77,15 @@ def main():
     print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
     print("")
 
+    print("removing...")
+    nonempty_frontier = []
+    for node in frontier:
+        mh = load_minhash(node, minhash_db)
+        if mh and len(mh.get_mins()) > 0:
+            nonempty_frontier.append(node)
+    print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
+    frontier = nonempty_frontier
+
     shadow = find_shadow(frontier, dag)
 
     print("Size of the frontier shadow: {}".format(len(shadow)))
