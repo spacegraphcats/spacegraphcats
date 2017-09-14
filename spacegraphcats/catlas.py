@@ -14,6 +14,8 @@ from io import TextIOWrapper
 from collections import defaultdict
 from typing import List, Dict, Set
 
+UPPER_RADIUS = 1
+
 
 class Project(object):
     """Methods for coordinating whole projects."""
@@ -87,31 +89,46 @@ class Project(object):
                     break
                 tmpf.write(line)
             # once we are at the graph section, start reading from there
-            self.graph = read_from_gxt(f, radius=1, directed=False,
+            self.graph = read_from_gxt(f, radius=UPPER_RADIUS, directed=False,
                                        sequential=False)
             # move back to the beginning of the temporary file and read the
             # catlas
             tmpf.seek(0)
             root = CAtlas.read(tmpf)
             tmpf.close()
-            print("Root has children {}".format(
-                    [i.vertex for i in root.children]))
+            # print("Root has children {}".format(
+            #         [i.vertex for i in root.children]))
             self.level_nodes = {node.vertex: node for node in root.children}
             self.idx = root.idx
             self.level = root.level
+            # if the graph has isolated vertices, they don't appear in the
+            # edge list, which means we need to infer them from the catlas
+            # nodes
+            self.__handle_missing_nodes()
 
-            # sanity check that the catlas nodes and graph vertices correspond
-            if set(self.graph.nodes) ^ set(self.level_nodes.keys()):
-                # they are not equal when there are isolated vertices, which
-                # cannot be represented in the edge list file format.  We need
-                # to make sure that these vertices are indeed isolated by
-                # checking that they are not dominated by multiple vertices.
+    def __handle_missing_nodes(self):
+        # sanity check that the catlas nodes and graph vertices correspond
+        num_missing = len(self.level_nodes.keys()) - len(self.graph.nodes)
+        if num_missing > 0:
+            missing = set(self.level_nodes.keys()) - set(self.graph.nodes)
+            # they are not equal when there are isolated vertices, which
+            # cannot be represented in the edge list file format.  We need
+            # to make sure that these vertices are indeed isolated by
+            # checking that they are not dominated by multiple vertices.
+            if self.level == 1:
+                # at level 1, the domination relationship is not captured by
+                # the children so we just assume the vertices are isolated.
+                #  We could check first_doms.txt but this is probably too much
+                # effort.
+                for v in missing:
+                    self.graph.add_node(v)
+            else:
                 parent_count = defaultdict(int)
                 for _, node in self.level_nodes.items():
                     for u in node.children:
                         parent_count[u.vertex] += 1
-                for v in self.level_nodes:
-                    if v not in self.graph and parent_count[v] != 1:
+                for v in missing:
+                    if parent_count[v] != 1:
                         print("{} has {} parents".format(v, parent_count[v]))
                         raise ValueError("graph should have the same nodes as"
                                          " the previous level")
@@ -165,11 +182,12 @@ class CAtlas(object):
         # keep creating progressively smaller graphs until we hit the level
         # threshold or steady state
         while True:
+            print()
             # the base level should have a large radius, others are just 1
             if proj.level == 0:
                 r = proj.r
             else:
-                r = 1
+                r = UPPER_RADIUS
             # build the current level
             nodes, domgraph, dominated = CAtlas._build_level(proj.graph,
                                                              r,
@@ -206,8 +224,6 @@ class CAtlas(object):
 
             # write level results to the checkpoint file if applicable
             proj.save_checkpoint()
-            print(len(proj.graph))
-
         # create a single root over the top level
         root_children = list(nodes.values())
         root_vertex = root_children[0].vertex
@@ -218,17 +234,9 @@ class CAtlas(object):
                      prev_nodes: List[int]=None):
         # find the domgraph of the current domgraph
         domset = rdomset(graph, radius)
-        domgraph, closest_dominators = domination_graph(graph, domset, radius)
-
-        # closest_dominators indicates the domset vertices that dominate
-        # each vertex.
-        # v dominating u indicates that u will be a child of v
-        # we have the assignment from vertices to dominators, make the
-        # reverse
-        dominated = {v: list() for v in domset}  # type: Dict[int, List[int]]
-        for u, doms in closest_dominators.items():
-            for v in doms:
-                dominated[v].append(u)
+        # dominated maps dominating vertices to a list of the vertices they
+        # optimally dominate
+        domgraph, dominated = domination_graph(graph, domset, radius)
 
         # create the CAtlas nodes
         nodes = {}

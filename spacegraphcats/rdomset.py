@@ -303,8 +303,9 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     print("assigning to dominators")
     closest_dominators, domdistance =\
         assign_to_dominators(graph, domset, radius)
-    domgraph = DictGraph(nodes=domset)
+    domgraph = DictGraph(nodes=domset, r=radius)
 
+    print("domset has {} vertices".format(len(domset)))
     print("computing dominating edges")
     # map of dominators to vertices they dominate
     dominated = {x: set() for x in domset}  # type: Dict[int, Set[int]]
@@ -329,7 +330,6 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     for v in graph:
         for u in list(graph.in_neighbors(v, 1)):
             graph.add_arc(v, u)
-
     for x in domset:
         # neighbors of vertices dominated by x that are not dominated by x
         domination_boundary = set()  # type: Set[int]
@@ -350,7 +350,7 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
             domgraph.add_arc(x, y)
             domgraph.add_arc(y, x)
 
-    return domgraph, closest_dominators
+    return domgraph, dominated
 
 
 def rdomset(graph: Graph, radius: int):
