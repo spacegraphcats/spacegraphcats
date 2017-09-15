@@ -44,9 +44,7 @@ def main():
 
     db = sqlite3.connect(dbfilename)
     cursor = db.cursor()
-    cursor.execute('CREATE TABLE sequences (id INTEGER PRIMARY KEY, offset INTEGER)');
-    cursor.execute('CREATE TABLE tags_to_sequences (tag INTEGER, seq_id INTEGER, FOREIGN KEY(seq_id) REFERENCES sequences(id))');
-    cursor.execute('CREATE TABLE tags_and_labels(tag INTEGER, label INTEGER)');
+    cursor.execute('CREATE TABLE sequences (offset INTEGER, label INTEGER)');
     db.commit()
 
     # @CTB support different sizes.
@@ -62,6 +60,7 @@ def main():
 
     print('walking catlas cDBG contigs: {}'.format(contigfile))
     n = 0
+    tags_to_label = collections.defaultdict(int)
     for contig in screed.open(contigfile):
         n += 1
         if total_bp >= watermark:
@@ -76,9 +75,7 @@ def main():
         tags = ng.get_tags_for_sequence(contig.sequence)
 
         for t in tags:
-            cursor.execute('INSERT INTO tags_and_labels (tag, label) VALUES (?, ?)', (t, cdbg_id))
-
-    db.commit()
+            tags_to_label[t] = cdbg_id
 
     ###
 
@@ -106,6 +103,12 @@ def main():
 
     print('walking read file: {}'.format(args.reads))
     n = 0
+
+    cursor.execute('PRAGMA cache_size=1000000')
+    cursor.execute('PRAGMA synchronous = OFF')
+    cursor.execute('PRAGMA journal_mode = MEMORY')
+    cursor.execute('BEGIN TRANSACTION')
+
     for record, offset in read_bgzf(args.reads):
         n += 1
         if total_bp >= watermark:
@@ -114,11 +117,11 @@ def main():
             watermark += watermark_size
         total_bp += len(record.sequence)
 
-        cursor.execute('INSERT INTO sequences (id, offset) VALUES (?, ?)', (n, offset))
-
         tags = ng.get_tags_for_sequence(record.sequence)
-        for t in tags:
-            cursor.execute('INSERT INTO tags_to_sequences (tag, seq_id) VALUES (?, ?)', (t, n))
+        labels = set([ tags_to_label[t] for t in tags ])
+
+        for lb in labels:
+            cursor.execute('INSERT INTO sequences (offset, label) VALUES (?, ?)', (offset, lb))
 
     db.commit()
             

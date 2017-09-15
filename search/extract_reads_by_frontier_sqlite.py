@@ -154,10 +154,10 @@ def main():
         cursor.execute('CREATE TEMPORARY TABLE label_query (label_id INTEGER PRIMARY KEY);')
         for label in cdbg_shadow:
             cursor.execute('INSERT INTO label_query (label_id) VALUES (?)', (label,))
-            
+
         print('running sqlite query...')
 
-        cursor.execute('SELECT DISTINCT sequences.offset FROM sequences,tags_to_sequences,tags_and_labels WHERE sequences.id=tags_to_sequences.seq_id AND tags_to_sequences.tag=tags_and_labels.tag AND tags_and_labels.label in (SELECT label_id FROM label_query)')
+        cursor.execute('SELECT DISTINCT sequences.offset FROM sequences WHERE label in (SELECT label_id FROM label_query) ORDER BY offset')
         print('...fetching read offsets')
 
         # @CTB try sorting? => then can work with .gz file?
