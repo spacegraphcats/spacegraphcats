@@ -19,6 +19,7 @@ import collections
 from pickle import dump
 import sqlite3
 import shutil
+from . import bgzf
 
 sys.path.insert(0, '/Users/t/dev/khmer')
 
@@ -43,7 +44,7 @@ def main():
 
     db = sqlite3.connect(dbfilename)
     cursor = db.cursor()
-    cursor.execute('CREATE TABLE sequences (id INTEGER PRIMARY KEY, name TEXT, sequence TEXT, quality TEXT)');
+    cursor.execute('CREATE TABLE sequences (id INTEGER PRIMARY KEY, offset INTEGER)');
     cursor.execute('CREATE TABLE tags_to_sequences (tag INTEGER, seq_id INTEGER, FOREIGN KEY(seq_id) REFERENCES sequences(id))');
     cursor.execute('CREATE TABLE tags_and_labels(tag INTEGER, label INTEGER)');
     db.commit()
@@ -85,9 +86,25 @@ def main():
     watermark_size = 1e7
     watermark = watermark_size
 
+    def read_bgzf(filename):
+        from screed.openscreed import fastq_iter, fasta_iter
+        reader = bgzf.BgzfReader(filename, 'rt')
+        ch = reader.read(1)
+        if ch == '>':
+            iter_fn = fasta_iter
+        elif ch == '@':
+            iter_fn = fastq_iter
+        else:
+            raise Exception('unknown start chr {}'.format(ch))
+
+        reader.seek(0)
+
+        for record in iter_fn(reader):
+            yield record, reader.tell()
+
     print('walking read file: {}'.format(args.reads))
     n = 0
-    for record in screed.open(args.reads):
+    for record, offset in read_bgzf(args.reads):
         n += 1
         if total_bp >= watermark:
             print('... {:5.2e} bp thru reads'.format(int(watermark)),
@@ -95,10 +112,7 @@ def main():
             watermark += watermark_size
         total_bp += len(record.sequence)
 
-        if not hasattr(record, 'quality'):
-            record.quality = ''
-
-        cursor.execute('INSERT INTO sequences (id, name, sequence, quality) VALUES (?, ?, ?, ?)', (n, record.name, record.sequence, record.quality))
+        cursor.execute('INSERT INTO sequences (id, offset) VALUES (?, ?)', (n, offset))
 
         tags = ng.get_tags_for_sequence(record.sequence)
         for t in tags:

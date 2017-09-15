@@ -173,7 +173,7 @@ twofoo-extract-1: twofoo/minhashes.db twofoo.labels
 	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.63.fq
 
 twofoo-extract-s: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_reads_by_frontier_sqlite 63-os223.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.63.fq
+	python -m search.extract_reads_by_frontier_sqlite 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgzf twofoo.labels twofoo.frontier.63.fq
 
 twofoo-extract: twofoo/minhashes.db twofoo.labels
 	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.63.fq

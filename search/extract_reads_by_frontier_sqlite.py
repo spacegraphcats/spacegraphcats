@@ -20,6 +20,25 @@ from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
 from .search_utils import (load_dag, load_layer0_to_cdbg)
 import khmer.utils
+from . import bgzf
+
+
+def read_bgzf(reader):
+    from screed.openscreed import fastq_iter, fasta_iter
+    ch = reader.read(1)
+    if ch == '>':
+        iter_fn = fasta_iter
+    elif ch == '@':
+        iter_fn = fastq_iter
+    else:
+        raise Exception('unknown start chr {}'.format(ch))
+
+    reader.seek(0)
+
+    last_pos = reader.tell()
+    for record in iter_fn(reader):
+        yield record, last_pos
+        last_pos = reader.tell()
 
 
 def main():
@@ -27,6 +46,7 @@ def main():
     p.add_argument('query_sig', help='query minhash')
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('overhead', help='\% of overhead', type=float)
+    p.add_argument('readsfile')
     p.add_argument('labeled_reads_sqlite')
     p.add_argument('output')
     p.add_argument('--no-empty', action='store_true')
@@ -120,6 +140,9 @@ def main():
     output_seqs = 0
 
     outfp = open(args.output, 'wt')
+    reader = bgzf.BgzfReader(args.readsfile, 'rt')
+    reads_iter = read_bgzf(reader)
+    next(reads_iter)
 
     seen_seq = set()
     if 1:
@@ -130,10 +153,19 @@ def main():
             
         print('running sqlite query...')
 
-        cursor.execute('SELECT DISTINCT sequences.name,sequences.sequence, sequences.quality FROM sequences,tags_to_sequences,tags_and_labels WHERE sequences.id=tags_to_sequences.seq_id AND tags_to_sequences.tag=tags_and_labels.tag AND tags_and_labels.label in (SELECT label_id FROM label_query)')
-        print('...fetching reads.')
+        cursor.execute('SELECT DISTINCT sequences.offset FROM sequences,tags_to_sequences,tags_and_labels WHERE sequences.id=tags_to_sequences.seq_id AND tags_to_sequences.tag=tags_and_labels.tag AND tags_and_labels.label in (SELECT label_id FROM label_query)')
+        print('...fetching read offsets')
 
-        for (name, sequence, quality) in cursor:
+        # @CTB try sorting? => then can work with .gz file?
+        for (offset,) in cursor:
+            reader.seek(offset)
+            (record, xx) = next(reads_iter)
+
+            name = record.name
+            sequence = record.sequence
+
+            assert xx == offset, (xx, offset)
+            
             total_bp += len(sequence)
             total_seqs += 1
 
