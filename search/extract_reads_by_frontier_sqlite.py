@@ -144,6 +144,10 @@ def main():
     reads_iter = read_bgzf(reader)
     next(reads_iter)
 
+    ## get last offset:
+    cursor.execute('SELECT max(sequences.offset) FROM sequences')
+    last_offset = list(cursor)[0][0]
+
     seen_seq = set()
     if 1:
         label = 0
@@ -157,7 +161,9 @@ def main():
         print('...fetching read offsets')
 
         # @CTB try sorting? => then can work with .gz file?
-        for (offset,) in cursor:
+        for n, (offset,) in enumerate(cursor):
+            if n % 10000 == 0:
+                print('...at n {} ({:.1f}% of file)'.format(n, offset /  last_offset * 100), end='\r')
             reader.seek(offset)
             (record, xx) = next(reads_iter)
 
@@ -168,11 +174,6 @@ def main():
             
             total_bp += len(sequence)
             total_seqs += 1
-
-            if total_bp >= watermark:
-                print('... {:5.2e} bp thru reads, {} seqs written'.format(int(watermark), total_seqs),
-                      file=sys.stderr, end='\r')
-                watermark += watermark_size
 
             outfp.write('>{}\n{}\n'.format(name, sequence))
 

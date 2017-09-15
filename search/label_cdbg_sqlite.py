@@ -99,8 +99,10 @@ def main():
 
         reader.seek(0)
 
+        last_pos = reader.tell()
         for record in iter_fn(reader):
-            yield record, reader.tell()
+            yield record, last_pos
+            last_pos = reader.tell()
 
     print('walking read file: {}'.format(args.reads))
     n = 0
