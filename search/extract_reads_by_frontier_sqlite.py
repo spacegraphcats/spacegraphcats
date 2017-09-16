@@ -97,6 +97,21 @@ def main():
     print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
     print("")
 
+    print("removing...")
+    nonempty_frontier = []
+    merge_mh = query_mh.copy_and_clear()
+    max_scaled = max(merge_mh.scaled, top_mh.scaled)
+
+    for node in frontier:
+        mh = load_minhash(node, minhash_db)
+        if mh and len(mh.get_mins()) > 0:
+            nonempty_frontier.append(node)
+            mh = mh.downsample_scaled(max_scaled)
+            merge_mh.merge(mh)
+    print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
+    print('recalculated frontier mh similarity: {}'.format(merge_mh.similarity(query_mh)))
+    frontier = nonempty_frontier
+
     shadow = find_shadow(frontier, dag)
 
     print("Size of the frontier shadow: {}".format(len(shadow)))
