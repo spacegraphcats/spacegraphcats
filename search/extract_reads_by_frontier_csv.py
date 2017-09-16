@@ -160,6 +160,8 @@ def main():
     reads_iter = read_bgzf(reader)
     next(reads_iter)
 
+    seen_offset = set()
+
     if 1:
         offset = 0
         label = 0
@@ -174,6 +176,9 @@ def main():
                 continue
 
             offset = int(offset)
+            if offset in seen_offset:
+                continue
+            seen_offset.add(offset)
                 
             reader.seek(offset)
             (record, xx) = next(reads_iter)
