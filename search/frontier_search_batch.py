@@ -7,6 +7,8 @@ import time
 from collections import defaultdict
 import csv
 import leveldb
+import gzip
+import sqlite3
 
 import screed
 import sourmash_lib
@@ -20,11 +22,32 @@ import traceback
 from .frontier_search import frontier_search, compute_overhead, find_shadow
 from .search_catlas_with_minhash import load_dag, load_minhash
 from .search_utils import (load_dag, load_layer0_to_cdbg)
+from . import bgzf
+
+
+def read_bgzf(reader):
+    from screed.openscreed import fastq_iter, fasta_iter
+    ch = reader.read(1)
+    if ch == '>':
+        iter_fn = fasta_iter
+    elif ch == '@':
+        iter_fn = fastq_iter
+    else:
+        raise Exception('unknown start chr {}'.format(ch))
+
+    reader.seek(0)
+
+    last_pos = reader.tell()
+    for record in iter_fn(reader):
+        yield record, last_pos
+        last_pos = reader.tell()
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
+    p.add_argument('readsfile')
+    p.add_argument('labeled_reads_sqlite')
     p.add_argument('query_sigs', help='query minhash list', nargs='+')
     p.add_argument('--overhead', help='\% of overhead', type=float,
                    default=0.1)
@@ -56,7 +79,12 @@ def main():
     if args.output:
         w = csv.writer(args.output)
 
-    db = leveldb.LevelDB(os.path.join(args.catlas_prefix, 'minhashes.db'))
+    minhash_db = leveldb.LevelDB(os.path.join(args.catlas_prefix, 'minhashes.db'))
+
+    # sql
+    dbfilename = args.labeled_reads_sqlite + '.sqlite'
+    assert os.path.exists(dbfilename), 'sqlite file {} does not exist'.format(dbfilename)
+    readsdb = sqlite3.connect(dbfilename)
 
     for filename in args.query_sigs:
         query_sig = load_query_signature(filename, select_ksize=args.ksize,
@@ -64,11 +92,21 @@ def main():
         print('loaded query sig {}'.format(query_sig.name()), file=sys.stderr)
 
         try:
-            frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, db, args.overhead, True, args.purgatory)
+            frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, True, args.purgatory)
         except:
             traceback.print_exc()
             continue
         
+        print("removing empty frontier nodes...")
+        nonempty_frontier = []
+
+        for node in frontier:
+            mh = load_minhash(node, minhash_db)
+            if mh and len(mh.get_mins()) > 0:
+                nonempty_frontier.append(node)
+        print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
+        frontier = nonempty_frontier
+
         shadow = find_shadow(frontier, dag)
         cdbg_shadow = set()
         for x in shadow:
@@ -91,16 +129,66 @@ def main():
             outsig = os.path.basename(filename) + '.frontier'
             outsig = os.path.join(args.savedir, outsig)
 
+            ## save frontier signature ##
+
             with open(outsig, 'w') as fp:
                 sig = signature.SourmashSignature('', frontier_mh,
                                                   name='frontier o={:1.2f} {}'.format(args.overhead, str(args.output)))
                 sourmash_lib.signature.save_signatures([sig], fp)
 
-            outshadow = os.path.basename(filename) + '.shadow'
-            outshadow = os.path.join(args.savedir, outshadow)
+            ## save reads ##
 
-            with open(outshadow, 'wb') as fp:
-                pickle.dump(cdbg_shadow, fp)
+            cursor = readsdb.cursor()
+
+            total_bp = 0
+            watermark_size = 1e7
+            watermark = watermark_size
+            total_seqs = 0
+            output_seqs = 0
+
+            outreads = os.path.basename(filename) + '.reads.fa.gz'
+            outreads = os.path.join(args.savedir, outreads)
+
+            outfp = gzip.open(outreads, 'wt')
+            reader = bgzf.BgzfReader(args.readsfile, 'rt')
+            reads_iter = read_bgzf(reader)
+            next(reads_iter)
+
+            ## get last offset:
+            cursor.execute('SELECT max(sequences.offset) FROM sequences')
+            last_offset = list(cursor)[0][0]
+
+            seen_seq = set()
+            label = 0
+            cursor.execute('DROP TABLE IF EXISTS label_query;')
+            cursor.execute('CREATE TEMPORARY TABLE label_query (label_id INTEGER PRIMARY KEY);')
+            for label in cdbg_shadow:
+                cursor.execute('INSERT INTO label_query (label_id) VALUES (?)', (label,))
+
+            print('running sqlite query...')
+
+            cursor.execute('SELECT DISTINCT sequences.offset FROM sequences WHERE label in (SELECT label_id FROM label_query) ORDER BY offset')
+            print('...fetching read offsets')
+
+            for n, (offset,) in enumerate(cursor):
+                if n % 10000 == 0:
+                    print('...at n {} ({:.1f}% of file) - {} seqs'.format(n, offset /  last_offset * 100, total_seqs), end='\r')
+                reader.seek(offset)
+                (record, xx) = next(reads_iter)
+
+                name = record.name
+                sequence = record.sequence
+
+                assert xx == offset, (xx, offset)
+
+                total_bp += len(sequence)
+                total_seqs += 1
+
+                outfp.write('>{}\n{}\n'.format(name, sequence))
+
+            print('')
+            print('fetched {} reads, {} bp matching frontier.'.format(total_seqs, total_bp))
+            outfp.close()
                 
     
 if __name__ == '__main__':
