@@ -123,6 +123,7 @@ def main():
         print(filename, containment, similarity)
         if args.output:
             w.writerow([filename,containment,similarity,overhead])
+            args.output.flush()
 
         if args.savedir:
             assert args.output
