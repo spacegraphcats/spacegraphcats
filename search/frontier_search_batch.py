@@ -133,7 +133,7 @@ def main():
 
             with open(outsig, 'w') as fp:
                 sig = signature.SourmashSignature('', frontier_mh,
-                                                  name='frontier o={:1.2f} {}'.format(args.overhead, str(args.output)))
+                                                  name='frontier o={:1.2f} {}'.format(args.overhead, os.path.basename(filename)))
                 sourmash_lib.signature.save_signatures([sig], fp)
 
             ## save reads ##
