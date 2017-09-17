@@ -17,6 +17,7 @@ from .memoize import memoize
 from .search_catlas_with_minhash import load_dag, load_minhash
 from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
+from . import search_utils
 from .search_utils import (load_dag, load_layer0_to_cdbg)
 import khmer.utils
 
@@ -76,26 +77,20 @@ def main():
     print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
     print("")
 
-    print("removing...")
-    nonempty_frontier = []
-    merge_mh = query_mh.copy_and_clear()
-    max_scaled = max(merge_mh.scaled, top_mh.scaled)
-
-    for node in frontier:
-        mh = load_minhash(node, minhash_db)
-        if mh and len(mh.get_mins()) > 0:
-            nonempty_frontier.append(node)
-            mh = mh.downsample_scaled(max_scaled)
-            merge_mh.merge(mh)
+    print("removing empty catlas nodes from the frontier...")
+    nonempty_frontier = search_utils.remove_empty_catlas_nodes(frontier,
+                                                               minhash_db)
     print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
-    print('recalculated frontier mh similarity: {}'.format(merge_mh.similarity(query_mh)))
     frontier = nonempty_frontier
 
+    ## now get the catlas level 0 nodes...
     shadow = find_shadow(frontier, dag)
 
     print("Size of the frontier shadow: {}".format(len(shadow)))
     if len(shadow) == len(layer0_to_cdbg):
         print('\n*** WARNING: shadow is the entire graph! ***\n')
+
+    # diagnostic output from search:
 
     query_size = len(query_sig.minhash.get_mins())
     query_bp = query_size * query_sig.minhash.scaled
@@ -108,30 +103,26 @@ def main():
 
     log(args.catlas_prefix, sys.argv)
 
-    #### extract reads
+    #### extract reads: first, get the cdbg_ids.
 
     cdbg_shadow = set()
     for x in shadow:
         cdbg_shadow.update(layer0_to_cdbg.get(x))
 
+    # track various things
+    n = 0
     total_bp = 0
     watermark_size = 1e7
     watermark = watermark_size
-    no_tags = 0
-    no_tags_bp = 0
     total_seqs = 0
     output_seqs = 0
 
     outfp = open(args.output, 'wt')
 
-    n = 0
-    n_no_tags = 0
-    n_no_labels = 0
-    empty_set = set()
     for record in screed.open(contigfile):
         n += 1
         if total_bp >= watermark:
-            print('... {:5.2e} bp thru contigs; {} read, {} written, {} no tags'.format(int(watermark), total_seqs, output_seqs, n_no_tags),
+            print('... {:5.2e} bp thru contigs; {} read, {} written'.format(int(watermark), total_seqs, output_seqs),
                   file=sys.stderr, end='\r')
             watermark += watermark_size
 

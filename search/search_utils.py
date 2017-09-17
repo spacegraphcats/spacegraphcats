@@ -2,6 +2,7 @@ import pickle
 import collections
 
 import leveldb
+import sqlite3
 
 from sourmash_lib import MinHash
 
@@ -109,4 +110,41 @@ def calc_node_shadow_sizes(dag, dag_levels, layer0_to_cdbg):
             node_shadow_sizes[node_id] = sub_size
 
     return node_shadow_sizes
-    
+
+
+def remove_empty_catlas_nodes(nodes, minhash_db):
+    nonempty_frontier = set()
+    for node in nodes:
+        mh = load_minhash(node, minhash_db)
+        if mh and len(mh.get_mins()) > 0:
+            nonempty_frontier.add(node)
+
+    return nonempty_frontier
+
+
+def sqlite_get_max_offset(cursor):
+    cursor.execute('SELECT max(sequences.offset) FROM sequences')
+    last_offset, = next(cursor)
+
+    return last_offset
+
+
+def sqlite_get_offsets(cursor, cdbg_ids):
+    seen_offsets = set()
+    seen_labels = set()
+
+    cursor.execute('CREATE TEMPORARY TABLE label_query (label_id INTEGER PRIMARY KEY);')
+
+    for label in cdbg_ids:
+        cursor.execute('INSERT INTO label_query (label_id) VALUES (?)', (label,))
+
+    cursor.execute('SELECT DISTINCT sequences.offset,sequences.label FROM sequences WHERE label in (SELECT label_id FROM label_query) ORDER BY offset')
+
+    for n, (offset, label) in enumerate(cursor):
+        if offset not in seen_offsets:
+            yield offset
+        seen_offsets.add(offset)
+        seen_labels.add(label)
+
+    seen_labels -= cdbg_ids
+    assert not seen_labels                # should have gotten ALL the labels

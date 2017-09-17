@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 """
+DEPRECATED in favor of label_cdbg_sqlite.py.
+
 Build an index that can be used to retrieve individual reads or contigs
 by cDBG node ID.
 

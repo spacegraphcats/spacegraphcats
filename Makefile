@@ -164,7 +164,7 @@ twofoo/minhashes.db: twofoo/catlas.csv twofoo/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo
 
 twofoo.labels.sqlite:
-	python -m search.label_cdbg_sqlite twofoo twofoo.fq.gz twofoo.labels -k 21 -M 1e9
+	python -m search.label_cdbg_sqlite twofoo twofoo.fq.gz.bgz twofoo.labels -k 21 -M 1e9
 
 twofoo.labels.tagset: twofoo/catlas.csv
 	python -m search.label_cdbg twofoo twofoo.labels -k 21
@@ -175,8 +175,11 @@ twofoo-extract-1: twofoo/minhashes.db twofoo.labels
 twofoo-extract-s: twofoo/minhashes.db twofoo.labels
 	python -m search.extract_reads_by_frontier_sqlite 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
 
+twofoo-extract-p: twofoo/minhashes.db twofoo.labels
+	python -m search.extract_contigs_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.frontier.contigs.63.fq
+
 twofoo-extract-bulk:
-	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz xxx 2-akker.sig 47-os185.sig 63-os223.sig  -k 21 --savedir foo -o foo/results.csv
+	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels 2-akker.sig 47-os185.sig 63-os223.sig  -k 21 --savedir foo -o foo/results.csv
 
 twofoo-extract: twofoo/minhashes.db twofoo.labels
 	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.63.fq

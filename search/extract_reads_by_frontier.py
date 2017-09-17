@@ -1,4 +1,13 @@
 #! /usr/bin/env python
+"""
+DEPRECATED in favor of extract_reads_by_frontier_sqlite.py.
+
+Use the output from label_cdbg.py to extract the reads that match to
+cDBG nodes found during a frontier search.
+
+Deprecated because this is extremely slow for large data sets :).  Will
+remove eventually.
+"""
 import argparse
 import os
 import sys

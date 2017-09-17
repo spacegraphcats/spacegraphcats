@@ -3,6 +3,17 @@
 Build an index that can be used to retrieve individual reads or contigs
 by cDBG node ID; produce a SQLite database for fast retrieval.
 
+Briefly, this script creates a sqlite database with a single table,
+'sequences', where a query like this:
+
+   SELECT DISTINCT sequences.offset FROM sequences WHERE label ...
+
+can be executed to return the offset of all sequences with the given
+label. Here, 'label' is the cDBG ID to which the sequence belongs.
+
+The script extract_reads_by_frontier_sqlite.py is a downstream script to
+extract the reads with a frontier search.
+
 Specifically,
 * walk through the contigs assembled from the cDBG;
 * build a DBG cover using khmer tags, such that every k-mer in the DBG
@@ -73,6 +84,7 @@ def main():
         ng.consume_and_tag(contig.sequence)
 
         tags = ng.get_tags_for_sequence(contig.sequence)
+        assert(tags)
 
         for t in tags:
             tags_to_label[t] = cdbg_id

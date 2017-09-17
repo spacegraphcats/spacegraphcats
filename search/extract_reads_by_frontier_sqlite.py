@@ -1,4 +1,10 @@
 #! /usr/bin/env python
+"""
+Do a frontier search and retrieve reads that match to the cDBG nodes
+in the frontier.
+
+Uses the output of label_cdbg_sqlite to do its magic.
+"""
 import argparse
 import os
 import sys
@@ -18,6 +24,7 @@ from .memoize import memoize
 from .search_catlas_with_minhash import load_dag, load_minhash
 from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
+from . import search_utils
 from .search_utils import (load_dag, load_layer0_to_cdbg)
 import khmer.utils
 from . import bgzf
@@ -97,19 +104,10 @@ def main():
     print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
     print("")
 
-    print("removing...")
-    nonempty_frontier = []
-    merge_mh = query_mh.copy_and_clear()
-    max_scaled = max(merge_mh.scaled, top_mh.scaled)
-
-    for node in frontier:
-        mh = load_minhash(node, minhash_db)
-        if mh and len(mh.get_mins()) > 0:
-            nonempty_frontier.append(node)
-            mh = mh.downsample_scaled(max_scaled)
-            merge_mh.merge(mh)
+    print("removing empty catlas nodes from the frontier...")
+    nonempty_frontier = search_utils.remove_empty_catlas_nodes(frontier,
+                                                               minhash_db)
     print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
-    print('recalculated frontier mh similarity: {}'.format(merge_mh.similarity(query_mh)))
     frontier = nonempty_frontier
 
     shadow = find_shadow(frontier, dag)
@@ -137,9 +135,6 @@ def main():
 
     print('loading graph & labels/foo...')
     
-    # actually don't need whole graph, just tags @CTB
-    ng = khmer.Nodegraph(args.ksize, 1, 1)
-
     # sql
     dbfilename = args.labeled_reads_sqlite + '.sqlite'
     assert os.path.exists(dbfilename), 'sqlite file {} does not exist'.format(dbfilename)
@@ -161,45 +156,29 @@ def main():
 
     ## get last offset:
     cursor.execute('SELECT max(sequences.offset) FROM sequences')
-    last_offset = list(cursor)[0][0]
+    last_offset = search_utils.sqlite_get_max_offset(cursor)
 
-    seen_seq = set()
-    if 1:
-        label = 0
-        cursor.execute('CREATE TEMPORARY TABLE label_query (label_id INTEGER PRIMARY KEY);')
-        for label in cdbg_shadow:
-            cursor.execute('INSERT INTO label_query (label_id) VALUES (?)', (label,))
+    print('running query...')
+    for n, offset in enumerate(search_utils.sqlite_get_offsets(cursor, cdbg_shadow)):
+        if n % 10000 == 0:
+            print('...at n {} ({:.1f}% of file)'.format(n, offset /  last_offset * 100), end='\r')
+        reader.seek(offset)
+        (record, xx) = next(reads_iter)
+        assert xx == offset, (xx, offset)
 
-        print('running sqlite query...')
+        name = record.name
+        sequence = record.sequence
 
-        cursor.execute('SELECT DISTINCT sequences.offset FROM sequences WHERE label in (SELECT label_id FROM label_query) ORDER BY offset')
-        print('...fetching read offsets')
+        total_bp += len(sequence)
+        total_seqs += 1
 
-        # @CTB try sorting? => then can work with .gz file?
-        for n, (offset,) in enumerate(cursor):
-            if n % 10000 == 0:
-                print('...at n {} ({:.1f}% of file)'.format(n, offset /  last_offset * 100), end='\r')
-            reader.seek(offset)
-            (record, xx) = next(reads_iter)
+        outfp.write('>{}\n{}\n'.format(name, sequence))
 
-            name = record.name
-            sequence = record.sequence
-
-            assert xx == offset, (xx, offset)
-            
-            total_bp += len(sequence)
-            total_seqs += 1
-
-            outfp.write('>{}\n{}\n'.format(name, sequence))
-
-        print('')
-        print('fetched {} reads, {} bp matching frontier.'.format(total_seqs, total_bp))
+    print('')
+    print('fetched {} reads, {} bp matching frontier.'.format(total_seqs, total_bp))
 
     sys.exit(0)
 
 
 if __name__ == '__main__':
-    # import cProfile
-    # cProfile.run('main()', 'search_stats')
-
     main()
