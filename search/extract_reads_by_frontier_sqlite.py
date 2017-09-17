@@ -30,24 +30,6 @@ import khmer.utils
 from . import bgzf
 
 
-def read_bgzf(reader):
-    from screed.openscreed import fastq_iter, fasta_iter
-    ch = reader.read(1)
-    if ch == '>':
-        iter_fn = fasta_iter
-    elif ch == '@':
-        iter_fn = fastq_iter
-    else:
-        raise Exception('unknown start chr {}'.format(ch))
-
-    reader.seek(0)
-
-    last_pos = reader.tell()
-    for record in iter_fn(reader):
-        yield record, last_pos
-        last_pos = reader.tell()
-
-
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('query_sig', help='query minhash')
@@ -155,7 +137,6 @@ def main():
     next(reads_iter)
 
     ## get last offset:
-    cursor.execute('SELECT max(sequences.offset) FROM sequences')
     last_offset = search_utils.sqlite_get_max_offset(cursor)
 
     print('running query...')

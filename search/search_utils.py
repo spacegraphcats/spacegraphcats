@@ -133,6 +133,7 @@ def sqlite_get_offsets(cursor, cdbg_ids):
     seen_offsets = set()
     seen_labels = set()
 
+    cursor.execute('DROP TABLE IF EXISTS label_query')
     cursor.execute('CREATE TEMPORARY TABLE label_query (label_id INTEGER PRIMARY KEY);')
 
     for label in cdbg_ids:
@@ -148,3 +149,21 @@ def sqlite_get_offsets(cursor, cdbg_ids):
 
     seen_labels -= cdbg_ids
     assert not seen_labels                # should have gotten ALL the labels
+
+
+def read_bgzf(reader):
+    from screed.openscreed import fastq_iter, fasta_iter
+    ch = reader.read(1)
+    if ch == '>':
+        iter_fn = fasta_iter
+    elif ch == '@':
+        iter_fn = fastq_iter
+    else:
+        raise Exception('unknown start chr {}'.format(ch))
+
+    reader.seek(0)
+
+    last_pos = reader.tell()
+    for record in iter_fn(reader):
+        yield record, last_pos
+        last_pos = reader.tell()

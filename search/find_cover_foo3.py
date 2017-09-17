@@ -117,6 +117,9 @@ def main(args=sys.argv[1:]):
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('outcover')
     p.add_argument('--maxsize', type=float, default=1000)
+    p.add_argument('readsfile')
+    p.add_argument('labeled_reads_sqlite')
+    p.add_argument('output')
     args = p.parse_args(args)
 
     print('maxsize: {:g}'.format(args.maxsize))
@@ -210,9 +213,9 @@ def main(args=sys.argv[1:]):
 
     print('terminal node stats for MAXSIZE: {:g}'.format(MAXSIZE))
     print('n merged:', n_merged)
-    print('n tnodes:', len(terminal), '; k-mer cover:', len(merge_mh.get_mins()) * MAXSIZE)
+    print('n tnodes:', len(terminal), '; k-mer cover:', len(merge_mh.get_mins()) * merge_mh.scaled)
     mh = load_minhash(top_node_id, minhash_db)
-    print('total k-mers:', len(mh.get_mins()) * MAXSIZE)
+    print('total k-mers:', len(mh.get_mins()) * mh.scaled)
 
     with open(args.outcover, 'wb') as outfp:
         pickle.dump(terminal, outfp)

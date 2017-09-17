@@ -23,24 +23,7 @@ from .frontier_search import frontier_search, compute_overhead, find_shadow
 from .search_catlas_with_minhash import load_dag, load_minhash
 from .search_utils import (load_dag, load_layer0_to_cdbg)
 from . import bgzf
-
-
-def read_bgzf(reader):
-    from screed.openscreed import fastq_iter, fasta_iter
-    ch = reader.read(1)
-    if ch == '>':
-        iter_fn = fasta_iter
-    elif ch == '@':
-        iter_fn = fastq_iter
-    else:
-        raise Exception('unknown start chr {}'.format(ch))
-
-    reader.seek(0)
-
-    last_pos = reader.tell()
-    for record in iter_fn(reader):
-        yield record, last_pos
-        last_pos = reader.tell()
+from . import search_utils
 
 
 def main():
@@ -152,35 +135,23 @@ def main():
 
             outfp = gzip.open(outreads, 'wt')
             reader = bgzf.BgzfReader(args.readsfile, 'rt')
-            reads_iter = read_bgzf(reader)
+            reads_iter = search_utils.read_bgzf(reader)
             next(reads_iter)
 
             ## get last offset:
-            cursor.execute('SELECT max(sequences.offset) FROM sequences')
-            last_offset = list(cursor)[0][0]
-
-            seen_seq = set()
-            label = 0
-            cursor.execute('DROP TABLE IF EXISTS label_query;')
-            cursor.execute('CREATE TEMPORARY TABLE label_query (label_id INTEGER PRIMARY KEY);')
-            for label in cdbg_shadow:
-                cursor.execute('INSERT INTO label_query (label_id) VALUES (?)', (label,))
+            last_offset = search_utils.sqlite_get_max_offset(cursor)
 
             print('running sqlite query...')
+            for n, offset in enumerate(search_utils.sqlite_get_offsets(cursor, cdbg_shadow)):
 
-            cursor.execute('SELECT DISTINCT sequences.offset FROM sequences WHERE label in (SELECT label_id FROM label_query) ORDER BY offset')
-            print('...fetching read offsets')
-
-            for n, (offset,) in enumerate(cursor):
                 if n % 10000 == 0:
                     print('...at n {} ({:.1f}% of file) - {} seqs'.format(n, offset /  last_offset * 100, total_seqs), end='\r')
                 reader.seek(offset)
                 (record, xx) = next(reads_iter)
+                assert xx == offset, (xx, offset)
 
                 name = record.name
                 sequence = record.sequence
-
-                assert xx == offset, (xx, offset)
 
                 total_bp += len(sequence)
                 total_seqs += 1
