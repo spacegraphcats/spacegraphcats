@@ -133,7 +133,7 @@ def main():
 
     outfp = open(args.output, 'wt')
     reader = bgzf.BgzfReader(args.readsfile, 'rt')
-    reads_iter = read_bgzf(reader)
+    reads_iter = search_utils.read_bgzf(reader)
     next(reads_iter)
 
     ## get last offset:
