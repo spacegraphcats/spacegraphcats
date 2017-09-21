@@ -6,6 +6,7 @@ import sys
 import leveldb
 import shutil
 import json
+from collections import defaultdict
 
 from spacegraphcats.logging import log
 
