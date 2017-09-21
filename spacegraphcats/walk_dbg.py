@@ -37,7 +37,7 @@ class Pathfinder(object):
         self.nodes_to_kmers[this_id] = kmer
         self.kmers_to_nodes[kmer] = this_id
 
-        
+
 
         return this_id
 
@@ -53,7 +53,7 @@ class Pathfinder(object):
         node_id, adj = min(node_id, adj), max(node_id, adj)
 
         self.adjfp.write('{},{}\n'.format(node_id, adj))
-        
+
     def add_label(self, kmer, label):
         x = self.labels[kmer]
         x.add(label)
@@ -107,6 +107,8 @@ def run(args):
         elif output_dir.endswith('.fa.gz'):
             output_dir = output_dir[:-6]
 
+    # set this so we can read it for logging
+    args.output = output_dir
     # gxtfile = os.path.basename(output_dir) + '.gxt'
     gxtfile = os.path.join(output_dir, "cdbg.gxt")
     contigfile = os.path.join(output_dir, "contigs.fa.gz")
@@ -140,12 +142,14 @@ def run(args):
 
         # load in all of the input sequences, one file at a time.
         for seqfile in args.seqfiles:
-            for record in screed.open(seqfile):
+            fp = screed.open(seqfile)
+            for record in fp:
                 if len(record.sequence) < graph.ksize(): continue
                 n += 1
                 if n % 100000 == 0:
                     print('...', seqfile, n)
                 graph.consume(record.sequence)
+            fp.close()
 
         # complain if too small set of graphs was used.
         fp_rate = khmer.calc_expected_collisions(graph,
@@ -162,7 +166,8 @@ def run(args):
     degree_nodes = khmer.HashSet(ksize)
     n = 0
     for seqfile in args.seqfiles:
-        for record in screed.open(seqfile):
+        fp = screed.open(seqfile)
+        for record in fp:
             if len(record.sequence) < ksize: continue
             n += 1
             if n % 100000 == 0:
@@ -175,6 +180,7 @@ def run(args):
                 label_list.append(record.name)
                 for kmer in these_hdn:
                     pathy.add_label(kmer, n)
+        fp.close()
 
     # get all of the degree > 2 kmers and give them IDs.
     for kmer in degree_nodes:
@@ -224,15 +230,16 @@ def run(args):
     label_counts = {}
 
     pathy.adjfp.close()
-    adj_filename = open(gxtfile + '.adj', 'rt')
+    adj_fp = open(gxtfile + '.adj', 'rt')
 
     # this uniqifies the edges...
-    for line in adj_filename:
+    for line in adj_fp:
         a, b = line.split(',')
         a = int(a)
         b = int(b)
         pathy.adjacencies[a].add(b)
 
+    adj_fp.close()
     try:
         os.unlink(gxtfile + '.adj')
     except:
@@ -246,7 +253,11 @@ def run(args):
             if (k != dest):
                 edges.append((k, dest))
 
-    write(open(gxtfile, 'wt'), pathy.node_counter, edges)
+    with open(gxtfile, 'wt') as fp:
+        write(fp, pathy.node_counter, edges)
+
+    if not args.no_assemble:
+        pathy.assemblyfp.close()
 
     if args.label:
         print('note: used/assigned %d labels total' % (len(set(all_labels)),))
