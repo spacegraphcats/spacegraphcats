@@ -117,7 +117,7 @@ def main():
     print('loading graph & labels/foo...')
     
     # sql
-    dbfilename = args.labeled_reads_sqlite + '.sqlite'
+    dbfilename = args.labeled_reads_sqlite
     assert os.path.exists(dbfilename), 'sqlite file {} does not exist'.format(dbfilename)
     db = sqlite3.connect(dbfilename)
     cursor = db.cursor()

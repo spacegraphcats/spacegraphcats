@@ -91,8 +91,8 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
 
     def add_node(node_id: int, minhash: MinHash):
         nonlocal frontier_minhash
-        if node_id == top_node_id:        # this should never happen
-            raise Exception
+#        if node_id == top_node_id:      # this should never happen
+#            raise Exception             # ...unless the match is whole graph!
 
         frontier.append(node_id)
         if minhash:
