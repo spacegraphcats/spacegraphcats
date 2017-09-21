@@ -30,7 +30,7 @@ import collections
 from pickle import dump
 import sqlite3
 import shutil
-from . import bgzf
+from . import search_utils
 
 sys.path.insert(0, '/Users/t/dev/khmer')
 
@@ -48,7 +48,7 @@ def main():
                             type=float)
     args = p.parse_args()
 
-    dbfilename = args.savename + '.sqlite'
+    dbfilename = args.savename
     if os.path.exists(dbfilename):
         print('removing existing db {}'.format(dbfilename))
         os.unlink(dbfilename)
@@ -95,24 +95,6 @@ def main():
     watermark_size = 1e7
     watermark = watermark_size
 
-    def read_bgzf(filename):
-        from screed.openscreed import fastq_iter, fasta_iter
-        reader = bgzf.BgzfReader(filename, 'rt')
-        ch = reader.read(1)
-        if ch == '>':
-            iter_fn = fasta_iter
-        elif ch == '@':
-            iter_fn = fastq_iter
-        else:
-            raise Exception('unknown start chr {}'.format(ch))
-
-        reader.seek(0)
-
-        last_pos = reader.tell()
-        for record in iter_fn(reader):
-            yield record, last_pos
-            last_pos = reader.tell()
-
     print('walking read file: {}'.format(args.reads))
     n = 0
 
@@ -121,7 +103,8 @@ def main():
     cursor.execute('PRAGMA journal_mode = MEMORY')
     cursor.execute('BEGIN TRANSACTION')
 
-    for record, offset in read_bgzf(args.reads):
+    reader = search_utils.BgzfReader(args.reads)
+    for record, offset in search_utils.read_bgzf(reader):
         n += 1
         if total_bp >= watermark:
             print('... {:5.2e} bp thru reads'.format(int(watermark)),

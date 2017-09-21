@@ -27,7 +27,6 @@ from search.frontier_search import (frontier_search, compute_overhead, find_shad
 from . import search_utils
 from .search_utils import (load_dag, load_layer0_to_cdbg)
 import khmer.utils
-from . import bgzf
 
 
 def main():
@@ -132,7 +131,7 @@ def main():
     output_seqs = 0
 
     outfp = open(args.output, 'wt')
-    reader = bgzf.BgzfReader(args.readsfile, 'rt')
+    reader = search_utils.BgzfReader(args.readsfile, 'rt')
     reads_iter = search_utils.read_bgzf(reader)
     next(reads_iter)
 

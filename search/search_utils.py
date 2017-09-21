@@ -6,6 +6,8 @@ import sqlite3
 
 from sourmash_lib import MinHash
 
+from .bgzf.bgzf import BgzfReader
+
 
 def load_layer0_to_cdbg(catlas_file, domfile):
     "Load the mapping between first layer catlas and the original DBG nodes."

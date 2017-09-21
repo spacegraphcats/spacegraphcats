@@ -227,3 +227,12 @@ akker-reads/catlas.csv: akker-reads/cdbg.gxt
 # build minhashes
 akker-reads/minhashes.db: akker-reads/catlas.csv akker-reads/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 31 --scaled=1000 akker-reads
+
+akker-reads.abundtrim.gz.bgz: akker-reads.abundtrim.gz
+	python -m search.make_bgzf akker-reads.abundtrim.gz
+
+# build reverse index into reads
+akker-reads.labels.sqlite: akker-reads/catlas.csv akker-reads/contigs.fa.gz \
+		akker-reads.abundtrim.gz.bgz
+	python -m search.label_cdbg_sqlite akker-reads \
+			akker-reads.abundtrim.gz.bgz akker-reads.labels.sqlite -k 21
