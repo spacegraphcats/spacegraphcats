@@ -14,16 +14,16 @@ class ComponentsTest(unittest.TestCase):
         g.add_arc(5, 6).add_arc(6, 7).add_arc(7, 5)
         g.add_arc(8, 9).add_arc(8, 10).add_arc(8, 11)
 
-        self.assertEquals(num_components(g), 5)
+        self.assertEqual(num_components(g), 5)
 
         comps = components(g)
-        self.assertEquals(len(comps), 5)
+        self.assertEqual(len(comps), 5)
 
         union = set()
         for c in comps:
             union |= set(c)
 
-        self.assertEquals(len(union), len(g))
+        self.assertEqual(len(union), len(g))
 
 
 if __name__ == '__main__':
