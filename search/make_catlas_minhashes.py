@@ -241,7 +241,7 @@ def main(args=sys.argv[1:]):
     total_mh = 0
     empty_mh = 0
     for n, (catlas_node, cdbg_nodes) in enumerate(layer0_to_cdbg.items()):
-        if n and n % 1000 == 0:
+        if n and n % 10000 == 0:
             print('... built {} leaf node MinHashes...'.format(n),
                   file=sys.stderr)
         mh = merge_nodes(graph_minhashes, cdbg_nodes, factory)
