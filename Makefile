@@ -238,6 +238,11 @@ akker-reads.labels.sqlite: akker-reads/catlas.csv akker-reads/contigs.fa.gz \
 			akker-reads.abundtrim.gz.bgz akker-reads.labels.sqlite -k 21
 
 # build reverse index into reads
+akker-reads.frontier: akker-reads/minhashes.db
+	python -m search.frontier_search 2-akker.sig akker-reads 0.2 \
+		--fullstats -k 21 --purgatory
+
+# build reverse index into reads
 akker-reads.frontier.2.fq: akker-reads.labels.sqlite akker-reads/minhashes.db
 	python -m search.extract_reads_by_frontier_sqlite 2-akker.sig akker-reads \
 		0.2 -k 21 akker-reads.abundtrim.gz.bgz akker-reads.labels.sqlite \
