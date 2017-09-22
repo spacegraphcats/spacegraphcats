@@ -189,6 +189,10 @@ def run(args):
                 degree_nodes += these_hdn
             else:
                 # possible linear node? check first and last k-mer.
+                # (the logic here is that every purely linear node must
+                # start or end in *some* record.sequence - so where we have
+                # record sequences that have only 1 neighbor, those will be
+                # all possible linear nodes.
                 first_kmer = record.sequence[:ksize]
                 last_kmer = record.sequence[-ksize:]
                 assert len(last_kmer) == ksize
@@ -240,6 +244,8 @@ def run(args):
                 traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy,
                                                degree_nodes)
 
+    # now, clean up at the end -- make sure we've hit all the possible
+    # linear nodes.
     print('traversing from {} potential linear starts'.format(len(linear_starts)))
     for n, k in enumerate(linear_starts):
         traverse_and_mark_linear_paths(graph, k, stop_bf, pathy, degree_nodes)
