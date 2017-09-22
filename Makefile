@@ -28,20 +28,20 @@ acido/catlas.csv: acido/cdbg.gxt
 	python -m spacegraphcats.catlas acido 1
 
 # build minhashes database
-acido/minhashes.db: acido/catlas.csv
-	python -m search.make_catlas_minhashes acido -k 31 --scaled=1000 --sbt --sigs
+acido/minhashes_info.json: acido/catlas.csv
+	python -m search.make_catlas_minhashes acido -k 31 --scaled=1000
 
 # build a search signature
 acido/acido-chunk1.fa.gz.sig: data/acido-chunk1.fa.gz
 	sourmash compute -k 31 data/acido-chunk1.fa.gz --scaled 500 -f -o acido/acido-chunk1.fa.gz.sig
 
-acido-simple-search: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
+acido-simple-search: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
 	python -m search.search_catlas_with_minhash acido/acido-chunk1.fa.gz.sig acido
 
-acido-frontier-search: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
+acido-frontier-search: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
 	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1 --fullstats
 
-acido-frontier-search-optimized: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
+acido-frontier-search-optimized: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
 	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1  --purgatory
 
 
@@ -59,15 +59,18 @@ acido-frontier-search-optimized: acido/minhashes.db acido/acido-chunk1.fa.gz.sig
 	python -m spacegraphcats.catlas 15genome 3
 
 # build minhashes
-15genome/minhashes.db: 15genome/catlas.csv
+15genome/minhashes_info.json: 15genome/catlas.csv
 	python -m search.make_catlas_minhashes -k 31 --scaled=5000 15genome
 
 # run search!
-15genome-simple-search: 15genome/minhashes.db
+15genome-search: 15genome/minhashes_info.json
 	python -m search.search_catlas_with_minhash data/15genome.5.fa.sig 15genome
 
-15genome-search: 15genome/minhashes.db
-	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1  --purgatory
+15genome-frontier-search: 15genome/minhashes_info.json
+	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1
+
+15genome-frontier-search-optimized: 15genome/minhashes_info.json
+	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1 --purgatory
 
 ####
 
@@ -95,7 +98,7 @@ shew-reads/catlas.csv: shew-reads/cdbg.gxt
 	python -m spacegraphcats.catlas shew-reads 1
 
 # build minhashes
-shew-reads/minhashes.db: shew-reads/catlas.csv shew-reads/contigs.fa.gz
+shew-reads/minhashes_info.json: shew-reads/catlas.csv shew-reads/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 31 --scaled=1000 shew-reads
 
 # download the shewanella genome from OSF
@@ -108,7 +111,7 @@ shew-reads/shewanella.fa.gz.sig: shew-reads/shewanella.fa.gz
 	sourmash compute -k 31 --scaled=1000 shew-reads/shewanella.fa.gz -o shew-reads/shewanella.fa.gz.sig
 
 # run frontier search
-shew-search: shew-reads/shewanella.fa.gz.sig shew-reads/minhashes.db
+shew-search: shew-reads/shewanella.fa.gz.sig shew-reads/minhashes_info.json
 	python -m search.frontier_search shew-reads/shewanella.fa.gz.sig shew-reads 0.1 --purgatory
 
 ###
