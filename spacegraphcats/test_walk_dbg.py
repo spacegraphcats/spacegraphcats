@@ -62,7 +62,7 @@ def test_purely_linear_tr_vsmall():
         cdbg_file = os.path.join(projpath, 'cdbg.gxt')
         num_nodes = len(list(open(cdbg_file)))
         assert num_nodes == 1
-        
+
         contigs_file = os.path.join(projpath, 'contigs.fa.gz')
         num_contigs = len(list(screed.open(contigs_file)))
         assert num_contigs == 1
