@@ -82,16 +82,16 @@ acido-frontier-search-optimized: acido/minhashes_info.json acido/acido-chunk1.fa
 
 # prepared reads -- this is here only for record keeping & never
 # needs to be done again.
-XXXshewanella.abundtrim.gz:
-	trim-low-abund.py --normalize 12 -V -Z 10 -M 2e9 -C 3 -k 21 shewanella.mappedreads.fa -o shewanella.abundtrim.gz --gzip
+XXXshew-reads.abundtrim.gz:
+	trim-low-abund.py --normalize 12 -V -Z 10 -M 2e9 -C 3 -k 21 shewanella.mappedreads.fa -o shew-reads.abundtrim.gz --gzip
 
 # download the prepared reads (27 MB) from OSF
-shewanella.abundtrim.gz:
-	curl -L 'https://osf.io/7az9p/?action=download' > shewanella.abundtrim.gz
+shew-reads.abundtrim.gz:
+	curl -L 'https://osf.io/7az9p/?action=download' > shew-reads.abundtrim.gz
 
 # build cDBG
-shew-reads/cdbg.gxt: shewanella.abundtrim.gz
-	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 shewanella.abundtrim.gz -o shew-reads
+shew-reads/cdbg.gxt: shew-reads.abundtrim.gz
+	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 shew-reads.abundtrim.gz -o shew-reads
 
 # build catlas
 shew-reads/catlas.csv: shew-reads/cdbg.gxt
@@ -156,7 +156,7 @@ podar-search: podar/minhashes.db
 
 # build cDBG
 twofoo/cdbg.gxt:
-	python -m spacegraphcats.build_contracted_dbg -k 21 -M 4e9 shewanella.abundtrim.gz akker-reads.abundtrim.gz -o twofoo
+	python -m spacegraphcats.build_contracted_dbg -k 21 -M 4e9 shew-reads.abundtrim.gz akker-reads.abundtrim.gz -o twofoo
 
 # build catlas
 twofoo/catlas.csv: twofoo/cdbg.gxt

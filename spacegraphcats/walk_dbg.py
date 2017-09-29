@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import sys
-import khmer
+import khmer, khmer.utils
 import screed
 from collections import OrderedDict, defaultdict
 import os, os.path
@@ -152,12 +152,12 @@ def run(args):
         # load in all of the input sequences, one file at a time.
         for seqfile in args.seqfiles:
             fp = screed.open(seqfile)
-            for record in fp:
-                if len(record.sequence) < graph.ksize(): continue
+            for record in khmer.utils.clean_input_reads(fp):
+                if len(record.cleaned_seq) < graph.ksize(): continue
                 n += 1
                 if n % 100000 == 0:
                     print('...', seqfile, n)
-                graph.consume(record.sequence)
+                graph.consume(record.cleaned_seq)
             fp.close()
 
         # complain if too small set of graphs was used.
@@ -175,16 +175,19 @@ def run(args):
     degree_nodes = khmer.HashSet(ksize)
     linear_starts = khmer.HashSet(ksize)
     n = 0
+    skipped = 0
     for seqfile in args.seqfiles:
         fp = screed.open(seqfile)
-        for record in fp:
-            if len(record.sequence) < ksize: continue
+        for record in khmer.utils.clean_input_reads(fp):
+            if len(record.cleaned_seq) < ksize:
+                skipped += 1
+                continue
             n += 1
             if n % 100000 == 0:
                 print('...2', seqfile, n)
             # walk across sequences, find all high degree nodes,
             # name them and cherish them.
-            these_hdn = graph.find_high_degree_nodes(record.sequence)
+            these_hdn = graph.find_high_degree_nodes(record.cleaned_seq)
             if these_hdn:
                 degree_nodes += these_hdn
             else:
@@ -207,6 +210,8 @@ def run(args):
                 for kmer in these_hdn:
                     pathy.add_label(kmer, n)
         fp.close()
+
+    print('read {}, skipped {} for being too short'.format(n, skipped))
 
     # get all of the degree > 2 kmers and give them IDs.
     for kmer in degree_nodes:
