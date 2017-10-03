@@ -59,7 +59,6 @@ class Pathfinder(object):
         x.add(label)
 
     def add_assembly(self, path_id, contig):
-        assert len(contig), path_id
         self.assemblyfp.write('>{}\n{}\n'.format(path_id, contig))
 
 
