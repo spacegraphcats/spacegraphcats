@@ -59,6 +59,7 @@ class Pathfinder(object):
         x.add(label)
 
     def add_assembly(self, path_id, contig):
+        assert len(contig), path_id
         self.assemblyfp.write('>{}\n{}\n'.format(path_id, contig))
 
 
@@ -70,6 +71,12 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
 
     # get an ID for the new path
     path_id = pathy.new_linear_node()
+
+    # output a contig if requested
+    if pathy.assemblyfp:
+        asm = khmer.LinearAssembler(graph, stop_bf)
+        contig = asm.assemble(graph.reverse_hash(nk))
+        pathy.add_assembly(path_id, contig)
 
     # add all adjacencies, if any
     if adj_kmers:
@@ -84,11 +91,6 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
         # note: if you knew which k-mer was the other end,
         # you could just add that; but we don't know.
 
-    # output a contig if requested
-    if pathy.assemblyfp:
-        asm = khmer.LinearAssembler(graph, stop_bf)
-        contig = asm.assemble(graph.reverse_hash(nk))
-        pathy.add_assembly(path_id, contig)
 
 
 def run(args):
