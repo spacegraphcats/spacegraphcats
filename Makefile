@@ -166,7 +166,7 @@ twofoo/catlas.csv: twofoo/cdbg.gxt
 twofoo/minhashes.db: twofoo/catlas.csv twofoo/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo
 
-twofoo.labels.sqlite: twofoo/catlas.csv
+twofoo.labels: twofoo/catlas.csv
 	python -m search.label_cdbg_sqlite twofoo twofoo.fq.gz.bgz twofoo.labels -k 21 -M 1e9
 
 twofoo-extract-1: twofoo/minhashes.db twofoo.labels
