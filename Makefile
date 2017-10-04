@@ -166,16 +166,10 @@ twofoo/catlas.csv: twofoo/cdbg.gxt
 twofoo/minhashes.db: twofoo/catlas.csv twofoo/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo
 
-twofoo.labels.sqlite:
+twofoo.labels.sqlite: twofoo/catlas.csv
 	python -m search.label_cdbg_sqlite twofoo twofoo.fq.gz.bgz twofoo.labels -k 21 -M 1e9
 
-twofoo.labels.tagset: twofoo/catlas.csv
-	python -m search.label_cdbg twofoo twofoo.labels -k 21
-
 twofoo-extract-1: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.63.fq
-
-twofoo-extract-s: twofoo/minhashes.db twofoo.labels
 	python -m search.extract_reads_by_frontier_sqlite 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
 
 twofoo-extract-p: twofoo/minhashes.db twofoo.labels

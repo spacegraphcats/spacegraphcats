@@ -15,13 +15,19 @@ def main():
     p.add_argument('input_file')
     args = p.parse_args()
 
-    outfp = bgzf.open(os.path.basename(args.input_file) + '.bgz', 'wb')
+    output_filename = os.path.basename(args.input_file) + '.bgz'
+    outfp = bgzf.open(output_filename, 'wb')
 
-    for n, record in enumerate(screed.open(sys.argv[1])):
+    print('turning {} into a block-gzipped (BGZF) file'.format(args.input_file))
+    print('output file will be {}'.format(output_filename))
+
+    for n, record in enumerate(screed.open(args.input_file)):
         offset = outfp.tell()
         outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
         if n % 10000 == 0:
             print('offset for {} is {}'.format(n, offset))
+
+    print('done!')
 
 
 if __name__ == '__main__':

@@ -80,6 +80,9 @@ def main():
             watermark += watermark_size
         total_bp += len(contig.sequence)
 
+        if len(contig.sequence) < args.ksize:
+            continue
+
         cdbg_id = int(contig.name)
         ng.consume_and_tag(contig.sequence)
 
@@ -104,7 +107,7 @@ def main():
     cursor.execute('BEGIN TRANSACTION')
 
     reader = search_utils.BgzfReader(args.reads)
-    for record, offset in search_utils.read_bgzf(reader):
+    for record, offset in search_utils.iterate_bgzf(reader):
         n += 1
         if total_bp >= watermark:
             print('... {:5.2e} bp thru reads'.format(int(watermark)),
@@ -121,6 +124,7 @@ def main():
     db.commit()
             
     db.close()
+    print('done!')
 
 if __name__ == '__main__':
     main()

@@ -74,7 +74,7 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     # output a contig if requested
     if pathy.assemblyfp:
         asm = khmer.LinearAssembler(graph, stop_bf)
-        contig = asm.assemble(graph.reverse_hash(nk))
+        contig = asm.assemble(nk)
         pathy.add_assembly(path_id, contig)
 
     # add all adjacencies, if any
@@ -133,11 +133,11 @@ def run(args):
     print('')
     if args.loadgraph:
         print('loading nodegraph from:', args.loadgraph)
-        graph = khmer.load_nodegraph(args.loadgraph)
+        graph = khmer.Nodegraph.load(args.loadgraph)
         print('creating accompanying stopgraph')
         ksize = graph.ksize()
         hashsizes = graph.hashsizes()
-        stop_bf = khmer._Nodegraph(ksize, hashsizes)
+        stop_bf = khmer.Nodegraph(ksize, 1, 1, primes=graph.hashsizes())
     else:
         print('building graphs and loading files')
 

@@ -131,9 +131,7 @@ def main():
     output_seqs = 0
 
     outfp = open(args.output, 'wt')
-    reader = search_utils.BgzfReader(args.readsfile, 'rt')
-    reads_iter = search_utils.read_bgzf(reader)
-    next(reads_iter)
+    reads_grabber = search_utils.GrabBGZF_Random(args.readsfile)
 
     ## get last offset:
     last_offset = search_utils.sqlite_get_max_offset(cursor)
@@ -142,9 +140,9 @@ def main():
     for n, offset in enumerate(search_utils.sqlite_get_offsets(cursor, cdbg_shadow)):
         if n % 10000 == 0:
             print('...at n {} ({:.1f}% of file)'.format(n, offset /  last_offset * 100), end='\r')
-        reader.seek(offset)
-        (record, xx) = next(reads_iter)
-        assert xx == offset, (xx, offset)
+
+        record, xx = reads_grabber.get_sequence_at(offset)
+        assert xx == offset
 
         name = record.name
         sequence = record.sequence

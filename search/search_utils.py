@@ -5,6 +5,8 @@ import leveldb
 import sqlite3
 
 from sourmash_lib import MinHash
+from screed.screedRecord import Record
+from screed.utils import to_str
 
 from .bgzf.bgzf import BgzfReader
 
@@ -153,11 +155,32 @@ def sqlite_get_offsets(cursor, cdbg_ids):
     assert not seen_labels                # should have gotten ALL the labels
 
 
-def read_bgzf(reader):
-    from screed.openscreed import fastq_iter, fasta_iter
+class GrabBGZF_Random(object):
+    def __init__(self, filename):
+        self.reader = BgzfReader(filename, 'rt')
+
+        ch = self.reader.read(1)
+
+        if ch == '>':
+            iter_fn = my_fasta_iter
+        elif ch == '@':
+            iter_fn = my_fastq_iter
+        else:
+            raise Exception('unknown start chr {}'.format(ch))
+
+        self.iter_fn = iter_fn
+
+    def get_sequence_at(self, pos):
+        self.reader.seek(pos)
+        record = next(self.iter_fn(self.reader))
+        return record
+
+
+def iterate_bgzf(reader):
     ch = reader.read(1)
+
     if ch == '>':
-        iter_fn = fasta_iter
+        iter_fn = my_fasta_iter
     elif ch == '@':
         iter_fn = fastq_iter
     else:
@@ -165,7 +188,101 @@ def read_bgzf(reader):
 
     reader.seek(0)
 
-    last_pos = reader.tell()
-    for record in iter_fn(reader):
-        yield record, last_pos
-        last_pos = reader.tell()
+    for record, pos in iter_fn(reader):
+        yield record, pos
+
+
+def my_fasta_iter(handle, parse_description=False, line=None):
+    """
+    Iterator over the given FASTA file handle, returning records. handle
+    is a handle to a file opened for reading
+    """
+    last_start = handle.tell()
+    if line is None:
+        line = handle.readline()
+
+    while line:
+        data = {}
+
+        line = to_str(line.strip())
+        if not line.startswith('>'):
+            raise IOError("Bad FASTA format: no '>' at beginning of line: {}".format(line))
+
+        if parse_description:  # Try to grab the name and optional description
+            try:
+                data['name'], data['description'] = line[1:].split(' ', 1)
+            except ValueError:  # No optional description
+                data['name'] = line[1:]
+                data['description'] = ''
+        else:
+            data['name'] = line[1:]
+            data['description'] = ''
+
+        data['name'] = data['name'].strip()
+        data['description'] = data['description'].strip()
+
+        # Collect sequence lines into a list
+        sequenceList = []
+        pos = handle.tell()
+        line = to_str(handle.readline())
+        while line and not line.startswith('>'):
+            sequenceList.append(line.strip())
+            pos = handle.tell()
+            line = to_str(handle.readline())
+
+        data['sequence'] = ''.join(sequenceList)
+        yield Record(**data), last_start
+        last_start = pos
+
+
+def my_fastq_iter(handle, line=None, parse_description=False):
+    """
+    Iterator over the given FASTQ file handle returning records. handle
+    is a handle to a file opened for reading
+    """
+    if line is None:
+        line = handle.readline()
+    line = to_str(line.strip())
+    while line:
+        data = {}
+
+        if line and not line.startswith('@'):
+            raise IOError("Bad FASTQ format: no '@' at beginning of line")
+
+        # Try to grab the name and (optional) annotations
+        if parse_description:
+            try:
+                data['name'], data['annotations'] = line[1:].split(' ', 1)
+            except ValueError:  # No optional annotations
+                data['name'] = line[1:]
+                data['annotations'] = ''
+                pass
+        else:
+            data['name'] = line[1:]
+            data['annotations'] = ''
+
+        # Extract the sequence lines
+        sequence = []
+        line = to_str(handle.readline().strip())
+        while line and not line.startswith('+') and not line.startswith('#'):
+            sequence.append(line)
+            line = to_str(handle.readline().strip())
+
+        data['sequence'] = ''.join(sequence)
+
+        # Extract the quality lines
+        quality = []
+        line = to_str(handle.readline().strip())
+        seqlen = len(data['sequence'])
+        aclen = 0
+        while not line == '' and aclen < seqlen:
+            quality.append(line)
+            aclen += len(line)
+            line = to_str(handle.readline().strip())
+
+        data['quality'] = ''.join(quality)
+        if len(data['sequence']) != len(data['quality']):
+            raise IOError('sequence and quality strings must be '
+                          'of equal length')
+
+        yield Record(**data)
