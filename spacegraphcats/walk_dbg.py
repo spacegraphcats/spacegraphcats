@@ -76,7 +76,8 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
         asm = khmer.LinearAssembler(graph, stop_bf)
         contig = asm.assemble(graph.reverse_hash(nk))
         pathy.add_assembly(path_id, contig)
-        if size: assert(contig)
+        if size and not contig:
+            print('nonzero size, but contig is not produced. WTF.')
 
     # add all adjacencies, if any
     if adj_kmers:
