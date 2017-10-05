@@ -42,6 +42,9 @@ def main():
     p.add_argument('--fullstats', action='store_true')
     p.add_argument('-k', '--ksize', default=None, type=int,
                         help='k-mer size (default: 31)')
+    p.add_argument('--no-remove-empty', action='store_true')
+    p.add_argument('--scaled', help='downsample query sig, for debug',
+                   type=float)
 
     args = p.parse_args()
 
@@ -69,6 +72,13 @@ def main():
                                      select_moltype='DNA')
     print('loaded query sig {}'.format(query_sig.name()))
 
+    if args.scaled:
+        scaled = int(args.scaled)
+        print('downsampling query signature to {}'.format(scaled))
+        query_sig.minhash = query_sig.minhash.downsample_scaled(scaled)
+
+    ###
+
     frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, not args.no_empty, args.purgatory)
 
     top_mh = load_minhash(top_node_id, minhash_db)
@@ -85,11 +95,12 @@ def main():
     print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
     print("")
 
-    print("removing empty catlas nodes from the frontier...")
-    nonempty_frontier = search_utils.remove_empty_catlas_nodes(frontier,
-                                                               minhash_db)
-    print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
-    frontier = nonempty_frontier
+    if not args.no_remove_empty:
+        print("removing empty catlas nodes from the frontier...")
+        nonempty_frontier = search_utils.remove_empty_catlas_nodes(frontier,
+                                                                   minhash_db)
+        print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
+        frontier = nonempty_frontier
 
     shadow = find_shadow(frontier, dag)
 
