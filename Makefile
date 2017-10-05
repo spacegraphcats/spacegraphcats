@@ -244,3 +244,15 @@ akker-reads.frontier.2.fq: akker-reads.labels.sqlite akker-reads/minhashes.db
 	python -m search.extract_reads_by_frontier_sqlite 2-akker.sig akker-reads \
 		0.2 -k 21 akker-reads.abundtrim.gz.bgz akker-reads.labels.sqlite \
 		akker-reads.frontier.2.fq
+
+###
+
+dory-test: dory-subset.fa dory-head.fa
+	rm -fr dory
+	python -m spacegraphcats.build_contracted_dbg -k 21 dory-subset.fa -o dory
+	python -m spacegraphcats.catlas dory 1
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 dory
+	python -m search.make_bgzf dory-subset.fa
+	python -m search.label_cdbg_sqlite dory dory-subset.fa.bgz dory.labels -k 21
+	sourmash compute -k 21 dory-head.fa --scaled=1000
+	python -m search.extract_reads_by_frontier_sqlite dory-head.fa.sig dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
