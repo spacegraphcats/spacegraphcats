@@ -256,3 +256,5 @@ dory-test: dory-subset.fa dory-head.fa
 	python -m search.label_cdbg_sqlite dory dory-subset.fa.bgz dory.labels -k 21
 	sourmash compute -k 21 dory-head.fa --scaled=1000
 	python -m search.extract_reads_by_frontier_sqlite dory-head.fa.sig dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
+	sourmash compute -k 21 dory-head.matches.fa --scaled=1000
+	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
