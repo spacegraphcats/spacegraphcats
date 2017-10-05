@@ -112,6 +112,7 @@ def main():
     # track various things
     n = 0
     total_bp = 0
+    output_bp = 0
     watermark_size = 1e7
     watermark = watermark_size
     total_seqs = 0
@@ -134,8 +135,12 @@ def main():
         if contig_id in cdbg_shadow:
             khmer.utils.write_record(record, outfp)
             output_seqs += 1
+            output_bp += len(record.sequence)
 
     print('')
+    print('... done! {} read, {} written'.format(total_seqs, output_seqs),
+          file=sys.stderr)
+    print('{:5.2e} bp written (of {:5.2e} read)'.format(output_bp, total_bp))
 
     sys.exit(0)
 

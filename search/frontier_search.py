@@ -73,7 +73,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
         minhash = load_minhash(node_id, minhash_db)
         if minhash is None:
             return None
-        return minhash.downsample_max_hash(query_sig.minhash)
+        return minhash.downsample_scaled(query_sig.minhash.scaled)
 
     @memoize
     def get_query_minhash(scaled: int) -> MinHash:
@@ -251,8 +251,11 @@ def main(args=sys.argv[1:]):
     frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, not args.no_empty, args.purgatory)
 
     top_mh = load_minhash(top_node_id, minhash_db)
-    query_mh = query_sig.minhash.downsample_max_hash(top_mh)
-    top_mh = top_mh.downsample_max_hash(query_sig.minhash)
+
+    scaled = max(top_mh.scaled, query_sig.minhash.scaled)
+    query_mh = query_sig.minhash.downsample_scaled(scaled)
+    top_mh = top_mh.downsample_scaled(scaled)
+
     print("Root containment: {}".format(query_mh.contained_by(top_mh)))
     print("Root similarity: {}".format(query_mh.similarity(top_mh)))
 

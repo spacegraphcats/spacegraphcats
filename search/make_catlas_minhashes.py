@@ -194,15 +194,12 @@ def main(args=sys.argv[1:]):
     args = p.parse_args(args)
 
     ksize = args.ksize
-    scaled = args.scaled
+    scaled = int(args.scaled)
     track_abundance = args.track_abundance
 
     # build a factory to produce new MinHash objects.
-    max_hash = sourmash_lib.MAX_HASH / float(scaled)
-    max_hash = int(round(max_hash, 0))
-
     factory = MinHashFactory(n=0, ksize=ksize,
-                             max_hash=max_hash,
+                             scaled=scaled,
                              track_abundance=args.track_abundance)
 
     # put together the basic catlas info --
@@ -213,7 +210,7 @@ def main(args=sys.argv[1:]):
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # make minhashes from node contigs
-    print('ksize={} scaled={:.0f}'.format(ksize, scaled))
+    print('ksize={} scaled={}'.format(ksize, scaled))
     print('making contig minhashes...')
     graph_minhashes = make_contig_minhashes(contigfile, factory)
     print('...made {} contig minhashes'.format(len(graph_minhashes)))
