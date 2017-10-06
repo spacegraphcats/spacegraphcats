@@ -3,7 +3,10 @@
 Do a frontier search and retrieve reads that match to the cDBG nodes
 in the frontier.
 
-Uses the output of label_cdbg_sqlite to do its magic.
+Uses the output of label_cdbg to do its magic.
+
+See also extract_contigs_by_frontier for a simpler version that just pulls
+out linear segments.
 """
 import argparse
 import os

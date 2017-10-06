@@ -1,4 +1,11 @@
 #! /usr/bin/env python
+"""
+Some code that Titus would like to play with more but doesn't want to explain
+right now.
+
+(Briefly, looks for portions of the graph that have lots of shadow nodes
+but very few k-mers; extracts reads from it.)
+"""
 import argparse
 import os
 import pickle

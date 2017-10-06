@@ -1,4 +1,13 @@
 #! /usr/bin/env python
+"""
+Do a frontier search, find the shadow, and extract the contigs in theshadow.
+
+Since every cDBG node in the shadow has a contig associated with it, this
+is relatively direct and straightforward and involves no indexing, just a
+linear pass through the (usually rather small) contigs file.
+
+See extract_reads_by_frontier.py for extracting the reads in the shadow.
+"""
 import argparse
 import os
 import sys

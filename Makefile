@@ -10,11 +10,16 @@ test:
 ##   acido-search: execute a small build-and-search on the 'acido' data set.
 ##   15genome-search: execute a medium build-and-search on 15 genomes.
 ##   shew-search: execute a small build-and-search on a real read data set
+##   dory-test: execute a small build, index, search, and extract on the
+##       'dory' data set.
 ##
 ##   podar-search: execute a search on the full podar data set
 ##       (requires 8GB RAM)
 ##   podar-download: download and set up a prebuilt podar catlas.
 ##       (see https://osf.io/h79um/?show=revision)
+##
+##   twofoo-extract: make, index, and search a combination of akker-reads
+##	      and shew-reads; contains lots of strain variation.
 
 acido-clean:
 	-rm -r acido
@@ -102,17 +107,17 @@ shew-reads/minhashes_info.json: shew-reads/catlas.csv shew-reads/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 31 --scaled=1000 shew-reads
 
 # download the shewanella genome from OSF
-shew-reads/shewanella.fa.gz:
+shew-reads/shewanella-OS223.fa.gz:
 	mkdir -p shew-reads
-	curl -L 'https://osf.io/fx4ew/?action=download' > shew-reads/shewanella.fa.gz
+	curl -L 'https://osf.io/yr8q6/?action=download' -o shew-reads/shewanella-OS223.fa.gz
 
 # compute shewanella genome signature
-shew-reads/shewanella.fa.gz.sig: shew-reads/shewanella.fa.gz
-	sourmash compute -k 31 --scaled=1000 shew-reads/shewanella.fa.gz -o shew-reads/shewanella.fa.gz.sig
+shew-reads/shewanella-OS223.fa.gz.sig: shew-reads/shewanella-OS223.fa.gz
+	sourmash compute -k 31 --scaled=1000 shew-reads/shewanella-OS223.fa.gz -o shew-reads/shewanella-OS223.fa.gz.sig
 
 # run frontier search
-shew-search: shew-reads/shewanella.fa.gz.sig shew-reads/minhashes_info.json
-	python -m search.frontier_search shew-reads/shewanella.fa.gz.sig shew-reads 0.1 --purgatory
+shew-search: shew-reads/shewanella-OS223.fa.gz.sig shew-reads/minhashes_info.json
+	python -m search.frontier_search shew-reads/shewanella-OS223.fa.gz.sig shew-reads 0.1 --purgatory
 
 ###
 
@@ -154,9 +159,16 @@ podar-search: podar/minhashes.db
 
 ####
 
+# make synthetic mix data set 'twofoo'
+twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
+	gunzip -c shew-reads.abundtrim.gz akker-reads.abundtrim.gz | gzip -9c > twofoo.fq.gz
+
+twofoo.fq.gz.bgz: twofoo.fq.gz
+	python -m search.make_bgzf twofoo.fq.gz
+
 # build cDBG
-twofoo/cdbg.gxt:
-	python -m spacegraphcats.build_contracted_dbg -k 21 -M 4e9 shew-reads.abundtrim.gz akker-reads.abundtrim.gz -o twofoo
+twofoo/cdbg.gxt: twofoo.fq.gz
+	python -m spacegraphcats.build_contracted_dbg -k 21 -M 4e9 twofoo.fq.gz -o twofoo
 
 # build catlas
 twofoo/catlas.csv: twofoo/cdbg.gxt
@@ -166,52 +178,19 @@ twofoo/catlas.csv: twofoo/cdbg.gxt
 twofoo/minhashes.db: twofoo/catlas.csv twofoo/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo
 
-twofoo.labels: twofoo/catlas.csv
-	python -m search.label_cdbg_sqlite twofoo twofoo.fq.gz.bgz twofoo.labels -k 21 -M 1e9
+twofoo.labels: twofoo/catlas.csv twofoo.fq.gz.bgz
+	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 21 -M 1e9
 
 twofoo-extract-1: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_reads_by_frontier_sqlite 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq --no-remove-empty
-
-twofoo-extract-p: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_contigs_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.frontier.contigs.63.fq
+	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq --no-remove-empty
 
 twofoo-extract-bulk:
 	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels 2-akker.sig 47-os185.sig 63-os223.sig  -k 21 --savedir foo -o foo/results.csv
 
 twofoo-extract: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.63.fq
-	python -m search.extract_reads_by_frontier 47-os185.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.47.fq
-	python -m search.extract_reads_by_frontier 2-akker.sig twofoo 0.2 -k 21 twofoo.fq.gz twofoo.labels twofoo.frontier.2.fq
-
-twofoo-extract-sqlite: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_reads_by_frontier_sqlite 63-os223.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.63.fq
-	python -m search.extract_reads_by_frontier_sqlite 47-os185.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.47.fq
-	python -m search.extract_reads_by_frontier_sqlite 2-akker.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.2.fq
-
-twofoo.frontier.63.fq.sig: twofoo.frontier.63.fq
-	sourmash compute -k 21,31,51 twofoo.frontier.sql.63.fq --scaled=1000 -f
-
-twofoo.frontier.47.fq.sig: twofoo.frontier.47.fq
-	sourmash compute -k 21,31,51 twofoo.frontier.sql.47.fq --scaled=1000 -f
-
-twofoo.frontier.2.fq.sig: twofoo.frontier.2.fq
-	sourmash compute -k 21,31,51 twofoo.frontier.sql.2.fq --scaled=1000 -f
-
-twofoo-sigs: twofoo.frontier.63.fq.sig twofoo.frontier.2.fq.sig twofoo.frontier.47.fq.sig
-
-twofoo-search: twofoo/minhashes.db
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.0 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.1 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.2 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.3 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.4 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.5 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.6 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.7 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.8 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 0.9 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 1.0 --purgatory -k 31 --fullstats
-	python -m search.frontier_search shewshew/63.fa.sig twofoo 2.0 --purgatory -k 31 --fullstats
+	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.63.fq
+	python -m search.extract_reads_by_frontier 47-os185.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.47.fq
+	python -m search.extract_reads_by_frontier 2-akker.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.2.fq
 
 # build cDBG
 akker-reads/cdbg.gxt:
@@ -229,21 +208,10 @@ akker-reads.abundtrim.gz.bgz: akker-reads.abundtrim.gz
 	python -m search.make_bgzf akker-reads.abundtrim.gz
 
 # build reverse index into reads
-akker-reads.labels.sqlite: akker-reads/catlas.csv akker-reads/contigs.fa.gz \
+akker-reads.labels: akker-reads/catlas.csv akker-reads/contigs.fa.gz \
 		akker-reads.abundtrim.gz.bgz
-	python -m search.label_cdbg_sqlite akker-reads \
-			akker-reads.abundtrim.gz.bgz akker-reads.labels.sqlite -k 21
-
-# build reverse index into reads
-akker-reads.frontier: akker-reads/minhashes.db
-	python -m search.frontier_search 2-akker.sig akker-reads 0.2 \
-		--fullstats -k 21 --purgatory
-
-# build reverse index into reads
-akker-reads.frontier.2.fq: akker-reads.labels.sqlite akker-reads/minhashes.db
-	python -m search.extract_reads_by_frontier_sqlite 2-akker.sig akker-reads \
-		0.2 -k 21 akker-reads.abundtrim.gz.bgz akker-reads.labels.sqlite \
-		akker-reads.frontier.2.fq
+	python -m search.label_cdbg akker-reads \
+			akker-reads.abundtrim.gz.bgz akker-reads.labels -k 21
 
 ###
 
@@ -253,9 +221,9 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 	python -m spacegraphcats.catlas dory 1
 	python -m search.make_catlas_minhashes -k 21 --scaled=1000 dory
 	python -m search.make_bgzf data/dory-subset.fa
-	python -m search.label_cdbg_sqlite dory dory-subset.fa.bgz dory.labels -k 21
+	python -m search.label_cdbg dory dory-subset.fa.bgz dory.labels -k 21
 	sourmash compute -k 21 data/dory-head.fa --scaled=1000
-	python -m search.extract_reads_by_frontier_sqlite dory-head.fa.sig dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
+	python -m search.extract_reads_by_frontier dory-head.fa.sig dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
 	sourmash compute -k 21 dory-head.matches.fa --scaled=1000
 	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
 
