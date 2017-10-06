@@ -247,14 +247,18 @@ akker-reads.frontier.2.fq: akker-reads.labels.sqlite akker-reads/minhashes.db
 
 ###
 
-dory-test: dory-subset.fa dory-head.fa
+dory-test: data/dory-subset.fa data/dory-head.fa
 	rm -fr dory
-	python -m spacegraphcats.build_contracted_dbg -k 21 dory-subset.fa -o dory
+	python -m spacegraphcats.build_contracted_dbg -k 21 data/dory-subset.fa -o dory
 	python -m spacegraphcats.catlas dory 1
 	python -m search.make_catlas_minhashes -k 21 --scaled=1000 dory
-	python -m search.make_bgzf dory-subset.fa
+	python -m search.make_bgzf data/dory-subset.fa
 	python -m search.label_cdbg_sqlite dory dory-subset.fa.bgz dory.labels -k 21
-	sourmash compute -k 21 dory-head.fa --scaled=1000
+	sourmash compute -k 21 data/dory-head.fa --scaled=1000
 	python -m search.extract_reads_by_frontier_sqlite dory-head.fa.sig dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
 	sourmash compute -k 21 dory-head.matches.fa --scaled=1000
 	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
+
+twofoo-test:
+	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa
+	python -m search.extract_contigs_by_frontier -k 21 63-os223.sig twofoo 0.1 twofoo.contigs.out.fa

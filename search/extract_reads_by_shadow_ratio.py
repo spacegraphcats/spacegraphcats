@@ -20,7 +20,7 @@ import pickle
 from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
 import sqlite3
 from . import bgzf
-from .search_utils import read_bgzf
+#from .search_utils import read_bgzf
 from . import search_utils
 
 def load_layer0_to_cdbg(catlas_file, domfile):
@@ -240,7 +240,7 @@ def main(args=sys.argv[1:]):
     print('loading graph & labels/foo...')
     
     # sql
-    dbfilename = args.labeled_reads_sqlite + '.sqlite'
+    dbfilename = args.labeled_reads_sqlite
     assert os.path.exists(dbfilename), 'sqlite file {} does not exist'.format(dbfilename)
     db = sqlite3.connect(dbfilename)
     cursor = db.cursor()
@@ -254,9 +254,7 @@ def main(args=sys.argv[1:]):
     output_seqs = 0
 
     outfp = open(args.output, 'wt')
-    reader = bgzf.BgzfReader(args.readsfile, 'rt')
-    reads_iter = read_bgzf(reader)
-    next(reads_iter)
+    reads_grabber = search_utils.GrabBGZF_Random(args.readsfile)
 
     ## get last offset:
     last_offset = search_utils.sqlite_get_max_offset(cursor)
@@ -265,8 +263,8 @@ def main(args=sys.argv[1:]):
     for n, offset in enumerate(search_utils.sqlite_get_offsets(cursor, cdbg_shadow)):
         if n % 10000 == 0:
             print('...at n {} ({:.1f}% of {})'.format(n, offset / last_offset * 100, args.readsfile), end='\r')
-        reader.seek(offset)
-        (record, xx) = next(reads_iter)
+
+        (record, xx) = reads_grabber.get_sequence_at(offset)
         assert xx == offset, (xx, offset)
 
         name = record.name
