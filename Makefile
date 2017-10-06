@@ -188,9 +188,9 @@ twofoo-extract-bulk:
 	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels 2-akker.sig 47-os185.sig 63-os223.sig  -k 21 --savedir foo -o foo/results.csv
 
 twofoo-extract: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.63.fq
-	python -m search.extract_reads_by_frontier 47-os185.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.47.fq
-	python -m search.extract_reads_by_frontier 2-akker.sig twofoo 0.2 -k 21 twofoo.labels twofoo.frontier.sql.2.fq
+	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.fq
+	python -m search.extract_reads_by_frontier data/47-os185.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.47.fq
+	python -m search.extract_reads_by_frontier data/2-akker.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.2.fq
 
 # build cDBG
 akker-reads/cdbg.gxt:
@@ -229,4 +229,4 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 
 twofoo-test:
 	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa
-	python -m search.extract_contigs_by_frontier -k 21 63-os223.sig twofoo 0.1 twofoo.contigs.out.fa
+	python -m search.extract_contigs_by_frontier -k 21 data/63-os223.sig twofoo 0.1 twofoo.contigs.out.fa
