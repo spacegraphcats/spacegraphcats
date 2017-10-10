@@ -193,8 +193,8 @@ twofoo-extract: twofoo/minhashes.db twofoo.labels
 	python -m search.extract_reads_by_frontier data/2-akker.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.2.fq
 
 twofoo-extract-200k: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.0 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.200k.fq
-	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.0 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.200k.empty.fq --no-remove-empty
+	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.200k.fq
+	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.200k.empty.fq --no-remove-empty
 
 # build cDBG
 akker-reads/cdbg.gxt:
