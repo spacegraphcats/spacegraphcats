@@ -52,6 +52,9 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
     """
     # expand the frontier where the child nodes together have more than x% overhead
 
+    if not query_sig.minhash.scaled:
+        raise Exception("query signature must be created with --scaled")
+
     # load the leveldb unless we get a path
     if not isinstance(minhash_db, leveldb.LevelDB):
         minhash_db = leveldb.LevelDB(minhash_db)
