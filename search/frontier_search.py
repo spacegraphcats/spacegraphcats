@@ -76,7 +76,8 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
         minhash = load_minhash(node_id, minhash_db)
         if minhash is None:
             return None
-        return minhash.downsample_scaled(query_sig.minhash.scaled)
+        max_scaled = max(query_sig.minhash.scaled, minhash.scaled)
+        return minhash.downsample_scaled(max_scaled)
 
     @memoize
     def get_query_minhash(scaled: int) -> MinHash:
