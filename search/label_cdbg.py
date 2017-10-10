@@ -87,7 +87,6 @@ def main():
         ng.consume_and_tag(contig.sequence)
 
         tags = ng.get_tags_for_sequence(contig.sequence)
-        assert(tags)
 
         for t in tags:
             tags_to_label[t] = cdbg_id
