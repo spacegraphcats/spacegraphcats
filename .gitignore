@@ -15,3 +15,5 @@ spacegraphcats.egg-info/
 *~
 .vscode
 .mypy_cache/
+*.bgz
+*.sig

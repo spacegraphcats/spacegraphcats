@@ -10,18 +10,23 @@ test:
 ##   acido-search: execute a small build-and-search on the 'acido' data set.
 ##   15genome-search: execute a medium build-and-search on 15 genomes.
 ##   shew-search: execute a small build-and-search on a real read data set
+##   dory-test: execute a small build, index, search, and extract on the
+##       'dory' data set.
 ##
 ##   podar-search: execute a search on the full podar data set
 ##       (requires 8GB RAM)
 ##   podar-download: download and set up a prebuilt podar catlas.
 ##       (see https://osf.io/h79um/?show=revision)
+##
+##   twofoo-extract: make, index, and search a combination of akker-reads
+##	      and shew-reads; contains lots of strain variation.
 
 acido-clean:
 	-rm -r acido
 
 # build cDBG
 acido/cdbg.gxt: data/acido.fa.gz
-	python -m spacegraphcats.build_contracted_dbg -k 31 -M 1e9 data/acido.fa.gz
+	python -m spacegraphcats.build_contracted_dbg -k 31 -M 2e9 data/acido.fa.gz
 
 # build catlas
 acido/catlas.csv: acido/cdbg.gxt
@@ -82,16 +87,16 @@ acido-frontier-search-optimized: acido/minhashes_info.json acido/acido-chunk1.fa
 
 # prepared reads -- this is here only for record keeping & never
 # needs to be done again.
-XXXshewanella.abundtrim.gz:
-	trim-low-abund.py --normalize 12 -V -Z 10 -M 2e9 -C 3 -k 21 shewanella.mappedreads.fa -o shewanella.abundtrim.gz --gzip
+XXXshew-reads.abundtrim.gz:
+	trim-low-abund.py --normalize 12 -V -Z 10 -M 2e9 -C 3 -k 21 shewanella.mappedreads.fa -o shew-reads.abundtrim.gz --gzip
 
 # download the prepared reads (27 MB) from OSF
-shewanella.abundtrim.gz:
-	curl -L 'https://osf.io/7az9p/?action=download' > shewanella.abundtrim.gz
+shew-reads.abundtrim.gz:
+	curl -L 'https://osf.io/7az9p/?action=download' > shew-reads.abundtrim.gz
 
 # build cDBG
-shew-reads/cdbg.gxt: shewanella.abundtrim.gz
-	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 shewanella.abundtrim.gz -o shew-reads
+shew-reads/cdbg.gxt: shew-reads.abundtrim.gz
+	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 shew-reads.abundtrim.gz -o shew-reads
 
 # build catlas
 shew-reads/catlas.csv: shew-reads/cdbg.gxt
@@ -102,17 +107,17 @@ shew-reads/minhashes_info.json: shew-reads/catlas.csv shew-reads/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 31 --scaled=1000 shew-reads
 
 # download the shewanella genome from OSF
-shew-reads/shewanella.fa.gz:
+shew-reads/shewanella-OS223.fa.gz:
 	mkdir -p shew-reads
-	curl -L 'https://osf.io/fx4ew/?action=download' > shew-reads/shewanella.fa.gz
+	curl -L 'https://osf.io/yr8q6/?action=download' -o shew-reads/shewanella-OS223.fa.gz
 
 # compute shewanella genome signature
-shew-reads/shewanella.fa.gz.sig: shew-reads/shewanella.fa.gz
-	sourmash compute -k 31 --scaled=1000 shew-reads/shewanella.fa.gz -o shew-reads/shewanella.fa.gz.sig
+shew-reads/shewanella-OS223.fa.gz.sig: shew-reads/shewanella-OS223.fa.gz
+	sourmash compute -k 31 --scaled=1000 shew-reads/shewanella-OS223.fa.gz -o shew-reads/shewanella-OS223.fa.gz.sig
 
 # run frontier search
-shew-search: shew-reads/shewanella.fa.gz.sig shew-reads/minhashes_info.json
-	python -m search.frontier_search shew-reads/shewanella.fa.gz.sig shew-reads 0.1 --purgatory
+shew-search: shew-reads/shewanella-OS223.fa.gz.sig shew-reads/minhashes_info.json
+	python -m search.frontier_search shew-reads/shewanella-OS223.fa.gz.sig shew-reads 0.1 --purgatory
 
 ###
 
@@ -151,3 +156,81 @@ podar/minhashes.db: podar/cdbg.gxt podar/catlas.csv
 
 podar-search: podar/minhashes.db
 	time python -m search.frontier_search data/mircea-sigs/mircea-rm18.0.fa.sig podar 0.1 --purgatory
+
+####
+
+# make synthetic mix data set 'twofoo'
+twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
+	gunzip -c shew-reads.abundtrim.gz akker-reads.abundtrim.gz | gzip -9c > twofoo.fq.gz
+
+twofoo.fq.gz.bgz: twofoo.fq.gz
+	python -m search.make_bgzf twofoo.fq.gz
+
+# build cDBG
+twofoo/cdbg.gxt: twofoo.fq.gz
+	python -m spacegraphcats.build_contracted_dbg -k 21 -M 4e9 twofoo.fq.gz -o twofoo
+
+# build catlas
+twofoo/catlas.csv: twofoo/cdbg.gxt
+	python -m spacegraphcats.catlas twofoo 1
+
+# build minhashes
+twofoo/minhashes.db: twofoo/catlas.csv twofoo/contigs.fa.gz
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo
+
+twofoo.labels: twofoo/catlas.csv twofoo.fq.gz.bgz
+	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 21 -M 1e9
+
+twofoo-extract-1: twofoo/minhashes.db twofoo.labels
+	python -m search.extract_reads_by_frontier 63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq --no-remove-empty
+
+twofoo-extract-bulk:
+	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels 2-akker.sig 47-os185.sig 63-os223.sig  -k 21 --savedir foo -o foo/results.csv
+
+twofoo-extract: twofoo/minhashes.db twofoo.labels
+	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.fq
+	python -m search.extract_reads_by_frontier data/47-os185.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.47.fq
+	python -m search.extract_reads_by_frontier data/2-akker.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.2.fq
+
+twofoo-extract-200k: twofoo/minhashes.db twofoo.labels
+	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.200k.fq
+	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.200k.empty.fq --no-remove-empty
+
+# build cDBG
+akker-reads/cdbg.gxt:
+	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 akker-reads.abundtrim.gz -o akker-reads
+
+# build catlas
+akker-reads/catlas.csv: akker-reads/cdbg.gxt
+	python -m spacegraphcats.catlas akker-reads 1
+
+# build minhashes
+akker-reads/minhashes.db: akker-reads/catlas.csv akker-reads/contigs.fa.gz
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 akker-reads
+
+akker-reads.abundtrim.gz.bgz: akker-reads.abundtrim.gz
+	python -m search.make_bgzf akker-reads.abundtrim.gz
+
+# build reverse index into reads
+akker-reads.labels: akker-reads/catlas.csv akker-reads/contigs.fa.gz \
+		akker-reads.abundtrim.gz.bgz
+	python -m search.label_cdbg akker-reads \
+			akker-reads.abundtrim.gz.bgz akker-reads.labels -k 21
+
+###
+
+dory-test: data/dory-subset.fa data/dory-head.fa
+	rm -fr dory
+	python -m spacegraphcats.build_contracted_dbg -k 21 data/dory-subset.fa -o dory
+	python -m spacegraphcats.catlas dory 1
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 dory
+	python -m search.make_bgzf data/dory-subset.fa
+	python -m search.label_cdbg dory dory-subset.fa.bgz dory.labels -k 21
+	sourmash compute -k 21 data/dory-head.fa --scaled=1000
+	python -m search.extract_reads_by_frontier dory-head.fa.sig dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
+	sourmash compute -k 21 dory-head.matches.fa --scaled=1000
+	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
+
+twofoo-test:
+	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa
+	python -m search.extract_contigs_by_frontier -k 21 data/63-os223.sig twofoo 0.1 twofoo.contigs.out.fa
