@@ -15,6 +15,7 @@ def read_from_gxt(gxtfile, radius: int, directed: bool, sequential=True):
     def create_graph(num_nodes):
         nonlocal graph
         if sequential:
+            print("Sequential graph with {} nodes ".format(num_nodes))
             graph = Graph(num_nodes, radius)
         else:
             graph = DictGraph(r=radius)
