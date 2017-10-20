@@ -65,7 +65,7 @@ def main():
     minhash_db = leveldb.LevelDB(os.path.join(args.catlas_prefix, 'minhashes.db'))
 
     # sql
-    dbfilename = args.labeled_reads_sqlite + '.sqlite'
+    dbfilename = args.labeled_reads_sqlite
     assert os.path.exists(dbfilename), 'sqlite file {} does not exist'.format(dbfilename)
     readsdb = sqlite3.connect(dbfilename)
 

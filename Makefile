@@ -234,3 +234,7 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 twofoo-test:
 	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa
 	python -m search.extract_contigs_by_frontier -k 21 data/63-os223.sig twofoo 0.1 twofoo.contigs.out.fa
+
+twofoo-extract-200k-contigs: twofoo/minhashes.db twofoo.labels
+       python -m search.extract_contigs_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.frontier.contigs.63.200k.fq
+       python -m search.extract_contigs_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.frontier.contigs.63.200k.empty.fq --no-remove-empty

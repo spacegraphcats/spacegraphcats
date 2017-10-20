@@ -126,6 +126,50 @@ def remove_empty_catlas_nodes(nodes, minhash_db):
     return nonempty_frontier
 
 
+def boost_frontier(frontier, frontier_mh, dag, dag_up, minhash_db, top_node_id):
+    """
+    Find an internal frontier that covers the given frontier with no add'l
+    overhead.
+    """
+    boosted_frontier = set()
+
+    for node in frontier:
+        while 1:
+            node_up = dag_up.get(node)
+            if not node_up:               # top!
+                assert node == top_node_id, node
+                break
+
+            assert len(node_up) == 1          # with minor construction
+            node_up = node_up.pop()
+
+            node_up_mh = load_minhash(node_up, minhash_db)
+            node_up_mh = node_up_mh.downsample_scaled(frontier_mh.scaled)
+            if node_up_mh.contained_by(frontier_mh) < 1.0:
+                break
+
+            node = node_up
+
+        # try one more...
+        node_up = dag_up[node]
+        if node_up:
+            node_up = node_up.pop()
+            if node_up != top_node_id:
+                node_up_mh = load_minhash(node_up, minhash_db)
+                node_up_mh = node_up_mh.downsample_scaled(frontier_mh.scaled)
+                print('FOO!!', node_up_mh.contained_by(frontier_mh))
+                if node_up_mh.contained_by(frontier_mh) > 0.8:
+                    node = node_up
+            else:
+                print('next node up is top!')
+        else:
+            print('WTF?', node, node_up, top_node_id)
+
+        boosted_frontier.add(node)
+
+    return boosted_frontier
+
+
 def sqlite_get_max_offset(cursor):
     cursor.execute('SELECT max(sequences.offset) FROM sequences')
     last_offset, = next(cursor)
