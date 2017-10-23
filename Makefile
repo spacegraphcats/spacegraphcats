@@ -221,7 +221,8 @@ akker-reads.labels: akker-reads/catlas.csv akker-reads/contigs.fa.gz \
 
 dory-test: data/dory-subset.fa data/dory-head.fa
 	rm -fr dory
-	python -m spacegraphcats.build_contracted_dbg -k 21 data/dory-subset.fa -o dory
+	load-graph.py -k 21 -M 1e8 dory-subset.ng data/dory-subset.fa
+	python -m spacegraphcats.build_contracted_dbg -l dory-subset.ng data/dory-subset.fa -o dory
 	python -m spacegraphcats.catlas dory 1
 	python -m search.make_catlas_minhashes -k 21 --scaled=1000 dory
 	python -m search.make_bgzf data/dory-subset.fa
