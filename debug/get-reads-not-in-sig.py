@@ -3,8 +3,8 @@ import sourmash_lib
 import screed
 import khmer.utils
 
-both_sig = sourmash_lib.load_one_signature('shew-reads.contigs.sig', select_ksize=31)
-reads_sig = sourmash_lib.load_one_signature('shew-reads.abundtrim.gz.sig', select_ksize=31)
+both_sig = sourmash_lib.load_one_signature('shew-reads.contigs.sig', ksize=31)
+reads_sig = sourmash_lib.load_one_signature('shew-reads.abundtrim.gz.sig', ksize=31)
 
 diff_mins = set(reads_sig.minhash.get_mins()) - set(both_sig.minhash.get_mins())
 #print(diff_mins)

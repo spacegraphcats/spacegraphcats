@@ -248,7 +248,7 @@ def main(args=sys.argv[1:]):
     minhash_db = leveldb.LevelDB(db_path)
 
     # load query MinHash
-    query_sig = load_query_signature(args.query_sig, select_ksize=args.ksize,
+    query_sig = load_query_signature(args.query_sig, ksize=args.ksize,
                                      select_moltype='DNA')
     print('loaded query sig {}'.format(query_sig.name()))
 

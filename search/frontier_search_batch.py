@@ -70,7 +70,7 @@ def main():
     readsdb = sqlite3.connect(dbfilename)
 
     for filename in args.query_sigs:
-        query_sig = load_query_signature(filename, select_ksize=args.ksize,
+        query_sig = load_query_signature(filename, args.ksize,
                                          select_moltype='DNA')
         print('loaded query sig {}'.format(query_sig.name()), file=sys.stderr)
 
