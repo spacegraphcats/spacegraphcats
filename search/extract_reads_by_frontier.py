@@ -46,6 +46,7 @@ def main():
     p.add_argument('-k', '--ksize', default=None, type=int,
                         help='k-mer size (default: 31)')
     p.add_argument('--no-remove-empty', action='store_true')
+    p.add_argument('--boost-frontier', action='store_true')
     p.add_argument('--scaled', help='downsample query sig, for debug',
                    type=float)
 
@@ -105,9 +106,20 @@ def main():
         print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
         frontier = nonempty_frontier
 
+        if args.boost_frontier:
+            print("boosting frontier shadow")
+            boosted_frontier = search_utils.boost_frontier(frontier,
+                                                           frontier_mh,
+                                                           dag, dag_up,
+                                                           minhash_db,
+                                                           top_node_id)
+            print("...went from {} to {}".format(len(frontier), len(boosted_frontier)))
+            frontier = boosted_frontier
+
     shadow = find_shadow(frontier, dag)
 
-    print("Size of the frontier shadow: {}".format(len(shadow)))
+    print("Size of the frontier shadow: {} ({:.1f}%)".format(len(shadow),
+                                                         len(shadow) / len(layer0_to_cdbg)* 100))
     if len(shadow) == len(layer0_to_cdbg):
         print('\n*** WARNING: shadow is the entire graph! ***\n')
 
