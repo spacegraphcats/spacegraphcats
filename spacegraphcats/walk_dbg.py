@@ -135,11 +135,11 @@ def run(args):
     print('')
     if args.loadgraph:
         print('loading nodegraph from:', args.loadgraph)
-        graph = khmer.Nodegraph.load(args.loadgraph)
+        graph = khmer.load_nodegraph(args.loadgraph)
         print('creating accompanying stopgraph')
         ksize = graph.ksize()
         hashsizes = graph.hashsizes()
-        stop_bf = khmer.Nodegraph(ksize, 1, 1, primes=graph.hashsizes())
+        stop_bf = khmer._Nodegraph(ksize, hashsizes)
     else:
         print('building graphs and loading files')
 
