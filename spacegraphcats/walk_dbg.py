@@ -222,6 +222,8 @@ def run(args):
         stop_bf.add(kmer)
 
     print('traversing linear segments from', len(degree_nodes), 'nodes')
+    import time
+    start_time = time.time()
 
     # now traverse from each high degree node into all neighboring nodes,
     # seeking adjacencies.  if neighbor is high degree node, add it to
@@ -251,6 +253,9 @@ def run(args):
                 # linear! walk it.
                 traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy,
                                                degree_nodes)
+
+    stop_time = time.time()
+    print('TOOK:', stop_time - start_time)
 
     # now, clean up at the end -- make sure we've hit all the possible
     # linear nodes.
