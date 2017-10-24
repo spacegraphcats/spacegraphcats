@@ -67,11 +67,11 @@ class Pathfinder(object):
 
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     global global_time
-    a = time.time()
+    #a = time.time()
     size, adj_kmers, visited = graph.traverse_linear_path(nk, degree_nodes,
                                                           stop_bf)
     #print(size, len(adj_kmers), len(visited))
-    global_time += time.time() - a
+    #global_time += time.time() - a
     
     if not size:                          # 0 length paths
         return
@@ -82,7 +82,7 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     # output a contig if requested
     if pathy.assemblyfp:
         asm = khmer.LinearAssembler(graph, stop_bf)
-        a = time.time()
+        #a = time.time()
         contig = asm.assemble(nk)
         #global_time += time.time() - a
         #print('assemb', len(contig))
