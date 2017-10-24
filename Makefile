@@ -168,7 +168,7 @@ twofoo.fq.gz.bgz: twofoo.fq.gz
 
 # build cDBG
 twofoo/cdbg.gxt: twofoo.fq.gz
-	python -m spacegraphcats.build_contracted_dbg -l twofoo.ng twofoo.fq.100k -o twofoo
+	python -m spacegraphcats.build_contracted_dbg -l twofoo.ng twofoo.fq.gz -o twofoo
 
 # build catlas
 twofoo/catlas.csv: twofoo/cdbg.gxt

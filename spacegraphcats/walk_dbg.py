@@ -7,9 +7,6 @@ from collections import OrderedDict, defaultdict
 import os, os.path
 from .graph_parser import write
 import gzip
-import time
-
-global_time = 0
 
 
 class Pathfinder(object):
@@ -66,13 +63,8 @@ class Pathfinder(object):
 
 
 def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
-    global global_time
-    #a = time.time()
     size, adj_kmers, visited = graph.traverse_linear_path(nk, degree_nodes,
                                                           stop_bf)
-    #print(size, len(adj_kmers), len(visited))
-    #global_time += time.time() - a
-    
     if not size:                          # 0 length paths
         return
 
@@ -82,10 +74,7 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     # output a contig if requested
     if pathy.assemblyfp:
         asm = khmer.LinearAssembler(graph, stop_bf)
-        #a = time.time()
         contig = asm.assemble(nk)
-        #global_time += time.time() - a
-        #print('assemb', len(contig))
         pathy.add_assembly(path_id, contig)
         if size and not contig:
             print('nonzero size, but contig is not produced. WTF.')
@@ -106,7 +95,6 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
 
 
 def run(args):
-    global global_time
 
     # @CTB this is kind of a hack - nothing tricky going on, just want to
     # specify memory on the command line rather than graph size...
@@ -234,17 +222,13 @@ def run(args):
         stop_bf.add(kmer)
 
     print('traversing linear segments from', len(degree_nodes), 'nodes')
-    import time
-    start_time = time.time()
 
     # now traverse from each high degree node into all neighboring nodes,
     # seeking adjacencies.  if neighbor is high degree node, add it to
     # adjacencies; if neighbor is not, then traverse the linear path &
     # assemble if desired.
     for n, k in enumerate(degree_nodes):
-        if n % 500 == 0:
-            global_time = time.time() - start_time
-            print('TOOK:', global_time)
+        if n % 10000 == 0:
             print('...', n, 'of', len(degree_nodes))
 
         # retrieve the node ID of the primary segment.
@@ -261,13 +245,12 @@ def run(args):
         for nk in nbh:
             # neighbor is high degree? fine, mark its adjacencies.
             if nk in degree_nodes:
-                nk_id = pathy.kmers_to_nodes[nk]
+                nk_id = pathy.kmers_to_nodes[nk.kmer_u]
                 pathy.add_adjacency(k_id, nk_id)
             else:
                 # linear! walk it.
                 traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy,
                                                degree_nodes)
-
 
     # now, clean up at the end -- make sure we've hit all the possible
     # linear nodes.
