@@ -234,15 +234,17 @@ def run(args):
         stop_bf.add(kmer)
 
     print('traversing linear segments from', len(degree_nodes), 'nodes')
+    import time
+    start_time = time.time()
 
     # now traverse from each high degree node into all neighboring nodes,
     # seeking adjacencies.  if neighbor is high degree node, add it to
     # adjacencies; if neighbor is not, then traverse the linear path &
     # assemble if desired.
     for n, k in enumerate(degree_nodes):
-        if n % 100 == 0:
+        if n % 500 == 0:
+            global_time = time.time() - start_time
             print('TOOK:', global_time)
-            global_time = 0
             print('...', n, 'of', len(degree_nodes))
 
         # retrieve the node ID of the primary segment.
