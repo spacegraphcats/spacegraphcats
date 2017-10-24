@@ -74,7 +74,7 @@ def test_simple_tr():
             query_mh.add_sequence(record.sequence[:5000])
 
         print(query_mh.get_mins())
-        sig = sourmash_lib.signature.SourmashSignature('', query_mh)
+        sig = sourmash_lib.signature.SourmashSignature(query_mh)
 
         with open('query.sig', 'w') as fp:
             sourmash_lib.signature.save_signatures([ sig ], fp)
