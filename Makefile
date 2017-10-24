@@ -166,8 +166,12 @@ twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
 twofoo.fq.gz.bgz: twofoo.fq.gz
 	python -m search.make_bgzf twofoo.fq.gz
 
+# build DBG
+twofoo.ng: twofoo.fq.gz
+	load-graph.py -M 2e9 -k 21 twofoo.ng twofoo.fq.gz
+
 # build cDBG
-twofoo/cdbg.gxt: twofoo.fq.gz
+twofoo/cdbg.gxt: twofoo.fq.gz twofoo.ng
 	python -m spacegraphcats.build_contracted_dbg -l twofoo.ng twofoo.fq.gz -o twofoo
 
 # build catlas
@@ -188,13 +192,13 @@ twofoo-extract-bulk:
 	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels 2-akker.sig 47-os185.sig 63-os223.sig  -k 21 --savedir foo -o foo/results.csv
 
 twofoo-extract: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.fq
-	python -m search.extract_reads_by_frontier data/47-os185.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.47.fq
-	python -m search.extract_reads_by_frontier data/2-akker.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.2.fq
+	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
+	python -m search.extract_reads_by_frontier data/47-os185.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.47.fq
+	python -m search.extract_reads_by_frontier data/2-akker.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.2.fq
 
 twofoo-extract-200k: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.200k.fq
-	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.sql.63.200k.empty.fq --no-remove-empty
+	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.200k.fq
+	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.200k.empty.fq --no-remove-empty
 
 # build cDBG
 akker-reads/cdbg.gxt:
