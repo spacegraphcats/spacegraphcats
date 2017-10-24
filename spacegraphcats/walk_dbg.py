@@ -74,7 +74,7 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
     # output a contig if requested
     if pathy.assemblyfp:
         asm = khmer.LinearAssembler(graph, stop_bf)
-        contig = asm.assemble(graph.reverse_hash(nk))
+        contig = asm.assemble(nk)
         pathy.add_assembly(path_id, contig)
         if size and not contig:
             print('nonzero size, but contig is not produced. WTF.')
@@ -135,11 +135,11 @@ def run(args):
     print('')
     if args.loadgraph:
         print('loading nodegraph from:', args.loadgraph)
-        graph = khmer.load_nodegraph(args.loadgraph)
+        graph = khmer.Nodegraph.load(args.loadgraph)
         print('creating accompanying stopgraph')
         ksize = graph.ksize()
         hashsizes = graph.hashsizes()
-        stop_bf = khmer._Nodegraph(ksize, hashsizes)
+        stop_bf = khmer.Nodegraph(ksize, 1, 1, primes=hashsizes)
     else:
         print('building graphs and loading files')
 
@@ -245,7 +245,7 @@ def run(args):
         for nk in nbh:
             # neighbor is high degree? fine, mark its adjacencies.
             if nk in degree_nodes:
-                nk_id = pathy.kmers_to_nodes[nk]
+                nk_id = pathy.kmers_to_nodes[nk.kmer_u]
                 pathy.add_adjacency(k_id, nk_id)
             else:
                 # linear! walk it.

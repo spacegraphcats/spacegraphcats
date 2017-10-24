@@ -114,6 +114,9 @@ def main():
             watermark += watermark_size
         total_bp += len(record.sequence)
 
+        if len(record.sequence) < args.ksize:
+            continue
+
         tags = ng.get_tags_for_sequence(record.sequence)
         labels = set([ tags_to_label[t] for t in tags ])
 
