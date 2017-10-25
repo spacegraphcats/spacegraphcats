@@ -81,6 +81,8 @@ def main():
         print('downsampling query signature to {}'.format(scaled))
         query_sig.minhash = query_sig.minhash.downsample_scaled(scaled)
 
+    reads_minhash = query_sig.minhash.copy_and_clear()
+
     ###
 
     frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, not args.no_empty, args.purgatory)
@@ -176,10 +178,15 @@ def main():
         total_bp += len(sequence)
         total_seqs += 1
 
+        reads_minhash.add_sequence(record.sequence, True)
+
         outfp.write('>{}\n{}\n'.format(name, sequence))
 
     print('')
     print('fetched {} reads, {} bp matching frontier.'.format(total_seqs, total_bp))
+
+    print('query inclusion by retrieved reads: ', query_mh.contained_by(reads_minhash))
+    print('frontier inclusion by retrieved reads: ', frontier_mh.contained_by(reads_minhash))
 
     sys.exit(0)
 

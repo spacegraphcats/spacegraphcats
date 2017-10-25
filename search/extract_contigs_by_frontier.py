@@ -129,6 +129,8 @@ def main():
     total_seqs = 0
     output_seqs = 0
 
+    contigs_minhash = query_mh.copy_and_clear()
+
     outfp = open(args.output, 'wt')
 
     for record in screed.open(contigfile):
@@ -148,10 +150,15 @@ def main():
             output_seqs += 1
             output_bp += len(record.sequence)
 
+            contigs_minhash.add_sequence(record.sequence, True)
+
     print('')
     print('... done! {} read, {} written'.format(total_seqs, output_seqs),
           file=sys.stderr)
     print('{:5.2e} bp written (of {:5.2e} read)'.format(output_bp, total_bp))
+
+    print('query inclusion by retrieved contigs: ', query_mh.contained_by(contigs_minhash))
+    print('frontier inclusion by retrieved reads: ', frontier_mh.contained_by(contigs_minhash))
 
     sys.exit(0)
 
