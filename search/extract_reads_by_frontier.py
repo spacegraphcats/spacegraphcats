@@ -188,6 +188,10 @@ def main():
     print('query inclusion by retrieved reads: ', query_mh.contained_by(reads_minhash))
     print('frontier inclusion by retrieved reads: ', frontier_mh.contained_by(reads_minhash))
 
+    if query_mh.contained_by(frontier_mh) != query_mh.contained_by(reads_minhash):
+        print('*** WARNING: reads containment != frontier containment.',
+              file=sys.stderr)
+
     sys.exit(0)
 
 
