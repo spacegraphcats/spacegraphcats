@@ -81,6 +81,9 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
         if contig:
             stop_bf.add(contig[:graph.ksize()])
             stop_bf.add(contig[-graph.ksize():])
+
+        if len(contig) and size + graph.ksize() - 1 != len(contig):
+            print('visited k-mers != contig size. WTF?')
     else:
         assert 0
 
