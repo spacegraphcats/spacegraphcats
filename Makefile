@@ -186,7 +186,7 @@ twofoo.labels: twofoo/catlas.csv twofoo.fq.gz.bgz
 	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 21 -M 1e9
 
 twofoo-extract-1: twofoo/minhashes.db twofoo.labels
-	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.0 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
+	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.0 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq.XXX
 
 twofoo-extract-bulk:
 	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels 2-akker.sig 47-os185.sig 63-os223.sig  -k 21 --savedir foo -o foo/results.csv
@@ -237,7 +237,7 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
 
 twofoo-test:
-	#python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa
+	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa
 	python -m search.extract_contigs_by_frontier -k 21 data/63-os223.sig twofoo 0.0 twofoo.contigs.out.fa
 
 twofoo-extract-200k-contigs: twofoo/minhashes.db twofoo.labels
