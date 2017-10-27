@@ -28,6 +28,7 @@ from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
 from . import search_utils
 from .search_utils import (load_dag, load_layer0_to_cdbg)
+from .search_utils import get_minhashdb_name
 import khmer.utils
 
 
@@ -40,7 +41,7 @@ def main():
     p.add_argument('--no-empty', action='store_true')
     p.add_argument('--purgatory', action='store_true')
     p.add_argument('--fullstats', action='store_true')
-    p.add_argument('-k', '--ksize', default=None, type=int,
+    p.add_argument('-k', '--ksize', default=31, type=int,
                         help='k-mer size (default: 31)')
     p.add_argument('--no-remove-empty', action='store_true')
 
@@ -55,7 +56,11 @@ def main():
     top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
-    db_path = os.path.join(args.catlas_prefix, 'minhashes.db')
+    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0)
+    if not db_path:
+        print('** ERROR, minhash DB does not exist for {}'.format(args.ksize),
+              file=sys.stderr)
+        sys.exit(-1)
     minhash_db = leveldb.LevelDB(db_path)
 
     # load mapping between dom nodes and cDBG/graph nodes:

@@ -9,6 +9,7 @@ import json
 from collections import defaultdict
 
 from spacegraphcats.logging import log
+from search import search_utils
 
 import screed
 import sourmash_lib
@@ -223,9 +224,9 @@ def main(args=sys.argv[1:]):
         x.update(v)
     print('...corresponding to {} cDBG nodes.'.format(len(x)))
 
-    # create the minhash db
-    path = os.path.join(args.catlas_prefix, 'minhashes.db')
-
+    # create the minhash db & remove it if exists
+    path = search_utils.get_minhashdb_name(args.catlas_prefix, ksize, scaled,
+                                           track_abundance, must_exist=False)
     if os.path.exists(path):
         shutil.rmtree(path)
 
@@ -266,11 +267,8 @@ def main(args=sys.argv[1:]):
                                                  empty_mh))
 
     # write out some metadata
-    infopath = os.path.join(args.catlas_prefix, 'minhashes_info.json')
-    with open(infopath, 'w') as fp:
-        info = [ dict(ksize=ksize, scaled=scaled,
-                      track_abundance=track_abundance) ]
-        fp.write(json.dumps(info))
+    search_utils.update_minhash_info(args.catlas_prefix, ksize, scaled,
+                                     track_abundance)
 
     # log that this command was run
     log(args.catlas_prefix, sys.argv)

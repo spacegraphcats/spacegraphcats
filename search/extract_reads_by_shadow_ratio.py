@@ -29,6 +29,8 @@ import sqlite3
 from . import bgzf
 #from .search_utils import read_bgzf
 from . import search_utils
+from .search_utils import get_minhashdb_name
+
 
 def load_layer0_to_cdbg(catlas_file, domfile):
     "Load the mapping between first layer catlas and the original DBG nodes."
@@ -130,6 +132,8 @@ def main(args=sys.argv[1:]):
     p.add_argument('readsfile')
     p.add_argument('labeled_reads_sqlite')
     p.add_argument('output')
+    p.add_argument('-k', '--ksize', default=31, type=int,
+                        help='k-mer size (default: 31)')
     args = p.parse_args(args)
 
     print('maxsize: {:g}'.format(args.maxsize))
@@ -147,7 +151,11 @@ def main(args=sys.argv[1:]):
     print('loaded {} layer 0 catlas nodes'.format(len(layer0_to_cdbg)))
 
     # load minhash DB
-    db_path = os.path.join(args.catlas_prefix, 'minhashes.db')
+    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0)
+    if not db_path:
+        print('** ERROR, minhash DB does not exist for {}'.format(args.ksize),
+              file=sys.stderr)
+        sys.exit(-1)
     minhash_db = leveldb.LevelDB(db_path)
 
     # calculate the cDBG shadow sizes for each catlas node.

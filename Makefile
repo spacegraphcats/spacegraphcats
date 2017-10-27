@@ -7,7 +7,7 @@ test:
 
 ## Targets:
 ##
-##   acido-search: execute a small build-and-search on the 'acido' data set.
+##   acido-search: execute a small build-and-search on 'acido' data set.
 ##   15genome-search: execute a medium build-and-search on 15 genomes.
 ##   shew-search: execute a small build-and-search on a real read data set
 ##   dory-test: execute a small build, index, search, and extract on the
@@ -35,6 +35,7 @@ acido/catlas.csv: acido/cdbg.gxt
 # build minhashes database
 acido/minhashes_info.json: acido/catlas.csv
 	python -m search.make_catlas_minhashes acido -k 31 --scaled=1000
+	python -m search.make_catlas_minhashes acido -k 21 --scaled=1000
 
 # build a search signature
 acido/acido-chunk1.fa.gz.sig: data/acido-chunk1.fa.gz
@@ -43,7 +44,7 @@ acido/acido-chunk1.fa.gz.sig: data/acido-chunk1.fa.gz
 acido-simple-search: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
 	python -m search.search_catlas_with_minhash acido/acido-chunk1.fa.gz.sig acido
 
-acido-frontier-search: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
+acido-search: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
 	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1 --fullstats
 
 acido-frontier-search-optimized: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
@@ -151,10 +152,10 @@ podar/cdbg.gxt: podar.ng SRR606249.keep.fq.gz
 podar/catlas.csv: podar/cdbg.gxt
 	python -m spacegraphcats.catlas podar 3
 
-podar/minhashes.db: podar/cdbg.gxt podar/catlas.csv
+podar/minhashes_info.json: podar/cdbg.gxt podar/catlas.csv
 	python -m search.make_catlas_minhashes podar -k 31 --scaled=10000
 
-podar-search: podar/minhashes.db
+podar-search: podar/minhashes_info.json
 	time python -m search.frontier_search data/mircea-sigs/mircea-rm18.0.fa.sig podar 0.1 --purgatory
 
 ####
@@ -179,24 +180,24 @@ twofoo/catlas.csv: twofoo/cdbg.gxt
 	python -m spacegraphcats.catlas twofoo 1
 
 # build minhashes
-twofoo/minhashes.db: twofoo/catlas.csv twofoo/contigs.fa.gz
+twofoo/minhashes_info.json: twofoo/catlas.csv twofoo/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo
 
 twofoo.labels: twofoo/catlas.csv twofoo.fq.gz.bgz
 	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 21 -M 1e9
 
-twofoo-extract-1: twofoo/minhashes.db twofoo.labels
+twofoo-extract-1: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.0 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq.XXX
 
 twofoo-extract-bulk:
-	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels 2-akker.sig 47-os185.sig 63-os223.sig  -k 21 --savedir foo -o foo/results.csv
+	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig data/47-os185.sig data/63-os223.sig  -k 21 --savedir foo -o foo/results.csv
 
-twofoo-extract: twofoo/minhashes.db twofoo.labels
+twofoo-extract: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
 	python -m search.extract_reads_by_frontier data/47-os185.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.47.fq
 	python -m search.extract_reads_by_frontier data/2-akker.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.2.fq
 
-twofoo-extract-200k: twofoo/minhashes.db twofoo.labels
+twofoo-extract-200k: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.200k.fq
 	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.200k.empty.fq --no-remove-empty
 
@@ -209,7 +210,7 @@ akker-reads/catlas.csv: akker-reads/cdbg.gxt
 	python -m spacegraphcats.catlas akker-reads 1
 
 # build minhashes
-akker-reads/minhashes.db: akker-reads/catlas.csv akker-reads/contigs.fa.gz
+akker-reads/minhashes_info.json: akker-reads/catlas.csv akker-reads/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 21 --scaled=1000 akker-reads
 
 akker-reads.abundtrim.gz.bgz: akker-reads.abundtrim.gz
@@ -237,9 +238,10 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
 
 twofoo-test:
-	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa
+	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa -k 21
 	python -m search.extract_contigs_by_frontier -k 21 data/63-os223.sig twofoo 0.0 twofoo.contigs.out.fa
+	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig -k 21 --savedir foo -o foo/results.csv
 
-twofoo-extract-200k-contigs: twofoo/minhashes.db twofoo.labels
+twofoo-extract-200k-contigs: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_contigs_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.frontier.contigs.63.200k.fq
 	python -m search.extract_contigs_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.frontier.contigs.63.200k.empty.fq --no-remove-empty

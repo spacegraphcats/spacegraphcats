@@ -1,5 +1,7 @@
 import pickle
 import collections
+import os
+import json
 
 import leveldb
 import sqlite3
@@ -330,3 +332,64 @@ def my_fastq_iter(handle, line=None, parse_description=False):
                           'of equal length')
 
         yield Record(**data)
+
+
+def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance,
+                       must_exist=True):
+    """
+    Construct / return the name of the minhash db given the parameters.
+    """
+    # first, check if it's in minhashes_info.json
+    if must_exist:
+        infopath = os.path.join(catlas_prefix, 'minhashes_info.json')
+        if not os.path.exists(infopath):
+            return None
+
+        info = []
+        with open(infopath, 'rt') as fp:
+            info = json.loads(fp.read())
+
+        found = False
+        for d in info:
+            if d['ksize'] == ksize and \
+                 (not scaled or d['scaled'] <= scaled) and \
+                 d['track_abundance'] == track_abundance:
+                 found = True
+                 scaled = d['scaled']
+                 break
+
+        if not found:
+            return None
+
+    # ok, now create name.
+    is_abund = 0
+    if track_abundance:
+        is_abund = 1
+
+    name = 'minhashes.db.k{}.s{}.abund{}'
+    name = name.format(ksize, scaled, is_abund)
+    path = os.path.join(catlas_prefix, name)
+
+    if must_exist and not os.path.exists(path):
+        return None
+
+    return path
+
+
+def update_minhash_info(catlas_prefix, ksize, scaled, track_abundance):
+    """
+    Update minhashes_info with new db info.
+    """
+    infopath = os.path.join(catlas_prefix, 'minhashes_info.json')
+    info = []
+    if os.path.exists(infopath):
+        with open(infopath, 'rt') as fp:
+            info = json.loads(fp.read())
+
+    this_info = dict(ksize=ksize, scaled=scaled,
+                     track_abundance=track_abundance)
+    if this_info not in info:
+        info.append(this_info)
+
+        with open(infopath, 'wt') as fp:
+            fp.write(json.dumps(info))

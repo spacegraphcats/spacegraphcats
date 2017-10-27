@@ -24,6 +24,7 @@ from .search_catlas_with_minhash import load_dag, load_minhash
 from .search_utils import (load_dag, load_layer0_to_cdbg)
 from . import bgzf
 from . import search_utils
+from .search_utils import get_minhashdb_name
 
 
 def main():
@@ -36,7 +37,7 @@ def main():
                    default=0.1)
     p.add_argument('--purgatory', action='store_true')
     p.add_argument('-o', '--output', type=argparse.FileType('w'))
-    p.add_argument('-k', '--ksize', default=None, type=int,
+    p.add_argument('-k', '--ksize', default=31, type=int,
                         help='k-mer size (default: 31)')
     p.add_argument('--savedir', default=None)
     args = p.parse_args()
@@ -48,7 +49,6 @@ def main():
     # load catlas DAG
     top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
-    db_path = os.path.join(args.catlas_prefix, 'minhashes.db')
 
     # load mapping between dom nodes and cDBG/graph nodes:
     layer0_to_cdbg = load_layer0_to_cdbg(catlas, domfile)
@@ -62,7 +62,12 @@ def main():
     if args.output:
         w = csv.writer(args.output)
 
-    minhash_db = leveldb.LevelDB(os.path.join(args.catlas_prefix, 'minhashes.db'))
+    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0)
+    if not db_path:
+        print('** ERROR, minhash DB does not exist for {}'.format(args.ksize),
+              file=sys.stderr)
+        sys.exit(-1)
+    minhash_db = leveldb.LevelDB(db_path)
 
     # sql
     dbfilename = args.labeled_reads_sqlite
@@ -116,7 +121,7 @@ def main():
             ## save frontier signature ##
 
             with open(outsig, 'w') as fp:
-                sig = signature.SourmashSignature('', frontier_mh,
+                sig = signature.SourmashSignature(frontier_mh,
                                                   name='frontier o={:1.2f} {}'.format(args.overhead, os.path.basename(filename)))
                 sourmash_lib.signature.save_signatures([sig], fp)
 
@@ -134,9 +139,7 @@ def main():
             outreads = os.path.join(args.savedir, outreads)
 
             outfp = gzip.open(outreads, 'wt')
-            reader = bgzf.BgzfReader(args.readsfile, 'rt')
-            reads_iter = search_utils.read_bgzf(reader)
-            next(reads_iter)
+            reads_grabber = search_utils.GrabBGZF_Random(args.readsfile)
 
             ## get last offset:
             last_offset = search_utils.sqlite_get_max_offset(cursor)
@@ -146,8 +149,7 @@ def main():
 
                 if n % 10000 == 0:
                     print('...at n {} ({:.1f}% of file) - {} seqs'.format(n, offset /  last_offset * 100, total_seqs), end='\r')
-                reader.seek(offset)
-                (record, xx) = next(reads_iter)
+                record, xx = reads_grabber.get_sequence_at(offset)
                 assert xx == offset, (xx, offset)
 
                 name = record.name
