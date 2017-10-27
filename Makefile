@@ -169,7 +169,7 @@ twofoo.fq.gz.bgz: twofoo.fq.gz
 
 # build DBG
 twofoo.ng: twofoo.fq.gz
-	load-graph.py -M 2e9 -k 21 twofoo.ng twofoo.fq.gz
+	load-graph.py -n -M 2e9 -k 21 twofoo.ng twofoo.fq.gz
 
 # build cDBG
 twofoo/cdbg.gxt: twofoo.fq.gz twofoo.ng
