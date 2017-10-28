@@ -81,8 +81,6 @@ def main():
         print('downsampling query signature to {}'.format(scaled))
         query_sig.minhash = query_sig.minhash.downsample_scaled(scaled)
 
-    reads_minhash = query_sig.minhash.copy_and_clear()
-
     ###
 
     frontier, num_leaves, num_empty, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, not args.no_empty, args.purgatory)
@@ -163,6 +161,8 @@ def main():
 
     ## get last offset:
     last_offset = search_utils.sqlite_get_max_offset(cursor)
+
+    reads_minhash = query_mh.copy_and_clear()
 
     print('running query...')
     for n, offset in enumerate(search_utils.sqlite_get_offsets(cursor, cdbg_shadow)):
