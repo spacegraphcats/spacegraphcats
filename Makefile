@@ -192,7 +192,7 @@ twofoo.labels: twofoo/catlas.csv twofoo.fq.gz.bgz
 	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 21 -M 1e9
 
 twofoo-extract-1: twofoo/minhashes_info.json twofoo.labels
-	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.0 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq.XXX
+	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.0 -k 23,25,27,29,31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.k23-31.fq
 
 twofoo-extract-bulk:
 	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig data/47-os185.sig data/63-os223.sig  -k 21 --savedir foo -o foo/results.csv

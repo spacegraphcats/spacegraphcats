@@ -42,7 +42,7 @@ def main():
     p.add_argument('--purgatory', action='store_true')
     p.add_argument('--fullstats', action='store_true')
     p.add_argument('-k', '--ksize', default=31, type=str,
-                        help='list of k-mer sizes (default: 31)')
+                   help='list of k-mer sizes (default: 31)')
     p.add_argument('--no-remove-empty', action='store_true')
 
     args = p.parse_args()
