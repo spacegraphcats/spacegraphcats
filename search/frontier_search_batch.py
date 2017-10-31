@@ -9,6 +9,7 @@ import csv
 import leveldb
 import gzip
 import sqlite3
+import gc
 
 import screed
 import sourmash_lib
@@ -37,7 +38,7 @@ def main():
                    default=0.1)
     p.add_argument('--purgatory', action='store_true')
     p.add_argument('-o', '--output', type=argparse.FileType('w'))
-    p.add_argument('-k', '--ksize', default=31, type=int,
+    p.add_argument('-k', '--ksize', default=31, type=str,
                         help='k-mer size (default: 31)')
     p.add_argument('--savedir', default=None)
     args = p.parse_args()
@@ -58,16 +59,12 @@ def main():
         x.update(v)
     print('...corresponding to {} cDBG nodes.'.format(len(x)))
 
+    # minhash search stuff: iterate over ksizes.
+    ksizes = [int(k) for k in args.ksize.split(',')]
+
     w = None
     if args.output:
         w = csv.writer(args.output)
-
-    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0)
-    if not db_path:
-        print('** ERROR, minhash DB does not exist for {}'.format(args.ksize),
-              file=sys.stderr)
-        sys.exit(-1)
-    minhash_db = leveldb.LevelDB(db_path)
 
     # sql
     dbfilename = args.labeled_reads_sqlite
@@ -75,43 +72,50 @@ def main():
     readsdb = sqlite3.connect(dbfilename)
 
     for filename in args.query_sigs:
-        query_sig = load_query_signature(filename, args.ksize,
-                                         select_moltype='DNA')
-        print('loaded query sig {}'.format(query_sig.name()), file=sys.stderr)
-
-        try:
-            frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, True, args.purgatory)
-        except:
-            traceback.print_exc()
-            continue
-        
-        print("removing empty frontier nodes...")
-        nonempty_frontier = []
-
-        for node in frontier:
-            mh = load_minhash(node, minhash_db)
-            if mh and len(mh.get_mins()) > 0:
-                nonempty_frontier.append(node)
-        print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
-        frontier = nonempty_frontier
-
-        shadow = find_shadow(frontier, dag)
         cdbg_shadow = set()
-        for x in shadow:
-            cdbg_shadow.update(layer0_to_cdbg.get(x))
+        for ksize in ksizes:
+            db_path = get_minhashdb_name(args.catlas_prefix, ksize, 0, 0)
+            if not db_path:
+                print('** ERROR, minhash DB does not exist for {}'.format(ksize),
+                      file=sys.stderr)
+                sys.exit(-1)
+            minhash_db = leveldb.LevelDB(db_path)
 
-        query_mh = query_sig.minhash
-        query_mh = query_mh.downsample_max_hash(frontier_mh)
-        frontier_mh = frontier_mh.downsample_max_hash(query_mh)
+            query_sig = load_query_signature(filename, ksize,
+                                             select_moltype='DNA')
+            print('loaded query sig {}'.format(query_sig.name()), file=sys.stderr)
 
-        containment = query_mh.contained_by(frontier_mh)
-        similarity = query_mh.similarity(frontier_mh)
-        overhead = compute_overhead(frontier_mh, query_mh)
+            try:
+                frontier, _, _, frontier_mh = frontier_search(query_sig, top_node_id, dag, minhash_db, args.overhead, True, args.purgatory)
+            except:
+                traceback.print_exc()
+                continue
 
-        print(filename, containment, similarity)
-        if args.output:
-            w.writerow([filename,containment,similarity,overhead])
-            args.output.flush()
+            print("removing empty frontier nodes...")
+            nonempty_frontier = \
+              search_utils.remove_empty_catlas_nodes(frontier, minhash_db)
+            print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
+            frontier = nonempty_frontier
+
+            shadow = find_shadow(frontier, dag)
+            for x in shadow:
+                cdbg_shadow.update(layer0_to_cdbg.get(x))
+
+            query_mh = query_sig.minhash
+            query_mh = query_mh.downsample_max_hash(frontier_mh)
+            frontier_mh = frontier_mh.downsample_max_hash(query_mh)
+
+            containment = query_mh.contained_by(frontier_mh)
+            similarity = query_mh.similarity(frontier_mh)
+            overhead = compute_overhead(frontier_mh, query_mh)
+
+            print(filename, containment, similarity)
+            if args.output:
+                w.writerow([filename,ksize,containment,similarity,overhead])
+                args.output.flush()
+
+            del minhash_db
+            gc.collect()                  # force closure of leveldb obj.
 
         if args.savedir:
             assert args.output

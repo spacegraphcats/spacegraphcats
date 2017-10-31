@@ -4,6 +4,7 @@
         "email": "",
         "filename": "63.fa",
         "hash_function": "0.murmur64",
+        "name": "NC_011663.1 Shewanella baltica OS223, complete genome",
         "signatures": [
             {
                 "ksize": 21,
