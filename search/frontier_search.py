@@ -8,7 +8,7 @@ from copy import copy
 import sourmash_lib
 from sourmash_lib import MinHash, signature
 from sourmash_lib.sourmash_args import load_query_signature
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Set, Union, Tuple
 
 from .memoize import memoize
 from .search_utils import get_minhashdb_name, load_dag, load_minhash
