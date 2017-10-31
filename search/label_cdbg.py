@@ -27,9 +27,7 @@ import argparse
 import screed
 import khmer
 import collections
-from pickle import dump
 import sqlite3
-import shutil
 from . import search_utils
 
 sys.path.insert(0, '/Users/t/dev/khmer')

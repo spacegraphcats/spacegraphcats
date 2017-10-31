@@ -8,112 +8,15 @@ but very few k-mers; extracts reads from it.)
 """
 import argparse
 import os
-import pickle
 import sys
 import leveldb
-import shutil
 import collections
 import math
 
-from spacegraphcats.logging import log
-
-import screed
-import sourmash_lib
-from sourmash_lib import MinHash, signature
-from sourmash_lib.sbt import SBT, GraphFactory
-from sourmash_lib.sbtmh import SigLeaf, search_minhashes
 import leveldb
-import pickle
-from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
-import sqlite3
-from . import bgzf
-#from .search_utils import read_bgzf
 from . import search_utils
-
-def load_layer0_to_cdbg(catlas_file, domfile):
-    "Load the mapping between first layer catlas and the original DBG nodes."
-
-    # mapping from cdbg dominators to dominated nodes.
-    domset = {}
-
-    fp = open(domfile, 'rt')
-    for line in fp:
-        dom_node, *beneath = line.strip().split(' ')
-
-        dom_node = int(dom_node)
-        beneath = map(int, beneath)
-
-        domset[dom_node] = set(beneath)
-
-    fp.close()
-
-    layer0_to_cdbg = {}
-
-    # mapping from catlas node IDs to cdbg nodes
-    fp = open(catlas_file, 'rt')
-    for line in fp:
-        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-        if int(level) != 0:
-            continue
-
-        catlas_node = int(catlas_node)
-        cdbg_node = int(cdbg_node)
-        layer0_to_cdbg[catlas_node] = domset[cdbg_node]
-
-    fp.close()
-
-    return layer0_to_cdbg
-
-
-def load_dag(catlas_file):
-    "Load the catlas Directed Acyclic Graph."
-    dag = {}
-    dag_up = collections.defaultdict(set)
-    dag_levels = {}
-
-    # track the root of the tree
-    max_node = -1
-    max_level = -1
-
-    # load everything from the catlas file
-    for line in open(catlas_file, 'rt'):
-        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-
-        level = int(level)
-
-        # parse out the children
-        catlas_node = int(catlas_node)
-        beneath = beneath.strip()
-        if beneath:
-            beneath = beneath.split(' ')
-            beneath = set(map(int, beneath))
-
-            # save node -> children, and level
-            dag[catlas_node] = beneath
-            for child in beneath:
-                dag_up[child].add(catlas_node)
-        else:
-            dag[catlas_node] = set()
-
-        dag_levels[catlas_node] = level
-
-        # update max_node/max_level
-        level = int(level)
-        if level > max_level:
-            max_level = level
-            max_node = catlas_node
-
-    return max_node, dag, dag_up, dag_levels
-
-
-def load_minhash(node_id: int, minhash_db: leveldb.LevelDB) -> MinHash:
-    "Load an individual node's MinHash from the leveldb."
-    try:
-        value = minhash_db.Get(node_id.to_bytes(8, byteorder='big'))
-    except KeyError:
-        return None
-
-    return pickle.loads(value)
+from .search_utils import get_minhashdb_name, get_reads_by_cdbg, load_minhash
+from .frontier_search import find_shadow
 
 
 def get_minhash_size(node_id, minhash_db):
@@ -130,6 +33,8 @@ def main(args=sys.argv[1:]):
     p.add_argument('readsfile')
     p.add_argument('labeled_reads_sqlite')
     p.add_argument('output')
+    p.add_argument('-k', '--ksize', default=31, type=int,
+                        help='k-mer size (default: 31)')
     args = p.parse_args(args)
 
     print('maxsize: {:g}'.format(args.maxsize))
@@ -139,15 +44,19 @@ def main(args=sys.argv[1:]):
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
+    top_node_id, dag, dag_up, dag_levels = search_utils.load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer0_to_cdbg = load_layer0_to_cdbg(catlas, domfile)
+    layer0_to_cdbg = search_utils.load_layer0_to_cdbg(catlas, domfile)
     print('loaded {} layer 0 catlas nodes'.format(len(layer0_to_cdbg)))
 
     # load minhash DB
-    db_path = os.path.join(args.catlas_prefix, 'minhashes.db')
+    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0)
+    if not db_path:
+        print('** ERROR, minhash DB does not exist for {}'.format(args.ksize),
+              file=sys.stderr)
+        sys.exit(-1)
     minhash_db = leveldb.LevelDB(db_path)
 
     # calculate the cDBG shadow sizes for each catlas node.
@@ -237,50 +146,36 @@ def main(args=sys.argv[1:]):
     print("...went from {} to {}".format(len(terminal), len(nonempty_terminal)))
     terminal = nonempty_terminal
 
-    #### extract reads
-
+    # build cDBG shadow ID list.
     cdbg_shadow = set()
     terminal_shadow = find_shadow(terminal, dag)
     for x in terminal_shadow:
         cdbg_shadow.update(layer0_to_cdbg.get(x))
 
+    #### extract reads
     print('loading graph & labels/foo...')
     
-    # sql
     dbfilename = args.labeled_reads_sqlite
     assert os.path.exists(dbfilename), 'sqlite file {} does not exist'.format(dbfilename)
-    db = sqlite3.connect(dbfilename)
-    cursor = db.cursor()
 
     total_bp = 0
-    watermark_size = 1e7
-    watermark = watermark_size
-    no_tags = 0
-    no_tags_bp = 0
     total_seqs = 0
     output_seqs = 0
 
     outfp = open(args.output, 'wt')
-    reads_grabber = search_utils.GrabBGZF_Random(args.readsfile)
-
-    ## get last offset:
-    last_offset = search_utils.sqlite_get_max_offset(cursor)
 
     print('running query...')
-    for n, offset in enumerate(search_utils.sqlite_get_offsets(cursor, cdbg_shadow)):
+    reads_iter = get_reads_by_cdbg(dbfilename, args.readsfile, cdbg_shadow)
+    for n, (record, offset_f) in enumerate(reads_iter):
         if n % 10000 == 0:
-            print('...at n {} ({:.1f}% of {})'.format(n, offset / last_offset * 100, args.readsfile), end='\r')
+            print('...at n {} ({:.1f}% of {})'.format(n, offset_f * 100,
+                                                      args.readsfile),
+                  end='\r')
 
-        (record, xx) = reads_grabber.get_sequence_at(offset)
-        assert xx == offset, (xx, offset)
-
-        name = record.name
-        sequence = record.sequence
-
-        total_bp += len(sequence)
+        total_bp += len(record.sequence)
         total_seqs += 1
 
-        outfp.write('>{}\n{}\n'.format(name, sequence))
+        outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
 
     print('')
     print('fetched {} reads, {} bp matching terminal.'.format(total_seqs, total_bp))

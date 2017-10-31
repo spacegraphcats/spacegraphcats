@@ -11,7 +11,7 @@ from sourmash_lib.sourmash_args import load_query_signature
 from typing import Dict, List, Set, Union, Tuple
 
 from .memoize import memoize
-from .search_catlas_with_minhash import load_dag, load_minhash
+from .search_utils import get_minhashdb_name, load_dag, load_minhash
 from spacegraphcats.logging import log
 
 
@@ -232,7 +232,7 @@ def main(args=sys.argv[1:]):
     p.add_argument('-o', '--output', default=None)
     p.add_argument('--fullstats', action='store_true')
     p.add_argument('--checkfrontier', action='store_true')
-    p.add_argument('-k', '--ksize', default=None, type=int,
+    p.add_argument('-k', '--ksize', default=31, type=int,
                         help='k-mer size (default: 31)')
 
     args = p.parse_args(args)
@@ -241,10 +241,15 @@ def main(args=sys.argv[1:]):
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
 
     # load catlas DAG
-    top_node_id, dag, dag_levels = load_dag(catlas)
+    top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
-    db_path = os.path.join(args.catlas_prefix, 'minhashes.db')
+    # load minhash DB
+    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0)
+    if not db_path:
+        print('** ERROR, minhash DB does not exist for {}'.format(args.ksize),
+              file=sys.stderr)
+        sys.exit(-1)
     minhash_db = leveldb.LevelDB(db_path)
 
     # load query MinHash
