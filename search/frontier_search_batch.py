@@ -1,29 +1,20 @@
 #! /usr/bin/env python
 import argparse
 import os
-import pickle
 import sys
-import time
-from collections import defaultdict
 import csv
 import leveldb
 import gzip
 import sqlite3
 import gc
 
-import screed
 import sourmash_lib
-from sourmash_lib import MinHash, signature
+from sourmash_lib import SourmashSignature
 from sourmash_lib.sourmash_args import load_query_signature
-from sourmash_lib.sbt import SBT, GraphFactory
-from sourmash_lib.sbtmh import SigLeaf, search_minhashes
-from typing import List
 import traceback
 
 from .frontier_search import frontier_search, compute_overhead, find_shadow
-from .search_catlas_with_minhash import load_dag, load_minhash
 from .search_utils import (load_dag, load_layer0_to_cdbg)
-from . import bgzf
 from . import search_utils
 from .search_utils import get_minhashdb_name
 
@@ -125,9 +116,9 @@ def main():
             ## save frontier signature ##
 
             with open(outsig, 'w') as fp:
-                sig = signature.SourmashSignature(frontier_mh,
-                                                  name='frontier o={:1.2f} {}'.format(args.overhead, os.path.basename(filename)))
-                sourmash_lib.signature.save_signatures([sig], fp)
+                sig = SourmashSignature(frontier_mh,
+                                        name='frontier o={:1.2f} {}'.format(args.overhead, os.path.basename(filename)))
+                sourmash_lib.save_signatures([sig], fp)
 
             ## save reads ##
 

@@ -12,25 +12,14 @@ import argparse
 import os
 import sys
 import leveldb
-from copy import copy
-import collections
 
-import sourmash_lib
-from sourmash_lib import MinHash, signature
 from sourmash_lib.sourmash_args import load_query_signature
-from typing import Dict, List, Set, Union, Tuple
-from pickle import load
-import screed
-import sqlite3
 
-from .memoize import memoize
-from .search_catlas_with_minhash import load_dag, load_minhash
-from .search_utils import get_minhashdb_name
+from .search_utils import get_minhashdb_name, get_reads_by_cdbg
 from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
 from . import search_utils
-from .search_utils import (load_dag, load_layer0_to_cdbg)
-import khmer.utils
+from .search_utils import (load_dag, load_layer0_to_cdbg, load_minhash)
 
 
 def main():
@@ -154,42 +143,31 @@ def main():
     # sql
     dbfilename = args.labeled_reads_sqlite
     assert os.path.exists(dbfilename), 'sqlite file {} does not exist'.format(dbfilename)
-    db = sqlite3.connect(dbfilename)
-    cursor = db.cursor()
 
     total_bp = 0
-    watermark_size = 1e7
-    watermark = watermark_size
-    no_tags = 0
-    no_tags_bp = 0
     total_seqs = 0
     output_seqs = 0
 
+    # output sequences here:
     outfp = open(args.output, 'wt')
-    reads_grabber = search_utils.GrabBGZF_Random(args.readsfile)
 
-    ## get last offset:
-    last_offset = search_utils.sqlite_get_max_offset(cursor)
-
+    # track minhash of retrieved reads:
     reads_minhash = query_mh.copy_and_clear()
 
     print('running query...')
-    for n, offset in enumerate(search_utils.sqlite_get_offsets(cursor, cdbg_shadow)):
+    reads_iter = get_reads_by_cdbg(dbfilename, args.readsfile, cdbg_shadow)
+    for n, (record, offset_f) in enumerate(reads_iter):
         if n % 10000 == 0:
-            print('...at n {} ({:.1f}% of file)'.format(n, offset /  last_offset * 100), end='\r')
+            print('...at n {} ({:.1f}% of file)'.format(n, offset_f * 100),
+                  end='\r')
 
-        record, xx = reads_grabber.get_sequence_at(offset)
-        assert xx == offset
-
-        name = record.name
-        sequence = record.sequence
-
-        total_bp += len(sequence)
-        total_seqs += 1
-
+        # track retrieved minhash
         reads_minhash.add_sequence(record.sequence, True)
 
-        outfp.write('>{}\n{}\n'.format(name, sequence))
+        # output!
+        outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
+        total_bp += len(record.sequence)
+        total_seqs += 1
 
     print('')
     print('fetched {} reads, {} bp matching frontier.'.format(total_seqs, total_bp))

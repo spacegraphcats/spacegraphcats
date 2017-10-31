@@ -334,6 +334,31 @@ def my_fastq_iter(handle, line=None, parse_description=False):
         yield Record(**data)
 
 
+def get_reads_by_cdbg(sqlite_filename, reads_filename, cdbg_ids):
+    """
+    Given a list of cDBG IDs, retrieve the actual sequences corresponding
+    to them by using offsets into a BGZF file.
+    """
+    # connect to sqlite db
+    db = sqlite3.connect(sqlite_filename)
+    cursor = db.cursor()
+
+    # open readsfile for random access
+    reads_grabber = GrabBGZF_Random(reads_filename)
+
+    ## get last offset in file as measure of progress
+    last_offset = sqlite_get_max_offset(cursor)
+
+    # pull out the offsets of all sequences with matches in cdbg_ids.
+    for offset in sqlite_get_offsets(cursor, cdbg_ids):
+        offset_f = offset / last_offset
+
+        record, xx = reads_grabber.get_sequence_at(offset)
+        assert xx == offset
+
+        yield record, offset_f
+
+
 def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance,
                        must_exist=True):
     """

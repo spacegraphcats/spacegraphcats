@@ -5,14 +5,12 @@ import pickle
 import sys
 import leveldb
 import shutil
-import json
 from collections import defaultdict
 
 from spacegraphcats.logging import log
 from search import search_utils
 
 import screed
-import sourmash_lib
 from sourmash_lib import MinHash
 
 

@@ -1,5 +1,4 @@
 import unittest
-from io import StringIO
 
 from .frontier_search import find_shadow
 

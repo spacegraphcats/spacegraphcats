@@ -1,3 +1,8 @@
+all: test
+
+flakes:
+	pyflakes search/*.py
+
 lint:
 	mypy spacegraphcats/*.py search/*.py --ignore-missing-imports
 
@@ -41,9 +46,6 @@ acido/minhashes_info.json: acido/catlas.csv
 acido/acido-chunk1.fa.gz.sig: data/acido-chunk1.fa.gz
 	sourmash compute -k 31 data/acido-chunk1.fa.gz --scaled 500 -f -o acido/acido-chunk1.fa.gz.sig
 
-acido-simple-search: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
-	python -m search.search_catlas_with_minhash acido/acido-chunk1.fa.gz.sig acido
-
 acido-search: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
 	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1 --fullstats
 
@@ -69,9 +71,6 @@ acido-frontier-search-optimized: acido/minhashes_info.json acido/acido-chunk1.fa
 	python -m search.make_catlas_minhashes -k 31 --scaled=5000 15genome
 
 # run search!
-15genome-search: 15genome/minhashes_info.json
-	python -m search.search_catlas_with_minhash data/15genome.5.fa.sig 15genome
-
 15genome-frontier-search: 15genome/minhashes_info.json
 	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1
 

@@ -2,7 +2,6 @@
 """
 Convert an input file into a BGZF file that supports random indexing by offset.
 """
-import sys
 import screed
 from search.bgzf import bgzf
 import os.path
@@ -10,7 +9,6 @@ import argparse
 
 
 def main():
-    import argparse
     p = argparse.ArgumentParser()
     p.add_argument('input_file')
     args = p.parse_args()

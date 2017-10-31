@@ -12,22 +12,14 @@ import argparse
 import os
 import sys
 import leveldb
-from copy import copy
-import collections
 
-import sourmash_lib
-from sourmash_lib import MinHash, signature
 from sourmash_lib.sourmash_args import load_query_signature
-from typing import Dict, List, Set, Union, Tuple
-from pickle import load
 import screed
 
-from .memoize import memoize
-from .search_catlas_with_minhash import load_dag, load_minhash
 from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
 from . import search_utils
-from .search_utils import (load_dag, load_layer0_to_cdbg)
+from .search_utils import (load_dag, load_layer0_to_cdbg, load_minhash)
 from .search_utils import get_minhashdb_name
 import khmer.utils
 

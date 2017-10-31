@@ -8,11 +8,10 @@ from copy import copy
 import sourmash_lib
 from sourmash_lib import MinHash, signature
 from sourmash_lib.sourmash_args import load_query_signature
-from typing import Dict, List, Set, Union, Tuple
+from typing import Dict, List, Set, Union
 
 from .memoize import memoize
-from .search_catlas_with_minhash import load_dag, load_minhash
-from .search_utils import get_minhashdb_name
+from .search_utils import get_minhashdb_name, load_dag, load_minhash
 from spacegraphcats.logging import log
 
 
@@ -242,7 +241,7 @@ def main(args=sys.argv[1:]):
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
 
     # load catlas DAG
-    top_node_id, dag, dag_levels = load_dag(catlas)
+    top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # load minhash DB
