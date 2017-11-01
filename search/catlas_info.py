@@ -21,7 +21,7 @@ def main():
     contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
     top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
-    print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
+    print('loaded {} nodes and {} layers from catlas {}'.format(len(dag), dag_levels[top_node_id], catlas))
 
     print('top catlas node {} has {} children.'.format(top_node_id,
                                                        len(dag[top_node_id])))
