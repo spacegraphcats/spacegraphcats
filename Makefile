@@ -188,7 +188,7 @@ twofoo/minhashes_info.json: twofoo/catlas.csv twofoo/contigs.fa.gz
 	python -m search.make_catlas_minhashes -k 29 --scaled=1000 twofoo
 	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo
 
-twofoo.labels: twofoo/catlas.csv twofoo.fq.gz.bgz
+twofoo.labels: twofoo/contigs.fa.gz twofoo.fq.gz.bgz
 	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 31 -M 1e9
 
 twofoo-extract-1: twofoo/minhashes_info.json twofoo.labels
