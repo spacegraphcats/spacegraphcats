@@ -29,7 +29,7 @@ def main():
                    default=0.1)
     p.add_argument('--purgatory', action='store_true')
     p.add_argument('-o', '--output', type=argparse.FileType('w'))
-    p.add_argument('-k', '--ksize', default=31, type=str,
+    p.add_argument('-k', '--ksize', default='31', type=str,
                         help='k-mer size (default: 31)')
     p.add_argument('--savedir', default=None)
     args = p.parse_args()
