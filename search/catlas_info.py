@@ -43,6 +43,14 @@ def main():
     print('top node minhash has {} mins, k={} scaled={}'.format(len(top_mh.get_mins()), top_mh.ksize, top_mh.scaled))
     print(' => ~{:g} {}-mers total.'.format(len(top_mh.get_mins()) * top_mh.scaled, top_mh.ksize))
 
+    num_empty = 0
+    for child_node in dag[top_node_id]:
+        mh = load_minhash(child_node, minhash_db)
+        if not mh:
+            num_empty += 1
+
+    print('{} empty child nodes (of {}) beneath top node'.format(num_empty, len(dag[top_node_id])))
+
 
 if __name__ == '__main__':
     # import cProfile
