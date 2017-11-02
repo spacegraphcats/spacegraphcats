@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+"""
+Make the minhashes for catlas nodes, based on the cDBG nodes they dominate.
+"""
 import argparse
 import os
 import pickle
@@ -6,6 +9,7 @@ import sys
 import leveldb
 import shutil
 from collections import defaultdict
+import gc
 
 from spacegraphcats.logging import log
 from search import search_utils
@@ -176,6 +180,7 @@ def merge_nodes(child_dict, child_node_list, factory):
         if graph_node in child_dict:
             mh = child_dict[graph_node]
             if mh:
+                mh = mh.downsample_scaled(merged_mh.scaled)
                 merged_mh.merge(mh)
 
     # add into merged minhashes table.
@@ -186,7 +191,8 @@ def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('--leaves-only', action='store_true')
-    p.add_argument('--scaled', default=100.0, type=float)
+    p.add_argument('--scaled', default=1000, type=float)
+    p.add_argument('--leaf-scaled', default=1000, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int)
     p.add_argument('--track-abundance', action='store_true')
 
@@ -194,11 +200,15 @@ def main(args=sys.argv[1:]):
 
     ksize = args.ksize
     scaled = int(args.scaled)
+    leaf_scaled = int(args.leaf_scaled)
     track_abundance = args.track_abundance
 
-    # build a factory to produce new MinHash objects.
+    # build a factories to produce new MinHash objects.
     factory = MinHashFactory(n=0, ksize=ksize,
                              scaled=scaled,
+                             track_abundance=args.track_abundance)
+    leaf_factory = MinHashFactory(n=0, ksize=ksize,
+                             scaled=leaf_scaled,
                              track_abundance=args.track_abundance)
 
     # put together the basic catlas info --
@@ -211,7 +221,7 @@ def main(args=sys.argv[1:]):
     # make minhashes from node contigs
     print('ksize={} scaled={}'.format(ksize, scaled))
     print('making contig minhashes...')
-    graph_minhashes = make_contig_minhashes(contigfile, factory)
+    graph_minhashes = make_contig_minhashes(contigfile, leaf_factory)
     print('...made {} contig minhashes'.format(len(graph_minhashes)))
 
     # load mapping between dom nodes and cDBG/graph nodes:
@@ -240,7 +250,7 @@ def main(args=sys.argv[1:]):
         if n and n % 10000 == 0:
             print('... built {} leaf node MinHashes...'.format(n),
                   file=sys.stderr)
-        mh = merge_nodes(graph_minhashes, cdbg_nodes, factory)
+        mh = merge_nodes(graph_minhashes, cdbg_nodes, leaf_factory)
         catlas_minhashes[catlas_node] = mh
 
         total_mh += 1
@@ -249,6 +259,9 @@ def main(args=sys.argv[1:]):
                 save_db.put_minhash(catlas_node, mh)
         else:
             empty_mh += 1                 # track empty
+
+    del graph_minhashes
+    gc.collect()
 
     print('created {} leaf node MinHashes via merging'.format(n + 1))
     print('')

@@ -216,16 +216,21 @@ akker-reads/catlas.csv: akker-reads/cdbg.gxt
 
 # build minhashes
 akker-reads/minhashes_info.json: akker-reads/catlas.csv akker-reads/contigs.fa.gz
-	python -m search.make_catlas_minhashes -k 21 --scaled=1000 akker-reads
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 akker-reads \
+		--leaf-scaled=100
 
 akker-reads.abundtrim.gz.bgz: akker-reads.abundtrim.gz
 	python -m search.make_bgzf akker-reads.abundtrim.gz
 
 # build reverse index into reads
-akker-reads.labels: akker-reads/catlas.csv akker-reads/contigs.fa.gz \
+akker-reads.labels: akker-reads/contigs.fa.gz \
 		akker-reads.abundtrim.gz.bgz
 	python -m search.label_cdbg akker-reads \
 			akker-reads.abundtrim.gz.bgz akker-reads.labels -k 21
+
+# frontier search:
+akker-search: akker-reads/minhashes_info.json
+	python -m search.frontier_search data/2-akker.sig akker-reads 0.0 -k 21
 
 ###
 
