@@ -101,6 +101,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
         frontier.append(node_id)
         if minhash:
             if frontier_minhash:
+                minhash = minhash.downsample_scaled(frontier_minhash.scaled)
                 frontier_minhash.merge(minhash)
             else:
                 frontier_minhash = copy(minhash)
@@ -284,7 +285,7 @@ def main(args=sys.argv[1:]):
     if args.checkfrontier:
         test_mh = top_mh.copy_and_clear()
         for node_id in frontier:
-            mh = load_minhash(node_id, minhash_db)
+            mh = load_and_downsample_minhash(node_id, minhash_db)
             if mh:
                 test_mh.merge(mh)
 
