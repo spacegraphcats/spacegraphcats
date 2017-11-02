@@ -115,19 +115,27 @@ def main():
                 print("...went from {} to {}".format(len(frontier), len(boosted_frontier)))
                 frontier = boosted_frontier
 
-        shadow = find_shadow(frontier, dag)
         print('XXX', query_sig.minhash.scaled, frontier_mh.scaled)
-        keep_shadow = set()
-        for node_id in shadow:
+        keep_frontier = set()
+        for node_id in frontier:
             mh = load_minhash(node_id, minhash_db)
             if mh:
-                mh = mh.downsample_scaled(query_sig.minhash.scaled)
-                if mh and mh.contained_by(query_sig.minhash):
-                    keep_shadow.add(node_id)
+                keep_frontier.add(node_id)
+            else:
+                shadow = find_shadow([node_id], dag)
+                for shadow_node_id in shadow:
+                    shadow_mh = load_minhash(shadow_node_id, minhash_db)
+                    if not shadow_mh:
+                        continue
+                    shadow_mh = shadow_mh.downsample_scaled(query_sig.minhash.scaled)
+                    if mh and mh.contained_by(query_sig.minhash):
+                        keep_frontier.add(node_id)
+                        # @CTB could truncate here
 
-        print('YYY', len(shadow), len(keep_shadow))
-        shadow = keep_shadow
+        print('YYY', len(frontier), len(keep_frontier))
+        frontier = keep_frontier
 
+        shadow = find_shadow(frontier, dag)
         print("Size of the frontier shadow: {} ({:.1f}%)".format(len(shadow),
                                                              len(shadow) / len(layer0_to_cdbg)* 100))
         if len(shadow) == len(layer0_to_cdbg):
