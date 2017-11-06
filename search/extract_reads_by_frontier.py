@@ -63,11 +63,12 @@ def main():
 
     cdbg_shadow = set()
     for ksize in ksizes:
-        db_path = get_minhashdb_name(args.catlas_prefix, ksize, 0, 0)
+        db_path = get_minhashdb_name(args.catlas_prefix, ksize, args.scaled, 0)
         if not db_path:
             print('** ERROR, minhash DB does not exist for {}'.format(ksize),
                   file=sys.stderr)
             sys.exit(-1)
+        print('loading minhashdb:', db_path)
         minhash_db = leveldb.LevelDB(db_path)
 
         # load query MinHash

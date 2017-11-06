@@ -374,13 +374,24 @@ def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance,
         with open(infopath, 'rt') as fp:
             info = json.loads(fp.read())
 
-        found = False
+        matches = []
         for d in info:
-            if d['ksize'] == ksize and \
-                 (not scaled or d['scaled'] <= scaled) and \
-                 d['track_abundance'] == track_abundance:
+            if d['ksize'] == ksize:
+                matches.append((d['scaled'], d['track_abundance']))
+
+        print('found {} possible minhash dbs'.format(len(matches)))
+        if not matches:
+            return None
+
+        matches.sort(reverse=True)
+        found = False
+        for (db_scaled, db_track) in matches:
+            print('looking at', db_scaled)
+            if (not scaled or db_scaled <= scaled) and \
+                 db_track == track_abundance:
+                 print('settling for:', db_scaled)
                  found = True
-                 scaled = d['scaled']
+                 scaled = db_scaled
                  break
 
         if not found:
