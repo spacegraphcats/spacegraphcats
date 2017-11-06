@@ -203,7 +203,7 @@ def main(args=sys.argv[1:]):
     leaf_scaled = int(args.leaf_scaled)
     track_abundance = args.track_abundance
 
-    # build a factories to produce new MinHash objects.
+    # build factories to produce new MinHash objects.
     factory = MinHashFactory(n=0, ksize=ksize,
                              scaled=scaled,
                              track_abundance=args.track_abundance)
