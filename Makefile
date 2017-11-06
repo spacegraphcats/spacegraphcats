@@ -195,7 +195,7 @@ twofoo-extract-1: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.0 -k 23,25,27,29,31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.k23-31.fq
 
 twofoo-extract-bulk:
-	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig data/47-os185.sig data/63-os223.sig -k 21,23 --savedir foo -o foo/results.csv
+	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig data/47-os185.sig data/63-os223.sig -k 23,25,27,29,31 --savedir foo -o foo/results.csv
 
 twofoo-extract: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
