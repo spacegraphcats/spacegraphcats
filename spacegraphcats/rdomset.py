@@ -302,6 +302,8 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     for v, x in assigned_dominator.items():
         dominated[x].add(v)
 
+    domgraph.remove_isolates()
+
     return domgraph, dominated
 
 

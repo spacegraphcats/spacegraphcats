@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from typing import Callable, List, Tuple, Set, Iterable, Any, Sized
 
+
 class Graph(Iterable, Sized):
     """
     Graph data structure.
@@ -17,7 +18,7 @@ class Graph(Iterable, Sized):
         self.radius = radius
         # lookup the neighbors of a vertex with a given weight
         self.inarcs_by_weight = [[set() for i in range(self.num_nodes)]
-                                 for j in range(self.radius)] # type: Any
+                                 for j in range(self.radius)]  # type: Any
 
     def __iter__(self):
         """Iteration support."""
@@ -70,7 +71,7 @@ class Graph(Iterable, Sized):
         else:
             for x, N in enumerate(self.inarcs_by_weight[weight-1]):
                 for y in N:
-                    yield y,x
+                    yield y, x
 
     def in_neighbors(self, v: int, weight: int=None):
         """Return the inneighbors at a vertex."""
@@ -171,3 +172,17 @@ class DictGraph(Graph):
                     enumerate(self.inarcs_by_weight)
                     for x, N in arc_list.items()
                     for y in N]
+
+    def remove_isolates(self) -> List[int]:
+        """
+        Remove all isolated vertices and return a list of vertices removed.
+
+        Precondition:  the graph is bidirectional
+        """
+        isolates = [v for v in self if self.in_degree(v, 1) == 0]
+        for v in isolates:
+            self.nodes.remove(v)
+            for N in self.inarcs_by_weight:
+                if v in N:
+                    del N[v]
+        return isolates

@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import gzip
+import copy
 from .rdomset import rdomset, domination_graph
 from .graph_io import read_from_gxt, write_to_gxt
 from .graph import Graph
@@ -31,9 +32,10 @@ class Project(object):
         self.r = r
         self.checkpoint = checkpoint
         self.graph = None
+        self.idx = 1
+        self.level = 1
         self.level_nodes = None
-        self.idx = 0
-        self.level = 0
+        self.root = CAtlas(0, 0, self.level, list())
 
         # project file names
         self.domfilename = os.path.join(self.dir, "first_doms.txt")
@@ -96,15 +98,24 @@ class Project(object):
             tmpf.seek(0)
             root = CAtlas.read(tmpf)
             tmpf.close()
-            # print("Root has children {}".format(
-            #         [i.vertex for i in root.children]))
-            self.level_nodes = {node.vertex: node for node in root.children}
+
+            # the checkpointed CAtlas has a dummy root.  The nodes in the
+            # current level need to be removed from the root because we haven't
+            # finished constructing their parents.
+            print(root.vertex, root.idx, root.level, root.children)
+            unfinished_idx = -1*len(self.graph)
+            print(len(root.children), len(self.graph))
+            unfinished = root.children[unfinished_idx:]
+            root.children = root.children[:unfinished_idx]
+            self.level_nodes = {node.vertex: node for node in unfinished}
+            print(self.level_nodes)
             self.idx = root.idx
             self.level = root.level
+            self.root = root
             # if the graph has isolated vertices, they don't appear in the
             # edge list, which means we need to infer them from the catlas
             # nodes
-            self.__handle_missing_nodes()
+            # self.__handle_missing_nodes()
 
     def __handle_missing_nodes(self):
         # sanity check that the catlas nodes and graph vertices correspond
@@ -141,8 +152,11 @@ class Project(object):
         print("Writing to file {}".format(outfile))
         with gzip.open(outfile, 'wt') as f:
             # make a dummy root to write the catlas using catlas.write method
-            root = CAtlas(self.idx, 0, self.level, self.level_nodes.values())
+            # we add all current level nodes as children of the root
+            root = CAtlas(0, 0, self.level, copy.copy(self.root.children))
+            root.children.extend(self.level_nodes.values())
             root.write(f)
+            print(len(root.children), "children written")
             f.write("###\n")
             write_to_gxt(f, self.graph)
 
@@ -165,10 +179,10 @@ class CAtlas(object):
 
         Arguments:
             idx:  Integer identifier of the node.  A CAtlas with n nodes will
-                  have ids 0,1,...,n-1
+                  have ids 0,1,...,n-1.  The root will always have id 0.
             vertex:  Name of vertex in the cDBG
             level:  The height of the node in the hierarchy.  The leaves are at
-                    level 0, their parents at level 1, etc.
+                    level 1, their parents at level 2, etc.
             children:  the CAtlas nodes for which this is a parent
         """
         self.idx = idx
@@ -184,7 +198,7 @@ class CAtlas(object):
         while True:
             print()
             # the base level should have a large radius, others are just 1
-            if proj.level == 0:
+            if proj.level == 1:
                 r = proj.r
             else:
                 r = UPPER_RADIUS
@@ -199,7 +213,7 @@ class CAtlas(object):
 
             # at the bottom level we need to write out the domination
             # assignment
-            if proj.level == 0:
+            if proj.level == 1:
                 with open(proj.domfilename, 'w') as domfile:
                     for v, shadow in dominated.items():
                         domstr = str(v)
@@ -213,6 +227,13 @@ class CAtlas(object):
             proj.idx += len(nodes)
             proj.level += 1
 
+            # Keeping isolated vertices as parents of themselves blows up the
+            # CAtlas size unnecessarily.  We need to immediately make them
+            # children of the root.
+            for v in dominated:
+                if v not in domgraph:
+                    proj.root.children.append(nodes.pop(v))
+
             # quit if our level is sufficiently small
             if len(domgraph) <= CAtlas.LEVEL_THRESHOLD or \
                     len(domgraph) == len(proj.graph):
@@ -224,10 +245,11 @@ class CAtlas(object):
 
             # write level results to the checkpoint file if applicable
             proj.save_checkpoint()
-        # create a single root over the top level
-        root_children = list(nodes.values())
-        root_vertex = root_children[0].vertex
-        return CAtlas(proj.idx, root_vertex, proj.level, root_children)
+
+        # place all remaining nodes as children of the root
+        proj.root.children.extend(nodes.values())
+        proj.root.level = proj.level
+        return proj.root
 
     @staticmethod
     def _build_level(graph: Graph, radius: int, level: int, min_id: int=0,
@@ -239,7 +261,7 @@ class CAtlas(object):
         domgraph, dominated = domination_graph(graph, domset, radius)
 
         # create the CAtlas nodes
-        nodes = {}
+        nodes = {}  # type: Dict[int, CAtlas]
         for idx, v in enumerate(domset):
             # if no previous nodes were supplied, we assume we are on the
             # bottom level and thus the children field is empty
@@ -258,7 +280,7 @@ class CAtlas(object):
         if visited is None:
             visited = set([self])
         # base case is level 0
-        if self.level == 0:
+        if self.level == 1:
             return set([self])
         # otherwise gather the leaves of the children
         res = set()  # type: Set[object]
@@ -339,7 +361,7 @@ def main(args):
     print("reading graph")
     if level:
         print("Loading checkpoint at level {}".format(level))
-        proj.load(level)
+        proj.load_checkpoint(level)
     else:
         print("Loading checkpoint")
         proj.load_furthest_checkpoint()
