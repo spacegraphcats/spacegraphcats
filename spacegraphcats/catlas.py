@@ -107,12 +107,12 @@ class Project(object):
             root.children = root.children[:unfinished_idx]
             self.level_nodes = {node.vertex: node for node in unfinished}
             self.idx = root.idx
-            self.level = root.level
+            self.level = root.level - 1
             self.root = root
 
     def _save(self):
         """Method used by the thread to write out."""
-        outfile = self.cp_name(self.level)
+        outfile = self.cp_name(self.level - 1)
         print("Writing to file {}".format(outfile))
         with gzip.open(outfile, 'wt') as f:
             # make a dummy root to write the catlas using catlas.write method
