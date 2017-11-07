@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+"""
+Make the minhashes for catlas nodes, based on the cDBG nodes they dominate.
+"""
 import argparse
 import os
 import pickle
@@ -177,6 +180,7 @@ def merge_nodes(child_dict, child_node_list, factory):
         if graph_node in child_dict:
             mh = child_dict[graph_node]
             if mh:
+                mh = mh.downsample_scaled(merged_mh.scaled)
                 merged_mh.merge(mh)
 
     # add into merged minhashes table.
@@ -187,7 +191,8 @@ def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('--leaves-only', action='store_true')
-    p.add_argument('--scaled', default=100.0, type=float)
+    p.add_argument('--scaled', default=1000, type=float)
+    p.add_argument('--leaf-scaled', default=1000, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int)
     p.add_argument('--track-abundance', action='store_true')
 
@@ -195,11 +200,15 @@ def main(args=sys.argv[1:]):
 
     ksize = args.ksize
     scaled = int(args.scaled)
+    leaf_scaled = int(args.leaf_scaled)
     track_abundance = args.track_abundance
 
-    # build a factory to produce new MinHash objects.
+    # build factories to produce new MinHash objects.
     factory = MinHashFactory(n=0, ksize=ksize,
                              scaled=scaled,
+                             track_abundance=args.track_abundance)
+    leaf_factory = MinHashFactory(n=0, ksize=ksize,
+                             scaled=leaf_scaled,
                              track_abundance=args.track_abundance)
 
     # put together the basic catlas info --
@@ -236,7 +245,8 @@ def main(args=sys.argv[1:]):
 
     # create minhashes for catlas leaf nodes.
     print('ksize={} scaled={}'.format(ksize, scaled))
-    catlas_minhashes = make_leaf_minhashes(contigfile, cdbg_to_layer0, factory)
+    catlas_minhashes = make_leaf_minhashes(contigfile, cdbg_to_layer0,
+                                           leaf_factory)
     n = len(catlas_minhashes)
     print('... built {} leaf node MinHashes...'.format(n),
           file=sys.stderr)

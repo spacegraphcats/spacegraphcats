@@ -63,11 +63,12 @@ def main():
 
     cdbg_shadow = set()
     for ksize in ksizes:
-        db_path = get_minhashdb_name(args.catlas_prefix, ksize, 0, 0)
+        db_path = get_minhashdb_name(args.catlas_prefix, ksize, args.scaled, 0)
         if not db_path:
             print('** ERROR, minhash DB does not exist for {}'.format(ksize),
                   file=sys.stderr)
             sys.exit(-1)
+        print('loading minhashdb:', db_path)
         minhash_db = leveldb.LevelDB(db_path)
 
         # load query MinHash
@@ -116,7 +117,6 @@ def main():
                 frontier = boosted_frontier
 
         shadow = find_shadow(frontier, dag)
-
         print("Size of the frontier shadow: {} ({:.1f}%)".format(len(shadow),
                                                              len(shadow) / len(layer0_to_cdbg)* 100))
         if len(shadow) == len(layer0_to_cdbg):
@@ -151,8 +151,8 @@ def main():
     # output sequences here:
     outfp = open(args.output, 'wt')
 
-    # track minhash of retrieved reads:
-    reads_minhash = query_mh.copy_and_clear()
+    # track minhash of retrieved reads using original query minhash:
+    reads_minhash = query_sig.minhash.copy_and_clear()
 
     print('running query...')
     reads_iter = get_reads_by_cdbg(dbfilename, args.readsfile, cdbg_shadow)
@@ -172,10 +172,11 @@ def main():
     print('')
     print('fetched {} reads, {} bp matching frontier.'.format(total_seqs, total_bp))
 
-    print('query inclusion by retrieved reads: ', query_mh.contained_by(reads_minhash))
-    print('frontier inclusion by retrieved reads: ', frontier_mh.contained_by(reads_minhash))
+    print('query inclusion by retrieved reads: ', query_sig.minhash.contained_by(reads_minhash))
+    reads_mh_down = reads_minhash.downsample_scaled(frontier_mh.scaled)
+    print('frontier inclusion by retrieved reads: ', frontier_mh.contained_by(reads_mh_down))
 
-    if query_mh.contained_by(frontier_mh) != query_mh.contained_by(reads_minhash):
+    if query_mh.contained_by(frontier_mh) != query_mh.contained_by(reads_mh_down):
         print('*** WARNING: reads containment != frontier containment.',
               file=sys.stderr)
 
