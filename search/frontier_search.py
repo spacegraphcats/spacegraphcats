@@ -285,8 +285,9 @@ def main(args=sys.argv[1:]):
     if args.checkfrontier:
         test_mh = top_mh.copy_and_clear()
         for node_id in frontier:
-            mh = load_and_downsample_minhash(node_id, minhash_db)
+            mh = load_minhash(node_id, minhash_db)
             if mh:
+                mh = mh.downsample_scaled(test_mh.scaled)
                 test_mh.merge(mh)
 
         assert test_mh.similarity(frontier_mh) == 1.0
