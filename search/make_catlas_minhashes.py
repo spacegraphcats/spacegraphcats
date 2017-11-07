@@ -195,21 +195,26 @@ def main(args=sys.argv[1:]):
     p.add_argument('--leaf-scaled', default=1000, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int)
     p.add_argument('--track-abundance', action='store_true')
+    p.add_argument('--seed', default=42,
+                   type=int)
 
     args = p.parse_args(args)
 
     ksize = args.ksize
     scaled = int(args.scaled)
+    seed = args.seed
     leaf_scaled = int(args.leaf_scaled)
     track_abundance = args.track_abundance
 
     # build factories to produce new MinHash objects.
     factory = MinHashFactory(n=0, ksize=ksize,
                              scaled=scaled,
-                             track_abundance=args.track_abundance)
+                             track_abundance=args.track_abundance,
+                             seed=args.seed)
     leaf_factory = MinHashFactory(n=0, ksize=ksize,
                              scaled=leaf_scaled,
-                             track_abundance=args.track_abundance)
+                             track_abundance=args.track_abundance,
+                             seed=args.seed)
 
     # put together the basic catlas info --
     basename = os.path.basename(args.catlas_prefix)
@@ -235,7 +240,8 @@ def main(args=sys.argv[1:]):
 
     # create the minhash db, first removing it if it already exists
     path = search_utils.get_minhashdb_name(args.catlas_prefix, ksize, scaled,
-                                           track_abundance, must_exist=False)
+                                           track_abundance, seed,
+                                           must_exist=False)
     if os.path.exists(path):
         shutil.rmtree(path)
 
@@ -244,7 +250,7 @@ def main(args=sys.argv[1:]):
     save_db.start()                       # batch mode writing
 
     # create minhashes for catlas leaf nodes.
-    print('ksize={} scaled={}'.format(ksize, scaled))
+    print('ksize={} scaled={} seed={}'.format(ksize, scaled, seed))
     catlas_minhashes = make_leaf_minhashes(contigfile, cdbg_to_layer0,
                                            leaf_factory)
     n = len(catlas_minhashes)
@@ -274,7 +280,7 @@ def main(args=sys.argv[1:]):
 
     # write out some metadata
     search_utils.update_minhash_info(args.catlas_prefix, ksize, scaled,
-                                     track_abundance)
+                                     track_abundance, seed)
 
     # log that this command was run
     log(args.catlas_prefix, sys.argv)

@@ -359,11 +359,13 @@ def get_reads_by_cdbg(sqlite_filename, reads_filename, cdbg_ids):
         yield record, offset_f
 
 
-def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance,
+def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance, seed,
                        must_exist=True):
     """
     Construct / return the name of the minhash db given the parameters.
     """
+    track_abundance = bool(track_abundance)
+
     # first, check if it's in minhashes_info.json
     if must_exist:
         infopath = os.path.join(catlas_prefix, 'minhashes_info.json')
@@ -377,7 +379,7 @@ def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance,
         matches = []
         for d in info:
             if d['ksize'] == ksize:
-                matches.append((d['scaled'], d['track_abundance']))
+                matches.append((d['scaled'], d['track_abundance'], d['seed']))
 
         print('found {} possible minhash dbs'.format(len(matches)))
         if not matches:
@@ -385,11 +387,9 @@ def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance,
 
         matches.sort(reverse=True)
         found = False
-        for (db_scaled, db_track) in matches:
-            print('looking at', db_scaled)
+        for (db_scaled, db_track, db_seed) in matches:
             if (not scaled or db_scaled <= scaled) and \
-                 db_track == track_abundance:
-                 print('settling for:', db_scaled)
+                 db_track == track_abundance and db_seed == seed:
                  found = True
                  scaled = db_scaled
                  break
@@ -402,8 +402,8 @@ def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance,
     if track_abundance:
         is_abund = 1
 
-    name = 'minhashes.db.k{}.s{}.abund{}'
-    name = name.format(ksize, scaled, is_abund)
+    name = 'minhashes.db.k{}.s{}.abund{}.seed{}'
+    name = name.format(ksize, scaled, is_abund, seed)
     path = os.path.join(catlas_prefix, name)
 
     if must_exist and not os.path.exists(path):
@@ -412,7 +412,7 @@ def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance,
     return path
 
 
-def update_minhash_info(catlas_prefix, ksize, scaled, track_abundance):
+def update_minhash_info(catlas_prefix, ksize, scaled, track_abundance, seed):
     """
     Update minhashes_info with new db info.
     """
@@ -423,7 +423,7 @@ def update_minhash_info(catlas_prefix, ksize, scaled, track_abundance):
             info = json.loads(fp.read())
 
     this_info = dict(ksize=ksize, scaled=scaled,
-                     track_abundance=track_abundance)
+                     track_abundance=track_abundance, seed=seed)
     if this_info not in info:
         info.append(this_info)
 

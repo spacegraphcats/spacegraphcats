@@ -39,6 +39,7 @@ def main():
     p.add_argument('--boost-frontier', action='store_true')
     p.add_argument('--scaled', help='downsample query sig, for debug',
                    type=float)
+    p.add_argument('--seed', default=42, type=int)
 
     args = p.parse_args()
 
@@ -63,7 +64,8 @@ def main():
 
     cdbg_shadow = set()
     for ksize in ksizes:
-        db_path = get_minhashdb_name(args.catlas_prefix, ksize, args.scaled, 0)
+        db_path = get_minhashdb_name(args.catlas_prefix, ksize, args.scaled, 0,
+                                     args.seed)
         if not db_path:
             print('** ERROR, minhash DB does not exist for {}'.format(ksize),
                   file=sys.stderr)
