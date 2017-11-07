@@ -246,7 +246,7 @@ def main(args=sys.argv[1:]):
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # load minhash DB
-    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0)
+    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0, 42)
     if not db_path:
         print('** ERROR, minhash DB does not exist for {}'.format(args.ksize),
               file=sys.stderr)
