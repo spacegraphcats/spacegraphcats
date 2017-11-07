@@ -32,10 +32,10 @@ class Project(object):
         self.r = r
         self.checkpoint = checkpoint
         self.graph = None
-        self.idx = 1
+        self.idx = 0
         self.level = 1
         self.level_nodes = None
-        self.root = CAtlas(0, 0, self.level, list())
+        self.root = CAtlas(self.idx, -1, self.level, list())
 
         # project file names
         self.domfilename = os.path.join(self.dir, "first_doms.txt")
@@ -102,49 +102,13 @@ class Project(object):
             # the checkpointed CAtlas has a dummy root.  The nodes in the
             # current level need to be removed from the root because we haven't
             # finished constructing their parents.
-            print(root.vertex, root.idx, root.level, root.children)
             unfinished_idx = -1*len(self.graph)
-            print(len(root.children), len(self.graph))
             unfinished = root.children[unfinished_idx:]
             root.children = root.children[:unfinished_idx]
             self.level_nodes = {node.vertex: node for node in unfinished}
-            print(self.level_nodes)
             self.idx = root.idx
             self.level = root.level
             self.root = root
-            # if the graph has isolated vertices, they don't appear in the
-            # edge list, which means we need to infer them from the catlas
-            # nodes
-            # self.__handle_missing_nodes()
-
-    def __handle_missing_nodes(self):
-        # sanity check that the catlas nodes and graph vertices correspond
-        num_missing = len(self.level_nodes.keys()) - len(self.graph.nodes)
-        if num_missing > 0:
-            missing = set(self.level_nodes.keys()) - set(self.graph.nodes)
-            # they are not equal when there are isolated vertices, which
-            # cannot be represented in the edge list file format.  We need
-            # to make sure that these vertices are indeed isolated by
-            # checking that they are not dominated by multiple vertices.
-            if self.level == 1:
-                # at level 1, the domination relationship is not captured by
-                # the children so we just assume the vertices are isolated.
-                #  We could check first_doms.txt but this is probably too much
-                # effort.
-                for v in missing:
-                    self.graph.add_node(v)
-            else:
-                parent_count = defaultdict(int)
-                for _, node in self.level_nodes.items():
-                    for u in node.children:
-                        parent_count[u.vertex] += 1
-                for v in missing:
-                    if parent_count[v] != 1:
-                        print("{} has {} parents".format(v, parent_count[v]))
-                        raise ValueError("graph should have the same nodes as"
-                                         " the previous level")
-                    else:
-                        self.graph.add_node(v)
 
     def _save(self):
         """Method used by the thread to write out."""
@@ -153,10 +117,10 @@ class Project(object):
         with gzip.open(outfile, 'wt') as f:
             # make a dummy root to write the catlas using catlas.write method
             # we add all current level nodes as children of the root
-            root = CAtlas(0, 0, self.level, copy.copy(self.root.children))
+            root = CAtlas(self.idx, -1, self.level,
+                          copy.copy(self.root.children))
             root.children.extend(self.level_nodes.values())
             root.write(f)
-            print(len(root.children), "children written")
             f.write("###\n")
             write_to_gxt(f, self.graph)
 
@@ -179,7 +143,7 @@ class CAtlas(object):
 
         Arguments:
             idx:  Integer identifier of the node.  A CAtlas with n nodes will
-                  have ids 0,1,...,n-1.  The root will always have id 0.
+                  have ids 0,1,...,n-1.  The root will always have id n-1.
             vertex:  Name of vertex in the cDBG
             level:  The height of the node in the hierarchy.  The leaves are at
                     level 1, their parents at level 2, etc.
@@ -249,6 +213,8 @@ class CAtlas(object):
         # place all remaining nodes as children of the root
         proj.root.children.extend(nodes.values())
         proj.root.level = proj.level
+        proj.root.vertex = list(nodes.keys())[0]
+        proj.root.idx = proj.idx
         return proj.root
 
     @staticmethod
