@@ -181,12 +181,12 @@ twofoo/catlas.csv: twofoo/cdbg.gxt
 
 # build minhashes
 twofoo/minhashes_info.json: twofoo/catlas.csv twofoo/contigs.fa.gz
-	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo
-	python -m search.make_catlas_minhashes -k 23 --scaled=1000 twofoo
-	python -m search.make_catlas_minhashes -k 25 --scaled=1000 twofoo
-	python -m search.make_catlas_minhashes -k 27 --scaled=1000 twofoo
-	python -m search.make_catlas_minhashes -k 29 --scaled=1000 twofoo
-	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=43
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=44
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=45
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=46
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=47
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=48
 
 twofoo.labels: twofoo/contigs.fa.gz twofoo.fq.gz.bgz
 	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 31 -M 1e9
