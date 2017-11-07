@@ -116,8 +116,6 @@ def main():
                 print("...went from {} to {}".format(len(frontier), len(boosted_frontier)))
                 frontier = boosted_frontier
 
-        frontier = keep_frontier
-
         shadow = find_shadow(frontier, dag)
         print("Size of the frontier shadow: {} ({:.1f}%)".format(len(shadow),
                                                              len(shadow) / len(layer0_to_cdbg)* 100))
