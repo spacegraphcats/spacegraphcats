@@ -378,8 +378,9 @@ def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance, seed,
 
         matches = []
         for d in info:
-            if d['ksize'] == ksize:
-                matches.append((d['scaled'], d['track_abundance'], d['seed']))
+            if d['ksize'] == ksize and d['seed'] == seed and \
+              d['track_abundance'] == track_abundance:
+                matches.append(d['scaled'])
 
         print('found {} possible minhash dbs'.format(len(matches)))
         if not matches:
@@ -387,9 +388,8 @@ def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance, seed,
 
         matches.sort(reverse=True)
         found = False
-        for (db_scaled, db_track, db_seed) in matches:
-            if (not scaled or db_scaled <= scaled) and \
-                 db_track == track_abundance and db_seed == seed:
+        for db_scaled in matches:
+            if not scaled or db_scaled <= scaled:
                  found = True
                  scaled = db_scaled
                  break
