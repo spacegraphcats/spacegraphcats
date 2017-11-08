@@ -189,6 +189,7 @@ def main():
         num_seeds = len(seeds)
         
         csv_writer.writerow([query, containment, similarity, total_bp, total_seqs, num_seeds, ksize, scaled])
+        csvoutfp.flush()
 
     sys.exit(0)
 
