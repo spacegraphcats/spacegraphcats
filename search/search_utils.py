@@ -6,6 +6,8 @@ import json
 import leveldb
 import sqlite3
 
+import screed
+import sourmash_lib
 from sourmash_lib import MinHash
 from screed.screedRecord import Record
 from screed.utils import to_str
@@ -382,7 +384,6 @@ def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance, seed,
               d['track_abundance'] == track_abundance:
                 matches.append(d['scaled'])
 
-        print('found {} possible minhash dbs'.format(len(matches)))
         if not matches:
             return None
 
@@ -429,3 +430,22 @@ def update_minhash_info(catlas_prefix, ksize, scaled, track_abundance, seed):
 
         with open(infopath, 'wt') as fp:
             fp.write(json.dumps(info))
+
+
+def build_queries_for_seeds(seeds, ksize, scaled, query_seq_file):
+    seed_mh_list = []
+
+    for seed in seeds:
+        mh = MinHash(0, ksize, scaled=scaled, seed=seed)
+        seed_mh_list.append(mh)
+
+    name = None
+    for record in screed.open(query_seq_file):
+        if not name:
+            name = record.name
+        for seed_mh in seed_mh_list:
+            seed_mh.add_sequence(record.sequence, False)
+
+    seed_queries = [sourmash_lib.SourmashSignature(seed_mh, name=name) for \
+                        seed_mh in seed_mh_list]
+    return seed_queries
