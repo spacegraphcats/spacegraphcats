@@ -449,3 +449,17 @@ def build_queries_for_seeds(seeds, ksize, scaled, query_seq_file):
     seed_queries = [sourmash_lib.SourmashSignature(seed_mh, name=name) for \
                         seed_mh in seed_mh_list]
     return seed_queries
+
+
+def parse_seeds_arg(seeds_str):
+    seeds = []
+    seeds_str = seeds_str.split(',')
+    for seed in seeds_str:
+        if '-' in seed:
+            (start, end) = seed.split('-')
+            for s in range(int(start), int(end) + 1):
+                seeds.append(s)
+        else:
+            seeds.append(int(seed))
+
+    return seeds
