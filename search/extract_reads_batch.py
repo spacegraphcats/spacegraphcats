@@ -14,6 +14,7 @@ import os
 import sys
 import gc
 import csv
+import traceback
 
 import leveldb
 import screed
@@ -112,84 +113,87 @@ def main():
     csv_writer.writerow(['query', 'containment', 'similarity', 'bp', 'reads', 'n_seeds', 'ksize', 'scaled'])
 
     for query in args.query:
-        print('------')
-        print('QUERY FILE:', query)
+        try:
+            print('------')
+            print('QUERY FILE:', query)
 
-        # build a query sig for each seed.
-        seed_queries = build_queries_for_seeds(seeds, ksize, scaled, query)
+            # build a query sig for each seed.
+            seed_queries = build_queries_for_seeds(seeds, ksize, scaled, query)
 
-        # gather results of all queries across all seeds into cdbg_shadow
-        cdbg_shadow = set()
+            # gather results of all queries across all seeds into cdbg_shadow
+            cdbg_shadow = set()
 
-        # do queries!
-        for seed_query, db_path in zip(seed_queries, minhash_db_list):
-            minhash_db = leveldb.LevelDB(db_path)
+            # do queries!
+            for seed_query, db_path in zip(seed_queries, minhash_db_list):
+                minhash_db = leveldb.LevelDB(db_path)
 
-            frontier, num_leaves, num_empty, frontier_mh = \
-              frontier_search(seed_query, top_node_id, dag, minhash_db,
-                              args.overhead, not args.no_empty, args.purgatory)
+                frontier, num_leaves, num_empty, frontier_mh = \
+                  frontier_search(seed_query, top_node_id, dag, minhash_db,
+                                  args.overhead, not args.no_empty, args.purgatory)
 
-            frontier = search_utils.remove_empty_catlas_nodes(frontier, minhash_db)
-            shadow = find_shadow(frontier, dag)
+                frontier = search_utils.remove_empty_catlas_nodes(frontier, minhash_db)
+                shadow = find_shadow(frontier, dag)
 
-            if len(shadow) == len(layer0_to_cdbg):
-                print('\n*** WARNING: shadow is the entire graph! ***\n')
+                if len(shadow) == len(layer0_to_cdbg):
+                    print('\n*** WARNING: shadow is the entire graph! ***\n')
 
-            # update overall results
-            for x in shadow:
-                cdbg_shadow.update(layer0_to_cdbg.get(x))
+                # update overall results
+                for x in shadow:
+                    cdbg_shadow.update(layer0_to_cdbg.get(x))
 
-            del minhash_db
-            gc.collect()
+                del minhash_db
+                gc.collect()
 
-        # done with main loop! now extract reads corresponding to union of
-        # query results.
-        print('done searching! now -> extracting reads.')
+            # done with main loop! now extract reads corresponding to union of
+            # query results.
+            print('done searching! now -> extracting reads.')
 
-        # build check MinHash
-        query_mh = MinHash(0, ksize, scaled=scaled, seed=42)
+            # build check MinHash
+            query_mh = MinHash(0, ksize, scaled=scaled, seed=42)
 
-        name = None
-        for record in screed.open(query):
-            if not name:
-                name = record.name
-            query_mh.add_sequence(record.sequence, False)
-        query_sig = sourmash_lib.SourmashSignature(query_mh, name=name,
-                                                   filename=query)
+            name = None
+            for record in screed.open(query):
+                if not name:
+                    name = record.name
+                query_mh.add_sequence(record.sequence, True)
+            query_sig = sourmash_lib.SourmashSignature(query_mh, name=name,
+                                                       filename=query)
 
-        total_bp = 0
-        total_seqs = 0
-        output_seqs = 0
+            total_bp = 0
+            total_seqs = 0
+            output_seqs = 0
 
-        # track minhash of retrieved reads using original query minhash:
-        reads_minhash = query_sig.minhash.copy_and_clear()
+            # track minhash of retrieved reads using original query minhash:
+            reads_minhash = query_sig.minhash.copy_and_clear()
 
-        print('loading labels and querying for matching sequences..')
-        reads_iter = get_reads_by_cdbg(dbfilename, args.readsfile, cdbg_shadow)
-        for n, (record, offset_f) in enumerate(reads_iter):
-            if n % 10000 == 0:
-                print('...at n {} ({:.1f}% of file)'.format(n, offset_f * 100),
-                      end='\r')
+            print('loading labels and querying for matching sequences..')
+            reads_iter = get_reads_by_cdbg(dbfilename, args.readsfile, cdbg_shadow)
+            for n, (record, offset_f) in enumerate(reads_iter):
+                if n % 10000 == 0:
+                    print('...at n {} ({:.1f}% of file)'.format(n, offset_f * 100),
+                          end='\r')
 
-            # track retrieved minhash
-            reads_minhash.add_sequence(record.sequence, True)
+                # track retrieved minhash
+                reads_minhash.add_sequence(record.sequence, True)
 
-            # output!
-            total_bp += len(record.sequence)
-            total_seqs += 1
+                # output!
+                total_bp += len(record.sequence)
+                total_seqs += 1
 
-        print('')
-        print('fetched {} reads, {} bp matching combined frontiers.'.format(total_seqs, total_bp))
+            print('')
+            print('fetched {} reads, {} bp matching combined frontiers.'.format(total_seqs, total_bp))
 
-        containment = query_sig.minhash.contained_by(reads_minhash)
-        similarity = query_sig.minhash.similarity(reads_minhash)
-        print('query inclusion by retrieved reads:', containment)
-        print('query similarity to retrieved reads:', similarity)
+            containment = query_sig.minhash.contained_by(reads_minhash)
+            similarity = query_sig.minhash.similarity(reads_minhash)
+            print('query inclusion by retrieved reads:', containment)
+            print('query similarity to retrieved reads:', similarity)
 
-        num_seeds = len(seeds)
-        
-        csv_writer.writerow([query, containment, similarity, total_bp, total_seqs, num_seeds, ksize, scaled])
-        csvoutfp.flush()
+            num_seeds = len(seeds)
+
+            csv_writer.writerow([query, containment, similarity, total_bp, total_seqs, num_seeds, ksize, scaled])
+            csvoutfp.flush()
+        except:
+            traceback.print_exc()
 
     sys.exit(0)
 
