@@ -444,7 +444,7 @@ def build_queries_for_seeds(seeds, ksize, scaled, query_seq_file):
         if not name:
             name = record.name
         for seed_mh in seed_mh_list:
-            seed_mh.add_sequence(record.sequence, False)
+            seed_mh.add_sequence(record.sequence, True)
 
     seed_queries = [sourmash_lib.SourmashSignature(seed_mh, name=name) for \
                         seed_mh in seed_mh_list]

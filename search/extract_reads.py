@@ -174,7 +174,7 @@ def main():
     for record in screed.open(args.query_seqs):
         if not name:
             name = record.name
-        query_mh.add_sequence(record.sequence, False)
+        query_mh.add_sequence(record.sequence, True)
     print('loaded check sequences from {}'.format(args.query_seqs))
     query_sig = sourmash_lib.SourmashSignature(query_mh, name=name,
                                                filename=args.query_seqs)
