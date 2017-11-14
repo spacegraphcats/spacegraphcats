@@ -101,6 +101,13 @@ def build_catlas_minhashes(catlas_file, catlas_minhashes, factory, save_db):
     # walk through, building the merged minhashes (which we can do in a
     # single pass on the sorted list).
     x.sort()
+    # In general, the level of v's children is one less than v's level.  This
+    # is not true, however if v is the root, since we add vertices to be
+    # children of the root as soon as they become isolated in the domgraph.
+    # Our cleanup of no-longer needed minhashes can't delete the children of
+    # the root until all other nodes have been processed.
+    root_children = set(x[-1][2])
+
     levels = defaultdict(set)
     current_level = 1
     for (level, catlas_node, beneath) in x:
@@ -110,7 +117,9 @@ def build_catlas_minhashes(catlas_file, catlas_minhashes, factory, save_db):
             if level > 2:
                 print('flushing catlas minhashes at level {}'.format(level-2))
                 for node in levels[level - 2]:
-                    del catlas_minhashes[node]
+                    # don't delete yet if it's a child of the root
+                    if node not in root_children:
+                        del catlas_minhashes[node]
 
             current_level = level
 
