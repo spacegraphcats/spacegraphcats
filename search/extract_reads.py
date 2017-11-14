@@ -74,7 +74,8 @@ def main():
     scaled = int(args.scaled)
 
     # multiple seeds
-    seeds = [int(s) for s in args.seeds.split(',')]
+    seeds = search_utils.parse_seeds_arg(args.seeds)
+    print('seeds: {} -> {}'.format(args.seeds, seeds))
     assert 42 not in seeds
 
     # locate a minhash db for each seed
