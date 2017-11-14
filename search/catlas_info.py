@@ -4,7 +4,7 @@ import os
 import sys
 import leveldb
 
-from .search_utils import (load_dag, load_layer0_to_cdbg, load_minhash)
+from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
 from .search_utils import get_minhashdb_name
 
 
@@ -25,12 +25,12 @@ def main():
 
     print('top catlas node {} has {} children.'.format(top_node_id,
                                                        len(dag[top_node_id])))
-    
-    layer0_to_cdbg = load_layer0_to_cdbg(catlas, domfile)
+
+    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
     x = set()
-    for v in layer0_to_cdbg.values():
+    for v in layer1_to_cdbg.values():
         x.update(v)
-    print('{} layer 0 catlas nodes, corresponding to {} cDBG nodes.'.format(len(layer0_to_cdbg), len(x)))
+    print('{} layer 1 catlas nodes, corresponding to {} cDBG nodes.'.format(len(layer1_to_cdbg), len(x)))
 
     db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0)
     if not db_path:

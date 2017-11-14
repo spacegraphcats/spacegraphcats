@@ -103,7 +103,7 @@ def load_minhash(node_id: int, minhash_db: leveldb.LevelDB) -> MinHash:
     return pickle.loads(value)
 
 
-def calc_node_shadow_sizes(dag, dag_levels, layer0_to_cdbg):
+def calc_node_shadow_sizes(dag, dag_levels, layer1_to_cdbg):
     x = []
     for (node_id, level) in dag_levels.items():
         x.append((level, node_id))
@@ -112,7 +112,7 @@ def calc_node_shadow_sizes(dag, dag_levels, layer0_to_cdbg):
     node_shadow_sizes = {}
     for level, node_id in x:
         if level == 0:
-            node_shadow_sizes[node_id] = len(layer0_to_cdbg[node_id])
+            node_shadow_sizes[node_id] = len(layer1_to_cdbg[node_id])
         else:
             sub_size = 0
             for child_id in dag[node_id]:
