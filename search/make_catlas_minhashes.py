@@ -45,7 +45,7 @@ class LevelDBWriter(object):
         self.batch.Put(b, p)
 
 
-def make_leaf_minhashes(contigfile, cdbg_to_layer0, factory):
+def make_leaf_minhashes(contigfile, cdbg_to_layer1, factory):
     "Make the minhashes for each leaf node from the contigs in contigfile"
 
     d = defaultdict(factory)
@@ -67,7 +67,7 @@ def make_leaf_minhashes(contigfile, cdbg_to_layer0, factory):
         mh = factory()
         mh.add_sequence(record.sequence)
         if mh.get_mins():
-            leaf_nodes = cdbg_to_layer0.get(cdbg_id, set())
+            leaf_nodes = cdbg_to_layer1.get(cdbg_id, set())
             for leaf_node_id in leaf_nodes:
                 d[leaf_node_id].merge(mh)
 
@@ -78,7 +78,7 @@ def make_leaf_minhashes(contigfile, cdbg_to_layer0, factory):
     return d
 
 
-def load_layer0_to_cdbg(catlas_file, domfile):
+def load_layer1_to_cdbg(catlas_file, domfile):
     "Load the mapping between first layer catlas and the original DBG nodes."
 
     # mapping from cdbg dominators to dominated nodes.
@@ -95,22 +95,22 @@ def load_layer0_to_cdbg(catlas_file, domfile):
 
     fp.close()
 
-    layer0_to_cdbg = {}
+    layer1_to_cdbg = {}
 
     # mapping from catlas node IDs to cdbg nodes
     fp = open(catlas_file, 'rt')
     for line in fp:
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-        if int(level) != 0:
+        if int(level) != 1:
             continue
 
         catlas_node = int(catlas_node)
         cdbg_node = int(cdbg_node)
-        layer0_to_cdbg[catlas_node] = domset[cdbg_node]
+        layer1_to_cdbg[catlas_node] = domset[cdbg_node]
 
     fp.close()
 
-    return layer0_to_cdbg
+    return layer1_to_cdbg
 
 
 def build_catlas_minhashes(catlas_file, catlas_minhashes, factory, save_db):
@@ -124,7 +124,7 @@ def build_catlas_minhashes(catlas_file, catlas_minhashes, factory, save_db):
     fp = open(catlas_file, 'rt')
     for line in fp:
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-        if int(level) == 0:
+        if int(level) == 1:
             continue
 
         beneath = beneath.split(' ')
@@ -137,7 +137,7 @@ def build_catlas_minhashes(catlas_file, catlas_minhashes, factory, save_db):
     # single pass on the sorted list).
     x.sort()
     levels = defaultdict(set)
-    current_level = 0
+    current_level = 1
     for (level, catlas_node, beneath) in x:
 
         # remove no-longer needed catlas minhashes to save on memory
@@ -224,19 +224,19 @@ def main(args=sys.argv[1:]):
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer0_to_cdbg = load_layer0_to_cdbg(catlas, domfile)
-    print('loaded {} layer 0 catlas nodes'.format(len(layer0_to_cdbg)))
+    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
+    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
     x = set()
-    for v in layer0_to_cdbg.values():
+    for v in layer1_to_cdbg.values():
         x.update(v)
     print('...corresponding to {} cDBG nodes.'.format(len(x)))
     del x
 
     # build reverse mapping
-    cdbg_to_layer0 = defaultdict(set)
-    for catlas_node, cdbg_nodes in layer0_to_cdbg.items():
+    cdbg_to_layer1 = defaultdict(set)
+    for catlas_node, cdbg_nodes in layer1_to_cdbg.items():
         for cdbg_id in cdbg_nodes:
-            cdbg_to_layer0[cdbg_id].add(catlas_node)
+            cdbg_to_layer1[cdbg_id].add(catlas_node)
 
     # create the minhash db, first removing it if it already exists
     path = search_utils.get_minhashdb_name(args.catlas_prefix, ksize, scaled,
@@ -250,22 +250,18 @@ def main(args=sys.argv[1:]):
     save_db.start()                       # batch mode writing
 
     # create minhashes for catlas leaf nodes.
-    print('ksize={} scaled={} seed={}'.format(ksize, scaled, seed))
-    catlas_minhashes = make_leaf_minhashes(contigfile, cdbg_to_layer0,
+    print('ksize={} scaled={}'.format(ksize, scaled))
+    catlas_minhashes = make_leaf_minhashes(contigfile, cdbg_to_layer1,
                                            leaf_factory)
-    n = len(catlas_minhashes)
-    print('... built {} leaf node MinHashes...'.format(n),
-          file=sys.stderr)
 
-    total_mh = n
-    empty_mh = len(layer0_to_cdbg) - total_mh
+    total_mh = len(layer1_to_cdbg)
+    empty_mh = total_mh - len(catlas_minhashes)
+    print('... built {} leaf node MinHashes.'.format(total_mh),
+          file=sys.stderr)
 
     for catlas_node, mh in catlas_minhashes.items():
         if save_db:
             save_db.put_minhash(catlas_node, mh)
-
-    print('created {} leaf node MinHashes via merging'.format(n))
-    print('')
 
     # build minhashes for entire catlas, or just the leaves (dom nodes)?
     if not args.leaves_only:
@@ -275,8 +271,8 @@ def main(args=sys.argv[1:]):
         empty_mh += e
 
     save_db.end()
-    print('saved {} minhashes ({} empty)'.format(total_mh - empty_mh,
-                                                 empty_mh))
+    print('saved {} minhashes (and {} empty)'.format(total_mh - empty_mh,
+                                                     empty_mh))
 
     # write out some metadata
     search_utils.update_minhash_info(args.catlas_prefix, ksize, scaled,
@@ -284,6 +280,7 @@ def main(args=sys.argv[1:]):
 
     # log that this command was run
     log(args.catlas_prefix, sys.argv)
+
 
 if __name__ == '__main__':
     main()
