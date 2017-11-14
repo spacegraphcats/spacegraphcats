@@ -15,7 +15,9 @@ from screed.utils import to_str
 from .bgzf.bgzf import BgzfReader
 
 
-def load_layer0_to_cdbg(catlas_file, domfile):
+
+
+def load_layer1_to_cdbg(catlas_file, domfile):
     "Load the mapping between first layer catlas and the original DBG nodes."
 
     # mapping from cdbg dominators to dominated nodes.
@@ -32,22 +34,22 @@ def load_layer0_to_cdbg(catlas_file, domfile):
 
     fp.close()
 
-    layer0_to_cdbg = {}
+    layer1_to_cdbg = {}
 
     # mapping from catlas node IDs to cdbg nodes
     fp = open(catlas_file, 'rt')
     for line in fp:
         catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-        if int(level) != 0:
+        if int(level) != 1:
             continue
 
         catlas_node = int(catlas_node)
         cdbg_node = int(cdbg_node)
-        layer0_to_cdbg[catlas_node] = domset[cdbg_node]
+        layer1_to_cdbg[catlas_node] = domset[cdbg_node]
 
     fp.close()
 
-    return layer0_to_cdbg
+    return layer1_to_cdbg
 
 
 def load_dag(catlas_file):

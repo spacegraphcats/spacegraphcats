@@ -78,41 +78,6 @@ def make_leaf_minhashes(contigfile, cdbg_to_layer1, factory):
     return d
 
 
-def load_layer1_to_cdbg(catlas_file, domfile):
-    "Load the mapping between first layer catlas and the original DBG nodes."
-
-    # mapping from cdbg dominators to dominated nodes.
-    domset = {}
-
-    fp = open(domfile, 'rt')
-    for line in fp:
-        dom_node, *beneath = line.strip().split(' ')
-
-        dom_node = int(dom_node)
-        beneath = map(int, beneath)
-
-        domset[dom_node] = set(beneath)
-
-    fp.close()
-
-    layer1_to_cdbg = {}
-
-    # mapping from catlas node IDs to cdbg nodes
-    fp = open(catlas_file, 'rt')
-    for line in fp:
-        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-        if int(level) != 1:
-            continue
-
-        catlas_node = int(catlas_node)
-        cdbg_node = int(cdbg_node)
-        layer1_to_cdbg[catlas_node] = domset[cdbg_node]
-
-    fp.close()
-
-    return layer1_to_cdbg
-
-
 def build_catlas_minhashes(catlas_file, catlas_minhashes, factory, save_db):
     "Build MinHashes for all the internal nodes of the catlas DAG."
 
@@ -224,7 +189,7 @@ def main(args=sys.argv[1:]):
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
+    layer1_to_cdbg = search_utils.load_layer1_to_cdbg(catlas, domfile)
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
     x = set()
     for v in layer1_to_cdbg.values():

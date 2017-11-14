@@ -28,7 +28,7 @@ from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
 from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
 from . import search_utils
-from .search_utils import (load_dag, load_layer0_to_cdbg, load_minhash)
+from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
 
 
 def main():
@@ -76,10 +76,10 @@ def main():
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer0_to_cdbg = load_layer0_to_cdbg(catlas, domfile)
-    print('loaded {} layer 0 catlas nodes'.format(len(layer0_to_cdbg)))
+    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
+    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
     x = set()
-    for v in layer0_to_cdbg.values():
+    for v in layer1_to_cdbg.values():
         x.update(v)
     print('...corresponding to {} cDBG nodes.'.format(len(x)))
 
@@ -134,12 +134,12 @@ def main():
                 frontier = search_utils.remove_empty_catlas_nodes(frontier, minhash_db)
                 shadow = find_shadow(frontier, dag)
 
-                if len(shadow) == len(layer0_to_cdbg):
+                if len(shadow) == len(layer1_to_cdbg):
                     print('\n*** WARNING: shadow is the entire graph! ***\n')
 
                 # update overall results
                 for x in shadow:
-                    cdbg_shadow.update(layer0_to_cdbg.get(x))
+                    cdbg_shadow.update(layer1_to_cdbg.get(x))
 
                 del minhash_db
                 gc.collect()
