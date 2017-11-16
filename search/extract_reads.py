@@ -12,6 +12,7 @@ import argparse
 import os
 import sys
 import time
+import gc
 
 import leveldb
 
@@ -58,16 +59,8 @@ def main():
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
+    top_node_id, dag = load_just_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
-
-    # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
-    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
-    x = set()
-    for v in layer1_to_cdbg.values():
-        x.update(v)
-    print('...corresponding to {} cDBG nodes.'.format(len(x)))
 
     # single ksize
     ksize = int(args.ksize)
@@ -95,7 +88,7 @@ def main():
                                            args.query_seqs)
 
     # gather results of all queries across all seeds into cdbg_shadow
-    cdbg_shadow = set()
+    total_shadow = set()
 
     # do queries!
     for seed_query, db_path in zip(seed_queries, minhash_db_list):
@@ -134,13 +127,11 @@ def main():
         frontier = nonempty_frontier
 
         shadow = find_shadow(frontier, dag)
+        total_shadow.update(shadow)
 
         if args.verbose:
             print("Size of the frontier shadow: {} ({:.1f}%)".format(len(shadow),
                                                              len(shadow) / len(layer1_to_cdbg)* 100))
-
-        if len(shadow) == len(layer1_to_cdbg):
-            print('\n*** WARNING: shadow is the entire graph! ***\n')
 
         query_size = len(seed_query.minhash.get_mins())
         query_bp = query_size * seed_query.minhash.scaled
@@ -155,12 +146,19 @@ def main():
 
         log(args.catlas_prefix, sys.argv)
 
-        # update overall results
-        for x in shadow:
-            cdbg_shadow.update(layer1_to_cdbg.get(x))
-
         end = time.time()
         print('query time: {:.1f}s'.format(end-start))
+
+    del dag
+    gc.collect()
+    
+    # load mapping between dom nodes and cDBG/graph nodes:
+    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
+    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
+
+    cdbg_shadow = set()
+    for x in total_shadow:
+        cdbg_shadow.update(layer1_to_cdbg.get(x))
 
     # done with main loop! now extract reads corresponding to union of
     # query results.

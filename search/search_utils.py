@@ -15,8 +15,6 @@ from screed.utils import to_str
 from .bgzf.bgzf import BgzfReader
 
 
-
-
 def load_layer1_to_cdbg(catlas_file, domfile):
     "Load the mapping between first layer catlas and the original DBG nodes."
 
@@ -91,6 +89,118 @@ def load_dag(catlas_file):
             max_node = catlas_node
 
     return max_node, dag, dag_up, dag_levels
+
+
+def load_just_dag(catlas_file):
+    "Load the catlas Directed Acyclic Graph."
+    dag = {}
+
+    # track the root of the tree
+    max_node = -1
+    max_level = -1
+
+    # load everything from the catlas file
+    for line in open(catlas_file, 'rt'):
+        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
+
+        level = int(level)
+
+        # parse out the children
+        catlas_node = int(catlas_node)
+        beneath = beneath.strip()
+        if beneath:
+            beneath = beneath.split(' ')
+            beneath = set(map(int, beneath))
+
+            # save node -> children, and level
+            dag[catlas_node] = beneath
+        else:
+            dag[catlas_node] = set()
+
+        # update max_node/max_level
+        level = int(level)
+        if level > max_level:
+            max_level = level
+            max_node = catlas_node
+
+    return max_node, dag
+
+
+class CatlasDB(object):
+    """
+    Wrapper class for accessing catlas DAG in sqlite.
+    """
+    def __init__(self, catlas_prefix):
+        self.prefix = catlas_prefix
+
+        dbfilename = 'catlas.csv.sqlite'
+        self.dbfilename = os.path.join(self.prefix, dbfilename)
+
+        self.db = sqlite3.connect(self.dbfilename)
+        self.cursor = self.db.cursor()
+        self.cursor.execute('PRAGMA cache_size=1000000')
+        self.cursor.execute('PRAGMA synchronous = OFF')
+        self.cursor.execute('PRAGMA journal_mode = MEMORY')
+        self.cursor.execute('PRAGMA LOCKING_MODE = EXCLUSIVE')
+
+        self.cursor.execute('BEGIN TRANSACTION')
+        self.cursor.execute('SELECT DISTINCT COUNT(node_id) FROM children')
+        self.num_nodes = list(self.cursor)[0][0]
+        self.cache = collections.defaultdict(set)
+
+    def get_children(self, node_id):
+        if node_id in self.cache:
+            return self.cache[node_id]
+        c = self.cursor
+        c.execute('SELECT child_id FROM children WHERE node_id=?', (node_id,))
+        xx = set([ x[0] for x in c])
+        self.cache[node_id] = xx
+        return xx
+
+    def __getitem__(self, node_id):
+        x = self.get_children(node_id)
+        return x
+
+    def __len__(self):
+        return self.num_nodes
+
+    def get_top_node_id(self):
+        c = self.cursor
+        c.execute('SELECT node_id FROM top_node')
+        top_nodes = list(c)
+        assert len(top_nodes) == 1
+        return top_nodes[0][0]
+
+    def get_shadow(self, node_id_list):
+        shadow = set()
+        seen_nodes = set()
+
+        def add_to_shadow(node_id):
+            if node_id in seen_nodes:
+                return
+            seen_nodes.add(node_id)
+            
+            children_ids = self.get_children(node_id)
+            if not len(children_ids):
+                shadow.add(node_id)
+            else:
+                for child in children_ids:
+                    add_to_shadow(child)
+
+        for node in node_id_list:
+            add_to_shadow(node)
+
+        return shadow
+
+    def get_cdbg_nodes(self, leaf_node_list):
+        c = self.cursor()
+        cdbg_nodes = set()
+        for leaf_node in leaf_node_list:
+            c.execute('SELECT cdbg_id FROM first_doms WHERE node_id=?', (leaf_node,))
+            for cdbg_id in c:
+                cdbg_nodes.update(cdbg_id)
+
+        return cdbg_nodes
 
 
 def load_minhash(node_id: int, minhash_db: leveldb.LevelDB) -> MinHash:

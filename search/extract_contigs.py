@@ -12,6 +12,7 @@ import argparse
 import os
 import sys
 import time
+import gc
 
 import leveldb
 
@@ -50,24 +51,11 @@ def main():
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
+    top_node_id, dag = search_utils.load_just_dag(catlas)
+    print('loaded catlas DAG with {} nodes'.format(len(dag)))
+
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
     contig_db = screed.ScreedDB(contigs)
-
-    # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
-    print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
-
-    # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
-    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
-    x = set()
-    for v in layer1_to_cdbg.values():
-        x.update(v)
-    print('...corresponding to {} cDBG nodes.'.format(len(x)))
-
-    print('shadow top', len(find_shadow([top_node_id], dag)))
-    yyy = set(find_shadow([top_node_id], dag))
-    print(len(yyy.intersection(layer1_to_cdbg)))
 
     # single ksize
     ksize = int(args.ksize)
@@ -94,8 +82,8 @@ def main():
     seed_queries = build_queries_for_seeds(seeds, ksize, scaled,
                                            args.query_seqs)
 
-    # gather results of all queries across all seeds into cdbg_shadow
-    cdbg_shadow = set()
+    # gather results of all queries across all seeds into total_shadow
+    total_shadow = set()
 
     # do queries!
     for seed_query, db_path in zip(seed_queries, minhash_db_list):
@@ -118,7 +106,7 @@ def main():
 
             print("Containment of frontier: {}".format(query_mh.contained_by(frontier_mh)))
             print("Similarity of frontier: {}".format(query_mh.similarity(frontier_mh)))
-            print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), len(dag), 100 * len(frontier) / len(dag)))
+            print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), 1, 100 * len(frontier) / 1))
             print("Overhead of frontier: {}".format(compute_overhead(frontier_mh, query_mh)))
             print("Number of leaves in the frontier: {}".format(num_leaves))
             print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
@@ -133,14 +121,9 @@ def main():
             print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
         frontier = nonempty_frontier
 
+        # update overall results
         shadow = find_shadow(frontier, dag)
-
-        if args.verbose:
-            print("Size of the frontier shadow: {} ({:.1f}%)".format(len(shadow),
-                                                             len(shadow) / len(layer1_to_cdbg)* 100))
-
-        if len(shadow) == len(layer1_to_cdbg):
-            print('\n*** WARNING: shadow is the entire graph! ***\n')
+        total_shadow.update(shadow)
 
         query_size = len(seed_query.minhash.get_mins())
         query_bp = query_size * seed_query.minhash.scaled
@@ -155,12 +138,16 @@ def main():
 
         log(args.catlas_prefix, sys.argv)
 
-        # update overall results
-        for x in shadow:
-            cdbg_shadow.update(layer1_to_cdbg.get(x))
-
         end = time.time()
         print('query time: {:.1f}s'.format(end-start))
+
+    # load mapping between dom nodes and cDBG/graph nodes:
+    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
+    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
+
+    cdbg_shadow = set()
+    for x in total_shadow:
+        cdbg_shadow.update(layer1_to_cdbg.get(x))
 
     # done with main loop! now extract contigs corresponding to union of
     # query results.

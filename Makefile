@@ -192,7 +192,7 @@ twofoo.labels: twofoo/contigs.fa.gz twofoo.fq.gz.bgz
 	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 31 -M 1e9
 
 twofoo-extract-1: twofoo/minhashes_info.json twofoo.labels
-	python -m search.extract_reads data/63.fa.gz twofoo 0.2 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.31.fq --scaled=1000 --seed 43-47
+	python -m search.extract_reads data/63.fa.gz twofoo 0.2 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.31.fq --scaled=1000 --seed 43
 
 twofoo/contigs.fa.gz_screed: twofoo/cdbg.gxt twofoo/contigs.fa.gz
 	screed db twofoo/contigs.fa.gz
