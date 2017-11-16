@@ -194,6 +194,12 @@ twofoo.labels: twofoo/contigs.fa.gz twofoo.fq.gz.bgz
 twofoo-extract-1: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads data/63.fa.gz twofoo 0.2 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.31.fq --scaled=1000 --seed 43-47
 
+twofoo/contigs.fa.gz_screed: twofoo/cdbg.gxt twofoo/contigs.fa.gz
+	screed db twofoo/contigs.fa.gz
+
+twofoo-extract-1b: twofoo/minhashes_info.json twofoo/contigs.fa.gz_screed
+	python -m search.extract_contigs data/63.fa.gz twofoo 0.2 --scaled=1000 --seed 43
+
 twofoo-extract-bulk:
 	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig data/47-os185.sig data/63-os223.sig -k 23,25,27,29,31 --savedir foo -o foo/results.csv
 
