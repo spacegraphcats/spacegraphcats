@@ -51,7 +51,7 @@ def main():
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
-    top_node_id, dag = search_utils.load_just_dag(catlas)
+    top_node_id, dag, cdbg_to_catlas = search_utils.load_just_dag(catlas)
     print('loaded catlas DAG with {} nodes'.format(len(dag)))
 
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
@@ -142,7 +142,7 @@ def main():
         print('query time: {:.1f}s'.format(end-start))
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
+    layer1_to_cdbg = load_layer1_to_cdbg(cdbg_to_catlas, domfile)
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
 
     cdbg_shadow = set()

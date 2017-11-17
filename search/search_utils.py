@@ -15,11 +15,14 @@ from screed.utils import to_str
 from .bgzf.bgzf import BgzfReader
 
 
-def load_layer1_to_cdbg(catlas_file, domfile):
+def load_layer1_to_cdbg(cdbg_to_catlas, domfile):
     "Load the mapping between first layer catlas and the original DBG nodes."
 
     # mapping from cdbg dominators to dominated nodes.
-    domset = {}
+    #domset = {}
+    # mapping from catlas node IDs to cdbg nodes
+    layer1_to_cdbg = {}
+
 
     fp = open(domfile, 'rt')
     for line in fp:
@@ -28,22 +31,8 @@ def load_layer1_to_cdbg(catlas_file, domfile):
         dom_node = int(dom_node)
         beneath = map(int, beneath)
 
-        domset[dom_node] = set(beneath)
-
-    fp.close()
-
-    layer1_to_cdbg = {}
-
-    # mapping from catlas node IDs to cdbg nodes
-    fp = open(catlas_file, 'rt')
-    for line in fp:
-        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-        if int(level) != 1:
-            continue
-
-        catlas_node = int(catlas_node)
-        cdbg_node = int(cdbg_node)
-        layer1_to_cdbg[catlas_node] = domset[cdbg_node]
+        equiv_cdbg_to_catlas = cdbg_to_catlas[dom_node]
+        layer1_to_cdbg[equiv_cdbg_to_catlas] = set(beneath)
 
     fp.close()
 
@@ -94,6 +83,7 @@ def load_dag(catlas_file):
 def load_just_dag(catlas_file):
     "Load the catlas Directed Acyclic Graph."
     dag = {}
+    cdbg_to_catlas = {}
 
     # track the root of the tree
     max_node = -1
@@ -101,7 +91,7 @@ def load_just_dag(catlas_file):
 
     # load everything from the catlas file
     for line in open(catlas_file, 'rt'):
-        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
+        catlas_node, cdbg_id, level, beneath = line.strip().split(',')
 
         level = int(level)
 
@@ -123,7 +113,11 @@ def load_just_dag(catlas_file):
             max_level = level
             max_node = catlas_node
 
-    return max_node, dag
+        # save cdbg_to_catlas mapping
+        if level == 1:
+            cdbg_to_catlas[int(cdbg_id)] = catlas_node
+
+    return max_node, dag, cdbg_to_catlas
 
 
 class CatlasDB(object):

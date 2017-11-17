@@ -198,7 +198,11 @@ def main(args=sys.argv[1:]):
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = search_utils.load_layer1_to_cdbg(catlas, domfile)
+    max_node, dag, cdbg_to_catlas = search_utils.load_just_dag(catlas)
+    del dag
+    gc.collect()
+
+    layer1_to_cdbg = search_utils.load_layer1_to_cdbg(cdbg_to_catlas, domfile)
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
     x = set()
     for v in layer1_to_cdbg.values():

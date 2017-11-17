@@ -59,7 +59,7 @@ def main():
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load catlas DAG
-    top_node_id, dag = search_utils.load_just_dag(catlas)
+    top_node_id, dag, cdbg_to_catlas = search_utils.load_just_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # single ksize
@@ -130,8 +130,7 @@ def main():
         total_shadow.update(shadow)
 
         if args.verbose:
-            print("Size of the frontier shadow: {} ({:.1f}%)".format(len(shadow),
-                                                             len(shadow) / len(layer1_to_cdbg)* 100))
+            print("Size of the frontier shadow: {}".format(len(shadow)))
 
         query_size = len(seed_query.minhash.get_mins())
         query_bp = query_size * seed_query.minhash.scaled
@@ -153,7 +152,7 @@ def main():
     gc.collect()
     
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
+    layer1_to_cdbg = load_layer1_to_cdbg(cdbg_to_catlas, domfile)
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
 
     cdbg_shadow = set()
