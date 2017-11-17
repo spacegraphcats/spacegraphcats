@@ -476,6 +476,7 @@ class MinhashSqlDB(object):
         self.cursor.execute('PRAGMA cache_size=1000000')
         self.cursor.execute('PRAGMA synchronous = OFF')
         self.cursor.execute('PRAGMA journal_mode = MEMORY')
+        self.cursor.execute('BEGIN TRANSACTION')
 
     def create(self):
         self.cursor.execute('CREATE TABLE minhashes (catlas_node_id INTEGER PRIMARY KEY, mh_pickle BLOB)')
