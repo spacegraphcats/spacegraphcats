@@ -238,7 +238,7 @@ def main(args=sys.argv[1:]):
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
 
     # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
+    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # load minhash DB
