@@ -44,6 +44,7 @@ def load_dag(catlas_file):
     dag = {}
     dag_up = collections.defaultdict(set)
     dag_levels = {}
+    cdbg_to_catlas = {}
 
     # track the root of the tree
     max_node = -1
@@ -51,7 +52,7 @@ def load_dag(catlas_file):
 
     # load everything from the catlas file
     for line in open(catlas_file, 'rt'):
-        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
+        catlas_node, cdbg_id, level, beneath = line.strip().split(',')
 
         level = int(level)
 
@@ -77,7 +78,11 @@ def load_dag(catlas_file):
             max_level = level
             max_node = catlas_node
 
-    return max_node, dag, dag_up, dag_levels
+        # save cdbg_to_catlas mapping
+        if level == 1:
+            cdbg_to_catlas[int(cdbg_id)] = catlas_node
+
+    return max_node, dag, dag_up, dag_levels, cdbg_to_catlas
 
 
 def load_just_dag(catlas_file):

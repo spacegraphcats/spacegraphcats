@@ -254,5 +254,5 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
 
 twofoo-test:
-	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa -k 21
+	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa -k 31
 	python -m search.extract_reads_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig -k 21 --savedir foo -o foo/results.csv
