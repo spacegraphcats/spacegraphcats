@@ -245,12 +245,12 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 	load-graph.py -k 21 -M 1e8 dory-subset.ng data/dory-subset.fa
 	python -m spacegraphcats.build_contracted_dbg -l dory-subset.ng data/dory-subset.fa -o dory
 	python -m spacegraphcats.catlas dory 1
-	python -m search.make_catlas_minhashes -k 21 --scaled=1000 dory
+	python -m search.make_catlas_minhashes -k 21 --seed=43 --scaled=1000 dory
 	python -m search.make_bgzf data/dory-subset.fa
 	python -m search.label_cdbg dory dory-subset.fa.bgz dory.labels -k 21
-	sourmash compute -k 21 data/dory-head.fa --scaled=1000
-	python -m search.extract_reads_by_frontier dory-head.fa.sig dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
+	python -m search.extract_reads data/dory-head.fa dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
 	sourmash compute -k 21 dory-head.matches.fa --scaled=1000
+	sourmash compute -k 21 data/dory-head.fa --scaled=1000
 	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
 
 twofoo-test:

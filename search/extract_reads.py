@@ -59,7 +59,7 @@ def main():
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load catlas DAG
-    top_node_id, dag = load_just_dag(catlas)
+    top_node_id, dag = search_utils.load_just_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # single ksize
