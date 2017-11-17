@@ -89,7 +89,7 @@ def main():
     for seed_query, db_path in zip(seed_queries, minhash_db_list):
         start = time.time()
         print('loading minhashdb:', db_path)
-        minhash_db = leveldb.LevelDB(db_path)
+        minhash_db = search_utils.MinhashSqlDB(db_path)
 
         print('searching with seed={}'.format(seed_query.minhash.seed))
         frontier, num_leaves, num_empty, frontier_mh = \

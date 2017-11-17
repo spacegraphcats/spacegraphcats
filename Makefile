@@ -249,15 +249,10 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 	python -m search.make_bgzf data/dory-subset.fa
 	python -m search.label_cdbg dory dory-subset.fa.bgz dory.labels -k 21
 	python -m search.extract_reads data/dory-head.fa dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
-	sourmash compute -k 21 dory-head.matches.fa --scaled=1000
-	sourmash compute -k 21 data/dory-head.fa --scaled=1000
+	sourmash compute -k 21 -f dory-head.matches.fa --scaled=1000
+	sourmash compute -k 21 -f data/dory-head.fa --scaled=1000
 	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
 
 twofoo-test:
 	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa -k 21
-	python -m search.extract_contigs_by_frontier -k 21 data/63-os223.sig twofoo 0.0 twofoo.contigs.out.fa
-	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig -k 21 --savedir foo -o foo/results.csv
-
-twofoo-extract-200k-contigs: twofoo/minhashes_info.json twofoo.labels
-	python -m search.extract_contigs_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.frontier.contigs.63.200k.fq
-	python -m search.extract_contigs_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.frontier.contigs.63.200k.empty.fq --no-remove-empty
+	python -m search.extract_reads_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig -k 21 --savedir foo -o foo/results.csv

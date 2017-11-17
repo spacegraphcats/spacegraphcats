@@ -6,7 +6,6 @@ import argparse
 import os
 import pickle
 import sys
-import leveldb
 import shutil
 from collections import defaultdict
 import gc
@@ -24,25 +23,6 @@ class MinHashFactory(object):
 
     def __call__(self):
         return MinHash(**self.params)
-
-
-class LevelDBWriter(object):
-    def __init__(self, path):
-        self.db = leveldb.LevelDB(path)
-        self.batch = None
-
-    def start(self):
-        self.batch = leveldb.WriteBatch()
-
-    def end(self):
-        assert self.batch
-        self.db.Write(self.batch, sync=True)
-        self.batch = None
-
-    def put_minhash(self, node_id, mh):
-        b = node_id.to_bytes(8, byteorder='big')
-        p = pickle.dumps(mh)
-        self.batch.Put(b, p)
 
 
 def make_leaf_minhashes(contigfile, cdbg_to_layer1, factory):
@@ -138,7 +118,7 @@ def build_catlas_minhashes(catlas_file, catlas_minhashes, factory, save_db):
         # write!
         if merged_mh:
             if save_db:
-                save_db.put_minhash(catlas_node, merged_mh)
+                save_db.save_mh(catlas_node, merged_mh)
         else:
             empty_mh += 1
 
@@ -220,12 +200,13 @@ def main(args=sys.argv[1:]):
     path = search_utils.get_minhashdb_name(args.catlas_prefix, ksize, scaled,
                                            track_abundance, seed,
                                            must_exist=False)
-    if os.path.exists(path):
-        shutil.rmtree(path)
 
     print('saving minhashes in {}'.format(path))
-    save_db = LevelDBWriter(path)
-    save_db.start()                       # batch mode writing
+    if os.path.exists(path):
+        print('(removing previously existing file)')
+        os.unlink(path)
+    save_db = search_utils.MinhashSqlDB(path)
+    save_db.create()
 
     # create minhashes for catlas leaf nodes.
     print('ksize={} scaled={}'.format(ksize, scaled))
@@ -238,8 +219,7 @@ def main(args=sys.argv[1:]):
           file=sys.stderr)
 
     for catlas_node, mh in catlas_minhashes.items():
-        if save_db:
-            save_db.put_minhash(catlas_node, mh)
+        save_db.save_mh(catlas_node, mh)
 
     # build minhashes for entire catlas, or just the leaves (dom nodes)?
     if not args.leaves_only:
@@ -248,7 +228,9 @@ def main(args=sys.argv[1:]):
         total_mh += t
         empty_mh += e
 
-    save_db.end()
+    print('committing DB...')
+    save_db.commit()
+
     print('saved {} minhashes (and {} empty)'.format(total_mh - empty_mh,
                                                      empty_mh))
 

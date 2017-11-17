@@ -199,12 +199,8 @@ class CatlasDB(object):
 
 def load_minhash(node_id: int, minhash_db: leveldb.LevelDB) -> MinHash:
     "Load an individual node's MinHash from the leveldb."
-    try:
-        value = minhash_db.Get(node_id.to_bytes(8, byteorder='big'))
-    except KeyError:
-        return None
-
-    return pickle.loads(value)
+    mh = minhash_db.load_mh(node_id)
+    return mh
 
 
 def calc_node_shadow_sizes(dag, dag_levels, layer1_to_cdbg):
@@ -465,6 +461,35 @@ def get_reads_by_cdbg(sqlite_filename, reads_filename, cdbg_ids):
         assert xx == offset
 
         yield record, offset_f
+
+
+class MinhashSqlDB(object):
+    def __init__(self, filename):
+        self.dbfilename = filename
+        self.db = sqlite3.connect(self.dbfilename)
+        self.cursor = self.db.cursor()
+        self.cursor.execute('PRAGMA cache_size=1000000')
+        self.cursor.execute('PRAGMA synchronous = OFF')
+        self.cursor.execute('PRAGMA journal_mode = MEMORY')
+
+    def create(self):
+        self.cursor.execute('CREATE TABLE minhashes (catlas_node_id INTEGER PRIMARY KEY, mh_pickle BLOB)')
+
+    def commit(self):
+        self.db.commit()
+
+    def save_mh(self, catlas_id, mh):
+        pdata = pickle.dumps(mh)
+        self.cursor.execute('INSERT INTO minhashes (catlas_node_id, mh_pickle) VALUES (?, ?)', (catlas_id, sqlite3.Binary(pdata)))
+
+    def load_mh(self, catlas_id):
+        self.cursor.execute('SELECT mh_pickle FROM minhashes WHERE catlas_node_id=? LIMIT 1', (catlas_id,))
+        results = list(self.cursor)
+        if results:
+            pdata = results[0][0]
+            mh = pickle.loads(pdata)
+            return mh
+        return None
 
 
 def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance, seed,

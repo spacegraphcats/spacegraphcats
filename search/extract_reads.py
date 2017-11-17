@@ -14,8 +14,6 @@ import sys
 import time
 import gc
 
-import leveldb
-
 import screed
 
 import sourmash_lib
@@ -23,7 +21,7 @@ from sourmash_lib import MinHash
 from sourmash_lib.sourmash_args import load_query_signature
 
 from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
-                           build_queries_for_seeds)
+                           build_queries_for_seeds, MinhashSqlDB)
 from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
 from . import search_utils
@@ -94,7 +92,7 @@ def main():
     for seed_query, db_path in zip(seed_queries, minhash_db_list):
         start = time.time()
         print('loading minhashdb:', db_path)
-        minhash_db = leveldb.LevelDB(db_path)
+        minhash_db = MinhashSqlDB(db_path)
 
         print('searching with seed={}'.format(seed_query.minhash.seed))
         frontier, num_leaves, num_empty, frontier_mh = \
