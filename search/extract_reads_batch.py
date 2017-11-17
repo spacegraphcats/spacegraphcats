@@ -23,6 +23,7 @@ import sourmash_lib
 from sourmash_lib import MinHash
 from sourmash_lib.sourmash_args import load_query_signature
 
+from .extract_reads import collect_shadow
 from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
                            build_queries_for_seeds, parse_seeds_arg)
 from spacegraphcats.logging import log
@@ -72,16 +73,12 @@ def main():
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
+    top_node_id, dag, dag_up, dag_levels, catlas_to_cdbg = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
+    layer1_to_cdbg = load_layer1_to_cdbg(catlas_to_cdbg, domfile)
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
-    x = set()
-    for v in layer1_to_cdbg.values():
-        x.update(v)
-    print('...corresponding to {} cDBG nodes.'.format(len(x)))
 
     # single ksize
     ksize = int(args.ksize)
@@ -120,29 +117,14 @@ def main():
             # build a query sig for each seed.
             seed_queries = build_queries_for_seeds(seeds, ksize, scaled, query)
 
-            # gather results of all queries across all seeds into cdbg_shadow
+            # gather results of all queries across all seeds
+            total_shadow = collect_shadow(seed_queries, dag, top_node_id,
+                                          minhash_db_list,
+                                          overhead=args.overhead)
+
             cdbg_shadow = set()
-
-            # do queries!
-            for seed_query, db_path in zip(seed_queries, minhash_db_list):
-                minhash_db = leveldb.LevelDB(db_path)
-
-                frontier, num_leaves, num_empty, frontier_mh = \
-                  frontier_search(seed_query, top_node_id, dag, minhash_db,
-                                  args.overhead, not args.no_empty, args.purgatory)
-
-                frontier = search_utils.remove_empty_catlas_nodes(frontier, minhash_db)
-                shadow = find_shadow(frontier, dag)
-
-                if len(shadow) == len(layer1_to_cdbg):
-                    print('\n*** WARNING: shadow is the entire graph! ***\n')
-
-                # update overall results
-                for x in shadow:
-                    cdbg_shadow.update(layer1_to_cdbg.get(x))
-
-                del minhash_db
-                gc.collect()
+            for x in total_shadow:
+                cdbg_shadow.update(layer1_to_cdbg.get(x))
 
             # done with main loop! now extract reads corresponding to union of
             # query results.

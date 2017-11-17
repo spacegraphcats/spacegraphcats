@@ -201,7 +201,10 @@ twofoo-extract-1b: twofoo/minhashes_info.json twofoo/contigs.fa.gz_screed
 	python -m search.extract_contigs data/63.fa.gz twofoo 0.2 --scaled=1000 --seed 43
 
 twofoo-extract-bulk:
-	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig data/47-os185.sig data/63-os223.sig -k 23,25,27,29,31 --savedir foo -o foo/results.csv
+	python -m search.extract_reads_batch twofoo twofoo.fq.gz.bgz twofoo.labels foo --query data/{2,47,63}.fa.gz --seed 43-48
+
+twofoo-extract-bulk-2:
+	python -m search.extract_contigs_batch twofoo foo2 --query data/{2,47,63}.fa.gz --seed 43-48
 
 twofoo-extract: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
@@ -255,4 +258,5 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 
 twofoo-test:
 	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa -k 31
-	python -m search.extract_reads_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig -k 21 --savedir foo -o foo/results.csv
+	python -m search.extract_reads_batch twofoo twofoo.fq.gz.bgz twofoo.labels foo --query data/2.fa.gz -k 31
+	python -m search.extract_contigs_batch twofoo foo --query data/2.fa.gz -k 31
