@@ -50,7 +50,6 @@ def main():
     print('loaded catlas DAG with {} nodes'.format(len(dag)))
 
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
-    contig_db = screed.ScreedDB(contigs)
 
     # single ksize
     ksize = int(args.ksize)
@@ -122,14 +121,18 @@ def main():
     reads_minhash = query_sig.minhash.copy_and_clear()
 
     print('loading contigs...')
-    for n, contig_id in enumerate(cdbg_shadow):
+    n = 0
+    for record in screed.open(contigs):
         if n % 10000 == 0:
             offset_f = n / len(cdbg_shadow)
             print('...at n {} ({:.1f}% of shadow)'.format(n, offset_f * 100),
                   end='\r')
 
-        name = str(contig_id)
-        record = contig_db[name]
+        contig_id = int(record.name)
+        if contig_id not in cdbg_shadow:
+            continue
+
+        n += 1
 
         # track retrieved minhash
         reads_minhash.add_sequence(str(record.sequence), True)
