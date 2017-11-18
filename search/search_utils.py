@@ -227,11 +227,15 @@ def calc_node_shadow_sizes(dag, dag_levels, layer1_to_cdbg):
 
 
 def remove_empty_catlas_nodes(nodes, minhash_db):
+    import time
+    start = time.time()
     nonempty_frontier = set()
     for node in nodes:
         mh = load_minhash(node, minhash_db)
         if mh and len(mh.get_mins()) > 0:
             nonempty_frontier.add(node)
+
+    print('removed {} empty catlas nodes ({:.1f} s)'.format(len(nodes) - len(nonempty_frontier), time.time() - start))
 
     return nonempty_frontier
 
