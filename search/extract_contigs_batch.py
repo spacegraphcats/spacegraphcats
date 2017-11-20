@@ -1,12 +1,7 @@
 #! /usr/bin/env python
 """
-Do a frontier search and retrieve reads that match to the cDBG nodes
+Do a frontier search and retrieve contigs that match to the cDBG nodes
 in the frontier.
-
-Uses the output of label_cdbg to do its magic.
-
-See also extract_contigs_by_frontier for a simpler version that just pulls
-out linear segments.
 """
 import argparse
 import sys
@@ -36,8 +31,6 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('--overhead', help='\% of overhead', type=float, default=0.0)
-    p.add_argument('readsfile')
-    p.add_argument('labeled_reads_sqlite')
     p.add_argument('output')
     p.add_argument('--query', help='query sequences', nargs='+')
     p.add_argument('--no-empty', action='store_true')
@@ -49,11 +42,6 @@ def main():
     p.add_argument('--seeds', default="43", type=str)
 
     args = p.parse_args()
-
-    dbfilename = args.labeled_reads_sqlite
-    if not os.path.exists(dbfilename):
-        print('sqlite file {} does not exist'.format(dbfilename))
-        sys.exit(-1)
 
     for filename in args.query:
         if not os.path.exists(filename):
@@ -79,6 +67,10 @@ def main():
     # load mapping between dom nodes and cDBG/graph nodes:
     layer1_to_cdbg = load_layer1_to_cdbg(catlas_to_cdbg, domfile)
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
+
+    # load contigs DB
+    contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
+    contig_db = screed.ScreedDB(contigs)
 
     # single ksize
     ksize = int(args.ksize)
@@ -126,9 +118,9 @@ def main():
             for x in total_shadow:
                 cdbg_shadow.update(layer1_to_cdbg.get(x))
 
-            # done with main loop! now extract reads corresponding to union of
-            # query results.
-            print('done searching! now -> extracting reads.')
+            # done with main loop! now extract contigs corresponding to union
+            # of query results.
+            print('done searching! now -> extracting contigs.')
 
             # build check MinHash
             query_mh = MinHash(0, ksize, scaled=scaled, seed=42)
@@ -145,30 +137,33 @@ def main():
             total_seqs = 0
             output_seqs = 0
 
-            # track minhash of retrieved reads using original query minhash:
+            # track minhash of retrieved contigs using original query minhash:
             reads_minhash = query_sig.minhash.copy_and_clear()
 
-            print('loading labels and querying for matching sequences..')
-            reads_iter = get_reads_by_cdbg(dbfilename, args.readsfile, cdbg_shadow)
-            for n, (record, offset_f) in enumerate(reads_iter):
+            print('loading contigs...')
+            for n, contig_id in enumerate(cdbg_shadow):
                 if n % 10000 == 0:
-                    print('...at n {} ({:.1f}% of file)'.format(n, offset_f * 100),
+                    offset_f = n / len(cdbg_shadow)
+                    print('...at n {} ({:.1f}% of shadow)'.format(n, offset_f * 100),
                           end='\r')
 
-                # track retrieved minhash
-                reads_minhash.add_sequence(record.sequence, True)
+                name = str(contig_id)
+                record = contig_db[name]
 
-                # output!
+                # track retrieved minhash
+                reads_minhash.add_sequence(str(record.sequence), True)
+
                 total_bp += len(record.sequence)
                 total_seqs += 1
+            
 
             print('')
-            print('fetched {} reads, {} bp matching combined frontiers.'.format(total_seqs, total_bp))
+            print('fetched {} contigs, {} bp matching combined frontiers.'.format(total_seqs, total_bp))
 
             containment = query_sig.minhash.contained_by(reads_minhash)
             similarity = query_sig.minhash.similarity(reads_minhash)
-            print('query inclusion by retrieved reads:', containment)
-            print('query similarity to retrieved reads:', similarity)
+            print('query inclusion by retrieved contigs:', containment)
+            print('query similarity to retrieved contigs:', similarity)
 
             num_seeds = len(seeds)
 

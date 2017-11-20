@@ -12,8 +12,7 @@ import argparse
 import os
 import sys
 import time
-
-import leveldb
+import gc
 
 import screed
 
@@ -22,18 +21,82 @@ from sourmash_lib import MinHash
 from sourmash_lib.sourmash_args import load_query_signature
 
 from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
-                           build_queries_for_seeds)
+                           build_queries_for_seeds, MinhashSqlDB)
 from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
 from . import search_utils
-from .search_utils import (load_dag, load_layer0_to_cdbg, load_minhash)
+from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
+
+
+def collect_shadow(seed_queries, dag, top_node_id, minhash_db_list,
+                   overhead=0.0, verbose=False):
+    # gather results of all queries across all seeds into cdbg_shadow
+    total_shadow = set()
+
+    # do queries!
+    for seed_query, db_path in zip(seed_queries, minhash_db_list):
+        start = time.time()
+        print('loading minhashdb:', db_path)
+        minhash_db = MinhashSqlDB(db_path)
+
+        print('searching with seed={}'.format(seed_query.minhash.seed))
+        frontier, num_leaves, num_empty, frontier_mh = \
+          frontier_search(seed_query, top_node_id, dag, minhash_db,
+                          overhead, False, False)
+
+        top_mh = load_minhash(top_node_id, minhash_db)
+        query_mh = seed_query.minhash.downsample_max_hash(top_mh)
+        top_mh = top_mh.downsample_max_hash(seed_query.minhash)
+
+        if verbose:
+            print("Root containment: {}".format(query_mh.contained_by(top_mh)))
+            print("Root similarity: {}".format(query_mh.similarity(top_mh)))
+
+            print("Containment of frontier: {}".format(query_mh.contained_by(frontier_mh)))
+            print("Similarity of frontier: {}".format(query_mh.similarity(frontier_mh)))
+            print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), len(dag), 100 * len(frontier) / len(dag)))
+            print("Overhead of frontier: {}".format(compute_overhead(frontier_mh, query_mh)))
+            print("Number of leaves in the frontier: {}".format(num_leaves))
+            print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
+            print("")
+
+        if verbose:
+            print("removing empty catlas nodes from the frontier...")
+        nonempty_frontier = search_utils.remove_empty_catlas_nodes(frontier,
+                                                                   minhash_db)
+
+        if verbose:
+            print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
+        frontier = nonempty_frontier
+
+        shadow = find_shadow(frontier, dag)
+        total_shadow.update(shadow)
+
+        if verbose:
+            print("Size of the frontier shadow: {}".format(len(shadow)))
+
+        query_size = len(seed_query.minhash.get_mins())
+        query_bp = query_size * seed_query.minhash.scaled
+        if verbose:
+            print("Size of query minhash: {} (est {:2.1e} bp)".\
+                    format(query_size, query_bp))
+        minhash_size = len(frontier_mh.get_mins())
+        minhash_bp = minhash_size * frontier_mh.scaled
+        if verbose:
+            print("Size of frontier minhash: {} (est {:2.1e} bp); ratio {:.2f}".\
+                  format(minhash_size, minhash_bp, minhash_bp / query_bp))
+
+        end = time.time()
+        print('query time: {:.1f}s'.format(end-start))
+
+    return total_shadow
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('query_seqs', help='query sequences')
     p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('overhead', help='\% of overhead', type=float)
+    p.add_argument('overhead', help='\% of overhead', type=float, default=0.0)
     p.add_argument('readsfile')
     p.add_argument('labeled_reads_sqlite')
     p.add_argument('output')
@@ -58,16 +121,8 @@ def main():
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
+    top_node_id, dag, cdbg_to_catlas = search_utils.load_just_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
-
-    # load mapping between dom nodes and cDBG/graph nodes:
-    layer0_to_cdbg = load_layer0_to_cdbg(catlas, domfile)
-    print('loaded {} layer 0 catlas nodes'.format(len(layer0_to_cdbg)))
-    x = set()
-    for v in layer0_to_cdbg.values():
-        x.update(v)
-    print('...corresponding to {} cDBG nodes.'.format(len(x)))
 
     # single ksize
     ksize = int(args.ksize)
@@ -89,78 +144,28 @@ def main():
             sys.exit(-1)
         minhash_db_list.append(db_path)
 
+    log(args.catlas_prefix, sys.argv)
+
     # build a query sig for each seed.
     print('building query signatures for {} seeds.'.format(len(seeds)))
     seed_queries = build_queries_for_seeds(seeds, ksize, scaled,
                                            args.query_seqs)
 
     # gather results of all queries across all seeds into cdbg_shadow
+    total_shadow = collect_shadow(seed_queries, dag, top_node_id,
+                                  minhash_db_list, verbose=args.verbose,
+                                  overhead=args.overhead)
+
+    del dag
+    gc.collect()
+    
+    # load mapping between dom nodes and cDBG/graph nodes:
+    layer1_to_cdbg = load_layer1_to_cdbg(cdbg_to_catlas, domfile)
+    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
+
     cdbg_shadow = set()
-
-    # do queries!
-    for seed_query, db_path in zip(seed_queries, minhash_db_list):
-        start = time.time()
-        print('loading minhashdb:', db_path)
-        minhash_db = leveldb.LevelDB(db_path)
-
-        print('searching with seed={}'.format(seed_query.minhash.seed))
-        frontier, num_leaves, num_empty, frontier_mh = \
-          frontier_search(seed_query, top_node_id, dag, minhash_db,
-                          args.overhead, not args.no_empty, args.purgatory)
-
-        top_mh = load_minhash(top_node_id, minhash_db)
-        query_mh = seed_query.minhash.downsample_max_hash(top_mh)
-        top_mh = top_mh.downsample_max_hash(seed_query.minhash)
-
-        if args.verbose:
-            print("Root containment: {}".format(query_mh.contained_by(top_mh)))
-            print("Root similarity: {}".format(query_mh.similarity(top_mh)))
-
-            print("Containment of frontier: {}".format(query_mh.contained_by(frontier_mh)))
-            print("Similarity of frontier: {}".format(query_mh.similarity(frontier_mh)))
-            print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), len(dag), 100 * len(frontier) / len(dag)))
-            print("Overhead of frontier: {}".format(compute_overhead(frontier_mh, query_mh)))
-            print("Number of leaves in the frontier: {}".format(num_leaves))
-            print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
-            print("")
-
-        if args.verbose:
-            print("removing empty catlas nodes from the frontier...")
-        nonempty_frontier = search_utils.remove_empty_catlas_nodes(frontier,
-                                                                   minhash_db)
-
-        if args.verbose:
-            print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
-        frontier = nonempty_frontier
-
-        shadow = find_shadow(frontier, dag)
-
-        if args.verbose:
-            print("Size of the frontier shadow: {} ({:.1f}%)".format(len(shadow),
-                                                             len(shadow) / len(layer0_to_cdbg)* 100))
-
-        if len(shadow) == len(layer0_to_cdbg):
-            print('\n*** WARNING: shadow is the entire graph! ***\n')
-
-        query_size = len(seed_query.minhash.get_mins())
-        query_bp = query_size * seed_query.minhash.scaled
-        if args.verbose:
-            print("Size of query minhash: {} (est {:2.1e} bp)".\
-                    format(query_size, query_bp))
-        minhash_size = len(frontier_mh.get_mins())
-        minhash_bp = minhash_size * frontier_mh.scaled
-        if args.verbose:
-            print("Size of frontier minhash: {} (est {:2.1e} bp); ratio {:.2f}".\
-                  format(minhash_size, minhash_bp, minhash_bp / query_bp))
-
-        log(args.catlas_prefix, sys.argv)
-
-        # update overall results
-        for x in shadow:
-            cdbg_shadow.update(layer0_to_cdbg.get(x))
-
-        end = time.time()
-        print('query time: {:.1f}s'.format(end-start))
+    for x in total_shadow:
+        cdbg_shadow.update(layer1_to_cdbg.get(x))
 
     # done with main loop! now extract reads corresponding to union of
     # query results.

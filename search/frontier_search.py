@@ -2,7 +2,6 @@
 import argparse
 import os
 import sys
-import leveldb
 from copy import copy
 
 import sourmash_lib
@@ -11,6 +10,7 @@ from sourmash_lib.sourmash_args import load_query_signature
 from typing import Dict, List, Set, Union, Tuple
 
 from .memoize import memoize
+from . import search_utils
 from .search_utils import get_minhashdb_name, load_dag, load_minhash
 from spacegraphcats.logging import log
 
@@ -45,7 +45,7 @@ def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, leveldb.LevelDB], max_overhead: float, include_empty = False, use_purgatory = False):
+def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, search_utils.MinhashSqlDB], max_overhead: float, include_empty = False, use_purgatory = False):
     """
         include_empty: Whether to include nodes with no minhases in the frontier
         use_purgatory: put leaf nodes with large overhead into a purgatory and consider them after we have processes the whole frontier
@@ -54,10 +54,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, lev
 
     if not query_sig.minhash.scaled:
         raise Exception("query signature must be created with --scaled")
-
-    # load the leveldb unless we get a path
-    if not isinstance(minhash_db, leveldb.LevelDB):
-        minhash_db = leveldb.LevelDB(minhash_db)
 
     # nodes and minhases that are in the frontier
     frontier = []  # type: List[int]
@@ -242,7 +238,7 @@ def main(args=sys.argv[1:]):
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
 
     # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
+    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # load minhash DB
@@ -251,7 +247,7 @@ def main(args=sys.argv[1:]):
         print('** ERROR, minhash DB does not exist for {}'.format(args.ksize),
               file=sys.stderr)
         sys.exit(-1)
-    minhash_db = leveldb.LevelDB(db_path)
+    minhash_db = search_utils.MinhashSqlDB(db_path)
 
     # load query MinHash
     query_sig = load_query_signature(args.query_sig, ksize=args.ksize,

@@ -15,11 +15,14 @@ from screed.utils import to_str
 from .bgzf.bgzf import BgzfReader
 
 
-def load_layer0_to_cdbg(catlas_file, domfile):
+def load_layer1_to_cdbg(cdbg_to_catlas, domfile):
     "Load the mapping between first layer catlas and the original DBG nodes."
 
     # mapping from cdbg dominators to dominated nodes.
-    domset = {}
+    #domset = {}
+    # mapping from catlas node IDs to cdbg nodes
+    layer1_to_cdbg = {}
+
 
     fp = open(domfile, 'rt')
     for line in fp:
@@ -28,26 +31,12 @@ def load_layer0_to_cdbg(catlas_file, domfile):
         dom_node = int(dom_node)
         beneath = map(int, beneath)
 
-        domset[dom_node] = set(beneath)
+        equiv_cdbg_to_catlas = cdbg_to_catlas[dom_node]
+        layer1_to_cdbg[equiv_cdbg_to_catlas] = set(beneath)
 
     fp.close()
 
-    layer0_to_cdbg = {}
-
-    # mapping from catlas node IDs to cdbg nodes
-    fp = open(catlas_file, 'rt')
-    for line in fp:
-        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
-        if int(level) != 0:
-            continue
-
-        catlas_node = int(catlas_node)
-        cdbg_node = int(cdbg_node)
-        layer0_to_cdbg[catlas_node] = domset[cdbg_node]
-
-    fp.close()
-
-    return layer0_to_cdbg
+    return layer1_to_cdbg
 
 
 def load_dag(catlas_file):
@@ -55,6 +44,7 @@ def load_dag(catlas_file):
     dag = {}
     dag_up = collections.defaultdict(set)
     dag_levels = {}
+    cdbg_to_catlas = {}
 
     # track the root of the tree
     max_node = -1
@@ -62,7 +52,7 @@ def load_dag(catlas_file):
 
     # load everything from the catlas file
     for line in open(catlas_file, 'rt'):
-        catlas_node, cdbg_node, level, beneath = line.strip().split(',')
+        catlas_node, cdbg_id, level, beneath = line.strip().split(',')
 
         level = int(level)
 
@@ -88,20 +78,137 @@ def load_dag(catlas_file):
             max_level = level
             max_node = catlas_node
 
-    return max_node, dag, dag_up, dag_levels
+        # save cdbg_to_catlas mapping
+        if level == 1:
+            cdbg_to_catlas[int(cdbg_id)] = catlas_node
+
+    return max_node, dag, dag_up, dag_levels, cdbg_to_catlas
+
+
+def load_just_dag(catlas_file):
+    "Load the catlas Directed Acyclic Graph."
+    dag = {}
+    cdbg_to_catlas = {}
+
+    # track the root of the tree
+    max_node = -1
+    max_level = -1
+
+    # load everything from the catlas file
+    for line in open(catlas_file, 'rt'):
+        catlas_node, cdbg_id, level, beneath = line.strip().split(',')
+
+        level = int(level)
+
+        # parse out the children
+        catlas_node = int(catlas_node)
+        beneath = beneath.strip()
+        if beneath:
+            beneath = beneath.split(' ')
+            beneath = set(map(int, beneath))
+
+            # save node -> children, and level
+            dag[catlas_node] = beneath
+        else:
+            dag[catlas_node] = set()
+
+        # update max_node/max_level
+        level = int(level)
+        if level > max_level:
+            max_level = level
+            max_node = catlas_node
+
+        # save cdbg_to_catlas mapping
+        if level == 1:
+            cdbg_to_catlas[int(cdbg_id)] = catlas_node
+
+    return max_node, dag, cdbg_to_catlas
+
+
+class CatlasDB(object):
+    """
+    Wrapper class for accessing catlas DAG in sqlite.
+    """
+    def __init__(self, catlas_prefix):
+        self.prefix = catlas_prefix
+
+        dbfilename = 'catlas.csv.sqlite'
+        self.dbfilename = os.path.join(self.prefix, dbfilename)
+
+        self.db = sqlite3.connect(self.dbfilename)
+        self.cursor = self.db.cursor()
+        self.cursor.execute('PRAGMA cache_size=1000000')
+        self.cursor.execute('PRAGMA synchronous = OFF')
+        self.cursor.execute('PRAGMA journal_mode = MEMORY')
+        self.cursor.execute('PRAGMA LOCKING_MODE = EXCLUSIVE')
+
+        self.cursor.execute('BEGIN TRANSACTION')
+        self.cursor.execute('SELECT DISTINCT COUNT(node_id) FROM children')
+        self.num_nodes = list(self.cursor)[0][0]
+        self.cache = collections.defaultdict(set)
+
+    def get_children(self, node_id):
+        if node_id in self.cache:
+            return self.cache[node_id]
+        c = self.cursor
+        c.execute('SELECT child_id FROM children WHERE node_id=?', (node_id,))
+        xx = set([ x[0] for x in c])
+        self.cache[node_id] = xx
+        return xx
+
+    def __getitem__(self, node_id):
+        x = self.get_children(node_id)
+        return x
+
+    def __len__(self):
+        return self.num_nodes
+
+    def get_top_node_id(self):
+        c = self.cursor
+        c.execute('SELECT node_id FROM top_node')
+        top_nodes = list(c)
+        assert len(top_nodes) == 1
+        return top_nodes[0][0]
+
+    def get_shadow(self, node_id_list):
+        shadow = set()
+        seen_nodes = set()
+
+        def add_to_shadow(node_id):
+            if node_id in seen_nodes:
+                return
+            seen_nodes.add(node_id)
+            
+            children_ids = self.get_children(node_id)
+            if not len(children_ids):
+                shadow.add(node_id)
+            else:
+                for child in children_ids:
+                    add_to_shadow(child)
+
+        for node in node_id_list:
+            add_to_shadow(node)
+
+        return shadow
+
+    def get_cdbg_nodes(self, leaf_node_list):
+        c = self.cursor()
+        cdbg_nodes = set()
+        for leaf_node in leaf_node_list:
+            c.execute('SELECT cdbg_id FROM first_doms WHERE node_id=?', (leaf_node,))
+            for cdbg_id in c:
+                cdbg_nodes.update(cdbg_id)
+
+        return cdbg_nodes
 
 
 def load_minhash(node_id: int, minhash_db: leveldb.LevelDB) -> MinHash:
     "Load an individual node's MinHash from the leveldb."
-    try:
-        value = minhash_db.Get(node_id.to_bytes(8, byteorder='big'))
-    except KeyError:
-        return None
-
-    return pickle.loads(value)
+    mh = minhash_db.load_mh(node_id)
+    return mh
 
 
-def calc_node_shadow_sizes(dag, dag_levels, layer0_to_cdbg):
+def calc_node_shadow_sizes(dag, dag_levels, layer1_to_cdbg):
     x = []
     for (node_id, level) in dag_levels.items():
         x.append((level, node_id))
@@ -110,7 +217,7 @@ def calc_node_shadow_sizes(dag, dag_levels, layer0_to_cdbg):
     node_shadow_sizes = {}
     for level, node_id in x:
         if level == 0:
-            node_shadow_sizes[node_id] = len(layer0_to_cdbg[node_id])
+            node_shadow_sizes[node_id] = len(layer1_to_cdbg[node_id])
         else:
             sub_size = 0
             for child_id in dag[node_id]:
@@ -121,11 +228,15 @@ def calc_node_shadow_sizes(dag, dag_levels, layer0_to_cdbg):
 
 
 def remove_empty_catlas_nodes(nodes, minhash_db):
+    import time
+    start = time.time()
     nonempty_frontier = set()
     for node in nodes:
         mh = load_minhash(node, minhash_db)
         if mh and len(mh.get_mins()) > 0:
             nonempty_frontier.add(node)
+
+    print('removed {} empty catlas nodes ({:.1f} s)'.format(len(nodes) - len(nonempty_frontier), time.time() - start))
 
     return nonempty_frontier
 
@@ -359,6 +470,36 @@ def get_reads_by_cdbg(sqlite_filename, reads_filename, cdbg_ids):
         assert xx == offset
 
         yield record, offset_f
+
+
+class MinhashSqlDB(object):
+    def __init__(self, filename):
+        self.dbfilename = filename
+        self.db = sqlite3.connect(self.dbfilename)
+        self.cursor = self.db.cursor()
+        self.cursor.execute('PRAGMA cache_size=1000000')
+        self.cursor.execute('PRAGMA synchronous = OFF')
+        self.cursor.execute('PRAGMA journal_mode = MEMORY')
+        self.cursor.execute('BEGIN TRANSACTION')
+
+    def create(self):
+        self.cursor.execute('CREATE TABLE minhashes (catlas_node_id INTEGER PRIMARY KEY, mh_pickle BLOB)')
+
+    def commit(self):
+        self.db.commit()
+
+    def save_mh(self, catlas_id, mh):
+        pdata = pickle.dumps(mh)
+        self.cursor.execute('INSERT INTO minhashes (catlas_node_id, mh_pickle) VALUES (?, ?)', (catlas_id, sqlite3.Binary(pdata)))
+
+    def load_mh(self, catlas_id):
+        self.cursor.execute('SELECT mh_pickle FROM minhashes WHERE catlas_node_id=? LIMIT 1', (catlas_id,))
+        results = list(self.cursor)
+        if results:
+            pdata = results[0][0]
+            mh = pickle.loads(pdata)
+            return mh
+        return None
 
 
 def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance, seed,

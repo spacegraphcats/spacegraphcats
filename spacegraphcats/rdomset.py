@@ -255,7 +255,7 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     (at radius radius) of the original graph.
     """
     print("assigning to dominators")
-    domgraph = DictGraph(nodes=domset)
+    domgraph = DictGraph(nodes=set(domset))
 
     # We need to assign each vertex to a unique closest dominator.  A value of
     # -1 indicates this vertex has not yet been assigned to a dominator.
@@ -294,13 +294,16 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     for u, v in graph.arcs(1):
         du, dv = assigned_dominator[u], assigned_dominator[v]
         assert du in domset and dv in domset
-        domgraph.add_arc(du, dv)
-        domgraph.add_arc(dv, du)
+        if du != dv:
+            domgraph.add_arc(du, dv)
+            domgraph.add_arc(dv, du)
 
     # map of dominators to vertices they dominate
     dominated = {x: set() for x in domset}  # type: Dict[int, Set[int]]
     for v, x in assigned_dominator.items():
         dominated[x].add(v)
+
+    domgraph.remove_isolates()
 
     return domgraph, dominated
 
