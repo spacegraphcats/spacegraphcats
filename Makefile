@@ -180,23 +180,31 @@ twofoo/catlas.csv: twofoo/cdbg.gxt
 	python -m spacegraphcats.catlas twofoo 1
 
 # build minhashes
-#twofoo/minhashes_info.json: twofoo/catlas.csv twofoo/contigs.fa.gz
-foo:
-	python -m search.make_catlas_minhashes -k 21 --scaled=1000 --leaf-scaled=1000 twofoo
-	python -m search.make_catlas_minhashes -k 23 --scaled=1000 --leaf-scaled=1000 twofoo
-	python -m search.make_catlas_minhashes -k 25 --scaled=1000 --leaf-scaled=1000 twofoo
-	python -m search.make_catlas_minhashes -k 27 --scaled=1000 --leaf-scaled=1000 twofoo
-	python -m search.make_catlas_minhashes -k 29 --scaled=1000 --leaf-scaled=1000 twofoo
-	python -m search.make_catlas_minhashes -k 31 --scaled=1000 --leaf-scaled=1000 twofoo
+twofoo/minhashes_info.json: twofoo/catlas.csv twofoo/contigs.fa.gz
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=43
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=44
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=45
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=46
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=47
+	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=48
 
 twofoo.labels: twofoo/contigs.fa.gz twofoo.fq.gz.bgz
 	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 31 -M 1e9
 
 twofoo-extract-1: twofoo/minhashes_info.json twofoo.labels
-	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.2 -k 23,25,27,29,31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.k23-31.fq --scaled=10000
+	python -m search.extract_reads data/63.fa.gz twofoo 0.2 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.31.fq --scaled=1000 --seed 43
+
+twofoo/contigs.fa.gz_screed: twofoo/cdbg.gxt twofoo/contigs.fa.gz
+	screed db twofoo/contigs.fa.gz
+
+twofoo-extract-1b: twofoo/minhashes_info.json twofoo/contigs.fa.gz_screed
+	python -m search.extract_contigs data/63.fa.gz twofoo 0.2 --scaled=1000 --seed 43
 
 twofoo-extract-bulk:
-	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig data/47-os185.sig data/63-os223.sig -k 23,25,27,29,31 --savedir foo -o foo/results.csv
+	python -m search.extract_reads_batch twofoo twofoo.fq.gz.bgz twofoo.labels foo --query data/{2,47,63}.fa.gz --seed 43-48
+
+twofoo-extract-bulk-2:
+	python -m search.extract_contigs_batch twofoo foo2 --query data/{2,47,63}.fa.gz --seed 43-48
 
 twofoo-extract: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
@@ -240,19 +248,15 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 	load-graph.py -k 21 -M 1e8 dory-subset.ng data/dory-subset.fa
 	python -m spacegraphcats.build_contracted_dbg -l dory-subset.ng data/dory-subset.fa -o dory
 	python -m spacegraphcats.catlas dory 1
-	python -m search.make_catlas_minhashes -k 21 --scaled=1000 dory
+	python -m search.make_catlas_minhashes -k 21 --seed=43 --scaled=1000 dory
 	python -m search.make_bgzf data/dory-subset.fa
 	python -m search.label_cdbg dory dory-subset.fa.bgz dory.labels -k 21
-	sourmash compute -k 21 data/dory-head.fa --scaled=1000
-	python -m search.extract_reads_by_frontier dory-head.fa.sig dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
-	sourmash compute -k 21 dory-head.matches.fa --scaled=1000
+	python -m search.extract_reads data/dory-head.fa dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
+	sourmash compute -k 21 -f dory-head.matches.fa --scaled=1000
+	sourmash compute -k 21 -f data/dory-head.fa --scaled=1000
 	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
 
 twofoo-test:
-	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa -k 21
-	python -m search.extract_contigs_by_frontier -k 21 data/63-os223.sig twofoo 0.0 twofoo.contigs.out.fa
-	python -m search.frontier_search_batch twofoo twofoo.fq.gz.bgz twofoo.labels data/2-akker.sig -k 21 --savedir foo -o foo/results.csv
-
-twofoo-extract-200k-contigs: twofoo/minhashes_info.json twofoo.labels
-	python -m search.extract_contigs_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.frontier.contigs.63.200k.fq
-	python -m search.extract_contigs_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.frontier.contigs.63.200k.empty.fq --no-remove-empty
+	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa -k 31
+	python -m search.extract_reads_batch twofoo twofoo.fq.gz.bgz twofoo.labels foo --query data/2.fa.gz -k 31
+	python -m search.extract_contigs_batch twofoo foo --query data/2.fa.gz -k 31

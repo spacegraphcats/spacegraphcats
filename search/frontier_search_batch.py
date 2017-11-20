@@ -14,7 +14,7 @@ from sourmash_lib.sourmash_args import load_query_signature
 import traceback
 
 from .frontier_search import frontier_search, compute_overhead, find_shadow
-from .search_utils import (load_dag, load_layer0_to_cdbg)
+from .search_utils import (load_dag, load_layer1_to_cdbg)
 from . import search_utils
 from .search_utils import get_minhashdb_name
 
@@ -43,10 +43,10 @@ def main():
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer0_to_cdbg = load_layer0_to_cdbg(catlas, domfile)
-    print('loaded {} layer 0 catlas nodes'.format(len(layer0_to_cdbg)))
+    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
+    print('loaded {} layer 0 catlas nodes'.format(len(layer1_to_cdbg)))
     x = set()
-    for v in layer0_to_cdbg.values():
+    for v in layer1_to_cdbg.values():
         x.update(v)
     print('...corresponding to {} cDBG nodes.'.format(len(x)))
 
@@ -90,7 +90,7 @@ def main():
 
             shadow = find_shadow(frontier, dag)
             for x in shadow:
-                cdbg_shadow.update(layer0_to_cdbg.get(x))
+                cdbg_shadow.update(layer1_to_cdbg.get(x))
 
             query_mh = query_sig.minhash
             query_mh = query_mh.downsample_max_hash(frontier_mh)
@@ -158,7 +158,7 @@ def main():
             print('')
             print('fetched {} reads, {} bp matching frontier.'.format(total_seqs, total_bp))
             outfp.close()
-                
-    
+
+
 if __name__ == '__main__':
     main()

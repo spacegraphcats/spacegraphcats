@@ -13,7 +13,6 @@ import leveldb
 import collections
 import math
 
-import leveldb
 from . import search_utils
 from .search_utils import get_minhashdb_name, get_reads_by_cdbg, load_minhash
 from .frontier_search import find_shadow
@@ -44,20 +43,20 @@ def main(args=sys.argv[1:]):
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels = search_utils.load_dag(catlas)
+    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = search_utils.load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer0_to_cdbg = search_utils.load_layer0_to_cdbg(catlas, domfile)
-    print('loaded {} layer 0 catlas nodes'.format(len(layer0_to_cdbg)))
+    layer1_to_cdbg = search_utils.load_layer1_to_cdbg(cdbg_to_catlas, domfile)
+    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
 
     # load minhash DB
-    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0)
+    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0, 43)
     if not db_path:
         print('** ERROR, minhash DB does not exist for {}'.format(args.ksize),
               file=sys.stderr)
         sys.exit(-1)
-    minhash_db = leveldb.LevelDB(db_path)
+    minhash_db = search_utils.MinhashSqlDB(db_path)
 
     # calculate the cDBG shadow sizes for each catlas node.
     x = []
@@ -67,8 +66,8 @@ def main(args=sys.argv[1:]):
 
     node_shadow_sizes = {}
     for level, node_id in x:
-        if level == 0:
-            node_shadow_sizes[node_id] = len(layer0_to_cdbg[node_id])
+        if level == 1:
+            node_shadow_sizes[node_id] = len(layer1_to_cdbg[node_id])
         else:
             sub_size = 0
             for child_id in dag[node_id]:
@@ -113,6 +112,7 @@ def main(args=sys.argv[1:]):
 
         # retrieve shadow size, calculate mh_size / shadow_size.
         shadow_size = node_shadow_sizes[node_id]
+        print(shadow_size)
         ratio = math.log(mh_size, 2) - math.log(shadow_size, 2)
 
         level = dag_levels[node_id]
@@ -150,7 +150,7 @@ def main(args=sys.argv[1:]):
     cdbg_shadow = set()
     terminal_shadow = find_shadow(terminal, dag)
     for x in terminal_shadow:
-        cdbg_shadow.update(layer0_to_cdbg.get(x))
+        cdbg_shadow.update(layer1_to_cdbg.get(x))
 
     #### extract reads
     print('loading graph & labels/foo...')
