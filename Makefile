@@ -159,6 +159,9 @@ podar-search: podar/minhashes_info.json
 
 ####
 
+akker-reads.abundtrim.gz:
+	curl -o akker-reads.abundtrim.gz -L https://osf.io/dk7nb/download
+
 # make synthetic mix data set 'twofoo'
 twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
 	gunzip -c shew-reads.abundtrim.gz akker-reads.abundtrim.gz | gzip -9c > twofoo.fq.gz
