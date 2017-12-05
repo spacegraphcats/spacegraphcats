@@ -5,7 +5,7 @@ import sys
 import leveldb
 
 from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
-from .search_utils import get_minhashdb_name
+from .search_utils import get_minhashdb_name, MinhashSqlDB
 
 
 def main():
@@ -20,24 +20,24 @@ def main():
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
     contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
-    top_node_id, dag, dag_up, dag_levels = load_dag(catlas)
+    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = load_dag(catlas)
     print('loaded {} nodes and {} layers from catlas {}'.format(len(dag), dag_levels[top_node_id], catlas))
 
     print('top catlas node {} has {} children.'.format(top_node_id,
                                                        len(dag[top_node_id])))
 
-    layer1_to_cdbg = load_layer1_to_cdbg(catlas, domfile)
+    layer1_to_cdbg = load_layer1_to_cdbg(cdbg_to_catlas, domfile)
     x = set()
     for v in layer1_to_cdbg.values():
         x.update(v)
     print('{} layer 1 catlas nodes, corresponding to {} cDBG nodes.'.format(len(layer1_to_cdbg), len(x)))
 
-    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0)
+    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0, 43)
     if not db_path:
         print('** ERROR, minhash DB does not exist for {}'.format(ksize),
               file=sys.stderr)
         sys.exit(-1)
-    minhash_db = leveldb.LevelDB(db_path)
+    minhash_db = MinhashSqlDB(db_path)
 
     top_mh = load_minhash(top_node_id, minhash_db)
     print('top node minhash has {} mins, k={} scaled={}'.format(len(top_mh.get_mins()), top_mh.ksize, top_mh.scaled))
