@@ -78,6 +78,8 @@ def traverse_and_mark_linear_paths(graph, nk, stop_bf, pathy, degree_nodes):
         pathy.add_assembly(path_id, contig)
         if size and not contig:
             print('nonzero size, but contig is not produced. WTF.')
+        if contig and graph.get_min_count(contig) == 0:
+            print('generated k-mers not in BF. sigh.')
         if contig:
             stop_bf.add(contig[:graph.ksize()])
             stop_bf.add(contig[-graph.ksize():])
