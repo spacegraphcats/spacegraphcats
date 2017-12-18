@@ -80,9 +80,11 @@ acido-frontier-search-optimized: acido/minhashes_info.json acido/acido-chunk1.fa
 ####
 
 #
-# shewanella.mappedreads.fa is a collection of reads from podar data
-# that maps to the Shewanella OS228 genome via bwa aln.  "Real" data,
-# with known answer.
+# shew-reads.abundtrim.gz is a collection of reads from podar data
+# that maps to the Shewanella OS223 genome via bwa aln.  "Real" data,
+# with known answer.  Note that there is significant overlap with the
+# Shewanella OS185 genome; this is a data set with significant strain
+# variation.
 #
 
 # prepared reads -- this is here only for record keeping & never
@@ -119,6 +121,21 @@ shew-reads/shewanella-OS223.fa.gz.sig: shew-reads/shewanella-OS223.fa.gz
 shew-search: shew-reads/shewanella-OS223.fa.gz.sig shew-reads/minhashes_info.json
 	python -m search.frontier_search shew-reads/shewanella-OS223.fa.gz.sig shew-reads 0.1 --purgatory
 
+#
+# akker-reads.abundtrim.gz is a collection of reads from podar data
+# that maps to the Akkermansia muciniphila ATCC BAA-835 genome via bwa aln.
+# "Real" data, with known answer.  There does not appear to be significant
+# overlap with other genomes in the Podar data set; so, no significant strain
+# variation.
+#
+
+akker-reads.abundtrim.gz:
+	curl -o akker-reads.abundtrim.gz -L https://osf.io/dk7nb/download
+
+# build cDBG
+akker-reads/cdbg.gxt: akker-reads.abundtrim.gz
+	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 akker-reads.abundtrim.gz -o akker-reads
+
 ###
 
 #
@@ -151,16 +168,15 @@ podar/cdbg.gxt: podar.ng SRR606249.keep.fq.gz
 podar/catlas.csv: podar/cdbg.gxt
 	python -m spacegraphcats.catlas podar 3
 
-podar/minhashes_info.json: podar/cdbg.gxt podar/catlas.csv
-	python -m search.make_catlas_minhashes podar -k 31 --scaled=10000
-
-podar-search: podar/minhashes_info.json
-	time python -m search.frontier_search data/mircea-sigs/mircea-rm18.0.fa.sig podar 0.1 --purgatory
-
 ####
 
-akker-reads.abundtrim.gz:
-	curl -o akker-reads.abundtrim.gz -L https://osf.io/dk7nb/download
+#
+# twofoo targets, below, use a synthetic mixture of reads from podar data -
+# the shew-reads.abundtrim.gz (mapping to Shewanella baltica OS223) and
+# akker-reads.abundtrim.gz (mapping to Akkermansia muciniphila ATCC BAA-835).
+# Many of the shew-reads also map to S. baltica OS185, while the akker-reads
+# do not; so this is a good mixture for testing the effects of strain variation
+# on catlas foo.
 
 # make synthetic mix data set 'twofoo'
 twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
@@ -197,8 +213,11 @@ twofoo.labels: twofoo/contigs.fa.gz twofoo.fq.gz.bgz
 twofoo-extract-1: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads data/63.fa.gz twofoo 0.2 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.31.fq --scaled=1000 --seed 43
 
-twofoo-extract-1b: twofoo/minhashes_info.json twofoo/contigs.fa.gz_screed
-	python -m search.extract_contigs data/63.fa.gz twofoo 0.2 --scaled=1000 --seed 43
+twofoo-extract-1b: twofoo/minhashes_info.json 
+	python -m search.extract_contigs data/63.fa.gz twofoo 0.2 --scaled=1000 --seed 43-48
+
+twofoo-extract-conn: twofoo/minhashes_info.json twofoo/contigs.fa.gz_screed
+	python -m search.extract_contigs_conn data/63.fa.gz twofoo 0.2 --scaled=1000 --seed 43,44 --diffuse-radius=5
 
 twofoo-extract-bulk:
 	python -m search.extract_reads_batch twofoo twofoo.fq.gz.bgz twofoo.labels foo --query data/{2,47,63}.fa.gz --seed 43-48
@@ -207,41 +226,67 @@ twofoo-extract-bulk-2:
 	python -m search.extract_contigs_batch twofoo foo2 --query data/{2,47,63}.fa.gz --seed 43-48
 
 twofoo-extract: twofoo/minhashes_info.json twofoo.labels
-	python -m search.extract_reads_by_frontier data/63-os223.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
-	python -m search.extract_reads_by_frontier data/47-os185.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.47.fq
-	python -m search.extract_reads_by_frontier data/2-akker.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.2.fq
+	python -m search.extract_reads data/63.fa.gz twofoo 0.2 -k 31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
+	python -m search.extract_reads data/47.fa.gz twofoo 0.2 -k 31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.47.fq
+	python -m search.extract_reads data/2.fa.gz twofoo 0.2 -k 31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.2.fq
 
 twofoo-extract-200k: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.200k.fq
 	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.200k.empty.fq --no-remove-empty
 
-# build cDBG
-akker-reads/cdbg.gxt:
-	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 akker-reads.abundtrim.gz -o akker-reads
+make-long-contigs:
+	extract-long-sequences.py -l 2000 akker-reads/contigs.fa.gz | gzip -9c > akker-contigs-2k.fa.gz
+	#extract-long-sequences.py -l 1000 shew-reads/contigs.fa.gz | gzip -9c > shew-contigs-2k.fa.gz
 
-# build catlas
-akker-reads/catlas.csv: akker-reads/cdbg.gxt
-	python -m spacegraphcats.catlas akker-reads 1
+extract-from-long-contigs:
+	python -m search.extract_contigs --diffuse-radius=3 akker-contigs-2k.fa.gz twofoo 0.0 -o akker-long-oh00.fa --seed 43-47
+	python -m search.extract_contigs --diffuse-radius=3 akker-contigs-2k.fa.gz twofoo 0.2 -o akker-long-oh02.fa --seed 43-47
+	python -m search.extract_contigs --diffuse-radius=3 akker-contigs-2k.fa.gz twofoo 0.4 -o akker-long-oh04.fa --seed 43-47
+	python -m search.extract_contigs --diffuse-radius=3 akker-contigs-2k.fa.gz twofoo 0.6 -o akker-long-oh06.fa --seed 43-47
+	python -m search.extract_contigs --diffuse-radius=3 akker-contigs-2k.fa.gz twofoo 0.8 -o akker-long-oh08.fa --seed 43-47
 
-# build minhashes
-akker-reads/minhashes_info.json: akker-reads/catlas.csv akker-reads/contigs.fa.gz
-	python -m search.make_catlas_minhashes -k 21 --scaled=1000 akker-reads \
-		--leaf-scaled=100
+foo:
+	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 0.0 -o shew-long-oh00.fa --seed 43-47
+	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 0.2 -o shew-long-oh02.fa --seed 43-47
+	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 0.4 -o shew-long-oh04.fa --seed 43-47
+	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 0.6 -o shew-long-oh06.fa --seed 43-47
+	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 0.8 -o shew-long-oh08.fa --seed 43-47
+	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 1.0 -o shew-long-oh10.fa --seed 43-47
+	sourmash compute -k 31 --scaled=1000 shew-long-oh??.fa akker-long-oh??.fa -f
 
-akker-reads.abundtrim.gz.bgz: akker-reads.abundtrim.gz
-	python -m search.make_bgzf akker-reads.abundtrim.gz
+extract-from-long-contigs-search:
+	sourmash search --containment data/63-os223.sig shew-long-oh02.fa.sig
+	sourmash search --containment data/63-os223.sig shew-long-oh04.fa.sig
+	sourmash search --containment data/63-os223.sig shew-long-oh06.fa.sig
+	sourmash search --containment data/63-os223.sig shew-long-oh08.fa.sig
+	sourmash search --containment data/63-os223.sig shew-long-oh10.fa.sig
+	sourmash search --containment data/2-akker.sig akker-long-oh02.fa.sig
 
-# build reverse index into reads
-akker-reads.labels: akker-reads/contigs.fa.gz \
-		akker-reads.abundtrim.gz.bgz
-	python -m search.label_cdbg akker-reads \
-			akker-reads.abundtrim.gz.bgz akker-reads.labels -k 21
+extract-from-long-contigs-search-2:
+	sourmash search --containment data/47-os185.sig shew-long-oh02.fa.sig
+	sourmash search --containment data/47-os185.sig shew-long-oh04.fa.sig
+	sourmash search --containment data/47-os185.sig shew-long-oh06.fa.sig
+	sourmash search --containment data/47-os185.sig shew-long-oh08.fa.sig
+	sourmash search --containment data/47-os185.sig shew-long-oh10.fa.sig
 
-# frontier search:
-akker-search: akker-reads/minhashes_info.json
-	python -m search.frontier_search data/2-akker.sig akker-reads 0.0 -k 21
+extract-from-long-contigs-search-3:
+	sourmash search --containment data/63-os223.sig akker-long-oh02.fa.sig --threshold=0.0
+	sourmash search --containment data/47-os185.sig akker-long-oh02.fa.sig --threshold=0.0
 
+extract-from-long-contigs-search-4:
+	sourmash search --containment data/2-akker.sig shew-long-oh02.fa.sig
+	sourmash search --containment data/2-akker.sig shew-long-oh04.fa.sig
+	sourmash search --containment data/2-akker.sig shew-long-oh06.fa.sig
+	sourmash search --containment data/2-akker.sig shew-long-oh08.fa.sig
+	sourmash search --containment data/2-akker.sig shew-long-oh10.fa.sig
 ###
+
+#
+# these are targets for quick testing and/or obscure script testing.
+#
+# dory-test runs through the entire pipeline on a Doryteuthis transcriptome
+# subset.
+#
 
 dory-test: data/dory-subset.fa data/dory-head.fa
 	rm -fr dory
