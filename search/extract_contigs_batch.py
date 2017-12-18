@@ -10,6 +10,7 @@ import sys
 import gc
 import csv
 import traceback
+import gzip
 
 import leveldb
 import screed
@@ -18,7 +19,7 @@ import sourmash_lib
 from sourmash_lib import MinHash
 from sourmash_lib.sourmash_args import load_query_signature
 
-from .extract_reads import collect_shadow
+from .extract_reads import collect_frontier
 from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
                            build_queries_for_seeds, parse_seeds_arg)
 from spacegraphcats.logging import log
@@ -109,9 +110,11 @@ def main():
             seed_queries = build_queries_for_seeds(seeds, ksize, scaled, query)
 
             # gather results of all queries across all seeds
-            total_shadow = collect_shadow(seed_queries, dag, top_node_id,
-                                          minhash_db_list,
-                                          overhead=args.overhead)
+            total_frontier = collect_frontier(seed_queries, dag, top_node_id,
+                                              minhash_db_list,
+                                              overhead=args.overhead)
+
+            total_shadow = find_shadow(total_frontier, dag)
 
             cdbg_shadow = set()
             for x in total_shadow:
@@ -137,7 +140,7 @@ def main():
             output_seqs = 0
 
             # track minhash of retrieved contigs using original query minhash:
-            reads_minhash = query_sig.minhash.copy_and_clear()
+            contigs_minhash = query_sig.minhash.copy_and_clear()
 
             print('loading contigs...')
             n = 0
@@ -154,17 +157,17 @@ def main():
                 n += 1
 
                 # track retrieved minhash
-                reads_minhash.add_sequence(str(record.sequence), True)
+                contigs_minhash.add_sequence(str(record.sequence), True)
 
                 total_bp += len(record.sequence)
                 total_seqs += 1
-            
+
 
             print('')
             print('fetched {} contigs, {} bp matching combined frontiers.'.format(total_seqs, total_bp))
 
-            containment = query_sig.minhash.contained_by(reads_minhash)
-            similarity = query_sig.minhash.similarity(reads_minhash)
+            containment = query_sig.minhash.contained_by(contigs_minhash)
+            similarity = query_sig.minhash.similarity(contigs_minhash)
             print('query inclusion by retrieved contigs:', containment)
             print('query similarity to retrieved contigs:', similarity)
 
@@ -172,8 +175,30 @@ def main():
 
             csv_writer.writerow([query, containment, similarity, total_bp, total_seqs, num_seeds, ksize, scaled])
             csvoutfp.flush()
+
+            # write out signature from retrieved contigs.
+            sig_filename = os.path.basename(query) + '.contigs.sig'
+            with open(os.path.join(args.output, sig_filename), 'wt') as fp:
+                ss = sourmash_lib.SourmashSignature(contigs_minhash,
+                                                    name=sig_filename)
+                sourmash_lib.save_signatures([ss], fp)
+
+            # write out cDBG IDs
+            cdbg_listname = os.path.basename(query) + '.cdbg_ids.txt.gz'
+            with gzip.open(os.path.join(args.output, cdbg_listname), 'wt') as fp:
+                fp.write("\n".join([ str(x) for x in cdbg_shadow ]))
+
+            # write out frontier nodes by seed
+            frontier_listname = os.path.basename(query) + '.frontier.txt.gz'
+            with gzip.open(os.path.join(args.output, frontier_listname), 'wt') as fp:
+                for node, seedlist in total_frontier.items():
+                    fp.write('{},{}\n'.format(node,
+                                              " ".join([ str(x) for x in seedlist ])))
+
         except:
             traceback.print_exc()
+
+    ## end main loop!
 
     sys.exit(0)
 

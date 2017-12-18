@@ -225,6 +225,9 @@ twofoo-extract-bulk:
 twofoo-extract-bulk-2:
 	python -m search.extract_contigs_batch twofoo foo2 --query data/{2,47,63}.fa.gz --seed 43-48
 
+twofoo-extract-bulk-3:
+	python -m search.extract_contigs_batch twofoo foo2 --query data/2.fa.gz --seed 43-48
+
 twofoo-extract: twofoo/minhashes_info.json twofoo.labels
 	python -m search.extract_reads data/63.fa.gz twofoo 0.2 -k 31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
 	python -m search.extract_reads data/47.fa.gz twofoo 0.2 -k 31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.47.fq
