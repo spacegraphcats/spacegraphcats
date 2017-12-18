@@ -52,33 +52,6 @@ acido-search: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
 acido-frontier-search-optimized: acido/minhashes_info.json acido/acido-chunk1.fa.gz.sig
 	python -m search.frontier_search acido/acido-chunk1.fa.gz.sig acido 0.1  --purgatory
 
-
-### 
-
-15genome-clean:
-	-rm -r 15genome/
-
-# build cDBG
-15genome/cdbg.gxt:
-	python -m spacegraphcats.build_contracted_dbg -k 31 -M 4e9 data/15genome.fa.gz -o 15genome
-
-# build catlas
-15genome/catlas.csv: 15genome/cdbg.gxt
-	python -m spacegraphcats.catlas 15genome 3
-
-# build minhashes
-15genome/minhashes_info.json: 15genome/catlas.csv
-	python -m search.make_catlas_minhashes -k 31 --scaled=5000 15genome
-
-# run search!
-15genome-frontier-search: 15genome/minhashes_info.json
-	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1
-
-15genome-frontier-search-optimized: 15genome/minhashes_info.json
-	python -m search.frontier_search data/15genome.5.fa.sig 15genome 0.1 --purgatory
-
-####
-
 #
 # shew-reads.abundtrim.gz is a collection of reads from podar data
 # that maps to the Shewanella OS223 genome via bwa aln.  "Real" data,
@@ -146,6 +119,7 @@ akker-reads/cdbg.gxt: akker-reads.abundtrim.gz
 #    trim-low-abund.py -k 21 -M 8e9 -C 10 -V --normalize 10
 #			SRR606249.pe.qc.fq.gz --gzip -o SRR606249.keep.fq.gz
 #
+# @CTB fix/make sure it works
 
 # download the prepared reads - 5.3GB in size.
 SRR606249.keep.fq.gz:
@@ -210,51 +184,35 @@ twofoo/minhashes_info.json: twofoo/catlas.csv twofoo/contigs.fa.gz
 twofoo.labels: twofoo/contigs.fa.gz twofoo.fq.gz.bgz
 	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 31 -M 1e9
 
-twofoo-extract-1: twofoo/minhashes_info.json twofoo.labels
-	python -m search.extract_reads data/63.fa.gz twofoo 0.2 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.31.fq --scaled=1000 --seed 43
+twofoo-extract: twofoo/minhashes_info.json
+	python -m search.extract_nodes_by_query twofoo twofoo_out --query data/{2,47,63}.fa.gz --seed 43-48
 
-twofoo-extract-1b: twofoo/minhashes_info.json 
-	python -m search.extract_contigs data/63.fa.gz twofoo 0.2 --scaled=1000 --seed 43-48
+twofoo-extract-quick:
+	python -m search.extract_nodes_by_query twofoo twofoo_out --query data/{2,47,63}.fa.gz --seed 43-48
 
-twofoo-extract-conn: twofoo/minhashes_info.json twofoo/contigs.fa.gz_screed
-	python -m search.extract_contigs_conn data/63.fa.gz twofoo 0.2 --scaled=1000 --seed 43,44 --diffuse-radius=5
-
-twofoo-extract-bulk:
-	python -m search.extract_reads_batch twofoo twofoo.fq.gz.bgz twofoo.labels foo --query data/{2,47,63}.fa.gz --seed 43-48
-
-twofoo-extract-bulk-2:
-	python -m search.extract_contigs_batch twofoo foo2 --query data/{2,47,63}.fa.gz --seed 43-48
-
-twofoo-extract-bulk-3:
-	python -m search.extract_contigs_batch twofoo foo2 --query data/2.fa.gz --seed 43-48
-
-twofoo-extract: twofoo/minhashes_info.json twofoo.labels
-	python -m search.extract_reads data/63.fa.gz twofoo 0.2 -k 31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.fq
-	python -m search.extract_reads data/47.fa.gz twofoo 0.2 -k 31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.47.fq
-	python -m search.extract_reads data/2.fa.gz twofoo 0.2 -k 31 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.2.fq
-
-twofoo-extract-200k: twofoo/minhashes_info.json twofoo.labels
-	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.200k.fq
-	python -m search.extract_reads_by_frontier data/shew-os223-200k.fa.sig twofoo 0.2 -k 21 twofoo.fq.gz.bgz twofoo.labels twofoo.frontier.63.200k.empty.fq --no-remove-empty
+twofoo-extract-dna: twofoo_out/63.fa.gz.cdbg_ids.txt.gz twofoo.labels \
+	twofoo.fq.gz.bgz
+	python -m search.extract_contigs twofoo twofoo_out/63.fa.gz.cdbg_ids.txt.gz
+	python -m search.extract_reads twofoo.fq.gz.bgz twofoo.labels twofoo_out/63.fa.gz.cdbg_ids.txt.gz
 
 make-long-contigs:
 	extract-long-sequences.py -l 2000 akker-reads/contigs.fa.gz | gzip -9c > akker-contigs-2k.fa.gz
 	#extract-long-sequences.py -l 1000 shew-reads/contigs.fa.gz | gzip -9c > shew-contigs-2k.fa.gz
 
 extract-from-long-contigs:
-	python -m search.extract_contigs --diffuse-radius=3 akker-contigs-2k.fa.gz twofoo 0.0 -o akker-long-oh00.fa --seed 43-47
-	python -m search.extract_contigs --diffuse-radius=3 akker-contigs-2k.fa.gz twofoo 0.2 -o akker-long-oh02.fa --seed 43-47
-	python -m search.extract_contigs --diffuse-radius=3 akker-contigs-2k.fa.gz twofoo 0.4 -o akker-long-oh04.fa --seed 43-47
-	python -m search.extract_contigs --diffuse-radius=3 akker-contigs-2k.fa.gz twofoo 0.6 -o akker-long-oh06.fa --seed 43-47
-	python -m search.extract_contigs --diffuse-radius=3 akker-contigs-2k.fa.gz twofoo 0.8 -o akker-long-oh08.fa --seed 43-47
+	python -m search.extract_contigs akker-contigs-2k.fa.gz twofoo 0.0 -o akker-long-oh00.fa --seed 43-47
+	python -m search.extract_contigs akker-contigs-2k.fa.gz twofoo 0.2 -o akker-long-oh02.fa --seed 43-47
+	python -m search.extract_contigs akker-contigs-2k.fa.gz twofoo 0.4 -o akker-long-oh04.fa --seed 43-47
+	python -m search.extract_contigs akker-contigs-2k.fa.gz twofoo 0.6 -o akker-long-oh06.fa --seed 43-47
+	python -m search.extract_contigs akker-contigs-2k.fa.gz twofoo 0.8 -o akker-long-oh08.fa --seed 43-47
 
 foo:
-	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 0.0 -o shew-long-oh00.fa --seed 43-47
-	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 0.2 -o shew-long-oh02.fa --seed 43-47
-	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 0.4 -o shew-long-oh04.fa --seed 43-47
-	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 0.6 -o shew-long-oh06.fa --seed 43-47
-	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 0.8 -o shew-long-oh08.fa --seed 43-47
-	python -m search.extract_contigs --diffuse-radius=3 shew-reads.megahit.2k.fa.gz twofoo 1.0 -o shew-long-oh10.fa --seed 43-47
+	python -m search.extract_contigs shew-reads.megahit.2k.fa.gz twofoo 0.0 -o shew-long-oh00.fa --seed 43-47
+	python -m search.extract_contigs shew-reads.megahit.2k.fa.gz twofoo 0.2 -o shew-long-oh02.fa --seed 43-47
+	python -m search.extract_contigs shew-reads.megahit.2k.fa.gz twofoo 0.4 -o shew-long-oh04.fa --seed 43-47
+	python -m search.extract_contigs shew-reads.megahit.2k.fa.gz twofoo 0.6 -o shew-long-oh06.fa --seed 43-47
+	python -m search.extract_contigs shew-reads.megahit.2k.fa.gz twofoo 0.8 -o shew-long-oh08.fa --seed 43-47
+	python -m search.extract_contigs shew-reads.megahit.2k.fa.gz twofoo 1.0 -o shew-long-oh10.fa --seed 43-47
 	sourmash compute -k 31 --scaled=1000 shew-long-oh??.fa akker-long-oh??.fa -f
 
 extract-from-long-contigs-search:
@@ -297,14 +255,13 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 	python -m spacegraphcats.build_contracted_dbg -l dory-subset.ng data/dory-subset.fa -o dory
 	python -m spacegraphcats.catlas dory 1
 	python -m search.make_catlas_minhashes -k 21 --seed=43 --scaled=1000 dory
-	python -m search.make_bgzf data/dory-subset.fa
-	python -m search.label_cdbg dory dory-subset.fa.bgz dory.labels -k 21
-	python -m search.extract_reads data/dory-head.fa dory 0.2 -k 21 dory-subset.fa.bgz dory.labels dory-head.matches.fa
-	sourmash compute -k 21 -f dory-head.matches.fa --scaled=1000
+	python -m search.extract_nodes_by_query dory dory-head --overhead 0.2 -k 21 --query data/dory-head.fa
 	sourmash compute -k 21 -f data/dory-head.fa --scaled=1000
-	sourmash compare dory-head.matches.fa.sig dory-head.fa.sig
+	sourmash compare dory-head/dory-head.fa.contigs.sig dory-head.fa.sig
+
+	#python -m search.make_bgzf data/dory-subset.fa
+	#python -m search.label_cdbg dory dory-subset.fa.bgz dory.labels -k 21
 
 twofoo-test:
 	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa -k 31
-	python -m search.extract_reads_batch twofoo twofoo.fq.gz.bgz twofoo.labels foo --query data/2.fa.gz -k 31
-	python -m search.extract_contigs_batch twofoo foo --query data/2.fa.gz -k 31
+	python -m search.extract_nodes_by_query twofoo foo --query data/2.fa.gz -k 31
