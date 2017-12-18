@@ -92,6 +92,65 @@ def collect_shadow(seed_queries, dag, top_node_id, minhash_db_list,
     return total_shadow
 
 
+def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list,
+                     overhead=0.0, verbose=False):
+    # gather results of all queries across all seeds into total_frontier
+    total_frontier = set()
+
+    # do queries!
+    for seed_query, db_path in zip(seed_queries, minhash_db_list):
+        start = time.time()
+        print('loading minhashdb:', db_path)
+        minhash_db = MinhashSqlDB(db_path)
+
+        print('searching with seed={}'.format(seed_query.minhash.seed))
+        frontier, num_leaves, num_empty, frontier_mh = \
+          frontier_search(seed_query, top_node_id, dag, minhash_db,
+                          overhead, False, False)
+
+        top_mh = load_minhash(top_node_id, minhash_db)
+        query_mh = seed_query.minhash.downsample_max_hash(top_mh)
+        top_mh = top_mh.downsample_max_hash(seed_query.minhash)
+
+        if verbose:
+            print("Root containment: {}".format(query_mh.contained_by(top_mh)))
+            print("Root similarity: {}".format(query_mh.similarity(top_mh)))
+
+            print("Containment of frontier: {}".format(query_mh.contained_by(frontier_mh)))
+            print("Similarity of frontier: {}".format(query_mh.similarity(frontier_mh)))
+            print("Size of frontier: {} of {} ({:.3}%)".format(len(frontier), len(dag), 100 * len(frontier) / len(dag)))
+            print("Overhead of frontier: {}".format(compute_overhead(frontier_mh, query_mh)))
+            print("Number of leaves in the frontier: {}".format(num_leaves))
+            print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
+            print("")
+
+        if verbose:
+            print("removing empty catlas nodes from the frontier...")
+        nonempty_frontier = search_utils.remove_empty_catlas_nodes(frontier,
+                                                                   minhash_db)
+
+        if verbose:
+            print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
+        frontier = nonempty_frontier
+        total_frontier.update(frontier)
+
+        query_size = len(seed_query.minhash.get_mins())
+        query_bp = query_size * seed_query.minhash.scaled
+        if verbose:
+            print("Size of query minhash: {} (est {:2.1e} bp)".\
+                    format(query_size, query_bp))
+        minhash_size = len(frontier_mh.get_mins())
+        minhash_bp = minhash_size * frontier_mh.scaled
+        if verbose:
+            print("Size of frontier minhash: {} (est {:2.1e} bp); ratio {:.2f}".\
+                  format(minhash_size, minhash_bp, minhash_bp / query_bp))
+
+        end = time.time()
+        print('query time: {:.1f}s'.format(end-start))
+
+    return total_frontier
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('query_seqs', help='query sequences')
