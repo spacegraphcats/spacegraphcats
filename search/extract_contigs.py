@@ -13,17 +13,20 @@ import os
 import sys
 import time
 import gc
+import collections
 
 import screed
 
 import sourmash_lib
 from sourmash_lib import MinHash
 
-from .extract_reads import collect_shadow
+from .extract_reads import collect_shadow, collect_frontier
 from .search_utils import (get_minhashdb_name, build_queries_for_seeds)
 from spacegraphcats.logging import log
 from . import search_utils
 from .search_utils import (load_dag, load_layer1_to_cdbg)
+from .frontier_search import find_shadow
+from .extract_contigs_conn import assign_color, get_nodes
 
 
 def main():
@@ -40,11 +43,24 @@ def main():
     p.add_argument('--scaled', default=1000, type=float)
     p.add_argument('--seeds', default="43", type=str)
     p.add_argument('-v', '--verbose', action='store_true')
+    p.add_argument('--diffuse-radius', type=int, default=0)
 
     args = p.parse_args()
 
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
+    cdbgfile = os.path.join(args.catlas_prefix, 'cdbg.gxt')
+
+    ##
+    with open(cdbgfile, 'rt') as infp:
+        cdbg = collections.defaultdict(set)
+        num_nodes = int(next(infp))
+
+        for line in infp:
+            u, v = line.split()
+            u, v = int(u), int(v)
+            cdbg[u].add(v)
+            cdbg[v].add(u)
 
     top_node_id, dag, cdbg_to_catlas = search_utils.load_just_dag(catlas)
     print('loaded catlas DAG with {} nodes'.format(len(dag)))
@@ -78,20 +94,40 @@ def main():
 
     # gather results of all queries across all seeds into total_shadow
     # gather results of all queries across all seeds into cdbg_shadow
-    total_shadow = collect_shadow(seed_queries, dag, top_node_id,
-                                  minhash_db_list, verbose=args.verbose,
-                                  overhead=args.overhead)
+    total_frontier = collect_frontier(seed_queries, dag, top_node_id,
+                                      minhash_db_list, verbose=args.verbose,
+                                      overhead=args.overhead)
 
-    del dag
-    gc.collect()
 
     # load mapping between dom nodes and cDBG/graph nodes:
     layer1_to_cdbg = load_layer1_to_cdbg(cdbg_to_catlas, domfile)
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
 
-    cdbg_shadow = set()
-    for x in total_shadow:
-        cdbg_shadow.update(layer1_to_cdbg.get(x))
+    # assign colors
+    total_cdbg_shadow = set()
+    for x in total_frontier:
+        cdbg_shadow = set()
+        for y in find_shadow([x], dag):
+            cdbg_shadow.update(layer1_to_cdbg.get(y, set()))
+        assign_color(cdbg_shadow)
+        total_cdbg_shadow.update(cdbg_shadow)
+
+    next_layer = set()
+    this_layer = total_cdbg_shadow
+
+    #print(-1, group_max, color_max, len(set(group_to_color.values())))
+    for dr in range(args.diffuse_radius):
+        for u in this_layer:
+            for v in cdbg.get(u, ()):
+                next_layer.add(v)
+                assign_color([u, v])
+
+        this_layer = next_layer
+        next_layer = set()
+
+        #print(dr, group_max, color_max, len(set(group_to_color.values())))
+
+    cdbg_shadow = set(get_nodes())
 
     # done with main loop! now extract contigs corresponding to union of
     # query results.
