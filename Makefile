@@ -174,21 +174,21 @@ twofoo/catlas.csv: twofoo/cdbg.gxt
 
 # build minhashes
 twofoo/minhashes_info.json: twofoo/catlas.csv twofoo/contigs.fa.gz
-	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=43
-	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=44
-	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=45
-	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=46
-	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=47
-	python -m search.make_catlas_minhashes -k 31 --scaled=1000 twofoo --seed=48
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo --seed=43
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo --seed=44
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo --seed=45
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo --seed=46
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo --seed=47
+	python -m search.make_catlas_minhashes -k 21 --scaled=1000 twofoo --seed=48
 
 twofoo.labels: twofoo/contigs.fa.gz twofoo.fq.gz.bgz
 	python -m search.label_cdbg twofoo twofoo.fq.gz.bgz twofoo.labels -k 31 -M 1e9
 
 twofoo-extract: twofoo/minhashes_info.json
-	python -m search.extract_nodes_by_query twofoo twofoo_out --query data/{2,47,63}.fa.gz --seed 43-48
+	python -m search.extract_nodes_by_query twofoo twofoo_out --query data/{2,47,63}.fa.gz --seed 43-48 -k 21
 
 twofoo-extract-quick:
-	python -m search.extract_nodes_by_query twofoo twofoo_out --query data/{2,47,63}.fa.gz --seed 43-48
+	python -m search.extract_nodes_by_query twofoo twofoo_out --query data/2.fa.gz --seed 43-45 -k 21
 
 twofoo-extract-dna: twofoo_out/63.fa.gz.cdbg_ids.txt.gz twofoo.labels \
 	twofoo.fq.gz.bgz
