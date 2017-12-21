@@ -11,7 +11,7 @@ from .search_utils import get_minhashdb_name, MinhashSqlDB
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix')
-    p.add_argument('-k', '--ksize', default=31, type=int,
+    p.add_argument('-k', '--ksize', default=21, type=int,
                    help='list of k-mer sizes (default: 31)')
     args = p.parse_args()
 
@@ -46,7 +46,7 @@ def main():
     num_empty = 0
     for child_node in dag[top_node_id]:
         mh = load_minhash(child_node, minhash_db)
-        if not mh:
+        if not mh or not mh.get_mins():
             num_empty += 1
 
     print('{} empty child nodes (of {}) beneath top node'.format(num_empty, len(dag[top_node_id])))
