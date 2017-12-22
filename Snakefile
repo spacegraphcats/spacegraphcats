@@ -85,9 +85,9 @@ SEARCHQUICK_OUT=make_query_base(catlas_dir, searchquick)
 
 rule searchquick:
     input:
-        searchquick,
-        "{catlas_dir}/first_doms.txt",
-        "{catlas_dir}/catlas.csv",
+        searchquick, # input files
+        expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
         expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=seeds, ksize=ksize),
     output:
         expand("{catlas_dir}_search/results.csv", catlas_dir=catlas_dir),
