@@ -1,9 +1,8 @@
 {
-    "catlas_dir": "twofoo-snake",
-    "DATASETS": ["twofoo.fq.gz"],
+    "catlas_base": "twofoo",
+    "input_sequences": ["twofoo.fq.gz"],
     "ksize": 31,
     "radius": 1,
-    "seeds": [43,44,45,46,47,48,49,50,51],
 
     "searchquick": ["data/2.fa.gz"],
     "searchseeds": "43-48",
