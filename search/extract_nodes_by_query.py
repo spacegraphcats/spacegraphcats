@@ -268,6 +268,8 @@ def main():
                     fp.write('{},{}\n'.format(node,
                                               " ".join([ str(x) for x in seedlist ])))
 
+        except KeyboardInterrupt:
+            raise
         except:
             traceback.print_exc()
 
