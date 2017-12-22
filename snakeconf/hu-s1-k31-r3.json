@@ -6,7 +6,7 @@
     "radius": 3,
     "seeds": [43,44,45,46,47,48,49,50,51,52],
 
-    "searchquick": []
+    "searchquick": [],
     "searchseeds": "43-51",
 
     "search": []
