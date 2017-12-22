@@ -85,21 +85,27 @@ SEARCHQUICK_OUT=make_query_base(catlas_dir, searchquick)
 
 rule searchquick:
     input:
-        searchquick
+        searchquick,
+        "{catlas_dir}/first_doms.txt",
+        "{catlas_dir}/catlas.csv",
+        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=seeds, ksize=ksize),
     output:
         expand("{catlas_dir}_search/results.csv", catlas_dir=catlas_dir),
         SEARCHQUICK_OUT
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {input} --seed={searchseeds} -k {ksize}"
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {searchquick} --seed={searchseeds} -k {ksize}"
 
 
-# do a quick search!
+# do a full search!
 SEARCH_OUT=make_query_base(catlas_dir, search)
 rule search:
     input:
-        search
+        search,
+        expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=seeds, ksize=ksize),
     output:
         expand("{catlas_dir}_search/results.csv", catlas_dir=catlas_dir),
         SEARCH_OUT
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {input} --seed={searchseeds} -k {ksize}"
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {search} --seed={searchseeds} -k {ksize}"
