@@ -1,16 +1,17 @@
 # pull values in from config file:
-catlas_dir=config['catlas_dir']
-DATASETS=config['DATASETS']
+catlas_base=config['catlas_base']
+input_sequences=config['input_sequences']
 ksize=config['ksize']
 radius=config['radius']
-seeds=config['seeds']
+searchseeds=config.get('searchseeds', 43)
 
-searchquick=config['searchquick']
-search=config['search']
-searchseeds=config['searchseeds']
+catlas_dir = '{}_k{}_r{}'.format(catlas_base, ksize, radius)
 
 # internal definitions for convenience:
 python=sys.executable  # define as the version of Python running snakemake
+
+###############################################################################
+## some utility functions.
 
 # rewrite the datasets into bcalm format
 def write_bcalm_in(datasets):
@@ -19,7 +20,27 @@ def write_bcalm_in(datasets):
         x.append('-in {}'.format(d))
     return " ".join(x)
 
-BCALM_INPUT=write_bcalm_in(DATASETS)
+
+def parse_seeds(seeds_str):
+    seeds = []
+    seeds_str = seeds_str.split(',')
+    for seed in seeds_str:
+        if '-' in seed:
+            (start, end) = seed.split('-')
+            for s in range(int(start), int(end) + 1):
+                seeds.append(s)
+        else:
+            seeds.append(int(seed))
+
+    return seeds
+
+
+###############################################################################
+
+## now, build some variables...
+
+BCALM_INPUT=write_bcalm_in(input_sequences)
+SEEDS=parse_seeds(config['searchseeds'])
 
 ### rules!
 
@@ -27,18 +48,18 @@ BCALM_INPUT=write_bcalm_in(DATASETS)
 rule all:
     input:
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=seeds, ksize=ksize)
+        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize)
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
      input:
-        DATASETS
+        input_sequences
      output:
         "bcalm.{catlas_dir}.k{ksize}.unitigs.fa"
      shell:
         # @CTB here we run into the problem that bcalm wants
         # '-in file1 -in file2', so I am using 'params' and 
-        "bcalm {BCALM_INPUT} -out bcalm.{wildcards.catlas_dir}.k{wildcards.ksize} -kmer-size {wildcards.ksize} >& {output}.log.txt"
+        "bcalm {BCALM_INPUT} -out bcalm.{wildcards.catlas_dir}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt"
 
 # build catlas input from bcalm output by reformatting
 rule bcalm_catlas_input:
@@ -48,7 +69,8 @@ rule bcalm_catlas_input:
         "{catlas_dir}/cdbg.gxt",
         "{catlas_dir}/contigs.fa.gz"
      shell:
-        "{python} bcalm-to-gxt.py {input} {output}"
+        "{python} -m search.bcalm_to_gxt {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
+
 
 # build catlas!
 rule build_catlas:
@@ -81,31 +103,28 @@ def make_query_base(catlas_dir, searchfiles):
     return x
 
 # do a quick search!
-SEARCHQUICK_OUT=make_query_base(catlas_dir, searchquick)
-
 rule searchquick:
     input:
-        searchquick, # input files
-        expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=seeds, ksize=ksize),
+        config['searchquick'],
+        "{params.catlas_dir}/first_doms.txt"
+        "{params.catlas_dir}/catlas.csv",
+        expand("{{params.catlas_dir}}/minhashes.db.k{{params.ksize}}.s1000.abund0.seed{seed}", seed=SEEDS)
     output:
-        expand("{catlas_dir}_search/results.csv", catlas_dir=catlas_dir),
-        SEARCHQUICK_OUT
+        "{params.catlas_dir}_search/results.csv",
+        make_query_base(catlas_dir, config['searchquick'])
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {searchquick} --seed={searchseeds} -k {ksize}"
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {config[searchquick]} --seed={searchseeds} -k {ksize}"
 
 
 # do a full search!
-SEARCH_OUT=make_query_base(catlas_dir, search)
 rule search:
     input:
-        search,
+        config['search'],
         expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=seeds, ksize=ksize),
+        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
     output:
         expand("{catlas_dir}_search/results.csv", catlas_dir=catlas_dir),
-        SEARCH_OUT
+        make_query_base(catlas_dir, config['search']),
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {search} --seed={searchseeds} -k {ksize}"
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {config[search]} --seed={searchseeds} -k {ksize}"

@@ -1,7 +1,10 @@
 {
-    "catlas_dir": "dory-test-snake",
-    "DATASETS": ["data/dory-subset.fa", "data/dory-subset.fa"],
-    "ksize": 31,
+    "catlas_base": "dory",
+    "input_sequences": ["data/dory-subset.fa"],
+    "ksize": 21,
     "radius": 1,
-    "seeds": [43,44,45,46,47,48,49,50,51]
+
+    "searchquick": ['data/dory-head.fa'],
+    "searchseeds": "43",
+    "search": ['data/dory-head.fa'],
 }
