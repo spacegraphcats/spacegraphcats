@@ -1,0 +1,7 @@
+{
+    "catlas_dir": "twofoo-snake",
+    "DATASETS": ["twofoo.fq.gz"],
+    "ksize": 31,
+    "radius": 1,
+    "seeds": [43,44,45,46,47,48,49,50,51]
+}
