@@ -5,6 +5,9 @@ ksize=config['ksize']
 radius=config['radius']
 seeds=config['seeds']
 
+searchquick=config['searchquick']
+searchseeds=config['searchseeds']
+
 # internal definitions for convenience:
 python=sys.executable  # define as the version of Python running snakemake
 
@@ -24,6 +27,10 @@ rule all:
     input:
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
         expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=seeds, ksize=ksize)
+
+rule search:
+    input:
+        "{catlas_dir}_search/results.csv"
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
@@ -67,3 +74,11 @@ rule minhash_db:
         "{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}"
      shell:
         "{python} -m search.make_catlas_minhashes -k {wildcards.ksize} --seed={wildcards.seed} --scaled=1000 {catlas_dir}"
+
+rule do_extract_nodes_by_query:
+     input:
+        searchquick
+     output:
+        "{catlas_dir}_search/results.csv",
+     shell:
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {searchquick} --seed={searchseeds} -k {ksize}"

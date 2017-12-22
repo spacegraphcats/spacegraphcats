@@ -3,5 +3,10 @@
     "DATASETS": ["twofoo.fq.gz"],
     "ksize": 31,
     "radius": 1,
-    "seeds": [43,44,45,46,47,48,49,50,51]
+    "seeds": [43,44,45,46,47,48,49,50,51],
+
+    "searchquick": ["data/2.fa.gz"],
+    "searchseeds": "43-48"
+
+    "search": ["data/2.fa.gz", "data/47.fa.gz", "data/63.fa.gz"],
 }
