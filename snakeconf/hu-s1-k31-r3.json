@@ -1,0 +1,13 @@
+{
+    "catlas_dir": "hu-s1-k31-r3",
+    "DATASETS": ["SRR1976948.abundtrim.fq.gz"],
+    "_other_data": ["SRR1976948.abundtrim.fq.gz", "SRR1977304.abundtrim.fq.gz", "SRR1977249.abundtrim.fq.gz", "SRR1977357.abundtrim.fq.gz", "SRR1977296.abundtrim.fq.gz", "SRR1977365.abundtrim.fq.gz"],
+    "ksize": 31,
+    "radius": 3,
+    "seeds": [43,44,45,46,47,48,49,50,51,52],
+
+    "searchquick": []
+    "searchseeds": "43-51",
+
+    "search": []
+}
