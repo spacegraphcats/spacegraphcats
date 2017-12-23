@@ -113,7 +113,7 @@ rule searchquick:
         expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
     output:
         expand("{search_dir}/results.csv", search_dir=search_dir),
-        make_query_base(catlas_dir, config['search']),
+        make_query_base(catlas_dir, config['searchquick']),
     shell:
         "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} --seed={searchseeds} -k {ksize}"
 
