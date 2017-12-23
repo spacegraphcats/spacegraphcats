@@ -108,12 +108,12 @@ def make_query_base(catlas_dir, searchfiles):
 rule searchquick:
     input:
         config['searchquick'],
-        "{params.catlas_dir}/first_doms.txt"
-        "{params.catlas_dir}/catlas.csv",
-        expand("{{params.catlas_dir}}/minhashes.db.k{{params.ksize}}.s1000.abund0.seed{seed}", seed=SEEDS)
+        expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
     output:
-        "{params.search_dir}/results.csv",
-        make_query_base(catlas_dir, config['searchquick'])
+        expand("{search_dir}/results.csv", search_dir=search_dir),
+        make_query_base(catlas_dir, config['search']),
     shell:
         "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} --seed={searchseeds} -k {ksize}"
 
