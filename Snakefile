@@ -1,11 +1,13 @@
 # pull values in from config file:
-catlas_base=config['catlas_base']
-input_sequences=config['input_sequences']
-ksize=config['ksize']
-radius=config['radius']
-searchseeds=config.get('searchseeds', 43)
+catlas_base = config['catlas_base']
+input_sequences = config['input_sequences']
+ksize = config['ksize']
+radius = config['radius']
+searchseeds = config.get('searchseeds', 43)
+overhead = config.get('overhead', 0.0)
 
 catlas_dir = '{}_k{}_r{}'.format(catlas_base, ksize, radius)
+search_dir = '{}_k{}_r{}_search_oh{}'.format(catlas_base, ksize, radius, int(overhead*100))
 
 # internal definitions for convenience:
 python=sys.executable  # define as the version of Python running snakemake
@@ -99,7 +101,7 @@ rule minhash_db:
 def make_query_base(catlas_dir, searchfiles):
     x = []
     for filename in searchfiles:
-        x.append("{}_search/{}.contigs.sig".format(catlas_dir, os.path.basename(filename)))
+        x.append("{}/{}.contigs.sig".format(search_dir, os.path.basename(filename)))
     return x
 
 # do a quick search!
@@ -110,10 +112,10 @@ rule searchquick:
         "{params.catlas_dir}/catlas.csv",
         expand("{{params.catlas_dir}}/minhashes.db.k{{params.ksize}}.s1000.abund0.seed{seed}", seed=SEEDS)
     output:
-        "{params.catlas_dir}_search/results.csv",
+        "{params.search_dir}/results.csv",
         make_query_base(catlas_dir, config['searchquick'])
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {config[searchquick]} --seed={searchseeds} -k {ksize}"
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} --seed={searchseeds} -k {ksize}"
 
 
 # do a full search!
@@ -124,7 +126,7 @@ rule search:
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
         expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
     output:
-        expand("{catlas_dir}_search/results.csv", catlas_dir=catlas_dir),
+        expand("{search_dir}/results.csv", search_dir=search_dir),
         make_query_base(catlas_dir, config['search']),
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {catlas_dir}_search --query {config[search]} --seed={searchseeds} -k {ksize}"
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[search]} --seed={searchseeds} -k {ksize} --overhead={overhead}"
