@@ -110,6 +110,7 @@ def main():
                    help='k-mer size (default: 31)')
     p.add_argument('--scaled', default=1000, type=float)
     p.add_argument('--seeds', default="43", type=str)
+    p.add_argument('-v', '--verbose', action='store_true')
 
     args = p.parse_args()
 
@@ -181,7 +182,7 @@ def main():
     # output results.csv in the output directory:
     csvoutfp = open(os.path.join(args.output, 'results.csv'), 'wt')
     csv_writer = csv.writer(csvoutfp)
-    csv_writer.writerow(['query', 'containment', 'similarity', 'bp', 'reads', 'n_seeds', 'ksize', 'scaled'])
+    csv_writer.writerow(['query', 'containment', 'similarity', 'bp', 'reads', 'n_seeds', 'ksize', 'scaled', 'best_containment'])
 
     # iterate over each query, do the thing.
     for query in args.query:
@@ -196,7 +197,8 @@ def main():
             # gather results of all queries across all seeds
             total_frontier = collect_frontier(seed_queries, dag, top_node_id,
                                               minhash_db_list,
-                                              overhead=args.overhead)
+                                              overhead=args.overhead,
+                                              verbose=args.verbose)
 
             # calculate level 1 nodes for this frontier in the catlas
             total_shadow = find_shadow(total_frontier, dag)
@@ -252,8 +254,15 @@ def main():
 
             num_seeds = len(seeds)
 
+            # calculate best_containment using the first seed
+            # (shouldn't matter which one, so just pick one)
+            seed_query, db_path = seed_queries[0], minhash_db_list[0]
+            minhash_db = MinhashSqlDB(db_path)
+            top_mh = load_minhash(top_node_id, minhash_db)
+            best_containment = seed_query.minhash.contained_by(top_mh)
+
             # output to results.csv!
-            csv_writer.writerow([query, containment, similarity, total_bp, total_seqs, num_seeds, ksize, scaled])
+            csv_writer.writerow([query, containment, similarity, total_bp, total_seqs, num_seeds, ksize, scaled, best_containment])
             csvoutfp.flush()
 
             # write out signature from retrieved contigs.
