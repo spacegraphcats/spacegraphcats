@@ -24,7 +24,7 @@ from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
                            build_queries_for_seeds, parse_seeds_arg)
 from .search_utils import MinhashSqlDB
 from spacegraphcats.logging import log
-from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
+from search.frontier_search import (frontier_search, compute_overhead, find_shadow, NoContainment)
 from . import search_utils
 from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
 
@@ -43,9 +43,16 @@ def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list,
         minhash_db = MinhashSqlDB(db_path)
 
         print('searching with seed={}'.format(seed_query.minhash.seed))
-        frontier, num_leaves, num_empty, frontier_mh = \
-          frontier_search(seed_query, top_node_id, dag, minhash_db,
-                          overhead, False, False)
+        try:
+            frontier, num_leaves, num_empty, frontier_mh = \
+              frontier_search(seed_query, top_node_id, dag, minhash_db,
+                              overhead, False, False)
+        except NoContainment:
+            print('** WARNING: no containment!?')
+            frontier = []
+            num_leaves = 0
+            num_empty = 0
+            frontier_mh = seed_query.minhash.copy_and_clear()
 
         top_mh = load_minhash(top_node_id, minhash_db)
         query_mh = seed_query.minhash.downsample_max_hash(top_mh)

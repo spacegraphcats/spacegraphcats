@@ -15,6 +15,10 @@ from .search_utils import get_minhashdb_name, load_dag, load_minhash
 from spacegraphcats.logging import log
 
 
+class NoContainment(ValueError):
+    pass
+
+
 def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> Set[int]:
     shadow = set()  # type: Set[int]
 
@@ -139,7 +143,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         if containment == 0:
             # ignore nodes that have no containment
             # sanity check, should not get here
-            raise Exception("No containment")
+            raise NoContainment("No containment")
 
         overhead = node_overhead(minhash)
 
