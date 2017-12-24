@@ -28,7 +28,7 @@ from the main spacegraphcats directory.
 ''')
 
     parser.add_argument('configfile')
-    parser.add_argument('target', nargs='?', default='all')
+    parser.add_argument('target', nargs='?', default='build')
     parser.add_argument('-n', '--dry-run', action='store_true')
     parser.add_argument('--nolock', action='store_true')
     args = parser.parse_args()
