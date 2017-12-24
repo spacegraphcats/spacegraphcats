@@ -1,3 +1,11 @@
+#
+# Snakemake configuration file for running spacegraphcats pipelines.
+#
+# see script 'run' in this directory for a convenient entry point.
+#
+# Quickstart: `snakeconf/run snakeconf/dory-test.json searchquick`
+#
+
 # pull values in from config file:
 catlas_base = config['catlas_base']
 input_sequences = config['input_sequences']
@@ -47,7 +55,7 @@ SEEDS=parse_seeds(config['searchseeds'])
 ### rules!
 
 # build catlas & minhashes needed for search
-rule all:
+rule build:
     input:
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
         expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize)
