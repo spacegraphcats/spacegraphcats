@@ -135,11 +135,12 @@ def main(args=sys.argv[1:]):
     for (k, v, a, b, c) in x:
         print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b, '/ level:', c)
 
-    print("removing empty catlas nodes from the terminal nodes...")
-    nonempty_terminal = search_utils.remove_empty_catlas_nodes(terminal,
-                                                               minhash_db)
-    print("...went from {} to {}".format(len(terminal), len(nonempty_terminal)))
-    terminal = nonempty_terminal
+    if 0:
+        print("removing empty catlas nodes from the terminal nodes...")
+        nonempty_terminal = search_utils.remove_empty_catlas_nodes(terminal,
+                                                                   minhash_db)
+        print("...went from {} to {}".format(len(terminal), len(nonempty_terminal)))
+        terminal = nonempty_terminal
 
     # build cDBG shadow ID list.
     cdbg_shadow = set()

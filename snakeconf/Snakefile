@@ -142,12 +142,18 @@ rule search:
 
 ### shadow ratio stuff
 
-rule extract_by_shadow_ratio:
+rule shadow_ratio:
+    input:
+        expand("{catlas_dir}.shadow.{maxsize}.fa",
+               catlas_dir=catlas_dir,
+               maxsize=config.get('shadow_ratio_maxsize', 1000))
+
+rule extract_by_shadow_ratio_rule:
     input:
         expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
         expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed43", catlas_dir=catlas_dir, ksize=ksize),
     output:
-        expand("{catlas_dir}.shadow.fa", catlas_dir=catlas_dir),
+        "{catlas_dir}.shadow.{shadow_ratio_maxsize}.fa"
     shell:
-        "{python} -m search.extract_nodes_by_shadow_ratio {catlas_dir} {output}"
+        "{python} -m search.extract_nodes_by_shadow_ratio --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}"
