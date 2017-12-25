@@ -131,7 +131,7 @@ def main(args=sys.argv[1:]):
         else:
             shadow_size = node_shadow_sizes[node_id]
             x.append((0, node_id, shadow_size, 0, level))
-            if shadow_size >= 3:
+            if shadow_size >= 3 or 1:
                 new_node_set.add(node_id)
 
     terminal = new_node_set
