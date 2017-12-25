@@ -85,11 +85,10 @@ def main(args=sys.argv[1:]):
             
         return node_list
 
-    MAXSIZE = args.maxsize #/ mh.scaled
     counts = collections.defaultdict(int)
 
-    print('finding terminal nodes for {}.'.format(MAXSIZE))
-    terminal = find_terminal_nodes(top_node_id, counts, MAXSIZE)
+    print('finding terminal nodes for {}.'.format(args.maxsize))
+    terminal = find_terminal_nodes(top_node_id, counts, args.maxsize)
     print('...got {}'.format(len(terminal)))
 
     # now, go through and collect minhashes for each of them, and
@@ -117,7 +116,7 @@ def main(args=sys.argv[1:]):
 
         # keep those with larger shadow than k-mers (somewhat arbitrary :)
         # specifically: 10 k-mers per node, or fewer.
-        if 2**ratio < 10:
+        if 2**ratio < 10 or not mh:
             new_node_set.add(node_id)
 
             if mh is not None:
@@ -126,7 +125,7 @@ def main(args=sys.argv[1:]):
 
     terminal = new_node_set
 
-    print('terminal node stats for MAXSIZE: {:g}'.format(MAXSIZE))
+    print('terminal node stats for maxsize: {:g}'.format(args.maxsize))
     print('n merged:', n_merged)
     print('n tnodes:', len(terminal), '; k-mer cover:', len(merge_mh.get_mins()) * merge_mh.scaled)
     top_mh = load_minhash(top_node_id, minhash_db)
