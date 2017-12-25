@@ -120,7 +120,7 @@ def main(args=sys.argv[1:]):
         if 2**ratio < 10:
             new_node_set.add(node_id)
 
-            if mh_size > 1:
+            if mh > 1:
                 n_merged += 1
                 merge_mh.merge(mh)
 
