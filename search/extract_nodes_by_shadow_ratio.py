@@ -71,7 +71,7 @@ def main(args=sys.argv[1:]):
             node_shadow_sizes[node_id] = sub_size
 
     # find highest nodes with shadow size less than given max_size
-    def find_terminal_nodes(node_id, path_d, max_size):
+    def find_terminal_nodes(node_id, max_size):
         node_list = set()
         for sub_id in dag[node_id]:
             # shadow size
@@ -80,16 +80,23 @@ def main(args=sys.argv[1:]):
             if size < max_size:
                 node_list.add(sub_id)
             else:
-                children = find_terminal_nodes(sub_id, path_d, max_size)
+                children = find_terminal_nodes(sub_id, max_size)
                 node_list.update(children)
             
         return node_list
 
-    counts = collections.defaultdict(int)
-
     print('finding terminal nodes for {}.'.format(args.maxsize))
-    terminal = find_terminal_nodes(top_node_id, counts, args.maxsize)
-    print('...got {}'.format(len(terminal)))
+
+    if 1:
+        terminal = set()
+        for subnode in dag[top_node_id]:
+            mh = load_minhash(node_id, minhash_db)
+            if mh:
+                terminal.update(find_terminal_nodes(subnode, args.maxsize))
+
+    else:
+        terminal = find_terminal_nodes(top_node_id, args.maxsize)
+        print('...got {}'.format(len(terminal)))
 
     # now, go through and collect minhashes for each of them, and
     # estimate total k-mers underneath; filter terminal nodes.
