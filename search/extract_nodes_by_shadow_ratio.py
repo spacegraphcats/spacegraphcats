@@ -1,16 +1,14 @@
 #! /usr/bin/env python
 """
-Some code that Titus would like to play with more but doesn't want to explain
-right now.
-
-(Briefly, looks for portions of the graph that have lots of shadow nodes
-but very few k-mers; extracts reads from it.)
+Look for catlas nodes that have few k-mers but many cDBG nodes underneath
+them, as a likely sign of strain variation.
 """
 import argparse
 import os
 import sys
 import collections
 import math
+import sourmash_lib
 
 import screed
 from . import search_utils
@@ -130,8 +128,8 @@ def main(args=sys.argv[1:]):
     print('terminal node stats for MAXSIZE: {:g}'.format(MAXSIZE))
     print('n merged:', n_merged)
     print('n tnodes:', len(terminal), '; k-mer cover:', len(merge_mh.get_mins()) * merge_mh.scaled)
-    mh = load_minhash(top_node_id, minhash_db)
-    print('total k-mers:', len(mh.get_mins()) * mh.scaled)
+    top_mh = load_minhash(top_node_id, minhash_db)
+    print('total k-mers:', len(top_mh.get_mins()) * top_mh.scaled)
 
     x.sort(reverse=True)
     for (k, v, a, b, c) in x:
@@ -153,6 +151,10 @@ def main(args=sys.argv[1:]):
     print('extracting contigs')
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
+    # track results as signature
+    contigs_mh = sourmash_lib.MinHash(n=0, ksize=args.ksize, seed=42,
+                                      scaled=top_mh.scaled)
+
     total_bp = 0
     total_seqs = 0
 
@@ -169,6 +171,9 @@ def main(args=sys.argv[1:]):
         if contig_id not in cdbg_shadow:
             continue
 
+        outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
+        contigs_mh.add_sequence(record.sequence)
+
         # track retrieved sequences in a minhash
         total_bp += len(record.sequence)
         total_seqs += 1
@@ -176,6 +181,11 @@ def main(args=sys.argv[1:]):
     # done - got all contigs!
     print('')
     print('fetched {} contigs, {} bp matching combined frontiers.'.format(total_seqs, total_bp))
+
+    print('wrote contigs to {}'.format(args.output))
+    with open(args.output + '.sig', 'wt') as fp:
+        ss = sourmash_lib.SourmashSignature(contigs_mh)
+        sourmash_lib.save_signatures([ss], fp)
 
 
 if __name__ == '__main__':
