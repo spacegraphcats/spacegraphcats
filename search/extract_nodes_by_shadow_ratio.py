@@ -109,26 +109,30 @@ def main(args=sys.argv[1:]):
         mh = load_minhash(node_id, minhash_db)
         if mh:
             mh_size = len(mh.get_mins()) * mh.scaled
-        else:
-            mh_size = 1 * merge_mh.scaled
 
-        # retrieve shadow size, calculate mh_size / shadow_size.
-        shadow_size = node_shadow_sizes[node_id]
-        ratio = math.log(mh_size, 2) - math.log(shadow_size, 2)
+            # retrieve shadow size, calculate mh_size / shadow_size.
+            shadow_size = node_shadow_sizes[node_id]
+            ratio = math.log(mh_size, 2) - math.log(shadow_size, 2)
 
-        level = dag_levels[node_id]
+            level = dag_levels[node_id]
 
-        # track basic info
-        x.append((ratio, node_id, shadow_size, mh_size, level))
+            # track basic info
+            x.append((ratio, node_id, shadow_size, mh_size, level))
 
-        # keep those with larger shadow than k-mers (somewhat arbitrary :)
-        # specifically: 10 k-mers per node, or fewer.
-        if 2**ratio < 10 or not mh:
-            new_node_set.add(node_id)
+            # keep those with larger shadow than k-mers (somewhat arbitrary :)
+            # specifically: 10 k-mers per node, or fewer.
 
-            if mh is not None:
+            # THIS NEVER HAPPENS for small maxsize?!
+            if 2**ratio < 10:
+                new_node_set.add(node_id)
+
                 n_merged += 1
                 merge_mh.merge(mh)
+        else:
+            shadow_size = node_shadow_sizes[node_id]
+            x.append((0, node_id, shadow_size, 0, level))
+            if shadow_size >= 3:
+                new_node_set.add(node_id)
 
     terminal = new_node_set
 
