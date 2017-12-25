@@ -104,7 +104,7 @@ def main(args=sys.argv[1:]):
         if mh:
             mh_size = len(mh.get_mins()) * mh.scaled
         else:
-            mh_size = 1
+            mh_size = 1 * merge_mh.scaled
 
         # retrieve shadow size, calculate mh_size / shadow_size.
         shadow_size = node_shadow_sizes[node_id]
@@ -115,7 +115,8 @@ def main(args=sys.argv[1:]):
         # track basic info
         x.append((ratio, node_id, shadow_size, mh_size, level))
 
-        # merge those with larger shadow than k-mers (somewhat arbitrary :)
+        # keep those with larger shadow than k-mers (somewhat arbitrary :)
+        # specifically: 10 k-mers per node, or fewer.
         if 2**ratio < 10:
             new_node_set.add(node_id)
 
@@ -132,8 +133,9 @@ def main(args=sys.argv[1:]):
     print('total k-mers:', len(top_mh.get_mins()) * top_mh.scaled)
 
     x.sort(reverse=True)
-    for (k, v, a, b, c) in x:
-        print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b, '/ level:', c)
+    if 1:
+        for (k, v, a, b, c) in x:
+            print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b, '/ level:', c)
 
     if 0:
         print("removing empty catlas nodes from the terminal nodes...")
@@ -181,7 +183,7 @@ def main(args=sys.argv[1:]):
 
     # done - got all contigs!
     print('')
-    print('fetched {} contigs, {} bp matching combined frontiers.'.format(total_seqs, total_bp))
+    print('fetched {} contigs, {} bp.'.format(total_seqs, total_bp))
 
     print('wrote contigs to {}'.format(args.output))
     with open(args.output + '.sig', 'wt') as fp:
