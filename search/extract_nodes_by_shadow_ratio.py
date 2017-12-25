@@ -90,7 +90,7 @@ def main(args=sys.argv[1:]):
     if 1:
         terminal = set()
         for subnode in dag[top_node_id]:
-            mh = load_minhash(node_id, minhash_db)
+            mh = load_minhash(subnode, minhash_db)
             if mh:
                 terminal.update(find_terminal_nodes(subnode, args.maxsize))
 
