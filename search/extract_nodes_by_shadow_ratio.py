@@ -9,10 +9,10 @@ but very few k-mers; extracts reads from it.)
 import argparse
 import os
 import sys
-import leveldb
 import collections
 import math
 
+import screed
 from . import search_utils
 from .search_utils import get_minhashdb_name, get_reads_by_cdbg, load_minhash
 from .frontier_search import find_shadow
@@ -28,10 +28,8 @@ def get_minhash_size(node_id, minhash_db):
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('--maxsize', type=float, default=1000)
-    p.add_argument('readsfile')
-    p.add_argument('labeled_reads_sqlite')
     p.add_argument('output')
+    p.add_argument('--maxsize', type=float, default=1000)
     p.add_argument('-k', '--ksize', default=31, type=int,
                         help='k-mer size (default: 31)')
     args = p.parse_args(args)
@@ -112,7 +110,6 @@ def main(args=sys.argv[1:]):
 
         # retrieve shadow size, calculate mh_size / shadow_size.
         shadow_size = node_shadow_sizes[node_id]
-        print(shadow_size)
         ratio = math.log(mh_size, 2) - math.log(shadow_size, 2)
 
         level = dag_levels[node_id]
@@ -153,32 +150,32 @@ def main(args=sys.argv[1:]):
         cdbg_shadow.update(layer1_to_cdbg.get(x))
 
     #### extract reads
-    print('loading graph & labels/foo...')
-    
-    dbfilename = args.labeled_reads_sqlite
-    assert os.path.exists(dbfilename), 'sqlite file {} does not exist'.format(dbfilename)
+    print('extracting contigs')
+    contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
     total_bp = 0
     total_seqs = 0
-    output_seqs = 0
 
     outfp = open(args.output, 'wt')
-
-    print('running query...')
-    reads_iter = get_reads_by_cdbg(dbfilename, args.readsfile, cdbg_shadow)
-    for n, (record, offset_f) in enumerate(reads_iter):
-        if n % 10000 == 0:
-            print('...at n {} ({:.1f}% of {})'.format(n, offset_f * 100,
-                                                      args.readsfile),
+    for n, record in enumerate(screed.open(contigs)):
+        if n and n % 10000 == 0:
+            offset_f = total_seqs / len(cdbg_shadow)
+            print('...at n {} ({:.1f}% of shadow)'.format(total_seqs,
+                  offset_f * 100),
                   end='\r')
 
+        # contig names == cDBG IDs
+        contig_id = int(record.name)
+        if contig_id not in cdbg_shadow:
+            continue
+
+        # track retrieved sequences in a minhash
         total_bp += len(record.sequence)
         total_seqs += 1
 
-        outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
-
+    # done - got all contigs!
     print('')
-    print('fetched {} reads, {} bp matching terminal.'.format(total_seqs, total_bp))
+    print('fetched {} contigs, {} bp matching combined frontiers.'.format(total_seqs, total_bp))
 
 
 if __name__ == '__main__':
