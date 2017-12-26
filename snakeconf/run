@@ -31,6 +31,7 @@ from the main spacegraphcats directory.
     parser.add_argument('target', nargs='?', default='build')
     parser.add_argument('-n', '--dry-run', action='store_true')
     parser.add_argument('--nolock', action='store_true')
+    parser.add_argument('--overhead', type=float, default=0)
     args = parser.parse_args()
 
     snakefile = os.path.join(thisdir, 'Snakefile')
@@ -52,10 +53,13 @@ from the main spacegraphcats directory.
         sys.stderr.write('Error: cannot find configfile {}\n'.format(configfile))
         sys.exit(-1)
 
+    config = dict()
+    config['overhead'] = args.overhead
+
     status = snakemake.snakemake(snakefile, configfile=configfile,
                                  targets=[args.target], printshellcmds=True,
                                  dryrun=args.dry_run,
-                                 lock=not args.nolock)
+                                 lock=not args.nolock, config=config)
 
     return status
 
