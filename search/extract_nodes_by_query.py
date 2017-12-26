@@ -13,12 +13,14 @@ import traceback
 import gzip
 from collections import defaultdict
 import time
+import khmer
 
 import screed
 
 import sourmash_lib
 from sourmash_lib import MinHash
 from sourmash_lib.sourmash_args import load_query_signature
+from sourmash_lib._minhash import hash_murmur
 
 from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
                            build_queries_for_seeds, parse_seeds_arg)
@@ -31,7 +33,8 @@ from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
 
 
 
-def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list,
+def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list, bf,
+                     vardb,
                      overhead=0.0, verbose=False):
     # gather results of all queries across all seeds into total_frontier
     total_frontier = defaultdict(set)
@@ -46,7 +49,7 @@ def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list,
         try:
             frontier, num_leaves, num_empty, frontier_mh = \
               frontier_search(seed_query, top_node_id, dag, minhash_db,
-                              overhead, False, False)
+                              overhead, True, False)
         except NoContainment:
             print('** WARNING: no containment!?')
             frontier = []
@@ -72,11 +75,31 @@ def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list,
 
         if verbose:
             print("removing empty catlas nodes from the frontier...")
+        frontier = set(frontier)
         nonempty_frontier = search_utils.remove_empty_catlas_nodes(frontier,
                                                                    minhash_db)
 
-        if verbose:
-            print("...went from {} to {}".format(len(frontier), len(nonempty_frontier)))
+        nn = 0
+        n_empty = 0
+        for node in frontier:
+            mh = load_minhash(node, minhash_db)
+            if not mh or len(mh.get_mins()) == 0:
+                n_empty += 1
+                # empty! check it out in vardb
+                for znode in find_shadow([node], dag):
+                    var_mh = load_minhash(znode, vardb)
+                    if var_mh:
+                        n_present = 0
+                        for hashval in var_mh.get_mins():
+                            if bf.get(hashval):
+                                n_present += 1
+                                nonempty_frontier.add(znode)
+                                nn += 1
+                                break
+                    #print('XXX', node, len(var_mh.get_mins()), n_present)
+
+        print('FOO!', nn, n_empty)
+
         frontier = nonempty_frontier
 
         for node in frontier:
@@ -174,6 +197,9 @@ def main():
             sys.exit(-1)
         minhash_db_list.append(db_path)
 
+    vardbfile = os.path.join(args.catlas_prefix, 'minhash_FOO.db')
+    vardb = MinhashSqlDB(vardbfile)
+
     # record command line
     with open(os.path.join(args.output, 'command.txt'), 'wt') as fp:
         fp.write(str(sys.argv))
@@ -194,9 +220,15 @@ def main():
             # build a query sig for each seed.
             seed_queries = build_queries_for_seeds(seeds, ksize, scaled, query)
 
+            print('loading bf...', end=' ')
+            bf = khmer.Nodetable(ksize, 3e8, 2)
+            bf.consume_seqfile(query)
+            print('...done.')
+
             # gather results of all queries across all seeds
             total_frontier = collect_frontier(seed_queries, dag, top_node_id,
                                               minhash_db_list,
+                                              bf, vardb,
                                               overhead=args.overhead,
                                               verbose=args.verbose)
 
