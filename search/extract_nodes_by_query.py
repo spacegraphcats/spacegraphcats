@@ -49,7 +49,7 @@ def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list, bf,
         try:
             frontier, num_leaves, num_empty, frontier_mh = \
               frontier_search(seed_query, top_node_id, dag, minhash_db,
-                              overhead, True, False)
+                              overhead, bf, vardb, False, False)
         except NoContainment:
             print('** WARNING: no containment!?')
             frontier = []
@@ -79,14 +79,23 @@ def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list, bf,
         nonempty_frontier = search_utils.remove_empty_catlas_nodes(frontier,
                                                                    minhash_db)
 
+        for subnode in dag[top_node_id]:
+            break
+            mh = load_minhash(subnode, minhash_db)
+            if not mh:
+                frontier.add(subnode)
+
         nn = 0
         n_empty = 0
         for node in frontier:
+            break
             mh = load_minhash(node, minhash_db)
             if not mh or len(mh.get_mins()) == 0:
                 n_empty += 1
                 # empty! check it out in vardb
-                for znode in find_shadow([node], dag):
+                if 1:
+                    znode = node
+#                for znode in find_shadow([node], dag):
                     var_mh = load_minhash(znode, vardb)
                     if var_mh:
                         n_present = 0
