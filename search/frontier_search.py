@@ -72,6 +72,15 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
     num_empty = 0
 
     @memoize
+    def var_in_bf(node_id):
+        var_mh = load_minhash(node_id, vardb)
+        if var_mh:
+            for hashval in var_mh.get_mins():
+                if bf.get(hashval):
+                    return True
+        return False
+
+    @memoize
     def load_and_downsample_minhash(node_id: int) -> MinHash:
         minhash = load_minhash(node_id, minhash_db)
         if minhash is None:
@@ -118,107 +127,62 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
         minhash = load_and_downsample_minhash(node_id)
 
-        children_ids = dag[node_id]
-        if len(children_ids) == 0:
-            # the node is a leaf so let's add it to the frontier
-            nonlocal num_leaves
-            if use_purgatory:
-                # nodes with high overhead are added to the purgatory for later evaluation whether
-                # they are actually necessary to cover the query
-                overhead = node_overhead(minhash)
-                if overhead > max_overhead:
-                    purgatory.append((overhead, node_id, minhash))
-                else:
-                    add_node(node_id, minhash)
-                    num_leaves += 1
-            else:
+        if not minhash:
+            if var_in_bf(node_id):
                 add_node(node_id, minhash)
-                num_leaves += 1
             return
 
-        # check whether the node has more than x% overhead
-
-        containment = node_containment(minhash)
-
-        if containment == 0:
-            # ignore nodes that have no containment
-            # sanity check, should not get here
-            raise NoContainment("No containment")
-
+        children_ids = dag[node_id]
+        if len(children_ids) == 0:
+            if var_in_bf(node_id):
+                add_node(node_id, minhash)
+            return
+            
         overhead = node_overhead(minhash)
 
         # print("{} Overhead {}".format(node_id, overhead))
 
-        if overhead > max_overhead:
-            # greedily find the minimum number of children such that they together contain everything the node contains
-
-            overheads = []
-
+        if overhead <= max_overhead:
+            add_node(node_id, minhash)
+        else: # overhead > max_overhead:
             for child_id in children_ids:
+                # zero sized node? check var mh.
                 child_mh = load_and_downsample_minhash(child_id)
                 if not child_mh:
-                    if include_empty:
-                        nonlocal num_empty
-                        # always add nodes without minhashes to frontier
+                    if var_in_bf(child_id):
                         add_node(child_id, None)
-                        num_empty += 1
                     continue
 
-                # ignore children without any containment
+                # ignore children without any containment unless in var mh
                 if node_containment(child_mh) == 0:
+                    # check var mh.
+                    if var_in_bf(child_id):
+                        add_node(child_id, child_mh)
+                    else:
+                        add_to_frontier(child_id)
                     continue
 
-                child_oh = node_overhead(child_mh)
-                overheads.append((child_oh, child_id, child_mh))
+                add_to_frontier(child_id)
+        return
 
-            # look at nodes one by one, starting with the smallest overhead and try to cover what the parent covered
-            overheads.sort()
+    def add_to_frontier2(node_id):
+        if node_id in seen_nodes:
+            return
+            
+        seen_nodes.add(node_id)
 
-            _, first_node, first_mh = overheads[0]
+        minhash = load_and_downsample_minhash(node_id)
 
-            add_to_frontier(first_node)
+        children_ids = dag[node_id]
+        if len(children_ids) == 0:        # leaf node
+            if var_in_bf(node_id):
+                add_node(node_id, minhash)
+            return
 
-            # Get a list of the minhases that need to be covered because they are in the query and in the parent node.
-            query_mh = get_query_minhash(first_mh.scaled)
-            required_query_minhashes = set(minhash.get_mins()).intersection(query_mh.get_mins()).difference(first_mh.get_mins())
-
-            # Repeatedly remove hashes that are covered by nodes and add nodes to frontier until no more minhashes need to be covered.    
-            for _, child_id, child_mh in overheads[1:]:
-                if len(required_query_minhashes) == 0:
-                    # early termination, all children already cover the node so we can stop
-                    return
-
-                before = len(required_query_minhashes)
-                required_query_minhashes -= set(child_mh.get_mins())
-                after = len(required_query_minhashes)
-                if before > after:
-                    add_to_frontier(child_id)
-
-            if len(required_query_minhashes) > 0:
-                raise Exception('Children cannot cover node.')
-
-        else:
-            # low overhead node gets added to the frontier
-            add_node(node_id, minhash)
+        for child_id in children_ids:
+            add_to_frontier2(child_id)
 
     add_to_frontier(top_node_id)
-
-    # now check whether the nodes in the purgatory are still necessary
-    if len(purgatory):
-        purgatory.sort()
-        required_query_minhashes = query_sig.minhash.subtract_mins(frontier_minhash)
-        for _, node_id, node_mh in purgatory:
-            before = len(required_query_minhashes)
-            required_query_minhashes -= set(node_mh.get_mins())
-            after = len(required_query_minhashes)
-            if before > after:
-                frontier_minhash.merge(node_mh)
-                frontier.append(node_id)
-                num_leaves += 1
-
-            if len(required_query_minhashes) == 0:
-                # early termination, the full query is covered
-                break
 
     return frontier, num_leaves, num_empty, frontier_minhash
 

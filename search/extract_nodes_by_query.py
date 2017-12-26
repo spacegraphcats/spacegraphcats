@@ -109,7 +109,7 @@ def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list, bf,
 
         print('FOO!', nn, n_empty)
 
-        frontier = nonempty_frontier
+        #frontier = nonempty_frontier
 
         for node in frontier:
             total_frontier[node].add(seed_query.minhash.seed)
