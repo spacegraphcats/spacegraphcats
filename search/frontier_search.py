@@ -201,7 +201,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         if minhash:                     # non-empty banded minhash
             overhead = node_overhead(minhash)
             containment = node_containment(minhash)
-            if containment and overhead == 0:
+            if containment and overhead <= max_overhead:
                 add_node(node_id, minhash)
                 return
         else:                             # empty minhash: do we keep?
