@@ -168,7 +168,8 @@ def main():
             sys.exit(-1)
         minhash_db_list.append(db_path)
 
-    vardbfile = os.path.join(args.catlas_prefix, 'minhash_FOO.db')
+    vardbfile = os.path.join(args.catlas_prefix, 'minhashes.db.k{}.var.seed0'.format(ksize))
+    assert os.path.exists(vardbfile)
     vardb = MinhashSqlDB(vardbfile)
 
     # record command line
@@ -206,14 +207,14 @@ def main():
             # calculate level 1 nodes for this frontier in the catlas
             total_shadow = find_shadow(total_frontier, dag)
 
-            new_shadow = set()
-            for node_id in total_shadow:
-                var_mh = load_minhash(node_id, vardb)
-                n_present = sum([bf.get(hashval) for hashval in var_mh.get_mins() ])
-                if n_present:
-                    new_shadow.add(node_id)
+#            new_shadow = set()
+#            for node_id in total_shadow:
+#                var_mh = load_minhash(node_id, vardb)
+#                n_present = sum([bf.get(hashval) for hashval in var_mh.get_mins() ])
+#                if n_present:
+#                    new_shadow.add(node_id)
 
-            total_shadow = new_shadow
+#            total_shadow = new_shadow
 
             # calculate associated cDBG nodes
             cdbg_shadow = set()

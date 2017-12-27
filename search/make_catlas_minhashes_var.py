@@ -145,20 +145,16 @@ def main(args=sys.argv[1:]):
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('-k', '--ksize', default=31, type=int)
     p.add_argument('--track-abundance', action='store_true')
-    p.add_argument('--seed', default=42,
-                   type=int)
     p.add_argument('--num', default=10, type=int)
 
     args = p.parse_args(args)
 
     ksize = args.ksize
-    seed = args.seed
     track_abundance = args.track_abundance
 
     # build factories to produce new MinHash objects.
     factory = MinHashFactory(n=args.num, ksize=ksize,
-                             track_abundance=args.track_abundance,
-                             seed=args.seed)
+                             track_abundance=args.track_abundance, seed=0)
     leaf_factory = factory
 
     # put together the basic catlas info --
@@ -188,7 +184,7 @@ def main(args=sys.argv[1:]):
             cdbg_to_layer1[cdbg_id].add(catlas_node)
 
     # create the minhash db, first removing it if it already exists
-    path = os.path.join(args.catlas_prefix, 'minhash_FOO.db')
+    path = os.path.join(args.catlas_prefix, 'minhashes.db.k{}.var.seed0'.format(ksize))
 
     print('saving minhashes in {}'.format(path))
     if os.path.exists(path):
