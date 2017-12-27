@@ -81,7 +81,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         return False
 
     @memoize
-    def var_in_bf_decide(node_id, debug=False):
+    def var_in_bf_decide(node_id):
         var_mh = load_minhash(node_id, vardb)
         if not var_mh:                    # nothing to decide upon, nokeep
             return False
@@ -99,9 +99,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         is_full = False
         if len(mins) == MAX_MINS:
             is_full = True
-
-        if debug:
-            print('ZZZ', len(mins), sum_in)
 
         return is_full, frac, oh
 
@@ -201,14 +198,13 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
         minhash = load_and_downsample_minhash(node_id)
 
-        # empty minhash but good varhash present? keep.
         if minhash:                     # non-empty banded minhash
             overhead = node_overhead(minhash)
             containment = node_containment(minhash)
-            if containment and overhead <= max_overhead:
+            if containment and overhead == 0:
                 add_node(node_id, minhash)
                 return
-        else:
+        else:                             # empty minhash: do we keep?
             is_full, containment, overhead = var_in_bf_decide(node_id)
 
             # do we guesstimate this is good? ok => keep.
