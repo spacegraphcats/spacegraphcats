@@ -127,42 +127,32 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
         minhash = load_and_downsample_minhash(node_id)
 
-        if not minhash:
-            if var_in_bf(node_id):
-                add_node(node_id, minhash)
-            return
-
         children_ids = dag[node_id]
-        if len(children_ids) == 0:
+        if len(children_ids) == 0:             # leaf node? terminate.
             if var_in_bf(node_id):
                 add_node(node_id, minhash)
             return
             
+        if not minhash:                       # empty node? terminate.
+            add_to_frontier(node_id)
+            #if var_in_bf(node_id):
+            #    add_node(node_id, minhash)
+            return
+
         overhead = node_overhead(minhash)
+        containment = node_containment(minhash)
 
         # print("{} Overhead {}".format(node_id, overhead))
 
-        if overhead <= max_overhead:
+        if containment == 0:              # check & terminate
+            if var_in_bf(node_id):
+                add_node(node_id, minhash)
+        elif overhead <= max_overhead:    # overlap with low overhead - add!
             add_node(node_id, minhash)
-        else: # overhead > max_overhead:
+        else: # overhead > max_overhead: descend.
             for child_id in children_ids:
-                # zero sized node? check var mh.
-                child_mh = load_and_downsample_minhash(child_id)
-                if not child_mh:
-                    if var_in_bf(child_id):
-                        add_node(child_id, None)
-                    continue
-
-                # ignore children without any containment unless in var mh
-                if node_containment(child_mh) == 0:
-                    # check var mh.
-                    if var_in_bf(child_id):
-                        add_node(child_id, child_mh)
-                    else:
-                        add_to_frontier(child_id)
-                    continue
-
                 add_to_frontier(child_id)
+
         return
 
     def add_to_frontier2(node_id):
@@ -173,8 +163,20 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
         minhash = load_and_downsample_minhash(node_id)
 
+        # empty minhash but good varhash present? keep.
+        if not minhash and var_in_bf(node_id):
+            add_node(node_id, None)
+            return
+        elif minhash:                     # non-empty minhash
+            overhead = node_overhead(minhash)
+            containment = node_containment(minhash)
+            if containment and overhead <= max_overhead:
+                add_node(node_id, minhash)
+                return
+
+        # recurse into children, if any.
         children_ids = dag[node_id]
-        if len(children_ids) == 0:        # leaf node
+        if not len(children_ids):        # leaf node
             if var_in_bf(node_id):
                 add_node(node_id, minhash)
             return
@@ -182,7 +184,9 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         for child_id in children_ids:
             add_to_frontier2(child_id)
 
-    add_to_frontier(top_node_id)
+    add_to_frontier2(top_node_id)
+
+    print('visited:', len(seen_nodes))
 
     return frontier, num_leaves, num_empty, frontier_minhash
 
