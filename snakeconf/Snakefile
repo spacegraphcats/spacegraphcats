@@ -6,16 +6,36 @@
 # Quickstart: `snakeconf/run snakeconf/dory-test.json searchquick`
 #
 
-# pull values in from config file:
+## pull values in from config file:
+
+# name of catlas
 catlas_base = config['catlas_base']
+
+# sequence files to use when building catlas
 input_sequences = config['input_sequences']
+
+# k-mer size to use for everything
 ksize = config['ksize']
+
+# radius for catlas building
 radius = config['radius']
+
+# seeds to use when building minhash databases
 searchseeds = config.get('searchseeds', 43)
+
+# search overhead
 overhead = config.get('overhead', 0.0)
 
+# suffix to add to search output
+experiment = config.get('experiment', '')
+search_out_suffix = ''
+if experiment:
+    search_out_suffix = '_' + experiment
+
+### build some variables for internal use
+
 catlas_dir = '{}_k{}_r{}'.format(catlas_base, ksize, radius)
-search_dir = '{}_k{}_r{}_search_oh{}'.format(catlas_base, ksize, radius, int(overhead*100))
+search_dir = '{}_k{}_r{}_search_oh{}{}'.format(catlas_base, ksize, radius, int(overhead*100), search_out_suffix)
 
 # internal definitions for convenience:
 python=sys.executable  # define as the version of Python running snakemake
