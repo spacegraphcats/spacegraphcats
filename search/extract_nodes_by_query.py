@@ -206,6 +206,15 @@ def main():
             # calculate level 1 nodes for this frontier in the catlas
             total_shadow = find_shadow(total_frontier, dag)
 
+            new_shadow = set()
+            for node_id in total_shadow:
+                var_mh = load_minhash(node_id, vardb)
+                n_present = sum([bf.get(hashval) for hashval in var_mh.get_mins() ])
+                if n_present:
+                    new_shadow.add(node_id)
+
+            total_shadow = new_shadow
+
             # calculate associated cDBG nodes
             cdbg_shadow = set()
             for x in total_shadow:
