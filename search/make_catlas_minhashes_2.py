@@ -134,7 +134,6 @@ def merge_nodes(child_dict, child_node_list, factory):
         if graph_node in child_dict:
             mh = child_dict[graph_node]
             if mh:
-                mh = mh.downsample_scaled(merged_mh.scaled)
                 merged_mh.merge(mh)
 
     # add into merged minhashes table.

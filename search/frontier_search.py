@@ -81,6 +81,31 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         return False
 
     @memoize
+    def var_in_bf_decide(node_id, debug=False):
+        var_mh = load_minhash(node_id, vardb)
+        if not var_mh:                    # nothing to decide upon, nokeep
+            return False
+
+        MAX_MINS=10                       # @CTB don't hardcode, maaan
+        mins = var_mh.get_mins()
+        sum_in = 0
+        for hashval in mins:
+            if bf.get(hashval):
+                sum_in += 1
+
+        frac = sum_in / len(mins)
+        oh = 1 - frac
+
+        is_full = False
+        if len(mins) == MAX_MINS:
+            is_full = True
+
+        if debug:
+            print('ZZZ', len(mins), sum_in)
+
+        return is_full, frac, oh
+
+    @memoize
     def load_and_downsample_minhash(node_id: int) -> MinHash:
         minhash = load_minhash(node_id, minhash_db)
         if minhash is None:
@@ -155,6 +180,19 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
         return
 
+    def child_is_interesting(node_id):
+        is_int = False
+
+        children_ids = dag[node_id]
+        if not children_ids:
+            if var_in_bf(node_id):
+                return True
+            return False
+
+        for child_id in children_ids:
+            if child_is_interesting(child_id):
+                return True
+
     def add_to_frontier2(node_id):
         if node_id in seen_nodes:
             return
@@ -164,23 +202,33 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         minhash = load_and_downsample_minhash(node_id)
 
         # empty minhash but good varhash present? keep.
-        if not minhash and var_in_bf(node_id):
-            add_node(node_id, None)
-            return
-        elif minhash:                     # non-empty minhash
+        if minhash:                     # non-empty banded minhash
             overhead = node_overhead(minhash)
             containment = node_containment(minhash)
             if containment and overhead <= max_overhead:
                 add_node(node_id, minhash)
                 return
+        else:
+            is_full, containment, overhead = var_in_bf_decide(node_id)
 
-        # recurse into children, if any.
+            # do we guesstimate this is good? ok => keep.
+            if containment and overhead <= max_overhead:
+                add_node(node_id, None)
+                return
+
+            # is there any chance a good hash is below this? if not, exit.
+            if not is_full and containment == 0:
+                return
+
         children_ids = dag[node_id]
-        if not len(children_ids):        # leaf node
+
+        # leaf node. good varhash? keep.
+        if not children_ids:
             if var_in_bf(node_id):
                 add_node(node_id, minhash)
             return
 
+        # recurse into children
         for child_id in children_ids:
             add_to_frontier2(child_id)
 

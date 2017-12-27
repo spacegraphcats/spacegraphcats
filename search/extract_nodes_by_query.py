@@ -73,44 +73,6 @@ def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list, bf,
             print("Number of empty catlas nodes in the frontier: {}".format(num_empty))
             print("")
 
-        if verbose:
-            print("removing empty catlas nodes from the frontier...")
-        frontier = set(frontier)
-        nonempty_frontier = search_utils.remove_empty_catlas_nodes(frontier,
-                                                                   minhash_db)
-
-        for subnode in dag[top_node_id]:
-            break
-            mh = load_minhash(subnode, minhash_db)
-            if not mh:
-                frontier.add(subnode)
-
-        nn = 0
-        n_empty = 0
-        for node in frontier:
-            break
-            mh = load_minhash(node, minhash_db)
-            if not mh or len(mh.get_mins()) == 0:
-                n_empty += 1
-                # empty! check it out in vardb
-                if 1:
-                    znode = node
-#                for znode in find_shadow([node], dag):
-                    var_mh = load_minhash(znode, vardb)
-                    if var_mh:
-                        n_present = 0
-                        for hashval in var_mh.get_mins():
-                            if bf.get(hashval):
-                                n_present += 1
-                                nonempty_frontier.add(znode)
-                                nn += 1
-                                break
-                    #print('XXX', node, len(var_mh.get_mins()), n_present)
-
-        print('FOO!', nn, n_empty)
-
-        #frontier = nonempty_frontier
-
         for node in frontier:
             total_frontier[node].add(seed_query.minhash.seed)
 
