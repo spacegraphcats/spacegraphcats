@@ -81,9 +81,9 @@ def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list, bf,
         if verbose:
             print("Size of query minhash: {} (est {:2.1e} bp)".\
                     format(query_size, query_bp))
-        minhash_size = len(frontier_mh.get_mins())
-        minhash_bp = minhash_size * frontier_mh.scaled
         if verbose:
+            minhash_size = len(frontier_mh.get_mins())
+            minhash_bp = minhash_size * frontier_mh.scaled
             print("Size of frontier minhash: {} (est {:2.1e} bp); ratio {:.2f}".\
                   format(minhash_size, minhash_bp, minhash_bp / query_bp))
 
