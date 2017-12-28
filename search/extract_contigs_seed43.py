@@ -55,7 +55,7 @@ def main():
         var_mh = load_minhash(layer1_node, vardb)
         if var_mh:
             var_mins = set(var_mh.get_mins())
-            if var_mins.intersection(query_mins) or 1:
+            if var_mins.intersection(query_mins):
                 cdbg_shadow.update(cdbg_list)
                 n_taken += 1
         else:
