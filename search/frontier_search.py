@@ -349,7 +349,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
             # leaf node. good varhash? keep.
             if not children_ids:
-                add_node(node_id, None)
+                #add_node(node_id, None)
                 return
 
             # recurse into children
