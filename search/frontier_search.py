@@ -84,6 +84,16 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         return False
 
     @memoize
+    def var_is_full(node_id):
+        var_mh = load_minhash(node_id, vardb)
+        if not var_mh:
+            assert 0
+
+        if len(var_mh.get_mins()) == max_varnum:
+            return True
+        return False
+
+    @memoize
     def var_in_bf_decide(node_id):
         var_mh = load_minhash(node_id, vardb)
         if not var_mh:                    # nothing to decide upon, nokeep
@@ -349,12 +359,15 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
             # leaf node. good varhash? keep.
             if not children_ids:
-                #add_node(node_id, None)
+                add_node(node_id, None)
                 return
 
-            # recurse into children
-            for child_id in children_ids:
-                add_to_frontier3(child_id)
+            if var_is_full(node_id):
+                # recurse into children
+                for child_id in children_ids:
+                    add_to_frontier3(child_id)
+            else: # do something more complicated!
+                pass
 
     add_to_frontier3(top_node_id)
 
