@@ -156,7 +156,7 @@ rule searchquick:
         expand("{search_dir}/results.csv", search_dir=search_dir),
         make_query_base(catlas_dir, config['searchquick']),
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} --seed={searchseeds} -k {ksize}"
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} --seed={searchseeds} -k {ksize} --overhead={overhead}"
 
 
 # do a full search!

@@ -131,11 +131,12 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
             banded_common = banded_mh.count_common(query_mh)
 
         var_common = 0
+        is_full = False
         if var_mh:
             is_full, frac, oh = var_in_bf_decide(node_id)
             var_common = len(var_mh.get_mins()) * frac
 
-        if banded_common > var_common:
+        if banded_common > var_common or (banded_mh and is_full):
             return compute_overhead(banded_mh, query_mh)
         else:
             return oh
@@ -156,11 +157,12 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
             banded_common = banded_mh.count_common(query_mh)
 
         var_common = 0
+        is_full = False
         if var_mh:
             is_full, frac, oh = var_in_bf_decide(node_id)
             var_common = len(var_mh.get_mins()) * frac
 
-        if banded_common > var_common:
+        if banded_common > var_common: # or (banded_mh and is_full):
             return query_mh.contained_by(banded_mh)
         else:
             return frac
@@ -334,7 +336,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         containment = node_containment2(node_id)
         overhead = node_overhead2(node_id)
         if containment:
-            if overhead < max_overhead:
+            if overhead <= max_overhead:
                 add_node(node_id, None)
                 return
 
