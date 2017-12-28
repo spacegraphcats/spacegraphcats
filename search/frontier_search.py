@@ -87,7 +87,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         if not var_mh:                    # nothing to decide upon, nokeep
             return False
 
-        MAX_MINS=10                       # @CTB don't hardcode, maaan
+        MAX_MINS=50                       # @CTB don't hardcode, maaan
         mins = set(var_mh.get_mins())
         sum_in = 0
         for hashval in mins:

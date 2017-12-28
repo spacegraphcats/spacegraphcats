@@ -134,7 +134,7 @@ rule minhash_db_var:
      output:
         "{catlas_dir}/minhashes.db.k{ksize}.var.seed0"
      shell:
-        "{python} -m search.make_catlas_minhashes_var -k {wildcards.ksize} --num=10 {catlas_dir}"
+        "{python} -m search.make_catlas_minhashes_var -k {wildcards.ksize} --num=50 {catlas_dir}"
 
 ### Search rules.
 
