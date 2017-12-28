@@ -123,18 +123,24 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     @memoize
     def node_overhead2(node_id):
+        banded_mh = load_minhash(node_id, minhash_db)
         var_mh = load_minhash(node_id, vardb)
-        if not var_mh:
-            assert 0
-            return 1000.0                 # cannot decide
 
-        mins = var_mh.get_mins()
-        if len(mins) == max_varnum:
-            return 1000.0                 # cannot decide
+        banded_common = 0
+        if banded_mh:
+            query_mh = get_query_minhash(banded_mh.scaled)
+            banded_common = banded_mh.count_common(query_mh)
 
-        is_full, frac, oh = var_in_bf_decide(node_id)
-        assert not is_full
-        return oh
+        var_common = 0
+        is_full = False
+        if var_mh:
+            is_full, frac, oh = var_in_bf_decide(node_id)
+            var_common = len(var_mh.get_mins()) * frac
+
+        if banded_common > var_common or (banded_mh and is_full):
+            return compute_overhead(banded_mh, query_mh)
+        else:
+            return oh
 
     @memoize
     def node_containment(minhash) -> float:
@@ -326,8 +332,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         for child_id in children_ids:
             add_to_frontier2(child_id)
 
-    ###################################
-
     def add_to_frontier3(node_id):
         if node_id in seen_nodes:
             return
@@ -343,7 +347,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
             children_ids = dag[node_id]
 
-            # leaf node w/containment: keep!
+            # leaf node. good varhash? keep.
             if not children_ids:
                 add_node(node_id, None)
                 return
@@ -351,8 +355,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
             # recurse into children
             for child_id in children_ids:
                 add_to_frontier3(child_id)
-
-    ####################################
 
     add_to_frontier3(top_node_id)
 
