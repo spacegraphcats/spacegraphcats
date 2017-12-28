@@ -34,7 +34,7 @@ from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
 
 
 def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list, bf,
-                     vardb,
+                     vardb, bf2,
                      overhead=0.0, verbose=False):
     # gather results of all queries across all seeds into total_frontier
     total_frontier = defaultdict(set)
@@ -49,7 +49,7 @@ def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list, bf,
         try:
             frontier, num_leaves, num_empty, frontier_mh = \
               frontier_search(seed_query, top_node_id, dag, minhash_db,
-                              overhead, bf, vardb, False, True)
+                              overhead, bf, vardb, bf2, False, True)
         except NoContainment:
             print('** WARNING: no containment!?')
             frontier = []
@@ -196,11 +196,12 @@ def main():
             bf = khmer.Nodetable(ksize, 3e8, 2)
             bf.consume_seqfile(query)
             print('...done.')
+            bf2 = khmer.Nodetable(ksize, 3e8, 2)
 
             # gather results of all queries across all seeds
             total_frontier = collect_frontier(seed_queries, dag, top_node_id,
                                               minhash_db_list,
-                                              bf, vardb,
+                                              bf, vardb, bf2,
                                               overhead=args.overhead,
                                               verbose=args.verbose)
 

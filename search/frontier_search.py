@@ -49,7 +49,7 @@ def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, search_utils.MinhashSqlDB], max_overhead: float, bf, vardb, include_empty = False, use_purgatory = False):
+def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, search_utils.MinhashSqlDB], max_overhead: float, bf, vardb, bf2, include_empty = False, use_purgatory = False):
     """
         include_empty: Whether to include nodes with no minhases in the frontier
         use_purgatory: put leaf nodes with large overhead into a purgatory and consider them after we have processes the whole frontier
@@ -92,7 +92,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         mins = set(var_mh.get_mins())
         sum_in = 0
         for hashval in mins:
-            if bf.get(hashval):
+            if bf.get(hashval) and not bf2.get(hashval):
                 sum_in += 1
 
         frac = sum_in / len(mins)
@@ -181,6 +181,10 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
                 frontier_minhash.merge(minhash)
             else:
                 frontier_minhash = copy(minhash)
+
+        varmh = load_minhash(node_id, vardb)
+        for hashval in varmh.get_mins():
+            bf2.add(hashval)
 
     def add_to_frontier(node_id: int):
         """
