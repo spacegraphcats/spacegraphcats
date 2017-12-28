@@ -350,8 +350,11 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
         containment = node_containment2(node_id)
         overhead = node_overhead2(node_id)
+        is_full = var_is_full(node_id)
+
         if containment:
-            if overhead <= max_overhead:
+            # good node? add, if sufficiently low level
+            if overhead <= max_overhead and not is_full:
                 add_node(node_id, None)
                 return
 
@@ -362,8 +365,8 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
                 add_node(node_id, None)
                 return
 
-            if var_is_full(node_id):
-                # recurse into children
+            if is_full:
+                # recurse into children to get more resolution
                 for child_id in children_ids:
                     add_to_frontier3(child_id)
             else: # do something more complicated!
