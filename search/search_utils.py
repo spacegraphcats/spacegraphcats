@@ -484,6 +484,15 @@ class MinhashSqlDB(object):
 
     def create(self):
         self.cursor.execute('CREATE TABLE minhashes (catlas_node_id INTEGER PRIMARY KEY, mh_pickle BLOB)')
+        self.cursor.execute('CREATE TABLE parameters (name TEXT, value TEXT)')
+
+    def add_parameter(self, p, v):
+        self.cursor.execute('INSERT INTO parameters (name, value) VALUES (?, ?)', (p, str(v)))
+
+    def get_parameter(self, p):
+        self.cursor.execute('SELECT value FROM parameters WHERE name=?', (p,))
+        results = list(self.cursor)
+        return results[0][0]
 
     def commit(self):
         self.db.commit()

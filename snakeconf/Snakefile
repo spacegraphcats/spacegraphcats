@@ -23,6 +23,9 @@ radius = config['radius']
 # seeds to use when building minhash databases
 searchseeds = config.get('searchseeds', 43)
 
+# size of variable-size minhashes
+varnum = config.get('varnum', 50)
+
 # search overhead
 overhead = config.get('overhead', 0.0)
 
@@ -134,7 +137,7 @@ rule minhash_db_var:
      output:
         "{catlas_dir}/minhashes.db.k{ksize}.var.seed0"
      shell:
-        "{python} -m search.make_catlas_minhashes_var -k {wildcards.ksize} --num=50 {catlas_dir}"
+        "{python} -m search.make_catlas_minhashes_var -k {wildcards.ksize} --num={varnum} {catlas_dir}"
 
 ### Search rules.
 

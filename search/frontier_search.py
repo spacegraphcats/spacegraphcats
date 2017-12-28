@@ -71,6 +71,8 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
     num_leaves = 0
     num_empty = 0
 
+    max_varnum = int(vardb.get_parameter('varnum'))
+
     @memoize
     def var_in_bf(node_id):
         var_mh = load_minhash(node_id, vardb)
@@ -87,7 +89,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         if not var_mh:                    # nothing to decide upon, nokeep
             return False
 
-        MAX_MINS=50                       # @CTB don't hardcode, maaan
         mins = set(var_mh.get_mins())
         sum_in = 0
         for hashval in mins:
@@ -98,7 +99,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         oh = 1 - frac
 
         is_full = False
-        if len(mins) == MAX_MINS:
+        if len(mins) == max_varnum:       # max number of mins - are we full?
             is_full = True
 
         return is_full, frac, oh

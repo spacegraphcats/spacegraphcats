@@ -193,6 +193,9 @@ def main(args=sys.argv[1:]):
     save_db = search_utils.MinhashSqlDB(path)
     save_db.create()
 
+    save_db.add_parameter('ksize', ksize)
+    save_db.add_parameter('varnum', args.num)
+
     # create minhashes for catlas leaf nodes.
     print('ksize={} num={}'.format(ksize, args.num))
     catlas_minhashes = make_leaf_minhashes(contigfile, cdbg_to_layer1,
