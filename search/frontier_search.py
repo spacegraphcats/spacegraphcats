@@ -284,7 +284,24 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         for child_id in children_ids:
             add_to_frontier2(child_id)
 
-    add_to_frontier2(top_node_id)
+    add_to_frontier(top_node_id)
+
+    # now check whether the nodes in the purgatory are still necessary
+    if len(purgatory):
+        purgatory.sort()
+        required_query_minhashes = query_sig.minhash.subtract_mins(frontier_minhash)
+        for _, node_id, node_mh in purgatory:
+            before = len(required_query_minhashes)
+            required_query_minhashes -= set(node_mh.get_mins())
+            after = len(required_query_minhashes)
+            if before > after:
+                frontier_minhash.merge(node_mh)
+                frontier.append(node_id)
+                num_leaves += 1
+
+            if len(required_query_minhashes) == 0:
+                # early termination, the full query is covered
+                break
 
     print('visited:', len(seen_nodes))
 

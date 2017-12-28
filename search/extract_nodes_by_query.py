@@ -49,7 +49,7 @@ def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list, bf,
         try:
             frontier, num_leaves, num_empty, frontier_mh = \
               frontier_search(seed_query, top_node_id, dag, minhash_db,
-                              overhead, bf, vardb, False, False)
+                              overhead, bf, vardb, False, True)
         except NoContainment:
             print('** WARNING: no containment!?')
             frontier = []
