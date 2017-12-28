@@ -20,6 +20,8 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('query')
+    p.add_argument('-k', '--ksize', default=31, type=int,
+                   help='k-mer size (default: 31)')
     p.add_argument('-o', '--output', type=argparse.FileType('wt'))
     p.add_argument('-v', '--verbose', action='store_true')
     args = p.parse_args()
@@ -31,7 +33,7 @@ def main():
         outname = args.output.name
 
     print('loading bf...', end=' ')
-    bf = khmer.Nodetable(31, 3e8, 2)
+    bf = khmer.Nodetable(args.ksize, 3e8, 2)
     bf.consume_seqfile(args.query)
     print('...done.')
 
@@ -40,7 +42,8 @@ def main():
     top_node_id, dag, dag_up, dag_levels, catlas_to_cdbg = search_utils.load_dag(catlas)
     layer1_to_cdbg = search_utils.load_layer1_to_cdbg(catlas_to_cdbg, domfile)
 
-    vardbfile = os.path.join(args.catlas_prefix, 'minhash_FOO.db')
+    vardbfile = os.path.join(args.catlas_prefix, 'minhashes.db.k{}.var.seed0'.format(args.ksize))
+    assert os.path.exists(vardbfile)
     vardb = search_utils.MinhashSqlDB(vardbfile)
 
     cdbg_shadow = set()
