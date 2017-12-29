@@ -363,6 +363,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
             # leaf node. good varhash? keep.
             if not children_ids:
                 # ok, so this seems to add a lot of overhead.
+#                print('FOO', is_full)
                 add_node(node_id, None)
                 return
 
@@ -376,8 +377,31 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     add_to_frontier3(top_node_id)
 
+    x = []
+    for node_id in frontier:
+        _, _, oh = var_in_bf_decide(node_id)
+        x.append((oh, node_id))
+
+    x.sort()
+
+    new_frontier = []
+    query_mins = set(query_sig.minhash.get_mins())
+    for (oh, node_id) in x:
+        minhash = load_minhash(node_id, minhash_db)
+        if not minhash:
+            new_frontier.append(node_id)
+        else:
+            mins = set(minhash.get_mins())
+            if query_mins.intersection(mins) == 0:
+                continue
+            new_frontier.append(node_id)
+
+    print('XXX', len(frontier), len(new_frontier))
+    frontier = set(new_frontier)
+
     # now check whether the nodes in the purgatory are still necessary
     if len(purgatory):
+        assert 0
         purgatory.sort()
         required_query_minhashes = query_sig.minhash.subtract_mins(frontier_minhash)
         for _, node_id, node_mh in purgatory:
