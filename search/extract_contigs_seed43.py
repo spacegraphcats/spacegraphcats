@@ -27,9 +27,9 @@ def main():
 
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
-    if args.output:
-        outfp = args.output
-        outname = args.output.name
+    assert args.output, 'must specify -o'
+    outfp = args.output
+    outname = args.output.name
 
     query_mh = sourmash_lib.MinHash(n=0, ksize=31, scaled=1000, seed=43)
     for record in screed.open(args.query):
@@ -42,8 +42,8 @@ def main():
     top_node_id, dag, dag_up, dag_levels, catlas_to_cdbg = search_utils.load_dag(catlas)
     layer1_to_cdbg = search_utils.load_layer1_to_cdbg(catlas_to_cdbg, domfile)
 
-    vardbfile = os.path.join(args.catlas_prefix, 'minhashes.db.k31.s1000.abund0.seed43')
-    vardb = search_utils.MinhashSqlDB(vardbfile)
+    minhashdbfile = os.path.join(args.catlas_prefix, 'minhashes.db.k31.s1000.abund0.seed43')
+    minhashdb = search_utils.MinhashSqlDB(minhashdbfile)
 
     n_empty = 0
     n_taken = 0
@@ -52,10 +52,10 @@ def main():
     for layer1_node, cdbg_list in layer1_to_cdbg.items():
         n_iter += 1
         assert dag_levels.get(layer1_node) == 1
-        var_mh = load_minhash(layer1_node, vardb)
-        if var_mh:
-            var_mins = set(var_mh.get_mins())
-            if var_mins.intersection(query_mins):
+        banded_mh = load_minhash(layer1_node, minhashdb)
+        if banded_mh:
+            banded_mins = set(banded_mh.get_mins())
+            if banded_mins.intersection(query_mins):
                 cdbg_shadow.update(cdbg_list)
                 n_taken += 1
         else:
@@ -81,7 +81,6 @@ def main():
         total_bp += len(record.sequence)
         total_seqs += 1
 
-    print('')
     print('fetched {} contigs, {} bp matching node list.'.format(total_seqs, total_bp))
 
     sys.exit(0)
