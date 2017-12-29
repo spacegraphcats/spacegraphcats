@@ -412,10 +412,8 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
         fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
 
-        if total_oh / total > 0.1 and 0:
-            break
-        
-        new_frontier.append(node_id)
+        if total_cont / total < 0.95:
+            new_frontier.append(node_id)
 
     print('XXX', len(frontier), len(new_frontier))
     frontier = set(new_frontier)
