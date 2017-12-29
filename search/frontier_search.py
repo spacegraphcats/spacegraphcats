@@ -133,24 +133,12 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     @memoize
     def node_overhead2(node_id):
-        banded_mh = load_minhash(node_id, minhash_db)
         var_mh = load_minhash(node_id, vardb)
-
-        banded_common = 0
-        if banded_mh:
-            query_mh = get_query_minhash(banded_mh.scaled)
-            banded_common = banded_mh.count_common(query_mh)
-
-        var_common = 0
-        is_full = False
         if var_mh:
             is_full, frac, oh = var_in_bf_decide(node_id)
-            var_common = len(var_mh.get_mins()) * frac
-
-        if banded_common > var_common or (banded_mh and is_full):
-            return compute_overhead(banded_mh, query_mh)
-        else:
             return oh
+
+        return None
 
     @memoize
     def node_containment(minhash) -> float:
@@ -159,25 +147,11 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     @memoize
     def node_containment2(node_id) -> float:
-        banded_mh = load_minhash(node_id, minhash_db)
         var_mh = load_minhash(node_id, vardb)
-
-        banded_common = 0
-        if banded_mh:
-            query_mh = get_query_minhash(banded_mh.scaled)
-            banded_common = banded_mh.count_common(query_mh)
-
-        var_common = 0
-        is_full = False
         if var_mh:
             is_full, frac, oh = var_in_bf_decide(node_id)
-            var_common = len(var_mh.get_mins()) * frac
-
-        if banded_common > var_common: # or (banded_mh and is_full):
-            return query_mh.contained_by(banded_mh)
-        else:
             return frac
-
+        return None
 
     def add_node(node_id: int, minhash: MinHash):
         nonlocal frontier_minhash
@@ -340,38 +314,36 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         for child_id in children_ids:
             add_to_frontier2(child_id)
 
+    n_truncated = 0
+
     def add_to_frontier3(node_id):
+        nonlocal n_truncated
+
         if node_id in seen_nodes:
             return
             
         seen_nodes.add(node_id)
 
-        containment = node_containment2(node_id)
-        overhead = node_overhead2(node_id)
-        is_full = var_is_full(node_id)
+        _, containment, overhead = var_in_bf_decide(node_id)
 
-        if containment:
-            # good node? add, if sufficiently low level
-            if overhead <= max_overhead and not is_full:
+        if containment == 1.0:
+            add_node(node_id, None)
+            return
+        elif overhead == 1.0:
+            n_truncated += 1
+            return
+
+        children_ids = dag[node_id]
+
+        # leaf node: good varhash? keep.
+        if not children_ids:
+            if containment:
                 add_node(node_id, None)
-                return
+            return
 
-            children_ids = dag[node_id]
-
-            # leaf node. good varhash? keep.
-            if not children_ids:
-                # ok, so this seems to add a lot of overhead.
-#                print('FOO', is_full)
-                add_node(node_id, None)
-                return
-
-            if is_full:
-                # recurse into children to get more resolution
-                for child_id in children_ids:
-                    add_to_frontier3(child_id)
-            else:
-                # do something more complicated!
-                pass
+        # recurse into children to get more resolution
+        for child_id in children_ids:
+            add_to_frontier3(child_id)
 
     add_to_frontier3(top_node_id)
 
@@ -439,6 +411,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
                 break
 
     print('frontier search visited {} catlas nodes.'.format(len(seen_nodes)))
+    print('frontier search truncated {}'.format(n_truncated))
 
     return frontier, num_leaves, num_empty, frontier_minhash
 
