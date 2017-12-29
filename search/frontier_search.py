@@ -329,15 +329,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         if containment == 1.0:
             add_node(node_id, None)
             return
-        elif overhead == 1.0:
-            minhash = load_minhash(node_id, minhash_db)
-            if minhash:
-                if node_containment(minhash) == 0:
-                    n_truncated += 1
-                    return
-            else:
-                n_truncated += 1
-                return
 
         children_ids = dag[node_id]
 
