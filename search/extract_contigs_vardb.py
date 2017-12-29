@@ -49,16 +49,54 @@ def main():
     vardb = search_utils.MinhashSqlDB(vardbfile)
 
     cdbg_shadow = set()
+    catlas_nodes = set()
     for layer1_node, cdbg_list in layer1_to_cdbg.items():
         var_mh = load_minhash(layer1_node, vardb)
         if var_mh:
             for hashval in var_mh.get_mins():
                 if bf.get(hashval):
+                    catlas_nodes.add(layer1_node)
                     cdbg_shadow.update(cdbg_list)
                     break
     
     total_bp = 0
     total_seqs = 0
+
+    # do some nodelist post-processing & output a response curve
+    frontier_curve = []
+    total = 0
+    for node_id in catlas_nodes:
+        var_mh = load_minhash(node_id, vardb)
+        mins = var_mh.get_mins()
+
+        n_cont = 0
+        n_oh = 0
+        for hashval in mins:
+            if bf.get(hashval):
+                n_cont += 1
+            else:
+                n_oh += 1
+
+        total += n_cont
+        frontier_curve.append((-n_cont, n_oh, node_id))
+
+    frontier_curve.sort()
+
+    sofar = 0
+    total_oh = 0
+    total_cont = 0
+    new_frontier = []
+    response_filename = os.path.basename(outname + '.response.txt')
+    print('response curve in:', response_filename)
+    fp = open(response_filename, 'wt')
+    for pos, (n_cont, n_oh, node_id) in enumerate(frontier_curve):
+        n_cont = -n_cont
+
+        sofar += n_cont
+        total_oh += n_oh
+        total_cont += n_cont
+
+        fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
 
     print('extracting contigs to {}.'.format(outname))
     for n, record in enumerate(screed.open(contigs)):
