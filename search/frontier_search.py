@@ -330,8 +330,14 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
             add_node(node_id, None)
             return
         elif overhead == 1.0:
-            n_truncated += 1
-            return
+            minhash = load_minhash(node_id, minhash_db)
+            if minhash:
+                if node_containment(minhash) == 0:
+                    n_truncated += 1
+                    return
+            else:
+                n_truncated += 1
+                return
 
         children_ids = dag[node_id]
 
@@ -348,49 +354,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
     add_to_frontier3(top_node_id)
 
     frontier = set(frontier)
-
-    # do some frontier post-processing & output a response curve
-    frontier_curve = []
-    total = 0
-    for node_id in frontier:
-        var_mh = load_minhash(node_id, vardb)
-        mins = var_mh.get_mins()
-
-        n_cont = 0
-        n_oh = 0
-        for hashval in mins:
-            if bf.get(hashval):
-                n_cont += 1
-            else:
-                n_oh += 1
-
-        total += n_cont
-        frontier_curve.append((-n_cont, n_oh, node_id))
-
-    frontier_curve.sort()
-
-    sofar = 0
-    total_oh = 0
-    total_cont = 0
-    new_frontier = []
-    response_filename = os.path.basename(query_sig.d['filename']) + '.response.txt'
-    print('response curve in:', response_filename)
-    fp = open(response_filename, 'wt')
-    for pos, (n_cont, n_oh, node_id) in enumerate(frontier_curve):
-        n_cont = -n_cont
-
-        sofar += n_cont
-        total_oh += n_oh
-        total_cont += n_cont
-
-        fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
-
-        # select out only the first 95% of the frontier curve points
-        if pos / len(frontier_curve) < 0.95:
-            new_frontier.append(node_id)
-
-    print('(truncated frontier list, removing {} of {})'.format(len(frontier) - len(new_frontier), len(frontier)))
-    frontier = set(new_frontier)
 
     # now check whether the nodes in the purgatory are still necessary
     if len(purgatory):
