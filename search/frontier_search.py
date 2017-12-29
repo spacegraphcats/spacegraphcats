@@ -378,6 +378,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
     add_to_frontier3(top_node_id)
 
     x = []
+    total = 0
     for node_id in frontier:
         var_mh = load_minhash(node_id, vardb)
         mins = var_mh.get_mins()
@@ -390,11 +391,12 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
             else:
                 n_oh += 1
 
+        total += n_cont
         x.append((-n_cont, n_oh, node_id))
 
     x.sort()
 
-    total = 0
+    sofar = 0
     total_oh = 0
     total_cont = 0
     new_frontier = []
@@ -404,11 +406,11 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
     for (n_cont, n_oh, node_id) in x:
         n_cont = -n_cont
 
-        total += n_cont + n_oh
+        sofar += n_cont
         total_oh += n_oh
         total_cont += n_cont
 
-        fp.write('{} {} {} {} {} {}\n'.format(total, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
+        fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
 
         if total_oh / total > 0.1 and 0:
             break
