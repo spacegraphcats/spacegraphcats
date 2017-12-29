@@ -379,22 +379,41 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     x = []
     for node_id in frontier:
-        _, _, oh = var_in_bf_decide(node_id)
-        x.append((oh, node_id))
+        var_mh = load_minhash(node_id, vardb)
+        mins = var_mh.get_mins()
+
+        n_cont = 0
+        n_oh = 0
+        for hashval in mins:
+            if bf.get(hashval):
+                n_cont += 1
+            else:
+                n_oh += 1
+
+        x.append((-n_cont, n_oh, node_id))
 
     x.sort()
 
+    total = 0
+    total_oh = 0
+    total_cont = 0
     new_frontier = []
-    query_mins = set(query_sig.minhash.get_mins())
-    for (oh, node_id) in x:
-        minhash = load_minhash(node_id, minhash_db)
-        if not minhash:
-            new_frontier.append(node_id)
-        else:
-            mins = set(minhash.get_mins())
-            if query_mins.intersection(mins) == 0:
-                continue
-            new_frontier.append(node_id)
+    response_filename = os.path.basename(query_sig.d['filename']) + '.response.txt'
+    print('resp:', response_filename)
+    fp = open(response_filename, 'wt')
+    for (n_cont, n_oh, node_id) in x:
+        n_cont = -n_cont
+
+        total += n_cont + n_oh
+        total_oh += n_oh
+        total_cont += n_cont
+
+        fp.write('{} {} {} {} {} {}\n'.format(total, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
+
+        if total_oh / total > 0.1 and 0:
+            break
+        
+        new_frontier.append(node_id)
 
     print('XXX', len(frontier), len(new_frontier))
     frontier = set(new_frontier)
