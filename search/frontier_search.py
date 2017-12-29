@@ -49,7 +49,7 @@ def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, search_utils.MinhashSqlDB], max_overhead: float, bf, vardb, bf2, include_empty = False, use_purgatory = False):
+def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, search_utils.MinhashSqlDB], max_overhead: float, bf, vardb, include_empty = False, use_purgatory = False):
     """
         include_empty: Whether to include nodes with no minhases in the frontier
         use_purgatory: put leaf nodes with large overhead into a purgatory and consider them after we have processes the whole frontier
@@ -102,7 +102,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         mins = set(var_mh.get_mins())
         sum_in = 0
         for hashval in mins:
-            if bf.get(hashval) and not bf2.get(hashval):
+            if bf.get(hashval):
                 sum_in += 1
 
         frac = sum_in / len(mins)
@@ -193,8 +193,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
                 frontier_minhash = copy(minhash)
 
         varmh = load_minhash(node_id, vardb)
-        for hashval in varmh.get_mins():
-            bf2.add(hashval)
 
     def add_to_frontier(node_id: int):
         """
@@ -403,7 +401,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
     total_cont = 0
     new_frontier = []
     response_filename = os.path.basename(query_sig.d['filename']) + '.response.txt'
-    print('resp:', response_filename)
+    print('response curve in:', response_filename)
     fp = open(response_filename, 'wt')
     for pos, (n_cont, n_oh, node_id) in enumerate(x):
         n_cont = -n_cont
@@ -417,7 +415,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         if pos / len(x) < 0.95:
             new_frontier.append(node_id)
 
-    print('XXX', len(frontier), len(new_frontier))
+    print('(truncated frontier list, removing {} of {})'.format(len(frontier) - len(new_frontier), len(frontier)))
     frontier = set(new_frontier)
 
     # now check whether the nodes in the purgatory are still necessary
@@ -438,7 +436,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
                 # early termination, the full query is covered
                 break
 
-    print('visited:', len(seen_nodes))
+    print('frontier search visited {} catlas nodes.'.format(len(seen_nodes)))
 
     return frontier, num_leaves, num_empty, frontier_minhash
 
