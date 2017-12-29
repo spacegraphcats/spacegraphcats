@@ -377,6 +377,8 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     add_to_frontier3(top_node_id)
 
+    frontier = set(frontier)
+
     x = []
     total = 0
     for node_id in frontier:
