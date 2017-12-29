@@ -8,6 +8,7 @@ import os
 import sys
 import gzip
 import khmer
+import collections
 
 import screed
 
@@ -65,6 +66,7 @@ def main():
     # do some nodelist post-processing & output a response curve
     frontier_curve = []
     total = 0
+    min_counts = collections.defaultdict(int)
     for node_id in catlas_nodes:
         var_mh = load_minhash(node_id, vardb)
         mins = var_mh.get_mins()
@@ -74,6 +76,7 @@ def main():
         for hashval in mins:
             if bf.get(hashval):
                 n_cont += 1
+                min_counts[hashval] += 1
             else:
                 n_oh += 1
 
@@ -81,6 +84,11 @@ def main():
         frontier_curve.append((-n_cont, n_oh, node_id))
 
     frontier_curve.sort()
+
+    counts = sorted(min_counts.items(), key=lambda x: x[1], reverse=True)
+    for n, vals in enumerate(counts):
+        if vals[1] > 1:
+            print(n, vals)
 
     sofar = 0
     total_oh = 0
