@@ -377,7 +377,8 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     frontier = set(frontier)
 
-    x = []
+    # do some frontier post-processing & output a response curve
+    frontier_curve = []
     total = 0
     for node_id in frontier:
         var_mh = load_minhash(node_id, vardb)
@@ -392,9 +393,9 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
                 n_oh += 1
 
         total += n_cont
-        x.append((-n_cont, n_oh, node_id))
+        frontier_curve.append((-n_cont, n_oh, node_id))
 
-    x.sort()
+    frontier_curve.sort()
 
     sofar = 0
     total_oh = 0
@@ -403,7 +404,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
     response_filename = os.path.basename(query_sig.d['filename']) + '.response.txt'
     print('response curve in:', response_filename)
     fp = open(response_filename, 'wt')
-    for pos, (n_cont, n_oh, node_id) in enumerate(x):
+    for pos, (n_cont, n_oh, node_id) in enumerate(frontier_curve):
         n_cont = -n_cont
 
         sofar += n_cont
@@ -412,7 +413,8 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
         fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
 
-        if pos / len(x) < 0.95:
+        # select out only the first 95% of the frontier curve points
+        if pos / len(frontier_curve) < 0.95:
             new_frontier.append(node_id)
 
     print('(truncated frontier list, removing {} of {})'.format(len(frontier) - len(new_frontier), len(frontier)))
