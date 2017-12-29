@@ -28,19 +28,21 @@ def main():
 
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
-    if args.output:
-        outfp = args.output
-        outname = args.output.name
+    assert args.output, 'must specify -o'
+    outfp = args.output
+    outname = args.output.name
 
     print('loading bf...', end=' ')
     bf = khmer.Nodetable(args.ksize, 3e8, 2)
     bf.consume_seqfile(args.query)
-    print('...done.')
+    print('done.')
 
+    print('loading catlas...', end=' ')
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
     top_node_id, dag, dag_up, dag_levels, catlas_to_cdbg = search_utils.load_dag(catlas)
     layer1_to_cdbg = search_utils.load_layer1_to_cdbg(catlas_to_cdbg, domfile)
+    print('done.')
 
     vardbfile = os.path.join(args.catlas_prefix, 'minhashes.db.k{}.var.seed0'.format(args.ksize))
     assert os.path.exists(vardbfile)
