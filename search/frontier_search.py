@@ -366,9 +366,13 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
                 add_node(node_id, None)
                 return
 
-            # recurse into children to get more resolution
-            for child_id in children_ids:
-                add_to_frontier3(child_id)
+            if is_full:
+                # recurse into children to get more resolution
+                for child_id in children_ids:
+                    add_to_frontier3(child_id)
+            else:
+                # do something more complicated!
+                pass
 
     add_to_frontier3(top_node_id)
 
