@@ -134,11 +134,21 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
     @memoize
     def node_overhead2(node_id):
         var_mh = load_minhash(node_id, vardb)
-        if var_mh:
+        var_mins = var_mh.get_mins()
+
+        banded_mh = load_minhash(node_id, minhash_db)
+        banded_mins = []
+        if banded_mh:
+            banded_mins = banded_mh.get_mins()
+
+        if len(banded_mins) >= 10:        # arbitrary threshold
+            query_mh = get_query_minhash(banded_mh.scaled)
+            return compute_overhead(banded_mh, query_mh)
+        elif len(var_mins) >= 10:
             is_full, frac, oh = var_in_bf_decide(node_id)
             return oh
 
-        return None
+        return 0.0
 
     @memoize
     def node_containment(minhash) -> float:
@@ -318,6 +328,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     # This visits every node for which containment != 1.0, and adds
     # all children with any kind of containment.
+    # Also: if there is "robust" overhead, cancel out.
     def add_to_frontier3(node_id):
         nonlocal n_truncated
 
@@ -326,8 +337,12 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
             
         seen_nodes.add(node_id)
 
-        _, containment, overhead = var_in_bf_decide(node_id)
+        _, containment, _ = var_in_bf_decide(node_id)
+        overhead = node_overhead2(node_id)
 
+        if overhead == 1.0:
+            n_truncated += 1
+            return
         if containment == 1.0:
             add_node(node_id, None)
             return
