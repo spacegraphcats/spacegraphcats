@@ -316,6 +316,8 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     n_truncated = 0
 
+    # This visits every node for which containment != 1.0, and adds
+    # all children with any kind of containment.
     def add_to_frontier3(node_id):
         nonlocal n_truncated
 
@@ -333,9 +335,8 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         children_ids = dag[node_id]
 
         # leaf node: good varhash? keep.
-        if not children_ids:
-            if containment:
-                add_node(node_id, None)
+        if not children_ids and containment > 0.0:
+            add_node(node_id, None)
             return
 
         # recurse into children to get more resolution
