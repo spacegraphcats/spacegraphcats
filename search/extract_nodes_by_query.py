@@ -162,6 +162,7 @@ def main():
         try:
             print('------')
             print('QUERY FILE:', query)
+            start_time = time.time()
 
             # build a query sig for each seed.
             seed_queries = build_queries_for_seeds(seeds, ksize, scaled, query)
@@ -261,6 +262,7 @@ def main():
                     fp.write('{},{}\n'.format(node,
                                               " ".join([ str(x) for x in seedlist ])))
 
+            print('total time: {:.1f}s'.format(time.time() - start_time))
         except KeyboardInterrupt:
             raise
         except:
