@@ -328,7 +328,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     # This visits every node for which containment != 1.0, and adds
     # all children with any kind of containment.
-    # Also: if there is "robust" overhead, cancel out.
     def add_to_frontier3(node_id):
         nonlocal n_truncated
 
@@ -338,11 +337,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         seen_nodes.add(node_id)
 
         _, containment, _ = var_in_bf_decide(node_id)
-        overhead = node_overhead2(node_id)
-
-        if overhead == 1.0:
-            n_truncated += 1
-            return
         if containment == 1.0:
             add_node(node_id, None)
             return
