@@ -33,6 +33,7 @@ from the main spacegraphcats directory.
     parser.add_argument('--nolock', action='store_true')
     parser.add_argument('--overhead', type=float, default=0)
     parser.add_argument('--experiment', default='')
+    parser.add_argument('--radius', type=int, default=0)
     args = parser.parse_args()
 
     # first, find the Snakefile
@@ -58,8 +59,12 @@ from the main spacegraphcats directory.
 
     # build config override dict
     config = dict()
-    config['overhead'] = args.overhead
-    config['experiment'] = args.experiment
+    if args.overhead:
+        config['overhead'] = args.overhead
+    if args.experiment:
+        config['experiment'] = args.experiment
+    if args.radius:
+        config['radius'] = args.radius
 
     # run!!
     status = snakemake.snakemake(snakefile, configfile=configfile,
