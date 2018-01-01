@@ -89,16 +89,14 @@ rule bcalm_cdbg:
      input:
         input_sequences
      output:
-        "bcalm.{catlas_dir}.k{ksize}.unitigs.fa"
+        "bcalm.{catlas_base}.k{ksize}.unitigs.fa"
      shell:
-        # @CTB here we run into the problem that bcalm wants
-        # '-in file1 -in file2', so I am using 'params' and 
-        "bcalm {BCALM_INPUT} -out bcalm.{wildcards.catlas_dir}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt"
+        "bcalm {BCALM_INPUT} -out bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt"
 
 # build catlas input from bcalm output by reformatting
 rule bcalm_catlas_input:
      input:
-        expand("bcalm.{{catlas_dir}}.k{ksize}.unitigs.fa", ksize=ksize)
+        expand("bcalm.{catlas_base}.k{ksize}.unitigs.fa", ksize=ksize, catlas_base=catlas_base)
      output:
         "{catlas_dir}/cdbg.gxt",
         "{catlas_dir}/contigs.fa.gz"
