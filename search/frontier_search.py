@@ -337,7 +337,7 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         seen_nodes.add(node_id)
 
         _, containment, _ = var_in_bf_decide(node_id)
-        if containment == 1.0:
+        if containment >= 1.0 - max_overhead:
             add_node(node_id, None)
             return
 

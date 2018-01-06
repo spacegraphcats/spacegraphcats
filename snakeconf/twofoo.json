@@ -5,7 +5,7 @@
     "radius": 1,
 
     "searchquick": ["data/2.fa.gz"],
-    "searchseeds": "43-48",
+    "searchseeds": "43",
 
     "search": ["data/2.fa.gz", "data/47.fa.gz", "data/63.fa.gz"],
 
