@@ -49,7 +49,7 @@ def compute_overhead(node_minhash: MinHash, query_minhash: MinHash) -> float:
     return (node_length - node_minhash.count_common(query_minhash)) / node_length
 
 
-def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, search_utils.MinhashSqlDB], max_overhead: float, bf, vardb, include_empty = False, use_purgatory = False):
+def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, search_utils.MinhashSqlDB], max_overhead: float, include_empty = False, use_purgatory = False):
     """
         include_empty: Whether to include nodes with no minhases in the frontier
         use_purgatory: put leaf nodes with large overhead into a purgatory and consider them after we have processes the whole frontier
@@ -70,49 +70,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
 
     num_leaves = 0
     num_empty = 0
-
-    max_varnum = int(vardb.get_parameter('varnum'))
-
-    @memoize
-    def var_in_bf(node_id):
-        var_mh = load_minhash(node_id, vardb)
-        if var_mh:
-            mins = set(var_mh.get_mins())
-            for hashval in mins:
-                if bf.get(hashval):
-                    return True
-        return False
-
-    @memoize
-    def var_is_full(node_id):
-        var_mh = load_minhash(node_id, vardb)
-        if not var_mh:
-            assert 0
-
-        if len(var_mh.get_mins()) == max_varnum:
-            return True
-        return False
-
-    @memoize
-    def var_in_bf_decide(node_id):
-        var_mh = load_minhash(node_id, vardb)
-        if not var_mh:                    # nothing to decide upon, nokeep
-            return False
-
-        mins = set(var_mh.get_mins())
-        sum_in = 0
-        for hashval in mins:
-            if bf.get(hashval):
-                sum_in += 1
-
-        frac = sum_in / len(mins)
-        oh = 1 - frac
-
-        is_full = False
-        if len(mins) == max_varnum:       # max number of mins - are we full?
-            is_full = True
-
-        return is_full, frac, oh
 
     @memoize
     def load_and_downsample_minhash(node_id: int) -> MinHash:
@@ -175,8 +132,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
                 frontier_minhash.merge(minhash)
             else:
                 frontier_minhash = copy(minhash)
-
-        varmh = load_minhash(node_id, vardb)
 
     def add_to_frontier(node_id: int):
         """
@@ -273,56 +228,81 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
             # low overhead node gets added to the frontier
             add_node(node_id, minhash)
 
-    def child_is_interesting(node_id):
-        is_int = False
+    add_to_frontier(top_node_id)
 
-        children_ids = dag[node_id]
-        if not children_ids:
-            if var_in_bf(node_id):
-                return True
+    # now check whether the nodes in the purgatory are still necessary
+    if len(purgatory):
+        purgatory.sort()
+        required_query_minhashes = query_sig.minhash.subtract_mins(frontier_minhash)
+        for _, node_id, node_mh in purgatory:
+            before = len(required_query_minhashes)
+            required_query_minhashes -= set(node_mh.get_mins())
+            after = len(required_query_minhashes)
+            if before > after:
+                frontier_minhash.merge(node_mh)
+                frontier.append(node_id)
+                num_leaves += 1
+
+            if len(required_query_minhashes) == 0:
+                # early termination, the full query is covered
+                break
+
+    print('frontier search visited {} catlas nodes.'.format(len(seen_nodes)))
+
+    return frontier, num_leaves, num_empty, frontier_minhash
+
+
+def frontier_search_var(top_node_id: int, dag, max_overhead: float, bf, vardb):
+
+    # nodes and minhases that are in the frontier
+    frontier = []  # type: List[int]
+    frontier_minhash = None
+
+    # nodes and minhashes for leaves with large overhead
+    purgatory = []  # type: List[Tuple[float, int, MinHash]]
+
+    seen_nodes = set()  # type: Set[int]
+
+    num_leaves = 0
+    num_empty = 0
+
+    max_varnum = int(vardb.get_parameter('varnum'))
+
+    @memoize
+    def var_in_bf(node_id):
+        var_mh = load_minhash(node_id, vardb)
+        if var_mh:
+            mins = set(var_mh.get_mins())
+            for hashval in mins:
+                if bf.get(hashval):
+                    return True
+        return False
+
+    @memoize
+    def var_in_bf_decide(node_id):
+        var_mh = load_minhash(node_id, vardb)
+        if not var_mh:                    # nothing to decide upon, nokeep
             return False
 
-        for child_id in children_ids:
-            if child_is_interesting(child_id):
-                return True
+        mins = set(var_mh.get_mins())
+        sum_in = 0
+        for hashval in mins:
+            if bf.get(hashval):
+                sum_in += 1
 
-    def add_to_frontier2(node_id):
-        if node_id in seen_nodes:
-            return
-            
-        seen_nodes.add(node_id)
+        frac = sum_in / len(mins)
+        oh = 1 - frac
 
-        minhash = load_and_downsample_minhash(node_id)
+        is_full = False
+        if len(mins) == max_varnum:       # max number of mins - are we full?
+            is_full = True
 
-        if minhash:                     # non-empty banded minhash
-            overhead = node_overhead(minhash)
-            containment = node_containment(minhash)
-            if containment and overhead <= max_overhead:
-                add_node(node_id, minhash)
-                return
-        else:                             # empty minhash: do we keep?
-            is_full, containment, overhead = var_in_bf_decide(node_id)
+        return is_full, frac, oh
 
-            # do we guesstimate this is good? ok => keep.
-            if containment and overhead <= max_overhead:
-                add_node(node_id, None)
-                return
+    def add_node(node_id: int, minhash: MinHash):
+        nonlocal frontier_minhash
 
-            # is there any chance a good hash is below this? if not, exit.
-            if not is_full and containment == 0:
-                return
-
-        children_ids = dag[node_id]
-
-        # leaf node. good varhash? keep.
-        if not children_ids:
-            if var_in_bf(node_id):
-                add_node(node_id, minhash)
-            return
-
-        # recurse into children
-        for child_id in children_ids:
-            add_to_frontier2(child_id)
+        frontier.append(node_id)
 
     n_truncated = 0
 
@@ -355,24 +335,6 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
     add_to_frontier3(top_node_id)
 
     frontier = set(frontier)
-
-    # now check whether the nodes in the purgatory are still necessary
-    if len(purgatory):
-        assert 0
-        purgatory.sort()
-        required_query_minhashes = query_sig.minhash.subtract_mins(frontier_minhash)
-        for _, node_id, node_mh in purgatory:
-            before = len(required_query_minhashes)
-            required_query_minhashes -= set(node_mh.get_mins())
-            after = len(required_query_minhashes)
-            if before > after:
-                frontier_minhash.merge(node_mh)
-                frontier.append(node_id)
-                num_leaves += 1
-
-            if len(required_query_minhashes) == 0:
-                # early termination, the full query is covered
-                break
 
     print('frontier search visited {} catlas nodes.'.format(len(seen_nodes)))
     print('frontier search truncated {}'.format(n_truncated))

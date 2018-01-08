@@ -112,10 +112,10 @@ rule build_catlas:
         "{catlas_dir}/first_doms.txt",
         "{catlas_dir}/catlas.csv"
      shell:
-        "{python} -m spacegraphcats.catlas {catlas_dir} {radius}"
+        "{python} -m spacegraphcats.catlas --no_checkpoint {catlas_dir} {radius}"
 
 # build minhash databases
-rule minhash_db:
+rule minhash_db_scaled:
      input:
         "{catlas_dir}/cdbg.gxt",
         "{catlas_dir}/contigs.fa.gz",
@@ -138,10 +138,10 @@ rule minhash_db_var:
 
 ### Search rules.
 
-def make_query_base(catlas_dir, searchfiles):
+def make_query_base(catlas_dir, searchfiles, suffix=''):
     x = []
     for filename in searchfiles:
-        x.append("{}/{}.contigs.sig".format(search_dir, os.path.basename(filename)))
+        x.append("{}{}/{}.contigs.sig".format(search_dir, suffix, os.path.basename(filename)))
     return x
 
 # do a quick search!
@@ -151,12 +151,12 @@ rule searchquick:
         expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
         expand("{catlas_dir}/minhashes.db.k{ksize}.var.seed0", catlas_dir=catlas_dir, ksize=ksize),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
+#        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
     output:
         expand("{search_dir}/results.csv", search_dir=search_dir),
         make_query_base(catlas_dir, config['searchquick']),
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} --seed={searchseeds} -k {ksize} --overhead={overhead}"
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} -k {ksize} --overhead={overhead}"
 
 
 # do a full search!
@@ -165,13 +165,13 @@ rule search:
         config['search'],
         expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
+#        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
         expand("{catlas_dir}/minhashes.db.k{ksize}.var.seed0", catlas_dir=catlas_dir, ksize=ksize)
     output:
         expand("{search_dir}/results.csv", search_dir=search_dir),
         make_query_base(catlas_dir, config['search']),
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[search]} --seed={searchseeds} -k {ksize} --overhead={overhead}"
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[search]} -k {ksize} --overhead={overhead}"
 
 
 ### shadow ratio stuff
@@ -186,8 +186,24 @@ rule extract_by_shadow_ratio_rule:
     input:
         expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed43", catlas_dir=catlas_dir, ksize=ksize),
+#        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed43", catlas_dir=catlas_dir, ksize=ksize),
     output:
         "{catlas_dir}.shadow.{shadow_ratio_maxsize}.fa"
     shell:
         "{python} -m search.extract_nodes_by_shadow_ratio --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}"
+
+
+# do a frontier search with scaled minhashes - currently deprecated
+rule frontier_search:
+    input:
+        config['search'],
+        expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
+    output:
+        expand("{search_dir}_frontier/results.csv", search_dir=search_dir),
+        make_query_base(catlas_dir, config['search'], suffix='_frontier'),
+    shell:
+        "{python} -m search.extract_nodes_by_frontier_query {catlas_dir} {search_dir}_frontier --query {config[search]} -k {ksize} --overhead={overhead} --seed={searchseeds}"
+
+

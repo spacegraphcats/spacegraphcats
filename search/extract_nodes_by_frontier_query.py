@@ -26,37 +26,42 @@ from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
                            build_queries_for_seeds, parse_seeds_arg)
 from .search_utils import MinhashSqlDB
 from spacegraphcats.logging import log
-from search.frontier_search import (frontier_search_var, compute_overhead, find_shadow, NoContainment)
+from search.frontier_search import (frontier_search, compute_overhead, find_shadow, NoContainment)
 from . import search_utils
 from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
 
 
 
 
-def collect_frontier(dag, top_node_id, bf, vardb,
+def collect_frontier(seed_queries, dag, top_node_id, minhash_db_list,
                      overhead=0.0, verbose=False):
-    start = time.time()
-
-    # gather results into total_frontier
+    # gather results of all queries across all seeds into total_frontier
     total_frontier = defaultdict(set)
 
     # do queries!
-    try:
-        frontier, num_leaves, num_empty, frontier_mh = \
-          frontier_search_var(top_node_id, dag, overhead, bf, vardb)
-    except NoContainment:
-        print('** WARNING: no containment!?')
-        frontier = []
-        num_leaves = 0
-        num_empty = 0
-        frontier_mh = seed_query.minhash.copy_and_clear()
+    for seed_query, db_path in zip(seed_queries, minhash_db_list):
+        start = time.time()
+        print('loading minhashdb:', db_path)
+        minhash_db = MinhashSqlDB(db_path)
 
-    # record which seed (always 0, here) contributed to which node
-    for node in frontier:
-        total_frontier[node].add(0)
+        print('searching with seed={}'.format(seed_query.minhash.seed))
+        try:
+            frontier, num_leaves, num_empty, frontier_mh = \
+              frontier_search(seed_query, top_node_id, dag, minhash_db,
+                              overhead, False, True)
+        except NoContainment:
+            print('** WARNING: no containment!?')
+            frontier = []
+            num_leaves = 0
+            num_empty = 0
+            frontier_mh = seed_query.minhash.copy_and_clear()
 
-    end = time.time()
-    print('query time: {:.1f}s'.format(end-start))
+        # record which seed contributed to which node
+        for node in frontier:
+            total_frontier[node].add(seed_query.minhash.seed)
+
+        end = time.time()
+        print('query time: {:.1f}s'.format(end-start))
 
     return total_frontier
 
@@ -71,6 +76,7 @@ def main():
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     p.add_argument('--scaled', default=1000, type=float)
+    p.add_argument('--seeds', default="43", type=str)
     p.add_argument('-v', '--verbose', action='store_true')
 
     args = p.parse_args()
@@ -119,10 +125,21 @@ def main():
     ksize = int(args.ksize)
     scaled = int(args.scaled)
 
-    # retrieve minhash db
-    vardbfile = os.path.join(args.catlas_prefix, 'minhashes.db.k{}.var.seed0'.format(ksize))
-    assert os.path.exists(vardbfile)
-    vardb = MinhashSqlDB(vardbfile)
+    # we'll probably be using multiple seeds...
+    seeds = search_utils.parse_seeds_arg(args.seeds)
+    print('search seeds: {} -> {}'.format(args.seeds, seeds))
+    assert 42 not in seeds
+
+    # make sure there's a minhash db for each seed 
+    minhash_db_list = []
+    for seed in seeds:
+        db_path = get_minhashdb_name(args.catlas_prefix, ksize, scaled, 0,
+                                     seed)
+        if not db_path:
+            print('** ERROR, minhash DB does not exist for k={} seed={}'.format(ksize, seed),
+                  file=sys.stderr)
+            sys.exit(-1)
+        minhash_db_list.append(db_path)
 
     # record command line
     with open(os.path.join(args.output, 'command.txt'), 'wt') as fp:
@@ -142,15 +159,12 @@ def main():
             print('QUERY FILE:', query)
             start_time = time.time()
 
-            # build a bf for the query
-            print('loading bf...', end=' ')
-            bf = khmer.Nodetable(ksize, 3e8, 2)
-            bf.consume_seqfile(query)
-            print('...done.')
+            # build a query sig for each seed.
+            seed_queries = build_queries_for_seeds(seeds, ksize, scaled, query)
 
             # gather results of all queries across all seeds
-            total_frontier = collect_frontier(dag, top_node_id,
-                                              bf, vardb,
+            total_frontier = collect_frontier(seed_queries, dag, top_node_id,
+                                              minhash_db_list,
                                               overhead=args.overhead,
                                               verbose=args.verbose)
 
@@ -180,7 +194,10 @@ def main():
             print('extracting contigs...')
             for n, record in enumerate(screed.open(contigs)):
                 if n and n % 10000 == 0:
-                    offset_f = total_seqs / len(cdbg_shadow)
+                    if cdbg_shadow:
+                        offset_f = total_seqs / len(cdbg_shadow)
+                    else:
+                        offset_f = 0.0
                     print('...at n {} ({:.1f}% of shadow)'.format(total_seqs,
                           offset_f * 100),
                           end='\r')
@@ -205,10 +222,14 @@ def main():
             print('query inclusion by retrieved contigs:', containment)
             print('query similarity to retrieved contigs:', similarity)
 
-            num_seeds = 0
+            num_seeds = len(seeds)
 
-            # in var query, we no longer have the ability to calculate this!
-            best_containment = 0
+            # calculate best_containment using the first seed
+            # (shouldn't matter which one, so just pick one)
+            seed_query, db_path = seed_queries[0], minhash_db_list[0]
+            minhash_db = MinhashSqlDB(db_path)
+            top_mh = load_minhash(top_node_id, minhash_db)
+            best_containment = seed_query.minhash.contained_by(top_mh)
 
             # output to results.csv!
             csv_writer.writerow([query, containment, similarity, total_bp, total_seqs, num_seeds, ksize, scaled, best_containment])
