@@ -46,14 +46,6 @@ python=sys.executable  # define as the version of Python running snakemake
 ###############################################################################
 ## some utility functions.
 
-# rewrite the datasets into bcalm format
-def write_bcalm_in(datasets):
-    x = []
-    for d in datasets:
-        x.append('-in {}'.format(d))
-    return " ".join(x)
-
-
 def parse_seeds(seeds_str):
     seeds = []
     seeds_str = seeds_str.split(',')
@@ -71,8 +63,6 @@ def parse_seeds(seeds_str):
 ###############################################################################
 
 ## now, build some variables...
-
-BCALM_INPUT=write_bcalm_in(input_sequences)
 SEEDS=parse_seeds(config['searchseeds'])
 
 ### rules!
@@ -87,11 +77,20 @@ rule build:
 # build cDBG using bcalm
 rule bcalm_cdbg:
      input:
-        input_sequences
+        "bcalm.{catlas_base}.k{ksize}.inputlist.txt"
      output:
         "bcalm.{catlas_base}.k{ksize}.unitigs.fa"
      shell:
-        "bcalm {BCALM_INPUT} -out bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt"
+        "bcalm -in bcalm.{catlas_base}.k{ksize}.inputlist.txt -out bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt"
+
+# create list of input files for bcalm
+rule bcalm_cdbg_inpfiles:
+     input:
+        input_sequences
+     output:
+        "bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+     shell:
+        "echo {input_sequences:q} > bcalm.{catlas_base}.k{ksize}.inputlist.txt"
 
 # build catlas input from bcalm output by reformatting
 rule bcalm_catlas_input:
