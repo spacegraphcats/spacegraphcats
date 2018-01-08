@@ -89,36 +89,9 @@ def frontier_search(query_sig, top_node_id: int, dag, minhash_db: Union[str, sea
         return compute_overhead(minhash, query_mh)
 
     @memoize
-    def node_overhead2(node_id):
-        var_mh = load_minhash(node_id, vardb)
-        var_mins = var_mh.get_mins()
-
-        banded_mh = load_minhash(node_id, minhash_db)
-        banded_mins = []
-        if banded_mh:
-            banded_mins = banded_mh.get_mins()
-
-        if len(banded_mins) >= 10:        # arbitrary threshold
-            query_mh = get_query_minhash(banded_mh.scaled)
-            return compute_overhead(banded_mh, query_mh)
-        elif len(var_mins) >= 10:
-            is_full, frac, oh = var_in_bf_decide(node_id)
-            return oh
-
-        return 0.0
-
-    @memoize
     def node_containment(minhash) -> float:
         query_mh = get_query_minhash(minhash.scaled)
         return query_mh.contained_by(minhash)
-
-    @memoize
-    def node_containment2(node_id) -> float:
-        var_mh = load_minhash(node_id, vardb)
-        if var_mh:
-            is_full, frac, oh = var_in_bf_decide(node_id)
-            return frac
-        return None
 
     def add_node(node_id: int, minhash: MinHash):
         nonlocal frontier_minhash
