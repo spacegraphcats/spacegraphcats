@@ -315,6 +315,70 @@ def frontier_search_var(top_node_id: int, dag, max_overhead: float, bf, vardb):
     return frontier, num_leaves, num_empty, frontier_minhash
 
 
+def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, max_overhead):
+
+    # nodes and minhases that are in the frontier
+    frontier = []  # type: List[int]
+    frontier_minhash = None
+
+    # nodes and minhashes for leaves with large overhead
+    seen_nodes = set()  # type: Set[int]
+
+    num_leaves = 0
+    num_empty = 0
+
+    def node_containment(node_id):
+        query_kmers = node_query_kmers.get(node_id, 0)
+        total_kmers = node_kmer_sizes[node_id]
+        containment = query_kmers / total_kmers
+
+        return containment
+
+    def node_overhead(node_id):
+        return 1 - node_containment(node_id)
+
+    def add_node(node_id: int):
+        frontier.append(node_id)
+
+    n_truncated = 0
+
+    # This visits every node for which containment != 1.0, and adds
+    # all children with any kind of containment.
+    def add_to_frontier4(node_id):
+        nonlocal n_truncated
+
+        if node_id in seen_nodes:
+            return
+            
+        seen_nodes.add(node_id)
+
+        containment = node_containment(node_id)
+        if containment >= 1.0 - max_overhead:
+            add_node(node_id)
+            n_truncated += 1
+            return
+
+        children_ids = dag[node_id]
+
+        # leaf node: some containment? keep.
+        if not children_ids and containment > 0.0:
+            add_node(node_id)
+            return
+
+        # recurse into children to get more resolution
+        for child_id in children_ids:
+            add_to_frontier4(child_id)
+
+    add_to_frontier4(top_node_id)
+
+    frontier = set(frontier)
+
+    print('frontier search visited {} catlas nodes.'.format(len(seen_nodes)))
+    print('frontier search truncated {}'.format(n_truncated))
+
+    return frontier, num_leaves, num_empty, frontier_minhash
+
+
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('query_sig', help='query minhash')

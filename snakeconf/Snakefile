@@ -186,8 +186,7 @@ rule searchquick:
         config['searchquick'],
         expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.var.seed0", catlas_dir=catlas_dir, ksize=ksize),
-#        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
+        expand("{catlas_dir}/contigs.fa.gz.sqlindex", catlas_dir=catlas_dir)
     output:
         expand("{search_dir}/results.csv", search_dir=search_dir),
         make_query_base(config['searchquick']),
@@ -201,8 +200,7 @@ rule search:
         config['search'],
         expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
-#        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.var.seed0", catlas_dir=catlas_dir, ksize=ksize)
+        expand("{catlas_dir}/contigs.fa.gz.sqlindex", catlas_dir=catlas_dir)
     output:
         expand("{search_dir}/results.csv", search_dir=search_dir),
         make_query_base(config['search']),

@@ -26,14 +26,13 @@ from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
                            build_queries_for_seeds, parse_seeds_arg)
 from .search_utils import MinhashSqlDB
 from spacegraphcats.logging import log
-from search.frontier_search import (frontier_search_var, compute_overhead, find_shadow, NoContainment)
+from search.frontier_search import (frontier_search_exact, find_shadow, NoContainment)
 from . import search_utils
 from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash, SqlKmerIndex)
 
 
-
-
-def collect_frontier(dag, top_node_id, bf, vardb,
+def collect_frontier(dag, top_node_id,
+                     node_kmer_sizes, node_query_kmers,
                      overhead=0.0, verbose=False):
     start = time.time()
 
@@ -43,7 +42,7 @@ def collect_frontier(dag, top_node_id, bf, vardb,
     # do queries!
     try:
         frontier, num_leaves, num_empty, frontier_mh = \
-          frontier_search_var(top_node_id, dag, overhead, bf, vardb)
+          frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, overhead)
     except NoContainment:
         print('** WARNING: no containment!?')
         frontier = []
@@ -209,18 +208,15 @@ def main():
             print('XXX', sum(cdbg_count.values()), len(cdbg_count))
             print('...', n)
 
-            if 0:
-                # gather results of all queries across all seeds
-                total_frontier = collect_frontier(dag, top_node_id,
-                                                  node_kmer_sizes,
-                                                  node_query_kmers,
-                                                  overhead=args.overhead,
-                                                  verbose=args.verbose)
+            # gather results of all queries across all seeds
+            total_frontier = collect_frontier(dag, top_node_id,
+                                              node_kmer_sizes,
+                                              node_query_kmers,
+                                              overhead=args.overhead,
+                                              verbose=args.verbose)
 
-                # calculate level 1 nodes for this frontier in the catlas
-                total_shadow = find_shadow(total_frontier, dag)
-
-            total_shadow = set()
+            # calculate level 1 nodes for this frontier in the catlas
+            total_shadow = find_shadow(total_frontier, dag)
 
             # calculate associated cDBG nodes
             cdbg_shadow = set()
