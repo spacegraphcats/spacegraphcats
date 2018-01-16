@@ -127,6 +127,15 @@ rule build_catlas:
      shell:
         "{python} -m spacegraphcats.catlas --no_checkpoint {catlas_dir} {radius}"
 
+# index contigs, count node sizes
+rule make_contigs_kmer_index:
+     input:
+        "{catlas_dir}/contigs.fa.gz"
+     output:
+        "{catlas_dir}/contigs.fa.gz.sqlindex"
+     shell:
+        "{python} -m search.index_contigs_by_kmer {catlas_dir}"
+
 # build minhash databases
 rule minhash_db_scaled:
      input:
@@ -159,11 +168,11 @@ def make_query_base(searchfiles, suffix=''):
         x.append("{}{}/{}.frontier.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
     return x
 
-def make_output_cdbg_ids(searchfiles, suffix=''):
-    x = []
-    for filename in searchfiles:
-        x.append("{}{}/{query_filename}.cdbg_ids.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
-    return x
+#def make_output_cdbg_ids(searchfiles, suffix=''):
+#    x = []
+#    for filename in searchfiles:
+#        x.append("{}{}/{query_filename}.cdbg_ids.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
+#    return x
 
 def make_output_reads(searchfiles, suffix=''):
     x = []
@@ -241,12 +250,12 @@ rule extract_reads:
     input:
         make_output_reads(config['search'])
 
-rule extract_reads_rule:
-    input:
-        make_output_cdbg_ids(config['search']),
-        expand("{catlas_dir}/reads.fq.bgz", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir)
-    output:
-        make_output_reads(config['search'])
-    shell:
-        "{python} -m search.extract_reads {catlas_dir}/reads.fq.bgz {catlas_dir}/reads.fq.bgz.labels {search_dir}/{query_filename}.cdbg_ids.txt.gz -o {output}"
+#rule extract_reads_rule:
+#    input:
+#        make_output_cdbg_ids(config['search']),
+#        expand("{catlas_dir}/reads.fq.bgz", catlas_dir=catlas_dir),
+#        expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir)
+#    output:
+#        make_output_reads(config['search'])
+#    shell:
+#        "{python} -m search.extract_reads {catlas_dir}/reads.fq.bgz {catlas_dir}/reads.fq.bgz.labels {search_dir}/{query_filename}.cdbg_ids.txt.gz -o {output}"

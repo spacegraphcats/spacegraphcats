@@ -28,7 +28,7 @@ from .search_utils import MinhashSqlDB
 from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search_var, compute_overhead, find_shadow, NoContainment)
 from . import search_utils
-from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
+from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash, SqlKmerIndex)
 
 
 
@@ -99,30 +99,47 @@ def main():
     top_node_id, dag, dag_up, dag_levels, catlas_to_cdbg = load_dag(catlas)
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
-    del dag_up
-    del dag_levels
-
-    gc.collect()
-
     # load mapping between dom nodes and cDBG/graph nodes:
     layer1_to_cdbg = load_layer1_to_cdbg(catlas_to_cdbg, domfile)
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
 
-    del catlas_to_cdbg
-
-    gc.collect()
-
     # find the contigs filename
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
+
+    # ...and index.
+    kmer_sqlindex_file = contigs + '.sqlindex'
+    kmer_idx = SqlKmerIndex(kmer_sqlindex_file)
+
+    # load kmers per cdbg node
+    print('loading sizes...')
+    cdbg_kmer_sizes = {}
+    for cdbg_id, size in kmer_idx.get_node_sizes():
+        cdbg_kmer_sizes[cdbg_id] = size
+    print('...done')
+
+    # calculate the cDBG shadow sizes for each catlas node.
+    x = []
+    for (node_id, level) in dag_levels.items():
+        x.append((level, node_id))
+    x.sort()
+
+    node_kmer_sizes = {}
+    for level, node_id in x:
+        if level == 1:
+            total_kmers = 0
+            for cdbg_node in layer1_to_cdbg.get(node_id):
+                total_kmers += cdbg_kmer_sizes[node_id]
+            
+            node_kmer_sizes[node_id] = total_kmers
+        else:
+            sub_size = 0
+            for child_id in dag[node_id]:
+                sub_size += node_kmer_sizes[child_id]
+            node_kmer_sizes[node_id] = sub_size
 
     # get a single ksize & scaled
     ksize = int(args.ksize)
     scaled = int(args.scaled)
-
-    # retrieve minhash db
-    vardbfile = os.path.join(args.catlas_prefix, 'minhashes.db.k{}.var.seed0'.format(ksize))
-    assert os.path.exists(vardbfile)
-    vardb = MinhashSqlDB(vardbfile)
 
     # record command line
     with open(os.path.join(args.output, 'command.txt'), 'wt') as fp:
@@ -143,19 +160,67 @@ def main():
             start_time = time.time()
 
             # build a bf for the query
-            print('loading bf...', end=' ')
-            bf = khmer.Nodetable(ksize, 3e8, 2)
-            bf.consume_seqfile(query)
+            print('loading query kmers...')
+            bf = khmer.Nodetable(ksize, 1, 1)
+
+            cdbg_count = defaultdict(int)
+
+            x = set()
+            n = 0
+            for record in screed.open(query):
+                for hashval in bf.get_kmer_hashes(record.sequence):
+                    n += 1
+                    if n % 250000 == 0:
+                        print('...', n)
+                    cdbg_id = kmer_idx.retrieve_sample_by_kmer(hashval)
+                    cdbg_count[cdbg_id] += 1
+
             print('...done.')
+            del cdbg_count[None]
+            print('XXX', sum(cdbg_count.values()), len(cdbg_count))
 
-            # gather results of all queries across all seeds
-            total_frontier = collect_frontier(dag, top_node_id,
-                                              bf, vardb,
-                                              overhead=args.overhead,
-                                              verbose=args.verbose)
 
-            # calculate level 1 nodes for this frontier in the catlas
-            total_shadow = find_shadow(total_frontier, dag)
+            # calculate the cDBG matching k-mers sizes for each catlas node.
+            x = []
+            for (node_id, level) in dag_levels.items():
+                x.append((level, node_id))
+            x.sort()
+
+            node_query_kmers = {}
+            for level, node_id in x:
+                if level == 1:
+                    query_kmers = 0
+                    for cdbg_node in layer1_to_cdbg.get(node_id):
+                        query_kmers += cdbg_count.get(cdbg_node, 0)
+
+                    if query_kmers:
+                        node_query_kmers[node_id] = query_kmers
+                else:
+                    sub_size = 0
+                    for child_id in dag[node_id]:
+                        sub_size += node_query_kmers.get(child_id, 0)
+
+                    if sub_size:
+                        node_query_kmers[node_id] = sub_size
+
+            print('ZZZ', node_query_kmers[node_id])
+
+            assert sum(cdbg_count.values()) == node_query_kmers[node_id]
+            print('XXX', sum(cdbg_count.values()), len(cdbg_count))
+            print('...', n)
+
+            if 0:
+                # gather results of all queries across all seeds
+                total_frontier = collect_frontier(dag, top_node_id,
+                                                  node_kmer_sizes,
+                                                  node_query_kmers,
+                                                  overhead=args.overhead,
+                                                  verbose=args.verbose)
+
+                # calculate level 1 nodes for this frontier in the catlas
+                total_shadow = find_shadow(total_frontier, dag)
+
+            total_shadow = set()
 
             # calculate associated cDBG nodes
             cdbg_shadow = set()
