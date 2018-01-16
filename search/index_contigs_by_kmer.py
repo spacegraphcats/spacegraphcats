@@ -33,6 +33,11 @@ def main():
 
         db.set_node_size(cdbg_id, len(kmers))
 
+    print('committing...')
+    db.commit()
+    print('...building index...')
+    db.build_index()
+    print('...committing')
     db.commit()
 
 

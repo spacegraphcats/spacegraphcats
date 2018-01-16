@@ -630,8 +630,11 @@ class SqlKmerIndex(object):
         self.cursor.execute('BEGIN TRANSACTION')
 
     def create(self):
-        self.cursor.execute('CREATE TABLE kmers (hashval INTEGER PRIMARY KEY, cdbg_id INTEGER)')
+        self.cursor.execute('CREATE TABLE kmers (hashval INTEGER, cdbg_id INTEGER)')
         self.cursor.execute('CREATE TABLE n_kmers (cdbg_id INTEGER PRIMARY KEY, size INTEGER)')
+
+    def build_index(self):
+        self.cursor.execute('CREATE UNIQUE INDEX hashval_idx on kmers (hashval)')
 
     def commit(self):
         self.db.commit()
