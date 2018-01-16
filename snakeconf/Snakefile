@@ -71,8 +71,6 @@ SEEDS=parse_seeds(config['searchseeds'])
 rule build:
     input:
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.var.seed0", catlas_dir=catlas_dir, ksize=ksize)
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
@@ -101,6 +99,21 @@ rule bcalm_catlas_input:
         "{catlas_dir}/contigs.fa.gz"
      shell:
         "{python} -m search.bcalm_to_gxt {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
+
+#print(expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir))
+
+rule label_reads:
+     input:
+        expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir)
+
+# label the reads by contig
+rule label_reads_action:
+     input:
+        "{catlas_dir}/reads.fq.bgz"
+     output:
+        "{catlas_dir}/reads.fq.bgz.labels"
+     shell:
+        "{python} -m search.label_cdbg {catlas_dir} {input} {output}"
 
 
 # build catlas!
@@ -138,10 +151,24 @@ rule minhash_db_var:
 
 ### Search rules.
 
-def make_query_base(catlas_dir, searchfiles, suffix=''):
+def make_query_base(searchfiles, suffix=''):
     x = []
     for filename in searchfiles:
         x.append("{}{}/{}.contigs.sig".format(search_dir, suffix, os.path.basename(filename)))
+        x.append("{}{}/{}.cdbg_ids.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
+        x.append("{}{}/{}.frontier.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
+    return x
+
+def make_output_cdbg_ids(searchfiles, suffix=''):
+    x = []
+    for filename in searchfiles:
+        x.append("{}{}/{query_filename}.cdbg_ids.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
+    return x
+
+def make_output_reads(searchfiles, suffix=''):
+    x = []
+    for filename in searchfiles:
+        x.append("{}{}/{}.reads.fq.gz".format(search_dir, suffix, os.path.basename(filename)))
     return x
 
 # do a quick search!
@@ -154,7 +181,7 @@ rule searchquick:
 #        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
     output:
         expand("{search_dir}/results.csv", search_dir=search_dir),
-        make_query_base(catlas_dir, config['searchquick']),
+        make_query_base(config['searchquick']),
     shell:
         "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} -k {ksize} --overhead={overhead}"
 
@@ -169,10 +196,11 @@ rule search:
         expand("{catlas_dir}/minhashes.db.k{ksize}.var.seed0", catlas_dir=catlas_dir, ksize=ksize)
     output:
         expand("{search_dir}/results.csv", search_dir=search_dir),
-        make_query_base(catlas_dir, config['search']),
+        make_query_base(config['search']),
     shell:
         "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[search]} -k {ksize} --overhead={overhead}"
 
+ruleorder: search > searchquick
 
 ### shadow ratio stuff
 
@@ -202,8 +230,23 @@ rule frontier_search:
         expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
     output:
         expand("{search_dir}_frontier/results.csv", search_dir=search_dir),
-        make_query_base(catlas_dir, config['search'], suffix='_frontier'),
+        make_query_base(config['search'], suffix='_frontier'),
     shell:
         "{python} -m search.extract_nodes_by_frontier_query {catlas_dir} {search_dir}_frontier --query {config[search]} -k {ksize} --overhead={overhead} --seed={searchseeds}"
 
+print(make_output_reads(config['search']))
 
+# extract reads based on a search:
+rule extract_reads:
+    input:
+        make_output_reads(config['search'])
+
+rule extract_reads_rule:
+    input:
+        make_output_cdbg_ids(config['search']),
+        expand("{catlas_dir}/reads.fq.bgz", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir)
+    output:
+        make_output_reads(config['search'])
+    shell:
+        "{python} -m search.extract_reads {catlas_dir}/reads.fq.bgz {catlas_dir}/reads.fq.bgz.labels {search_dir}/{query_filename}.cdbg_ids.txt.gz -o {output}"
