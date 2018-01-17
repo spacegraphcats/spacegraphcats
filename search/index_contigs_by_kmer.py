@@ -6,6 +6,7 @@ import khmer
 from .search_utils import SqlKmerIndex
 import argparse
 import os
+from pickle import dump
 
 
 def main():
@@ -16,9 +17,10 @@ def main():
     kh = khmer.Nodetable(31, 1, 1)
 
     contigs_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz')
+    pickle_file = os.path.join(a.catlas_prefix, 'contigs.fa.gz.kmeridx')
 
-    db = SqlKmerIndex(contigs_filename + '.sqlindex')
-    db.create()
+    d = {}
+    sizes = {}
 
     print('reading cDBG nodes from {}'.format(contigs_filename))
     for n, record in enumerate(screed.open(contigs_filename)):
@@ -29,16 +31,12 @@ def main():
         cdbg_id = int(record.name)
 
         for hashval in kmers:
-            db.insert_kmer(hashval, cdbg_id)
+            d[hashval] = cdbg_id
 
-        db.set_node_size(cdbg_id, len(kmers))
+        sizes[cdbg_id] = len(kmers)
 
-    print('committing...')
-    db.commit()
-    print('...building index...')
-    db.build_index()
-    print('...committing')
-    db.commit()
+    with open(pickle_file, 'wb') as fp:
+        dump((d, sizes), fp)
 
 
 if __name__ == '__main__':
