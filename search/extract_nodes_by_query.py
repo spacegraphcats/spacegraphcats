@@ -116,6 +116,7 @@ def main():
     with open(array_filename, 'rb') as fp:
         np_dict = numpy.load(fp)
 
+        mphf_to_kmer = np_dict['mphf_to_kmer']
         kmer_to_cdbg = np_dict['kmer_to_cdbg']
         cdbg_kmer_sizes = np_dict['sizes']
 
@@ -176,8 +177,9 @@ def main():
                         print('...', n)
 
                     kmer_idx = mphf.lookup(hashval)
-                    cdbg_id = kmer_to_cdbg[kmer_idx]
-                    cdbg_count[cdbg_id] += 1
+                    if mphf_to_kmer[kmer_idx] == hashval:
+                        cdbg_id = kmer_to_cdbg[kmer_idx]
+                        cdbg_count[cdbg_id] += 1
 
             print('...done.')
             print('XXX', sum(cdbg_count.values()), len(cdbg_count))
