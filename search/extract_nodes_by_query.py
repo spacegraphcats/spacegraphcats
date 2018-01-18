@@ -15,6 +15,8 @@ from collections import defaultdict
 import time
 import khmer
 import pickle
+import bbhash
+import numpy
 
 import screed
 
@@ -107,10 +109,15 @@ def main():
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
     # ...and index.
-    kmer_sqlindex_file = contigs + '.kmeridx'
+    mphf_filename = os.path.join(args.catlas_prefix, 'contigs.fa.gz.mphf')
+    array_filename = os.path.join(args.catlas_prefix, 'contigs.fa.gz.indices')
 
-    with open(kmer_sqlindex_file, 'rb') as fp:
-        (kmer_idx, cdbg_kmer_sizes) = pickle.load(fp)
+    mphf = bbhash.load_mphf(mphf_filename)
+    with open(array_filename, 'rb') as fp:
+        np_dict = numpy.load(fp)
+
+        kmer_to_cdbg = np_dict['kmer_to_cdbg']
+        cdbg_kmer_sizes = np_dict['sizes']
 
     # calculate the cDBG shadow sizes for each catlas node.
     x = []
@@ -167,11 +174,12 @@ def main():
                     n += 1
                     if n % 250000 == 0:
                         print('...', n)
-                    cdbg_id = kmer_idx.get(hashval)
+
+                    kmer_idx = mphf.lookup(hashval)
+                    cdbg_id = kmer_to_cdbg[kmer_idx]
                     cdbg_count[cdbg_id] += 1
 
             print('...done.')
-            del cdbg_count[None]
             print('XXX', sum(cdbg_count.values()), len(cdbg_count))
 
 
