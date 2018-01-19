@@ -280,8 +280,8 @@ def main():
 
             num_seeds = 0
 
-            # in var query, we no longer have the ability to calculate this!
-            best_containment = 0
+            # recover from above.
+            best_containment = f_found
 
             # output to results.csv!
             csv_writer.writerow([query, containment, similarity, total_bp, total_seqs, num_seeds, ksize, scaled, best_containment])
