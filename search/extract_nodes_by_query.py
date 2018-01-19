@@ -131,7 +131,7 @@ def main():
         if level == 1:
             total_kmers = 0
             for cdbg_node in layer1_to_cdbg.get(node_id):
-                total_kmers += cdbg_kmer_sizes[node_id]
+                total_kmers += cdbg_kmer_sizes[cdbg_node]
             
             node_kmer_sizes[node_id] = total_kmers
         else:
@@ -162,7 +162,7 @@ def main():
             print('QUERY FILE:', query)
             start_time = time.time()
 
-            # build a bf for the query
+            # build hashes for all the query k-mers
             print('loading query kmers...')
             bf = khmer.Nodetable(ksize, 1, 1)
 
@@ -170,20 +170,27 @@ def main():
 
             x = set()
             n = 0
+
+            query_kmers = set()
             for record in screed.open(query):
-                for hashval in bf.get_kmer_hashes(record.sequence):
-                    n += 1
-                    if n % 250000 == 0:
-                        print('...', n)
+                query_kmers.update(bf.get_kmer_hashes(record.sequence))
 
-                    kmer_idx = mphf.lookup(hashval)
-                    if mphf_to_kmer[kmer_idx] == hashval:
-                        cdbg_id = kmer_to_cdbg[kmer_idx]
-                        cdbg_count[cdbg_id] += 1
+            for hashval in query_kmers:
+                n += 1
+                if n % 250000 == 0:
+                    print('...', n)
 
-            print('...done.')
-            print('XXX', sum(cdbg_count.values()), len(cdbg_count))
+                kmer_idx = mphf.lookup(hashval)
+                if mphf_to_kmer[kmer_idx] == hashval:
+                    cdbg_id = kmer_to_cdbg[kmer_idx]
+                    cdbg_count[cdbg_id] += 1
 
+            for k, v in cdbg_count.items():
+                assert v <= cdbg_kmer_sizes[k], k
+
+            f_found = sum(cdbg_count.values()) / n
+            print('...done loading & counting query k-mers in cDBG.')
+            print('containment: {:.1f}%'.format(f_found * 100))
 
             # calculate the cDBG matching k-mers sizes for each catlas node.
             x = []
@@ -208,11 +215,10 @@ def main():
                     if sub_size:
                         node_query_kmers[node_id] = sub_size
 
-            print('ZZZ', node_query_kmers[node_id])
-
             assert sum(cdbg_count.values()) == node_query_kmers[node_id]
-            print('XXX', sum(cdbg_count.values()), len(cdbg_count))
-            print('...', n)
+
+            for k, v in node_query_kmers.items():
+                assert v <= node_kmer_sizes[k], k
 
             # gather results of all queries across all seeds
             total_frontier = collect_frontier(dag, top_node_id,

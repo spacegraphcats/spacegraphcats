@@ -43,13 +43,14 @@ def main():
         if n % 50000 == 0 and n:
             print('... contig {} of {}'.format(n, n_contigs))
 
+        cdbg_id = int(record.name)
         kmers = kh.get_kmer_hashes(record.sequence)
         for kmer in kmers:
             ph = x.lookup(kmer)
             mphf_to_kmer[ph] = kmer
-            kmer_to_cdbg[ph] = int(record.name)
+            kmer_to_cdbg[ph] = cdbg_id
 
-        sizes[n] = len(kmers)
+        sizes[cdbg_id] = len(kmers)
 
     x.save(mphf_filename)
     with open(array_filename, 'wb') as fp:

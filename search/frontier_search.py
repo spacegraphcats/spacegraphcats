@@ -331,6 +331,7 @@ def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, m
         query_kmers = node_query_kmers.get(node_id, 0)
         total_kmers = node_kmer_sizes[node_id]
         containment = query_kmers / total_kmers
+        assert query_kmers <= total_kmers
 
         return containment
 
@@ -353,6 +354,10 @@ def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, m
         seen_nodes.add(node_id)
 
         containment = node_containment(node_id)
+        if containment == 0:
+            n_truncated += 1
+            return
+
         if containment >= 1.0 - max_overhead:
             add_node(node_id)
             n_truncated += 1
