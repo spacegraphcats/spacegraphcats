@@ -10,9 +10,10 @@ import numpy
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix')
+    p.add_argument('-k', '--ksize', default=31, type=int)
     a = p.parse_args()
     
-    kh = khmer.Nodetable(31, 1, 1)
+    kh = khmer.Nodetable(a.ksize, 1, 1)
 
     contigs_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz')
     mphf_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz.mphf')
@@ -51,6 +52,8 @@ def main():
             kmer_to_cdbg[ph] = cdbg_id
 
         sizes[cdbg_id] = len(kmers)
+
+    print('done! saving to {} and {}'.format(mphf_filename, array_filename))
 
     x.save(mphf_filename)
     with open(array_filename, 'wb') as fp:
