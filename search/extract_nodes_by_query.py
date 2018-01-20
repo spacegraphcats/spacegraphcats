@@ -25,13 +25,24 @@ from sourmash_lib import MinHash
 from sourmash_lib.sourmash_args import load_query_signature
 from sourmash_lib._minhash import hash_murmur
 
-from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
-                           build_queries_for_seeds, parse_seeds_arg)
-from .search_utils import MinhashSqlDB
+from .search_utils import get_reads_by_cdbg
 from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search_exact, find_shadow, NoContainment)
 from . import search_utils
-from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash, SqlKmerIndex)
+from .search_utils import (load_dag, load_layer1_to_cdbg)
+
+
+def build_query_mh_for_seed(seed, ksize, scaled, query_seq_file):
+    mh = MinHash(0, ksize, scaled=scaled, seed=seed)
+
+    name = None
+    for record in screed.open(query_seq_file):
+        if not name:
+            name = record.name
+
+        mh.add_sequence(record.sequence, True)
+
+    return sourmash_lib.SourmashSignature(mh, name=name, filename=query_seq_file)
 
 
 def collect_frontier(dag, top_node_id,
@@ -177,7 +188,7 @@ def main():
 
             for hashval in query_kmers:
                 n += 1
-                if n % 250000 == 0:
+                if n % 1000000 == 0:
                     print('...', n)
 
                 kmer_idx = mphf.lookup(hashval)
@@ -255,7 +266,7 @@ def main():
             total_seqs = 0
 
             # build check MinHash w/seed=42
-            query_sig = build_queries_for_seeds([42], ksize, scaled, query)[0]
+            query_sig = build_query_mh_for_seed(42, ksize, scaled, query)
 
             # track minhash of retrieved contigs using original query minhash:
             contigs_minhash = query_sig.minhash.copy_and_clear()

@@ -20,12 +20,6 @@ ksize = config['ksize']
 # radius for catlas building
 radius = config['radius']
 
-# seeds to use when building minhash databases
-searchseeds = config.get('searchseeds', 43)
-
-# size of variable-size minhashes
-varnum = config.get('varnum', 50)
-
 # search overhead
 overhead = config.get('overhead', 0.0)
 
@@ -67,7 +61,7 @@ SEEDS=parse_seeds(config['searchseeds'])
 
 ### rules!
 
-# build catlas & minhashes needed for search
+# build catlas needed for search
 rule build:
     input:
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
@@ -135,29 +129,7 @@ rule make_contigs_kmer_index:
         "{catlas_dir}/contigs.fa.gz.mphf",
         "{catlas_dir}/contigs.fa.gz.indices"
      shell:
-        "{python} -m search.index_contigs_by_kmer {catlas_dir}"
-
-# build minhash databases
-rule minhash_db_scaled:
-     input:
-        "{catlas_dir}/cdbg.gxt",
-        "{catlas_dir}/contigs.fa.gz",
-        "{catlas_dir}/first_doms.txt",
-     output:
-        "{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}"
-     shell:
-        "{python} -m search.make_catlas_minhashes -k {wildcards.ksize} --seed={wildcards.seed} --scaled=1000 {catlas_dir}"
-
-# build minhash databases
-rule minhash_db_var:
-     input:
-        "{catlas_dir}/cdbg.gxt",
-        "{catlas_dir}/contigs.fa.gz",
-        "{catlas_dir}/first_doms.txt",
-     output:
-        "{catlas_dir}/minhashes.db.k{ksize}.var.seed0"
-     shell:
-        "{python} -m search.make_catlas_minhashes_var -k {wildcards.ksize} --num={varnum} {catlas_dir}"
+        "{python} -m search.index_contigs_by_kmer -k {ksize} {catlas_dir}"
 
 ### Search rules.
 
@@ -224,25 +196,10 @@ rule extract_by_shadow_ratio_rule:
     input:
         expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
-#        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed43", catlas_dir=catlas_dir, ksize=ksize),
     output:
         "{catlas_dir}.shadow.{shadow_ratio_maxsize}.fa"
     shell:
         "{python} -m search.extract_nodes_by_shadow_ratio --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}"
-
-
-# do a frontier search with scaled minhashes - currently deprecated
-rule frontier_search:
-    input:
-        config['search'],
-        expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
-        expand("{catlas_dir}/minhashes.db.k{ksize}.s1000.abund0.seed{seed}", catlas_dir=catlas_dir, seed=SEEDS, ksize=ksize),
-    output:
-        expand("{search_dir}_frontier/results.csv", search_dir=search_dir),
-        make_query_base(config['search'], suffix='_frontier'),
-    shell:
-        "{python} -m search.extract_nodes_by_frontier_query {catlas_dir} {search_dir}_frontier --query {config[search]} -k {ksize} --overhead={overhead} --seed={searchseeds}"
 
 # extract reads based on a search:
 rule extract_reads:
