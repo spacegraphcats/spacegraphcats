@@ -244,8 +244,6 @@ rule frontier_search:
     shell:
         "{python} -m search.extract_nodes_by_frontier_query {catlas_dir} {search_dir}_frontier --query {config[search]} -k {ksize} --overhead={overhead} --seed={searchseeds}"
 
-print(make_output_reads(config['search']))
-
 # extract reads based on a search:
 rule extract_reads:
     input:
