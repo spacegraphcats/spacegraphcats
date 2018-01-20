@@ -525,3 +525,42 @@ def load_kmer_index(catlas_prefix):
         cdbg_sizes = np_dict['sizes']
 
     return MPHF_KmerIndex(mphf, mphf_to_kmer, mphf_to_cdbg, cdbg_sizes)
+
+
+def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
+    frontier_curve = []
+    total = 0
+    min_counts = collections.defaultdict(int)
+    for node_id, cdbg_nodes in layer1_to_cdbg.items():
+        n_cont = 0
+        n_oh = 0
+
+        n_matches = 0
+        n_kmers = 0
+        for cdbg_node in cdbg_nodes:
+            n_matches += match_counts.get(cdbg_node, 0)
+            n_kmers += kmer_idx.get_cdbg_size(cdbg_node)
+
+        if n_matches:
+            n_cont += n_matches
+            n_oh += (n_kmers - n_matches)
+
+            total += n_cont
+            frontier_curve.append((-n_cont, n_oh, node_id))
+
+    frontier_curve.sort()
+
+    sofar = 0
+    total_oh = 0
+    total_cont = 0
+    new_frontier = []
+
+    with open(outname, 'wt') as fp:
+        for pos, (n_cont, n_oh, node_id) in enumerate(frontier_curve):
+            n_cont = -n_cont
+
+            sofar += n_cont
+            total_oh += n_oh
+            total_cont += n_cont
+
+            fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))

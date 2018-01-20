@@ -272,6 +272,15 @@ def main():
                     fp.write('{},{}\n'.format(node,
                                               " ".join([ str(x) for x in seedlist ])))
 
+            # write response curve
+            response_curve_filename = os.path.basename(query) + '.response.txt'
+            response_curve_filename = os.path.join(args.output,
+                                                   response_curve_filename)
+            search_utils.output_response_curve(response_curve_filename,
+                                               cdbg_match_counts,
+                                               kmer_idx,
+                                               layer1_to_cdbg)
+
             print('total time: {:.1f}s'.format(time.time() - start_time))
         except KeyboardInterrupt:
             raise
