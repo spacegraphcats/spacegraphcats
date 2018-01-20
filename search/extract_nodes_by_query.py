@@ -15,8 +15,6 @@ from collections import defaultdict
 import time
 import khmer
 import pickle
-import bbhash
-import numpy
 
 import screed
 
@@ -25,7 +23,7 @@ from sourmash_lib import MinHash
 from sourmash_lib.sourmash_args import load_query_signature
 from sourmash_lib._minhash import hash_murmur
 
-from .search_utils import get_reads_by_cdbg
+from .search_utils import get_reads_by_cdbg, load_kmer_index
 from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search_exact, find_shadow, NoContainment)
 from . import search_utils
@@ -45,8 +43,7 @@ def build_query_mh_for_seed(seed, ksize, scaled, query_seq_file):
     return sourmash_lib.SourmashSignature(mh, name=name, filename=query_seq_file)
 
 
-def collect_frontier(dag, top_node_id,
-                     node_kmer_sizes, node_query_kmers,
+def collect_frontier(dag, top_node_id, node_sizes, catlas_match_counts,
                      overhead=0.0, verbose=False):
     start = time.time()
 
@@ -56,7 +53,7 @@ def collect_frontier(dag, top_node_id,
     # do queries!
     try:
         frontier, num_leaves, num_empty, frontier_mh = \
-          frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, overhead)
+          frontier_search_exact(top_node_id, dag, node_sizes, catlas_match_counts, overhead)
     except NoContainment:
         print('** WARNING: no containment!?')
         frontier = []
@@ -119,37 +116,11 @@ def main():
     # find the contigs filename
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
-    # ...and index.
-    mphf_filename = os.path.join(args.catlas_prefix, 'contigs.fa.gz.mphf')
-    array_filename = os.path.join(args.catlas_prefix, 'contigs.fa.gz.indices')
-
-    mphf = bbhash.load_mphf(mphf_filename)
-    with open(array_filename, 'rb') as fp:
-        np_dict = numpy.load(fp)
-
-        mphf_to_kmer = np_dict['mphf_to_kmer']
-        kmer_to_cdbg = np_dict['kmer_to_cdbg']
-        cdbg_kmer_sizes = np_dict['sizes']
+    # ...and kmer index.
+    kmer_idx = load_kmer_index(args.catlas_prefix)
 
     # calculate the cDBG shadow sizes for each catlas node.
-    x = []
-    for (node_id, level) in dag_levels.items():
-        x.append((level, node_id))
-    x.sort()
-
-    node_kmer_sizes = {}
-    for level, node_id in x:
-        if level == 1:
-            total_kmers = 0
-            for cdbg_node in layer1_to_cdbg.get(node_id):
-                total_kmers += cdbg_kmer_sizes[cdbg_node]
-            
-            node_kmer_sizes[node_id] = total_kmers
-        else:
-            sub_size = 0
-            for child_id in dag[node_id]:
-                sub_size += node_kmer_sizes[child_id]
-            node_kmer_sizes[node_id] = sub_size
+    node_sizes = kmer_idx.build_catlas_node_sizes(dag, dag_levels, layer1_to_cdbg)
 
     # get a single ksize & scaled
     ksize = int(args.ksize)
@@ -186,66 +157,39 @@ def main():
             for record in screed.open(query):
                 query_kmers.update(bf.get_kmer_hashes(record.sequence))
 
-            for hashval in query_kmers:
-                n += 1
-                if n % 1000000 == 0:
-                    print('...', n)
+            # construct dict cdbg_id -> # of query k-mers
+            cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
+            for k, v in cdbg_match_counts.items():
+                assert v <= kmer_idx.get_cdbg_size(k), k
 
-                kmer_idx = mphf.lookup(hashval)
-                if mphf_to_kmer[kmer_idx] == hashval:
-                    cdbg_id = kmer_to_cdbg[kmer_idx]
-                    cdbg_count[cdbg_id] += 1
-
-            for k, v in cdbg_count.items():
-                assert v <= cdbg_kmer_sizes[k], k
-
-            f_found = sum(cdbg_count.values()) / n
+            f_found = sum(cdbg_match_counts.values()) / len(query_kmers)
             print('...done loading & counting query k-mers in cDBG.')
             print('containment: {:.1f}%'.format(f_found * 100))
 
             # calculate the cDBG matching k-mers sizes for each catlas node.
-            x = []
-            for (node_id, level) in dag_levels.items():
-                x.append((level, node_id))
-            x.sort()
+            catlas_match_counts = kmer_idx.build_catlas_match_counts(cdbg_match_counts, dag, dag_levels, layer1_to_cdbg)
 
-            node_query_kmers = {}
-            total_kmers_in_query_nodes = 0.
-            for level, node_id in x:
-                if level == 1:
-                    query_kmers = 0
-                    all_kmers_in_node = 0
-                    for cdbg_node in layer1_to_cdbg.get(node_id):
-                        query_kmers += cdbg_count.get(cdbg_node, 0)
-                        all_kmers_in_node += cdbg_kmer_sizes[cdbg_node]
+            # check a few things - we've propogated properly:
+            assert sum(cdbg_match_counts.values()) == catlas_match_counts[top_node_id]
+            # ...and all nodes have no more matches than total k-mers.
+            for k, v in catlas_match_counts.items():
+                assert v <= node_sizes[k], k
 
-                    if query_kmers:
-                        node_query_kmers[node_id] = query_kmers
-                        total_kmers_in_query_nodes += all_kmers_in_node
+            # calculate the minimum overhead of the search, based on level 1
+            # nodes.
+            if catlas_match_counts[top_node_id]:
+                all_query_kmers = catlas_match_counts[top_node_id]
+                total_kmers_in_query_nodes = 0
+                for node_id, level in dag_levels.items():
+                    if level == 1 and catlas_match_counts.get(node_id):
+                        total_kmers_in_query_nodes += catlas_match_counts[node_id]
 
-                        assert all_kmers_in_node >= query_kmers
-
-                else:
-                    sub_size = 0
-                    for child_id in dag[node_id]:
-                        sub_size += node_query_kmers.get(child_id, 0)
-
-                    if sub_size:
-                        node_query_kmers[node_id] = sub_size
-
-            assert sum(cdbg_count.values()) == node_query_kmers[node_id]
-
-            if node_query_kmers[node_id]:
-                all_query_kmers = node_query_kmers[node_id]
                 print('minimum overhead: {}'.format((total_kmers_in_query_nodes - all_query_kmers) / all_query_kmers))
 
-            for k, v in node_query_kmers.items():
-                assert v <= node_kmer_sizes[k], k
-
-            # gather results of all queries across all seeds
+            # gather results of all queries
             total_frontier = collect_frontier(dag, top_node_id,
-                                              node_kmer_sizes,
-                                              node_query_kmers,
+                                              node_sizes,
+                                              catlas_match_counts,
                                               overhead=args.overhead,
                                               verbose=args.verbose)
 
