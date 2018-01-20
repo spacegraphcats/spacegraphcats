@@ -2,7 +2,6 @@ import pickle
 import collections
 import os
 import json
-import struct
 
 import leveldb
 import sqlite3
@@ -614,46 +613,3 @@ def parse_seeds_arg(seeds_str):
             seeds.append(int(seed))
 
     return seeds
-
-
-class SqlKmerIndex(object):
-    def __init__(self, filename):
-        self.dbfilename = filename
-
-        self.db = sqlite3.connect(self.dbfilename)
-        self.cursor = self.db.cursor()
-        self.cursor.execute('PRAGMA cache_size=1000000')
-        self.cursor.execute('PRAGMA synchronous = OFF')
-        self.cursor.execute('PRAGMA journal_mode = MEMORY')
-        self.cursor.execute('PRAGMA LOCKING_MODE = EXCLUSIVE')
-
-        self.cursor.execute('BEGIN TRANSACTION')
-
-    def create(self):
-        self.cursor.execute('CREATE TABLE kmers (hashval INTEGER, cdbg_id INTEGER)')
-        self.cursor.execute('CREATE TABLE n_kmers (cdbg_id INTEGER PRIMARY KEY, size INTEGER)')
-
-    def build_index(self):
-        self.cursor.execute('CREATE UNIQUE INDEX hashval_idx on kmers (hashval)')
-
-    def commit(self):
-        self.db.commit()
-
-    def insert_kmer(self, hashval, sample):
-        hashval = struct.unpack("q", struct.pack("Q", hashval))[0]
-        self.cursor.execute('INSERT INTO kmers (hashval, cdbg_id) VALUES (?, ?)', (hashval, sample))
-
-    def retrieve_sample_by_kmer(self, hashval):
-        hashval = struct.unpack("q", struct.pack("Q", hashval))[0]
-        self.cursor.execute('SELECT cdbg_id FROM kmers WHERE hashval=?', (hashval,))
-        results = list(self.cursor)
-        if results:
-            return int(results[0][0])
-        return None
-
-    def set_node_size(self, cdbg_id, size):
-        self.cursor.execute('INSERT INTO n_kmers (cdbg_id, size) VALUES (?, ?)', (cdbg_id, size))
-
-    def get_node_sizes(self):
-        self.cursor.execute('SELECT cdbg_id, size FROM n_kmers')
-        return self.cursor
