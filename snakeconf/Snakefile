@@ -38,26 +38,6 @@ search_dir = '{}_k{}_r{}_search_oh{}{}'.format(catlas_base, ksize, radius, int(o
 python=sys.executable  # define as the version of Python running snakemake
 
 ###############################################################################
-## some utility functions.
-
-def parse_seeds(seeds_str):
-    seeds = []
-    seeds_str = seeds_str.split(',')
-    for seed in seeds_str:
-        if '-' in seed:
-            (start, end) = seed.split('-')
-            for s in range(int(start), int(end) + 1):
-                seeds.append(s)
-        else:
-            seeds.append(int(seed))
-
-    return seeds
-
-
-###############################################################################
-
-## now, build some variables...
-SEEDS=parse_seeds(config['searchseeds'])
 
 ### rules!
 
@@ -81,8 +61,10 @@ rule bcalm_cdbg_inpfiles:
         input_sequences
      output:
         "bcalm.{catlas_base}.k{ksize}.inputlist.txt"
-     shell:
-        "echo {input_sequences:q} > bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+     run:
+        with open("bcalm.{catlas_base}.k{ksize}.inputlist.txt".format(catlas_base=catlas_base, ksize=ksize), 'wt') as fp:
+            for name in input_sequences:
+                fp.write('{}\n'.format(name))
 
 # build catlas input from bcalm output by reformatting
 rule bcalm_catlas_input:
@@ -141,18 +123,6 @@ def make_query_base(searchfiles, suffix=''):
         x.append("{}{}/{}.frontier.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
     return x
 
-#def make_output_cdbg_ids(searchfiles, suffix=''):
-#    x = []
-#    for filename in searchfiles:
-#        x.append("{}{}/{query_filename}.cdbg_ids.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
-#    return x
-
-def make_output_reads(searchfiles, suffix=''):
-    x = []
-    for filename in searchfiles:
-        x.append("{}{}/{}.reads.fq.gz".format(search_dir, suffix, os.path.basename(filename)))
-    return x
-
 # do a quick search!
 rule searchquick:
     input:
@@ -200,18 +170,3 @@ rule extract_by_shadow_ratio_rule:
         "{catlas_dir}.shadow.{shadow_ratio_maxsize}.fa"
     shell:
         "{python} -m search.extract_nodes_by_shadow_ratio --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}"
-
-# extract reads based on a search:
-rule extract_reads:
-    input:
-        make_output_reads(config['search'])
-
-#rule extract_reads_rule:
-#    input:
-#        make_output_cdbg_ids(config['search']),
-#        expand("{catlas_dir}/reads.fq.bgz", catlas_dir=catlas_dir),
-#        expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir)
-#    output:
-#        make_output_reads(config['search'])
-#    shell:
-#        "{python} -m search.extract_reads {catlas_dir}/reads.fq.bgz {catlas_dir}/reads.fq.bgz.labels {search_dir}/{query_filename}.cdbg_ids.txt.gz -o {output}"
