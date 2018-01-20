@@ -43,6 +43,7 @@ from the main spacegraphcats directory.
         sys.exit(-1)
 
     # next, find the config file
+    configfile = None
     if os.path.exists(args.configfile) and not os.path.isdir(args.configfile):
         configfile = args.configfile
     else:
@@ -53,8 +54,8 @@ from the main spacegraphcats directory.
                 configfile = tryfile
                 break
 
-    if not os.path.exists(configfile):
-        sys.stderr.write('Error: cannot find configfile {}\n'.format(configfile))
+    if not configfile:
+        sys.stderr.write('Error: cannot find configfile {}\n'.format(args.configfile))
         sys.exit(-1)
 
     # build config override dict
