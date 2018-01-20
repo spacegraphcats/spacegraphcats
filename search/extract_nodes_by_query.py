@@ -199,14 +199,21 @@ def main():
             x.sort()
 
             node_query_kmers = {}
+            total_kmers_in_query_nodes = 0.
             for level, node_id in x:
                 if level == 1:
                     query_kmers = 0
+                    all_kmers_in_node = 0
                     for cdbg_node in layer1_to_cdbg.get(node_id):
                         query_kmers += cdbg_count.get(cdbg_node, 0)
+                        all_kmers_in_node += cdbg_kmer_sizes[cdbg_node]
 
                     if query_kmers:
                         node_query_kmers[node_id] = query_kmers
+                        total_kmers_in_query_nodes += all_kmers_in_node
+
+                        assert all_kmers_in_node >= query_kmers
+
                 else:
                     sub_size = 0
                     for child_id in dag[node_id]:
@@ -216,6 +223,10 @@ def main():
                         node_query_kmers[node_id] = sub_size
 
             assert sum(cdbg_count.values()) == node_query_kmers[node_id]
+
+            if node_query_kmers[node_id]:
+                all_query_kmers = node_query_kmers[node_id]
+                print('minimum overhead: {}'.format((total_kmers_in_query_nodes - all_query_kmers) / all_query_kmers))
 
             for k, v in node_query_kmers.items():
                 assert v <= node_kmer_sizes[k], k
