@@ -1,3 +1,16 @@
+"""
+Use Minimal Perfect Hashing (see BBHash) to construct a fast lookup
+table connecting k-mers in the cDBG to cDBG node IDs.
+
+Input: a directory containing a contigs.fa.gz
+
+Output: contigs.fa.gz.mphf, a BBHash MPHF savefile; and contigs.fa.gz.indices,
+a numpy savez file containing mphf_to_kmer, kmer_to_cdbg, and sizes.
+
+Note: relies on the fact that for a cDBG constructed at a particular k,
+no k-mer will appear in more than one cDBG node and every k-mer will
+be in at least one cDBG node, i.e. k <-> cdbg_id is bijective.
+"""
 import sys
 import os
 import screed
@@ -19,9 +32,7 @@ def main():
     mphf_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz.mphf')
     array_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz.indices')
 
-    d = {}
-    sizes = {}
-
+    # build a list of all k-mers in the cDBG
     all_kmers = list()
     print('reading cDBG nodes from {}'.format(contigs_filename))
     for n, record in enumerate(screed.open(contigs_filename)):
@@ -33,10 +44,17 @@ def main():
 
     n_contigs = n + 1
 
+    # build MPHF (this is the CPU intensive bit)
+    print('building MPHF for {} k-mers in {} nodes.'.format(len(all_kmers), n_contigs))
     x = bbhash.PyMPHF(all_kmers, len(all_kmers), 4, 1.0)
 
+    # build tables linking:
+    # * mphf hash to k-mer hash (for checking exactness)
+    # * mphf hash to cDBG ID
+    # * cDBG ID to node size (in k-mers)
+
     mphf_to_kmer = numpy.zeros(len(all_kmers), numpy.uint64)
-    kmer_to_cdbg = numpy.zeros(len(all_kmers), numpy.uint32)
+    mphf_to_cdbg = numpy.zeros(len(all_kmers), numpy.uint32)
     sizes = numpy.zeros(n_contigs, numpy.uint32)
 
     print('second pass; reading cDBG nodes from {}'.format(contigs_filename))
@@ -44,14 +62,22 @@ def main():
         if n % 50000 == 0 and n:
             print('... contig {} of {}'.format(n, n_contigs))
 
+        # node ID is record name, must go from 0 to total-1
         cdbg_id = int(record.name)
-        kmers = kh.get_kmer_hashes(record.sequence)
-        for kmer in kmers:
-            ph = x.lookup(kmer)
-            mphf_to_kmer[ph] = kmer
-            kmer_to_cdbg[ph] = cdbg_id
 
+        # get 64-bit numbers for each k-mer (doesn't really matter what hash)
+        kmers = kh.get_kmer_hashes(record.sequence)
+
+        # for each k-mer, find its MPHF hashval, & link to info.
+        for kmer in kmers:
+            mphf = x.lookup(kmer)
+            mphf_to_kmer[mphf] = kmer
+            mphf_to_cdbg[mphf] = cdbg_id
+
+        # record each node size, while we're here.
         sizes[cdbg_id] = len(kmers)
+
+    assert n == max(mphf_to_cdbg), (n, max(mphf_to_cdbg))
 
     print('done! saving to {} and {}'.format(mphf_filename, array_filename))
 
@@ -59,7 +85,7 @@ def main():
     with open(array_filename, 'wb') as fp:
         numpy.savez_compressed(fp,
                                mphf_to_kmer=mphf_to_kmer,
-                               kmer_to_cdbg=kmer_to_cdbg,
+                               kmer_to_cdbg=mphf_to_cdbg,
                                sizes=sizes)
 
 
