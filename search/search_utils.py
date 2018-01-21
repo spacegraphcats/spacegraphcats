@@ -553,9 +553,9 @@ def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
     sofar = 0
     total_oh = 0
     total_cont = 0
-    new_frontier = []
 
     with open(outname, 'wt') as fp:
+        sampling_rate = int(len(frontier_curve) / 200)
         for pos, (n_cont, n_oh, node_id) in enumerate(frontier_curve):
             n_cont = -n_cont
 
@@ -563,4 +563,6 @@ def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
             total_oh += n_oh
             total_cont += n_cont
 
-            fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
+            if pos % sampling_rate == 0 or pos == 0 or \
+              pos+1 == len(frontier_curve):
+                fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
