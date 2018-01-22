@@ -136,7 +136,7 @@ def main():
     # output results.csv in the output directory:
     csvoutfp = open(os.path.join(args.output, 'results.csv'), 'wt')
     csv_writer = csv.writer(csvoutfp)
-    csv_writer.writerow(['query', 'containment', 'similarity', 'bp', 'reads', 'n_seeds', 'ksize', 'scaled', 'best_containment'])
+    csv_writer.writerow(['query', 'containment', 'similarity', 'bp', 'contigs', 'ksize', 'num_query_kmers', 'best_containment', 'cdbg_min_overhead', 'catlas_min_overhead'])
 
     # iterate over each query, do the thing.
     for query in args.query:
@@ -163,9 +163,19 @@ def main():
             for k, v in cdbg_match_counts.items():
                 assert v <= kmer_idx.get_cdbg_size(k), k
 
-            f_found = sum(cdbg_match_counts.values()) / len(query_kmers)
+            total_match_kmers = sum(cdbg_match_counts.values())
+            f_found = total_match_kmers / len(query_kmers)
             print('...done loading & counting query k-mers in cDBG. ({:.1f}s)'.format(time.time() - start_time))
             print('containment: {:.1f}%'.format(f_found * 100))
+
+            total_kmers_in_cdbg_matches = 0
+            for cdbg_id in set(cdbg_match_counts.keys()):
+                total_kmers_in_cdbg_matches += kmer_idx.get_cdbg_size(cdbg_id)
+
+            cdbg_sim = total_match_kmers / total_kmers_in_cdbg_matches
+            print('cdbg match node similarity: {:.1f}%'.format(cdbg_sim * 100))
+            cdbg_min_overhead = (total_kmers_in_cdbg_matches - total_match_kmers) / total_match_kmers
+            print('min cdbg overhead: {}'.format(cdbg_min_overhead))
 
             # calculate the cDBG matching k-mers sizes for each catlas node.
             catlas_match_counts = kmer_idx.build_catlas_match_counts(cdbg_match_counts, dag, dag_levels, layer1_to_cdbg)
@@ -178,14 +188,16 @@ def main():
 
             # calculate the minimum overhead of the search, based on level 1
             # nodes.
+            catlas_min_overhead = 0
             if catlas_match_counts[top_node_id]:
                 all_query_kmers = catlas_match_counts[top_node_id]
                 total_kmers_in_query_nodes = 0
                 for node_id, level in dag_levels.items():
                     if level == 1 and catlas_match_counts.get(node_id):
-                        total_kmers_in_query_nodes += catlas_match_counts[node_id]
+                        total_kmers_in_query_nodes += node_sizes[node_id]
 
-                print('minimum overhead: {}'.format((total_kmers_in_query_nodes - all_query_kmers) / all_query_kmers))
+                catlas_min_overhead = (total_kmers_in_query_nodes - all_query_kmers) / all_query_kmers
+                print('minimum catlas overhead: {}'.format(catlas_min_overhead))
 
             # gather results of all queries
             total_frontier = collect_frontier(dag, top_node_id,
@@ -253,7 +265,7 @@ def main():
             best_containment = f_found
 
             # output to results.csv!
-            csv_writer.writerow([query, containment, similarity, total_bp, total_seqs, num_seeds, ksize, scaled, best_containment])
+            csv_writer.writerow([query, containment, similarity, total_bp, total_seqs, ksize, len(query_kmers), best_containment, cdbg_min_overhead, catlas_min_overhead])
             csvoutfp.flush()
 
             # write out signature from retrieved contigs.
