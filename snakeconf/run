@@ -3,6 +3,7 @@ import argparse
 import os.path
 import snakemake
 import sys
+import pprint
 
 
 thisdir = os.path.abspath(os.path.dirname(__file__))
@@ -31,9 +32,9 @@ from the main spacegraphcats directory.
     parser.add_argument('target', nargs='?', default='build')
     parser.add_argument('-n', '--dry-run', action='store_true')
     parser.add_argument('--nolock', action='store_true')
-    parser.add_argument('--overhead', type=float, default=0)
-    parser.add_argument('--experiment', default='')
-    parser.add_argument('--radius', type=int, default=0)
+    parser.add_argument('--overhead', type=float, default=None)
+    parser.add_argument('--experiment', default=None)
+    parser.add_argument('--radius', type=int, default=None)
     args = parser.parse_args()
 
     # first, find the Snakefile
@@ -60,12 +61,20 @@ from the main spacegraphcats directory.
 
     # build config override dict
     config = dict()
-    if args.overhead:
+    if args.overhead is not None:
         config['overhead'] = args.overhead
-    if args.experiment:
+    if args.experiment is not None:
         config['experiment'] = args.experiment
-    if args.radius:
+    if args.radius is not None:
         config['radius'] = args.radius
+
+    print('--------')
+    print('details!')
+    print('\tconfig: {}'.format(snakefile))
+    print('\ttarget: {}'.format(args.target))
+    if config:
+        print('\toverride: {}'.format(pprint.pformat(config)))
+    print('--------')
 
     # run!!
     status = snakemake.snakemake(snakefile, configfile=configfile,

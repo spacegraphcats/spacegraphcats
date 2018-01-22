@@ -215,6 +215,8 @@ def main():
             # track minhash of retrieved contigs using original query minhash:
             contigs_minhash = query_sig.minhash.copy_and_clear()
 
+            retrieve_start = time.time()
+
             # walk through the contigs, retrieving.
             print('extracting contigs...')
             for n, record in enumerate(screed.open(contigs)):
@@ -236,7 +238,7 @@ def main():
                 total_seqs += 1
 
             # done - got all contigs!
-            print('...fetched {} contigs, {} bp matching combined frontiers.'.format(total_seqs, total_bp))
+            print('...fetched {} contigs, {} bp matching combined frontiers. ({:.1f}s)'.format(total_seqs, total_bp, time.time() - retrieve_start))
 
             # calculate summary values of extracted contigs
             containment = query_sig.minhash.contained_by(contigs_minhash)
