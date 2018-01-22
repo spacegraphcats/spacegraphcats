@@ -66,7 +66,7 @@ def collect_frontier(dag, top_node_id, node_sizes, catlas_match_counts,
         total_frontier[node].add(0)
 
     end = time.time()
-    print('query time: {:.1f}s'.format(end-start))
+    print('catlas query time: {:.1f}s'.format(end-start))
 
     return total_frontier
 
@@ -117,7 +117,9 @@ def main():
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
     # ...and kmer index.
+    ki_start = time.time()
     kmer_idx = load_kmer_index(args.catlas_prefix)
+    print('loaded {} k-mers in index ({:.1f}s)'.format(len(kmer_idx.mphf_to_kmer), time.time() - ki_start))
 
     # calculate the cDBG shadow sizes for each catlas node.
     node_sizes = kmer_idx.build_catlas_node_sizes(dag, dag_levels, layer1_to_cdbg)
@@ -140,7 +142,6 @@ def main():
     for query in args.query:
         # ignore all the problems!
         try:
-            print('------')
             print('QUERY FILE:', query)
             start_time = time.time()
 
@@ -163,7 +164,7 @@ def main():
                 assert v <= kmer_idx.get_cdbg_size(k), k
 
             f_found = sum(cdbg_match_counts.values()) / len(query_kmers)
-            print('...done loading & counting query k-mers in cDBG.')
+            print('...done loading & counting query k-mers in cDBG. ({:.1f}s)'.format(time.time() - start_time))
             print('containment: {:.1f}%'.format(f_found * 100))
 
             # calculate the cDBG matching k-mers sizes for each catlas node.
@@ -243,8 +244,8 @@ def main():
             # calculate summary values of extracted contigs
             containment = query_sig.minhash.contained_by(contigs_minhash)
             similarity = query_sig.minhash.similarity(contigs_minhash)
-            print('query inclusion by retrieved contigs:', containment)
-            print('query similarity to retrieved contigs:', similarity)
+            print('query inclusion by retrieved contigs: {:.3f}%'.format(containment*100))
+            print('query similarity to retrieved contigs: {:.3f}%'.format(similarity*100))
 
             num_seeds = 0
 
@@ -282,7 +283,6 @@ def main():
                                                cdbg_match_counts,
                                                kmer_idx,
                                                layer1_to_cdbg)
-
             print('total time: {:.1f}s'.format(time.time() - start_time))
         except KeyboardInterrupt:
             raise

@@ -106,7 +106,7 @@ def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, m
 
     frontier = set(frontier)
 
-    print('frontier search visited {} catlas nodes.'.format(len(seen_nodes)))
-    print('frontier search truncated {}'.format(n_truncated))
+    print('search visited {} catlas nodes.'.format(len(seen_nodes)))
+    print('search truncated at {}'.format(n_truncated))
 
     return frontier, num_leaves, num_empty, frontier_minhash
