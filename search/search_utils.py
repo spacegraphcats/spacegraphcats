@@ -528,41 +528,53 @@ def load_kmer_index(catlas_prefix):
 
 
 def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
-    frontier_curve = []
-    total = 0
-    min_counts = collections.defaultdict(int)
-    for node_id, cdbg_nodes in layer1_to_cdbg.items():
-        n_cont = 0
-        n_oh = 0
+    curve = []
 
+    # track total containment
+    total = 0
+
+    # walk over all layer1 nodes
+    for node_id, cdbg_nodes in layer1_to_cdbg.items():
         n_matches = 0
         n_kmers = 0
+
+        # aggregate counts across cDBG nodes under this layer1 node.
         for cdbg_node in cdbg_nodes:
             n_matches += match_counts.get(cdbg_node, 0)
             n_kmers += kmer_idx.get_cdbg_size(cdbg_node)
 
+        # do we keep this layer1 node, i.e. does it have positive containment?
         if n_matches:
-            n_cont += n_matches
-            n_oh += (n_kmers - n_matches)
+            n_cont = n_matches
+            n_oh = (n_kmers - n_matches)
 
             total += n_cont
-            frontier_curve.append((-n_cont, n_oh, node_id))
+            curve.append((n_cont, n_oh, node_id))
 
-    frontier_curve.sort()
+    # sort by absolute containment
+    curve.sort(reverse=True)
 
+    # track total containment etc
     sofar = 0
     total_oh = 0
     total_cont = 0
 
-    with open(outname, 'wt') as fp:
-        sampling_rate = int(len(frontier_curve) / 200)
-        for pos, (n_cont, n_oh, node_id) in enumerate(frontier_curve):
-            n_cont = -n_cont
+    # @CTB: remove redundant sum_cont fields
+    # @CTB: switch to CSV output
+    # @CTB: ask Mike what he wants here :)
 
+    with open(outname, 'wt') as fp:
+        fp.write('sum_cont relative_cont relative_overhead sum_cont2 sum_oh catlas_id')
+
+        # only output ~200 points
+        sampling_rate = int(len(curve) / 200)
+
+        # do the output thing
+        for pos, (n_cont, n_oh, node_id) in enumerate(curve):
             sofar += n_cont
             total_oh += n_oh
             total_cont += n_cont
 
-            if pos % sampling_rate == 0 or pos == 0 or \
-              pos+1 == len(frontier_curve):
+            # output first and last points, as well as at sampling rate.
+            if pos % sampling_rate == 0 or pos == 0 or pos+1 == len(curve):
                 fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
