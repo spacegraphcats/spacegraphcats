@@ -121,7 +121,7 @@ def main():
     kmer_idx = load_kmer_index(args.catlas_prefix)
     print('loaded {} k-mers in index ({:.1f}s)'.format(len(kmer_idx.mphf_to_kmer), time.time() - ki_start))
 
-    # calculate the cDBG shadow sizes for each catlas node.
+    # calculate the k-mer sizes for each catlas node.
     node_sizes = kmer_idx.build_catlas_node_sizes(dag, dag_levels, layer1_to_cdbg)
 
     # get a single ksize & scaled
