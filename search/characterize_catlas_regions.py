@@ -108,7 +108,7 @@ def main(args=sys.argv[1:]):
     D = numpy.zeros((len(group_info), len(group_info)))
     for i, (group_id, mh1) in enumerate(group_info.items()):
         for j, (group_id, mh2) in enumerate(group_info.items()):
-            if i < j:
+            if i <= j:
                 D[i][j] = mh1.similarity(mh2)
                 D[j][i] = D[i][j]
 
