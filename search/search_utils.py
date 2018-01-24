@@ -469,13 +469,18 @@ class MPHF_KmerIndex(object):
     def get_match_counts(self, query_kmers):
         "Return a dictionary containing cdbg_id -> # of matches in query_kmers"
         match_counts = {}
+        n_matched = 0
         for n, hashval in enumerate(query_kmers):
             if n % 1000000 == 0:
-                print('...', n)
+                print('matching ...', n, end='\r')
 
             cdbg_id = self.get_cdbg_id(hashval)
             if cdbg_id is not None:
                 match_counts[cdbg_id] = match_counts.get(cdbg_id, 0) + 1
+                n_matched += 1
+
+        print('... found {} matches to {} k-mers total.'.format(n_matched,
+                                                                n + 1))
 
         return match_counts
 
@@ -567,7 +572,7 @@ def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
         fp.write('sum_cont relative_cont relative_overhead sum_cont2 sum_oh catlas_id')
 
         # only output ~200 points
-        sampling_rate = int(len(curve) / 200)
+        sampling_rate = max(int(len(curve) / 200), 1)
 
         # do the output thing
         for pos, (n_cont, n_oh, node_id) in enumerate(curve):

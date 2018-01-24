@@ -142,11 +142,12 @@ def main():
     for query in args.query:
         # ignore all the problems!
         try:
+            print('----')
             print('QUERY FILE:', query)
             start_time = time.time()
 
             # build hashes for all the query k-mers
-            print('loading query kmers...')
+            print('loading query kmers...', end=' ')
             bf = khmer.Nodetable(ksize, 1, 1)
 
             cdbg_count = defaultdict(int)
@@ -158,6 +159,8 @@ def main():
             for record in screed.open(query):
                 query_kmers.update(bf.get_kmer_hashes(record.sequence))
 
+            print('got {}'.format(len(query_kmers)))
+
             # construct dict cdbg_id -> # of query k-mers
             cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
             for k, v in cdbg_match_counts.items():
@@ -165,8 +168,8 @@ def main():
 
             total_match_kmers = sum(cdbg_match_counts.values())
             f_found = total_match_kmers / len(query_kmers)
-            print('...done loading & counting query k-mers in cDBG. ({:.1f}s)'.format(time.time() - start_time))
-            print('containment: {:.1f}%'.format(f_found * 100))
+            print('=> containment: {:.1f}%'.format(f_found * 100))
+            print('done loading & counting query k-mers in cDBG. ({:.1f}s)'.format(time.time() - start_time))
 
             total_kmers_in_cdbg_matches = 0
             for cdbg_id in set(cdbg_match_counts.keys()):

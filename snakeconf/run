@@ -70,7 +70,8 @@ from the main spacegraphcats directory.
 
     print('--------')
     print('details!')
-    print('\tconfig: {}'.format(snakefile))
+    print('\tsnakefile: {}'.format(snakefile))
+    print('\tconfig: {}'.format(configfile))
     print('\ttarget: {}'.format(args.target))
     if config:
         print('\toverride: {}'.format(pprint.pformat(config)))

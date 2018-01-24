@@ -45,6 +45,9 @@ python=sys.executable  # define as the version of Python running snakemake
 rule build:
     input:
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.mphf", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.indices", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.info.csv", catlas_dir=catlas_dir),
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
@@ -72,9 +75,10 @@ rule bcalm_catlas_input:
         expand("{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa", ksize=ksize, catlas_base=catlas_base)
      output:
         "{catlas_dir}/cdbg.gxt",
-        "{catlas_dir}/contigs.fa.gz"
+        "{catlas_dir}/contigs.fa.gz",
+        "{catlas_dir}/contigs.fa.gz.info.csv"
      shell:
-        "{python} -m search.bcalm_to_gxt {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
+        "{python} -m search.bcalm_to_gxt -k {ksize} {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
 
 #print(expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir))
 

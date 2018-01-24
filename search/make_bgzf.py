@@ -25,6 +25,8 @@ def main():
         if n % 10000 == 0:
             print('offset for {} is {}'.format(n, offset))
 
+    outfp.close()
+
     print('done!')
 
 

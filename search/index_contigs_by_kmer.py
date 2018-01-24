@@ -37,12 +37,13 @@ def main():
     print('reading cDBG nodes from {}'.format(contigs_filename))
     for n, record in enumerate(screed.open(contigs_filename)):
         if n % 50000 == 0 and n:
-            print('... contig', n)
+            print('... contig', n, end='\r')
 
         kmers = kh.get_kmer_hashes(record.sequence)
         all_kmers.extend(list(kmers))
 
     n_contigs = n + 1
+    print('loaded {} contigs.\n'.format(n_contigs))
 
     # build MPHF (this is the CPU intensive bit)
     print('building MPHF for {} k-mers in {} nodes.'.format(len(all_kmers), n_contigs))
@@ -60,7 +61,7 @@ def main():
     print('second pass; reading cDBG nodes from {}'.format(contigs_filename))
     for n, record in enumerate(screed.open(contigs_filename)):
         if n % 50000 == 0 and n:
-            print('... contig {} of {}'.format(n, n_contigs))
+            print('... contig {} of {}'.format(n, n_contigs), end='\r')
 
         # node ID is record name, must go from 0 to total-1
         cdbg_id = int(record.name)
@@ -77,6 +78,7 @@ def main():
         # record each node size, while we're here.
         sizes[cdbg_id] = len(kmers)
 
+    print('loaded {} contigs in pass2.\n'.format(n_contigs))
     assert n == max(mphf_to_cdbg), (n, max(mphf_to_cdbg))
 
     print('done! saving to {} and {}'.format(mphf_filename, array_filename))
