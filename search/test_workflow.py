@@ -3,9 +3,7 @@ import tempfile
 import shutil
 import screed
 
-from spacegraphcats import walk_dbg
 from spacegraphcats import catlas
-from search import make_catlas_minhashes, frontier_search
 import sourmash_lib
 
 
@@ -40,18 +38,7 @@ def test_simple_tr():
     with TempDirectory() as location:
         projpath = os.path.join(location, 'tr')
 
-        # build cDBG
-        walk_args = Args()
-        walk_args.ksize = 31
-        walk_args.memory = 1e7
-        walk_args.seqfiles = [relative_filename('data/tr-cross.fa')]
-        walk_args.label = False
-        walk_args.output = relative_filename(projpath)
-        walk_args.loadgraph = None
-        walk_args.force = False
-        walk_args.no_assemble = False
-
-        walk_dbg.run(walk_args)
+        return
 
         # build catlas
         catlas_args = Args()
