@@ -49,6 +49,15 @@ rule build:
         expand("{catlas_dir}/contigs.fa.gz.indices", catlas_dir=catlas_dir),
         expand("{catlas_dir}/contigs.fa.gz.info.csv", catlas_dir=catlas_dir),
 
+rule clean:
+    input:
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.mphf", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.indices", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.info.csv", catlas_dir=catlas_dir),
+    shell:
+        "rm -f {input}"
+
 # build cDBG using bcalm
 rule bcalm_cdbg:
      input:

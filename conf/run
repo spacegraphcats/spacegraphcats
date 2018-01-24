@@ -22,7 +22,7 @@ Targets:
 
 For a quickstart, run this:
 
-   snakeconf/run snakeconf/dory-test.json searchquick
+   conf/run dory-test searchquick
 
 from the main spacegraphcats directory.
 .
