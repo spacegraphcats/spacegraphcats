@@ -1,7 +1,7 @@
+Cython
 mypy
 screed
 pytest
-leveldb
 https://github.com/dib-lab/sourmash/archive/spacegraphcats.zip
 https://github.com/dib-lab/khmer/archive/spacegraphcats.zip
 numpy
