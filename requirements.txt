@@ -5,5 +5,5 @@ pytest
 https://github.com/dib-lab/sourmash/archive/spacegraphcats.zip
 https://github.com/dib-lab/khmer/archive/spacegraphcats.zip
 numpy
-bbhash
+https://github.com/dib-lab/bbhash/archive/spacegraphcats.zip
 snakemake
