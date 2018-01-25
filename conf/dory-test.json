@@ -5,6 +5,5 @@
     "radius": 1,
 
     "searchquick": ['data/dory-head.fa'],
-    "searchseeds": "43",
     "search": ['data/dory-head.fa'],
 }
