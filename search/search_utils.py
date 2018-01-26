@@ -439,7 +439,9 @@ class MPHF_KmerIndex(object):
 
     def get_cdbg_id(self, kmer_hash):
         mphf_hash = self.mphf.lookup(kmer_hash)
-        if self.mphf_to_kmer[mphf_hash] == kmer_hash:
+        if mphf_hash is None:
+            return None
+        elif self.mphf_to_kmer[mphf_hash] == kmer_hash:
             cdbg_id = self.mphf_to_cdbg_id[mphf_hash]
             return cdbg_id
         return None
