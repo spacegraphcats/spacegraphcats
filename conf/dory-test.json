@@ -4,6 +4,6 @@
     "ksize": 21,
     "radius": 1,
 
-    "searchquick": ['data/dory-head.fa'],
-    "search": ['data/dory-head.fa'],
+    "searchquick": ["data/dory-head.fa"],
+    "search": ["data/dory-head.fa"]
 }

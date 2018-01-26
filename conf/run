@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+"""
+Execution script for snakemake workflows for spacegraphcats.
+"""
 import argparse
 import os.path
 import snakemake
@@ -66,9 +69,10 @@ Run snakemake workflows for spacegraphcats, using the given config file.
 
 Targets:
 
-   build            - builds catlas
+   build            - builds catlas (default)
    searchquick      - do a quick search (only a few files)
    search           - do a full search for this data set (many files)
+   clean            - remove the primary catlas build files
 
 For a quickstart, run this:
 
