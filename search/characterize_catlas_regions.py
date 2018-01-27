@@ -40,12 +40,13 @@ def main(args=sys.argv[1:]):
     p.add_argument('output')
     p.add_argument('--maxsize', type=float, default=100000)
     p.add_argument('--minsize', type=float, default=5000)
-    p.add_argument('-k', '--ksize', default=4, type=int,
+    p.add_argument('-k', '--ksize', default=5, type=int,
                    help='k-mer size for vectors')
     args = p.parse_args(args)
 
-    print('maxsize: {:g}'.format(args.maxsize))
     print('minsize: {:g}'.format(args.minsize))
+    print('maxsize: {:g}'.format(args.maxsize))
+    print('ksize: {}'.format(args.ksize))
 
     basename = os.path.basename(args.catlas_prefix)
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
