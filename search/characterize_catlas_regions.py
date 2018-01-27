@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 """
-Look for catlas nodes that have few k-mers but many cDBG nodes underneath
-them, as a likely sign of strain variation.
+Choose catlas subtrees between no larger than --maxsize and no smaller
+than --minsize in number of k-mers, and extract summary information on
+abundances of kmers within the subtrees.
 """
 import argparse
 import os
@@ -9,13 +10,29 @@ import sys
 import collections
 import math
 import sourmash_lib
+from sourmash_lib._minhash import hash_murmur
 import time
 import numpy
+import pandas
 
 import screed
 from . import search_utils
 from .frontier_search import find_shadow
 
+
+def make_all(ksize):
+    DNA = 'ACGT'
+
+    x = []
+    def add(sofar, n):
+        if n == 0:
+            x.append("".join(sofar))
+        else:
+            for ch in DNA:
+                add(sofar + ch, n-1)
+
+    add("", ksize)
+    return x
 
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
@@ -23,11 +40,12 @@ def main(args=sys.argv[1:]):
     p.add_argument('output')
     p.add_argument('--maxsize', type=float, default=100000)
     p.add_argument('--minsize', type=float, default=5000)
-    p.add_argument('-k', '--ksize', default=31, type=int,
-                        help='k-mer size (default: 31)')
+    p.add_argument('-k', '--ksize', default=4, type=int,
+                   help='k-mer size for vectors')
     args = p.parse_args(args)
 
     print('maxsize: {:g}'.format(args.maxsize))
+    print('minsize: {:g}'.format(args.minsize))
 
     basename = os.path.basename(args.catlas_prefix)
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
@@ -44,20 +62,40 @@ def main(args=sys.argv[1:]):
     # find the contigs filename
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
-    # ...and kmer index.
-    ki_start = time.time()
-    kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
-    print('loaded {} k-mers in index ({:.1f}s)'.format(len(kmer_idx.mphf_to_kmer), time.time() - ki_start))
+    # ...and catlas node sizes
+    print('loading contig size info')
+    contigs_info = pandas.read_csv(os.path.join(args.catlas_prefix, 'contigs.fa.gz.info.csv'))
+    cdbg_kmer_sizes = {}
+    for _, row in contigs_info.iterrows():
+        cdbg_kmer_sizes[int(row.contig_id)] = int(row.n_kmers)
 
-    # calculate the k-mer sizes for each catlas node.
-    node_sizes = kmer_idx.build_catlas_node_sizes(dag, dag_levels, layer1_to_cdbg)
+    x = []
+    for (node_id, level) in dag_levels.items():
+        x.append((level, node_id))
+    x.sort()
+
+    node_kmer_sizes = {}
+    for level, node_id in x:
+        if level == 1:
+            total_kmers = 0
+            for cdbg_node in layer1_to_cdbg.get(node_id):
+                total_kmers += cdbg_kmer_sizes[cdbg_node]
+
+            node_kmer_sizes[node_id] = total_kmers
+        else:
+            sub_size = 0
+            for child_id in dag[node_id]:
+                sub_size += node_kmer_sizes[child_id]
+            node_kmer_sizes[node_id] = sub_size
+
+    ### everything is loaded!
 
     # find highest nodes with shadow size less than given max_size
     def find_terminal_nodes(node_id, max_size):
         node_list = set()
         for sub_id in dag[node_id]:
             # shadow size
-            size = node_sizes[sub_id]
+            size = node_kmer_sizes[sub_id]
 
             if size < max_size:
                 node_list.add(sub_id)
@@ -70,15 +108,15 @@ def main(args=sys.argv[1:]):
     print('finding terminal nodes for {}.'.format(args.maxsize))
     nodes = find_terminal_nodes(top_node_id, args.maxsize)
 
-    nodes = { n for n in nodes if node_sizes[n] > args.minsize }
+    nodes = { n for n in nodes if node_kmer_sizes[n] > args.minsize }
     
     print('{} nodes between {} and {} in k-mer size'.format(len(nodes), args.minsize, args.maxsize))
     print('containing {} level1 nodes of {} total'.format(len(find_shadow(nodes, dag)), len(layer1_to_cdbg)))
 
-    node_kmers = sum([ node_sizes[n] for n in nodes ])
-    print('containing {} kmers of {} total'.format(node_kmers, node_sizes[top_node_id]))
+    node_kmers = sum([ node_kmer_sizes[n] for n in nodes ])
+    print('containing {} kmers of {} total'.format(node_kmers, node_kmer_sizes[top_node_id]))
 
-    ### now build cdbg -> group ID
+    ### now build cdbg -> subtree/group ID
 
     cdbg_to_group = {}
     for n in nodes:
@@ -88,12 +126,15 @@ def main(args=sys.argv[1:]):
                 assert cdbg_id not in cdbg_to_group
                 cdbg_to_group[cdbg_id] = n
 
-    ### record group info
+    # record group info - here we are using the MinHash class to track
+    # k-mer abundances.
     group_info = {}
     for n in nodes:
-        group_info[n] = sourmash_lib.MinHash(n=0, ksize=4, scaled=1, track_abundance=1)
+        group_info[n] = sourmash_lib.MinHash(n=0, ksize=args.ksize,
+                                             scaled=1, track_abundance=1)
 
-    ### aaaaaand iterate over contigs.
+    # aaaaaand iterate over contigs, collecting abundances from all contigs
+    # in a group.
     for record_n, record in enumerate(screed.open(contigs)):
         if record_n % 10000 == 0:
             print('...', record_n, end='\r')
@@ -105,19 +146,29 @@ def main(args=sys.argv[1:]):
             mh = group_info[group_id]
             mh.add_sequence(record.sequence, True)
 
-    D = numpy.zeros((len(group_info), len(group_info)))
-    for i, (group_id, mh1) in enumerate(group_info.items()):
-        for j, (group_id, mh2) in enumerate(group_info.items()):
-            if i <= j:
-                D[i][j] = mh1.similarity(mh2)
-                D[j][i] = D[i][j]
+    # ok, now we have a pile of k-mer vectors of size 4**args.ksize;
+    # output in numpy format.
 
+    # first, make a consistently ordered list of all k-mers, and convert
+    # them into hashes.
+    all_kmers = make_all(args.ksize)
+    all_kmer_hashes = list(set([ hash_murmur(i) for i in all_kmers ]))
+    all_kmer_hashes.sort()
+
+    # now, build a matrix of GROUP_N rows x 4**ksize columns, where each
+    # row will be the set of k-mer abundances associated with each group.
+    V = numpy.zeros((len(group_info), 4**args.ksize), dtype=numpy.uint16)
+    for i, n in enumerate(group_info):
+        mh = group_info[n]
+        vec = dict(mh.get_mins(with_abundance=True))
+        vec = [ vec.get(hashval,0) for hashval in all_kmer_hashes ]
+        vec = numpy.array(vec)
+        V[i] = vec
+
+    # save!
+    print('saving matrix of size {} to {}'.format(str(V.shape), args.output))
     with open(args.output, 'wb') as fp:
-        numpy.save(fp, D)
-
-    with open(args.output + '.labels.txt', 'wt') as fp:
-        for group_id in group_info:
-            fp.write('{}\n'.format(group_id))
+        numpy.save(fp, V)
 
 
 if __name__ == '__main__':
