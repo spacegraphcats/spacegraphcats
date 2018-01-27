@@ -9,18 +9,11 @@ import sys
 import collections
 import math
 import sourmash_lib
+import pandas
 
 import screed
 from . import search_utils
-from .search_utils import get_minhashdb_name, get_reads_by_cdbg, load_minhash
 from .frontier_search import find_shadow
-
-
-def get_minhash_size(node_id, minhash_db):
-    mh = load_minhash(node_id, minhash_db)
-    if mh:
-        return len(mh.get_mins())
-    return 0
 
 
 def main(args=sys.argv[1:]):
@@ -45,14 +38,6 @@ def main(args=sys.argv[1:]):
     # load mapping between dom nodes and cDBG/graph nodes:
     layer1_to_cdbg = search_utils.load_layer1_to_cdbg(cdbg_to_catlas, domfile)
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
-
-    # load minhash DB
-    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0, 43)
-    if not db_path:
-        print('** ERROR, minhash DB does not exist for {}'.format(args.ksize),
-              file=sys.stderr)
-        sys.exit(-1)
-    minhash_db = search_utils.MinhashSqlDB(db_path)
 
     # calculate the cDBG shadow sizes for each catlas node.
     x = []
@@ -85,49 +70,62 @@ def main(args=sys.argv[1:]):
             
         return node_list
 
+    # ...and catlas node sizes
+    print('loading contig size info')
+    contigs_info = pandas.read_csv(os.path.join(args.catlas_prefix, 'contigs.fa.gz.info.csv'))
+    cdbg_kmer_sizes = {}
+    for _, row in contigs_info.iterrows():
+        cdbg_kmer_sizes[int(row.contig_id)] = int(row.n_kmers)
+
+    x = []
+    for (node_id, level) in dag_levels.items():
+        x.append((level, node_id))
+    x.sort()
+
+    node_kmer_sizes = {}
+    for level, node_id in x:
+        if level == 1:
+            total_kmers = 0
+            for cdbg_node in layer1_to_cdbg.get(node_id):
+                total_kmers += cdbg_kmer_sizes[cdbg_node]
+
+            node_kmer_sizes[node_id] = total_kmers
+        else:
+            sub_size = 0
+            for child_id in dag[node_id]:
+                sub_size += node_kmer_sizes[child_id]
+            node_kmer_sizes[node_id] = sub_size
+
     print('finding terminal nodes for {}.'.format(args.maxsize))
 
-    if 1:
-        terminal = set()
-        for subnode in dag[top_node_id]:
-            mh = load_minhash(subnode, minhash_db)
-            if mh:
-                terminal.update(find_terminal_nodes(subnode, args.maxsize))
+    terminal = set()
+    terminal = find_terminal_nodes(top_node_id, args.maxsize)
+    print('...got {}'.format(len(terminal)))
 
-    else:
-        terminal = find_terminal_nodes(top_node_id, args.maxsize)
-        print('...got {}'.format(len(terminal)))
-
-    # now, go through and collect minhashes for each of them, and
-    # estimate total k-mers underneath; filter terminal nodes.
+    # now, go through and calculate total k-mers underneath.
     x = []
-    merge_mh = load_minhash(top_node_id, minhash_db).copy_and_clear()
     n_merged = 0
     new_node_set = set()
     for node_id in terminal:
-        # get minhash size under this node
-        mh = load_minhash(node_id, minhash_db)
-        if mh:
-            mh_size = len(mh.get_mins()) * mh.scaled
+        size = node_kmer_sizes[node_id]
 
-            # retrieve shadow size, calculate mh_size / shadow_size.
-            shadow_size = node_shadow_sizes[node_id]
-            ratio = math.log(mh_size, 2) - math.log(shadow_size, 2)
+        # retrieve shadow size, calculate mh_size / shadow_size.
+        shadow_size = node_shadow_sizes[node_id]
+        ratio = math.log(size, 2) - math.log(shadow_size, 2)
 
-            level = dag_levels[node_id]
+        level = dag_levels[node_id]
 
-            # track basic info
-            x.append((ratio, node_id, shadow_size, mh_size, level))
+        # track basic info
+        x.append((ratio, node_id, shadow_size, size, level))
 
-            # keep those with larger shadow than k-mers (somewhat arbitrary :)
-            # specifically: 10 k-mers per node, or fewer.
+        # keep those with larger shadow than k-mers (somewhat arbitrary :)
+        # specifically: 10 k-mers per node, or fewer.
 
-            # THIS NEVER HAPPENS for small maxsize?!
-            if 2**ratio < 10:
-                new_node_set.add(node_id)
+        # THIS NEVER HAPPENS for small maxsize?!
+        if 2**ratio < 10:
+            new_node_set.add(node_id)
 
-                n_merged += 1
-                merge_mh.merge(mh)
+            n_merged += 1
         else:
             shadow_size = node_shadow_sizes[node_id]
             x.append((0, node_id, shadow_size, 0, level))
@@ -138,21 +136,12 @@ def main(args=sys.argv[1:]):
 
     print('terminal node stats for maxsize: {:g}'.format(args.maxsize))
     print('n merged:', n_merged)
-    print('n tnodes:', len(terminal), '; k-mer cover:', len(merge_mh.get_mins()) * merge_mh.scaled)
-    top_mh = load_minhash(top_node_id, minhash_db)
-    print('total k-mers:', len(top_mh.get_mins()) * top_mh.scaled)
+    print('n tnodes:', len(terminal))
+    print('total k-mers:', node_kmer_sizes[top_node_id])
 
     x.sort(reverse=True)
-    if 1:
-        for (k, v, a, b, c) in x:
-            print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b, '/ level:', c)
-
-    if 0:
-        print("removing empty catlas nodes from the terminal nodes...")
-        nonempty_terminal = search_utils.remove_empty_catlas_nodes(terminal,
-                                                                   minhash_db)
-        print("...went from {} to {}".format(len(terminal), len(nonempty_terminal)))
-        terminal = nonempty_terminal
+    for (k, v, a, b, c) in x:
+        print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b, '/ level:', c)
 
     # build cDBG shadow ID list.
     cdbg_shadow = set()
@@ -166,7 +155,7 @@ def main(args=sys.argv[1:]):
 
     # track results as signature
     contigs_mh = sourmash_lib.MinHash(n=0, ksize=args.ksize, seed=42,
-                                      scaled=top_mh.scaled)
+                                      scaled=1000)
 
     total_bp = 0
     total_seqs = 0
