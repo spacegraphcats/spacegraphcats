@@ -37,6 +37,16 @@ search_dir = '{}_k{}_r{}_search_oh{}{}'.format(catlas_base, ksize, radius, int(o
 # internal definitions for convenience:
 python=sys.executable  # define as the version of Python running snakemake
 
+onsuccess:
+    import os
+    print('\n-------- DONE --------\n')
+    if os.path.exists(catlas_dir):
+        print('catlas output directory: {}'.format(catlas_dir))
+        if os.path.exists(search_dir):
+            print('search output directory: {}'.format(search_dir))
+        print('')
+
+
 ###############################################################################
 
 ### rules!
@@ -45,6 +55,13 @@ python=sys.executable  # define as the version of Python running snakemake
 rule build:
     input:
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.mphf", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.indices", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.info.csv", catlas_dir=catlas_dir),
+
+rule clean:
+    shell:
+        "rm -fr {catlas_dir} {search_dir}"
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
@@ -72,9 +89,10 @@ rule bcalm_catlas_input:
         expand("{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa", ksize=ksize, catlas_base=catlas_base)
      output:
         "{catlas_dir}/cdbg.gxt",
-        "{catlas_dir}/contigs.fa.gz"
+        "{catlas_dir}/contigs.fa.gz",
+        "{catlas_dir}/contigs.fa.gz.info.csv"
      shell:
-        "{python} -m search.bcalm_to_gxt {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
+        "{python} -m search.bcalm_to_gxt -k {ksize} {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
 
 #print(expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir))
 

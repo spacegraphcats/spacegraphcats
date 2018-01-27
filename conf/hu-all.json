@@ -1,14 +1,10 @@
 {
-    "catlas_base": "hu-s1",
-    "input_sequences": ["SRR1976948.abundtrim.fq.gz"],
-    "_other_data": ["SRR1976948.abundtrim.fq.gz", "SRR1977304.abundtrim.fq.gz", "SRR1977249.abundtrim.fq.gz", "SRR1977357.abundtrim.fq.gz", "SRR1977296.abundtrim.fq.gz", "SRR1977365.abundtrim.fq.gz"],
+    "catlas_base": "hu-all",
+    "input_sequences": ["SRR1976948.abundtrim.fq.gz", "SRR1976948.abundtrim.fq.gz", "SRR1977304.abundtrim.fq.gz", "SRR1977249.abundtrim.fq.gz", "SRR1977357.abundtrim.fq.gz", "SRR1977296.abundtrim.fq.gz", "SRR1977365.abundtrim.fq.gz"],
     "ksize": 31,
-    "radius": 3,
+    "radius": 1,
 
-    "varnum": 100,
-
-    "searchquick": ["hu-genomes/hu-genome00.fa", "hu-genomes/hu-genome01.fa"],
-    "searchseeds": "43",
+    "searchquick": ["hu-genomes/hu-genome00.fa", "hu-genomes/hu-genome01.fa", "hu-genomes/hu-genome02.fa", "hu-genomes/hu-genome03.fa", "hu-genomes/hu-genome04.fa", "hu-genomes/hu-genome05.fa"],
 
     "search": ["hu-genomes/hu-genome54.fa", "hu-genomes/hu-genome24.fa", "hu-genomes/hu-genome33.fa", "hu-genomes/hu-genome43.fa", "hu-genomes/hu-genome42.fa", "hu-genomes/hu-genome32.fa", "hu-genomes/hu-genome25.fa", "hu-genomes/hu-genome55.fa", "hu-genomes/hu-genome27.fa", "hu-genomes/hu-genome08.fa", "hu-genomes/hu-genome57.fa", "hu-genomes/hu-genome40.fa", "hu-genomes/hu-genome30.fa", "hu-genomes/hu-genome31.fa", "hu-genomes/hu-genome41.fa", "hu-genomes/hu-genome56.fa", "hu-genomes/hu-genome09.fa", "hu-genomes/hu-genome26.fa", "hu-genomes/hu-genome45.fa", "hu-genomes/hu-genome35.fa", "hu-genomes/hu-genome22.fa", "hu-genomes/hu-genome52.fa", "hu-genomes/hu-genome53.fa", "hu-genomes/hu-genome23.fa", "hu-genomes/hu-genome34.fa", "hu-genomes/hu-genome44.fa", "hu-genomes/hu-genome36.fa", "hu-genomes/hu-genome69.fa", "hu-genomes/hu-genome46.fa", "hu-genomes/hu-genome19.fa", "hu-genomes/hu-genome51.fa", "hu-genomes/hu-genome21.fa", "hu-genomes/hu-genome20.fa", "hu-genomes/hu-genome50.fa", "hu-genomes/hu-genome18.fa", "hu-genomes/hu-genome47.fa", "hu-genomes/hu-genome68.fa", "hu-genomes/hu-genome37.fa", "hu-genomes/hu-genome29.fa", "hu-genomes/hu-genome06.fa", "hu-genomes/hu-genome59.fa", "hu-genomes/hu-genome11.fa", "hu-genomes/hu-genome61.fa", "hu-genomes/hu-genome60.fa", "hu-genomes/hu-genome10.fa", "hu-genomes/hu-genome58.fa", "hu-genomes/hu-genome07.fa", "hu-genomes/hu-genome28.fa", "hu-genomes/hu-genome05.fa", "hu-genomes/hu-genome62.fa", "hu-genomes/hu-genome12.fa", "hu-genomes/hu-genome13.fa", "hu-genomes/hu-genome63.fa", "hu-genomes/hu-genome04.fa", "hu-genomes/hu-genome38.fa", "hu-genomes/hu-genome67.fa", "hu-genomes/hu-genome48.fa", "hu-genomes/hu-genome17.fa", "hu-genomes/hu-genome00.fa", "hu-genomes/hu-genome70.fa", "hu-genomes/hu-genome71.fa", "hu-genomes/hu-genome01.fa", "hu-genomes/hu-genome16.fa", "hu-genomes/hu-genome49.fa", "hu-genomes/hu-genome66.fa", "hu-genomes/hu-genome39.fa", "hu-genomes/hu-genome14.fa", "hu-genomes/hu-genome64.fa", "hu-genomes/hu-genome73.fa", "hu-genomes/hu-genome03.fa", "hu-genomes/hu-genome02.fa", "hu-genomes/hu-genome72.fa", "hu-genomes/hu-genome65.fa", "hu-genomes/hu-genome15.fa"]
 }

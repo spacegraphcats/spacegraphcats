@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+"""
+Execution script for snakemake workflows for spacegraphcats.
+"""
 import argparse
 import os.path
 import snakemake
@@ -9,34 +12,7 @@ import pprint
 thisdir = os.path.abspath(os.path.dirname(__file__))
 
 
-def main():
-    parser = argparse.ArgumentParser(description='run snakemake workflows for spacegraphcats', usage='''run <configfile.json> [<target>]
-
-Run snakemake workflows for spacegraphcats, using the given config file.
-
-Targets:
-
-   build            - builds catlas
-   searchquick      - do a quick search (only a few files)
-   search           - do a full search for this data set (many files)
-
-For a quickstart, run this:
-
-   snakeconf/run snakeconf/dory-test.json searchquick
-
-from the main spacegraphcats directory.
-.
-''')
-
-    parser.add_argument('configfile')
-    parser.add_argument('target', nargs='?', default='build')
-    parser.add_argument('-n', '--dry-run', action='store_true')
-    parser.add_argument('--nolock', action='store_true')
-    parser.add_argument('--overhead', type=float, default=None)
-    parser.add_argument('--experiment', default=None)
-    parser.add_argument('--radius', type=int, default=None)
-    args = parser.parse_args()
-
+def main(args):
     # first, find the Snakefile
     snakefile = os.path.join(thisdir, 'Snakefile')
     if not os.path.exists(snakefile):
@@ -70,7 +46,8 @@ from the main spacegraphcats directory.
 
     print('--------')
     print('details!')
-    print('\tconfig: {}'.format(snakefile))
+    print('\tsnakefile: {}'.format(snakefile))
+    print('\tconfig: {}'.format(configfile))
     print('\ttarget: {}'.format(args.target))
     if config:
         print('\toverride: {}'.format(pprint.pformat(config)))
@@ -86,4 +63,32 @@ from the main spacegraphcats directory.
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    parser = argparse.ArgumentParser(description='run snakemake workflows for spacegraphcats', usage='''run <configfile.json> [<target>]
+
+Run snakemake workflows for spacegraphcats, using the given config file.
+
+Targets:
+
+   build            - builds catlas (default)
+   searchquick      - do a quick search (only a few files)
+   search           - do a full search for this data set (many files)
+   clean            - remove the primary catlas build files
+
+For a quickstart, run this:
+
+   conf/run dory-test searchquick
+
+from the main spacegraphcats directory.
+.
+''')
+
+    parser.add_argument('configfile')
+    parser.add_argument('target', nargs='?', default='build')
+    parser.add_argument('-n', '--dry-run', action='store_true')
+    parser.add_argument('--nolock', action='store_true')
+    parser.add_argument('--overhead', type=float, default=None)
+    parser.add_argument('--experiment', default=None)
+    parser.add_argument('--radius', type=int, default=None)
+    args = parser.parse_args()
+
+    sys.exit(main(args))
