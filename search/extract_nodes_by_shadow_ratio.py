@@ -42,46 +42,16 @@ def main(args=sys.argv[1:]):
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
 
     # calculate the cDBG shadow sizes for each catlas node.
-    x = []
-    for (node_id, level) in dag_levels.items():
-        x.append((level, node_id))
-    x.sort()
-
-    node_shadow_sizes = {}
-    for level, node_id in x:
-        if level == 1:
-            node_shadow_sizes[node_id] = len(layer1_to_cdbg[node_id])
-        else:
-            sub_size = 0
-            for child_id in dag[node_id]:
-                sub_size += node_shadow_sizes[child_id]
-            node_shadow_sizes[node_id] = sub_size
+    print('decorating catlas with shadow size info.')
+    node_shadow_sizes = search_utils.decorate_catlas_with_shadow_sizes(layer1_to_cdbg, dag, dag_levels)
 
     # ...and load cdbg node sizes
     print('loading contig size info')
     cdbg_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix)
 
     # decorate catlas with cdbg node sizes underneath them
-    print('decorating catlas.')
-    x = []
-    for (node_id, level) in dag_levels.items():
-        x.append((level, node_id))
-    x.sort()
-
-    node_kmer_sizes = {}
-    for level, node_id in x:
-        if level == 1:
-            total_kmers = 0
-            for cdbg_node in layer1_to_cdbg.get(node_id):
-                total_kmers += cdbg_kmer_sizes[cdbg_node]
-
-            node_kmer_sizes[node_id] = total_kmers
-        else:
-            sub_size = 0
-            for child_id in dag[node_id]:
-                sub_size += node_kmer_sizes[child_id]
-            node_kmer_sizes[node_id] = sub_size
-
+    print('decorating catlas with contig size info.')
+    node_kmer_sizes = search_utils.decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes)
 
     ### ok, the real work: look at articulation of cDBG graph.
 
@@ -126,26 +96,23 @@ def main(args=sys.argv[1:]):
     print('total k-mers:', node_kmer_sizes[top_node_id])
 
     x.sort(reverse=True)
-    for (k, v, a, b) in x:
+    for (k, v, a, b) in x[:10]:
+        print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b)
+    print('... eliding {} nodes'.format(len(x) - 20))
+    for (k, v, a, b) in x[-10:]:
         print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b)
 
-    if 0:
-        # keep only the last 10 (just for diagnostics/evaluation).
-        keep_num = 10
-        print('keeping last {} for examination.'.format(keep_num))
-        keep_terminal = { n for (k, n, a, b) in x[-keep_num:] }
-    elif 1:
-        # keep the last 500kb for examination
-        keep_sum_kmer = 500000
-        sofar = 0
-        keep_terminal = set()
-        for (k, v, a, b) in reversed(x):
-            sofar += b
-            if sofar > keep_sum_kmer:
-                break
-            keep_terminal.add(v)
+    # keep the last 10% for examination
+    keep_sum_kmer = 0.10 * node_kmer_sizes[top_node_id]
+    sofar = 0
+    keep_terminal = set()
+    for (k, v, a, b) in reversed(x):
+        sofar += b
+        if sofar > keep_sum_kmer:
+            break
+        keep_terminal.add(v)
 
-        print('keeping last {} k-mers worth of nodes for examination.'.format(sofar))
+    print('keeping last {} k-mers worth of nodes for examination.'.format(sofar))
 
     # build cDBG shadow ID list.
     cdbg_shadow = set()

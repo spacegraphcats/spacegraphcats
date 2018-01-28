@@ -547,6 +547,48 @@ def load_cdbg_size_info(catlas_prefix):
     return cdbg_kmer_sizes
 
 
+def decorate_catlas_with_shadow_sizes(layer1_to_cdbg, dag, dag_levels):
+    x = []
+    for (node_id, level) in dag_levels.items():
+        x.append((level, node_id))
+    x.sort()
+
+    node_shadow_sizes = {}
+    for level, node_id in x:
+        if level == 1:
+            node_shadow_sizes[node_id] = len(layer1_to_cdbg[node_id])
+        else:
+            sub_size = 0
+            for child_id in dag[node_id]:
+                sub_size += node_shadow_sizes[child_id]
+            node_shadow_sizes[node_id] = sub_size
+
+    return node_shadow_sizes
+
+
+def decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes):
+    x = []
+    for (node_id, level) in dag_levels.items():
+        x.append((level, node_id))
+    x.sort()
+
+    node_kmer_sizes = {}
+    for level, node_id in x:
+        if level == 1:
+            total_kmers = 0
+            for cdbg_node in layer1_to_cdbg.get(node_id):
+                total_kmers += cdbg_kmer_sizes[cdbg_node]
+
+            node_kmer_sizes[node_id] = total_kmers
+        else:
+            sub_size = 0
+            for child_id in dag[node_id]:
+                sub_size += node_kmer_sizes[child_id]
+            node_kmer_sizes[node_id] = sub_size
+
+    return node_kmer_sizes
+
+
 def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
     curve = []
 
