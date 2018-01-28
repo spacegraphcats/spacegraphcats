@@ -62,6 +62,7 @@ def main(args=sys.argv[1:]):
     cdbg_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix)
 
     # decorate catlas with cdbg node sizes underneath them
+    print('decorating catlas.')
     x = []
     for (node_id, level) in dag_levels.items():
         x.append((level, node_id))

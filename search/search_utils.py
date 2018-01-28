@@ -2,6 +2,7 @@ import pickle
 import collections
 import os
 import json
+import csv
 
 import sqlite3
 
@@ -536,11 +537,12 @@ def load_kmer_index(catlas_prefix):
 
 
 def load_cdbg_size_info(catlas_prefix):
-    contigs_info = pandas.read_csv(os.path.join(catlas_prefix,
-                                                'contigs.fa.gz.info.csv'))
-    cdbg_kmer_sizes = {}
-    for _, row in contigs_info.iterrows():
-        cdbg_kmer_sizes[int(row.contig_id)] = int(row.n_kmers)
+    filename = os.path.join(catlas_prefix, 'contigs.fa.gz.info.csv')
+    with open(filename, 'rt') as fp:
+        cdbg_kmer_sizes = {}
+        r = csv.DictReader(fp)
+        for row in r:
+            cdbg_kmer_sizes[int(row['contig_id'])] = int(row['n_kmers'])
 
     return cdbg_kmer_sizes
 
