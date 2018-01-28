@@ -150,11 +150,6 @@ def main():
             print('loading query kmers...', end=' ')
             bf = khmer.Nodetable(ksize, 1, 1)
 
-            cdbg_count = defaultdict(int)
-
-            x = set()
-            n = 0
-
             query_kmers = set()
             for record in screed.open(query):
                 query_kmers.update(bf.get_kmer_hashes(record.sequence))
