@@ -48,11 +48,11 @@ def main(args=sys.argv[1:]):
 
     # ...and load cdbg node sizes
     print('loading contig size info')
-    cdbg_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix)
+    cdbg_kmer_sizes, cdbg_weighted_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix)
 
     # decorate catlas with cdbg node sizes underneath them
     print('decorating catlas with contig size info.')
-    node_kmer_sizes = search_utils.decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes)
+    node_kmer_sizes, node_weighted_kmer_sizes = search_utils.decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes)
 
     ### ok, the real work: look at articulation of cDBG graph.
 
@@ -80,7 +80,7 @@ def main(args=sys.argv[1:]):
                                                             args.minsize,
                                                             args.maxsize))
 
-    # now, go through and calculate total k-mers underneath.
+    # now, go through and calculate ratios
     x = []
     for node_id in terminal:
         # calculate: how many k-mers per cDBG node?

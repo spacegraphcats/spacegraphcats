@@ -540,11 +540,16 @@ def load_cdbg_size_info(catlas_prefix):
     filename = os.path.join(catlas_prefix, 'contigs.fa.gz.info.csv')
     with open(filename, 'rt') as fp:
         cdbg_kmer_sizes = {}
+        cdbg_weighted_kmer_sizes = {}
         r = csv.DictReader(fp)
         for row in r:
-            cdbg_kmer_sizes[int(row['contig_id'])] = int(row['n_kmers'])
+            contig_id = int(row['contig_id'])
+            n_kmers = int(row['n_kmers'])
+            mean_abund = float(row['mean_abund'])
+            cdbg_kmer_sizes[contig_id] = n_kmers
+            cdbg_weighted_kmer_sizes[contig_id] = mean_abund*n_kmers
 
-    return cdbg_kmer_sizes
+    return cdbg_kmer_sizes, cdbg_weighted_kmer_sizes
 
 
 def decorate_catlas_with_shadow_sizes(layer1_to_cdbg, dag, dag_levels):
@@ -566,27 +571,34 @@ def decorate_catlas_with_shadow_sizes(layer1_to_cdbg, dag, dag_levels):
     return node_shadow_sizes
 
 
-def decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes):
+def decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes):
     x = []
     for (node_id, level) in dag_levels.items():
         x.append((level, node_id))
     x.sort()
 
     node_kmer_sizes = {}
+    node_weighted_kmer_sizes = {}
     for level, node_id in x:
-        if level == 1:
+        if level == 1:                    # aggregate across cDBG nodes
             total_kmers = 0
+            total_weighted_kmers = 0
             for cdbg_node in layer1_to_cdbg.get(node_id):
                 total_kmers += cdbg_kmer_sizes[cdbg_node]
+                total_weighted_kmers += cdbg_weighted_kmer_sizes[cdbg_node]
 
             node_kmer_sizes[node_id] = total_kmers
-        else:
+            node_weighted_kmer_sizes[node_id] = total_weighted_kmers
+        else:                             # aggregate across children
             sub_size = 0
+            sub_weighted_size = 0
             for child_id in dag[node_id]:
                 sub_size += node_kmer_sizes[child_id]
+                sub_weighted_size += node_weighted_kmer_sizes[child_id]
             node_kmer_sizes[node_id] = sub_size
+            node_weighted_kmer_sizes[node_id] = sub_weighted_size
 
-    return node_kmer_sizes
+    return node_kmer_sizes, node_weighted_kmer_sizes
 
 
 def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):

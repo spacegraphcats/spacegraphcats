@@ -65,27 +65,8 @@ def main(args=sys.argv[1:]):
 
     # ...and catlas node sizes
     print('loading contig size info')
-    cdbg_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix)
-
-    print('decorating catlas.')
-    x = []
-    for (node_id, level) in dag_levels.items():
-        x.append((level, node_id))
-    x.sort()
-
-    node_kmer_sizes = {}
-    for level, node_id in x:
-        if level == 1:
-            total_kmers = 0
-            for cdbg_node in layer1_to_cdbg.get(node_id):
-                total_kmers += cdbg_kmer_sizes[cdbg_node]
-
-            node_kmer_sizes[node_id] = total_kmers
-        else:
-            sub_size = 0
-            for child_id in dag[node_id]:
-                sub_size += node_kmer_sizes[child_id]
-            node_kmer_sizes[node_id] = sub_size
+    cdbg_kmer_sizes, cdbg_weighted_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix)
+    node_kmer_sizes, node_weighted_kmer_sizes = search_utils.decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes)
 
     ### everything is loaded!
 
