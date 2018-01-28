@@ -22,6 +22,7 @@ def main(args=sys.argv[1:]):
     p.add_argument('output')
     p.add_argument('--minsize', type=float, default=100)
     p.add_argument('--maxsize', type=float, default=10000)
+    p.add_argument('--keep-fraction', type=float, default=0.1)
     p.add_argument('-k', '--ksize', default=31, type=int,
                         help='k-mer size (default: 31)')
     args = p.parse_args(args)
@@ -102,8 +103,8 @@ def main(args=sys.argv[1:]):
     for (k, v, a, b) in x[-10:]:
         print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b)
 
-    # keep the last 10% for examination
-    keep_sum_kmer = 0.10 * node_kmer_sizes[top_node_id]
+    # keep the last keep-fraction (default 10%) for examination
+    keep_sum_kmer = args.keep_fraction * node_kmer_sizes[top_node_id]
     sofar = 0
     keep_terminal = set()
     for (k, v, a, b) in reversed(x):
