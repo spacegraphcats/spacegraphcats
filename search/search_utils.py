@@ -15,6 +15,7 @@ from .bgzf.bgzf import BgzfReader
 
 import bbhash
 import numpy
+import pandas
 
 
 def load_layer1_to_cdbg(cdbg_to_catlas, domfile):
@@ -532,6 +533,16 @@ def load_kmer_index(catlas_prefix):
         cdbg_sizes = np_dict['sizes']
 
     return MPHF_KmerIndex(mphf, mphf_to_kmer, mphf_to_cdbg, cdbg_sizes)
+
+
+def load_cdbg_size_info(catlas_prefix):
+    contigs_info = pandas.read_csv(os.path.join(catlas_prefix,
+                                                'contigs.fa.gz.info.csv'))
+    cdbg_kmer_sizes = {}
+    for _, row in contigs_info.iterrows():
+        cdbg_kmer_sizes[int(row.contig_id)] = int(row.n_kmers)
+
+    return cdbg_kmer_sizes
 
 
 def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):

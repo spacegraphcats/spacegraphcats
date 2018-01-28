@@ -20,11 +20,13 @@ def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('output')
-    p.add_argument('--maxsize', type=float, default=1000)
+    p.add_argument('--minsize', type=float, default=100)
+    p.add_argument('--maxsize', type=float, default=10000)
     p.add_argument('-k', '--ksize', default=31, type=int,
                         help='k-mer size (default: 31)')
     args = p.parse_args(args)
 
+    print('minsize: {:g}'.format(args.minsize))
     print('maxsize: {:g}'.format(args.maxsize))
 
     basename = os.path.basename(args.catlas_prefix)
@@ -55,28 +57,11 @@ def main(args=sys.argv[1:]):
                 sub_size += node_shadow_sizes[child_id]
             node_shadow_sizes[node_id] = sub_size
 
-    # find highest nodes with shadow size less than given max_size
-    def find_terminal_nodes(node_id, max_size):
-        node_list = set()
-        for sub_id in dag[node_id]:
-            # shadow size
-            size = node_shadow_sizes[sub_id]
-
-            if size < max_size:
-                node_list.add(sub_id)
-            else:
-                children = find_terminal_nodes(sub_id, max_size)
-                node_list.update(children)
-            
-        return node_list
-
-    # ...and catlas node sizes
+    # ...and load cdbg node sizes
     print('loading contig size info')
-    contigs_info = pandas.read_csv(os.path.join(args.catlas_prefix, 'contigs.fa.gz.info.csv'))
-    cdbg_kmer_sizes = {}
-    for _, row in contigs_info.iterrows():
-        cdbg_kmer_sizes[int(row.contig_id)] = int(row.n_kmers)
+    cdbg_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix)
 
+    # decorate catlas with cdbg node sizes underneath them
     x = []
     for (node_id, level) in dag_levels.items():
         x.append((level, node_id))
@@ -96,66 +81,83 @@ def main(args=sys.argv[1:]):
                 sub_size += node_kmer_sizes[child_id]
             node_kmer_sizes[node_id] = sub_size
 
+
+    ### ok, the real work: look at articulation of cDBG graph.
+
+    # find highest nodes with kmer size less than given max_size
+    def find_terminal_nodes(node_id, max_size):
+        node_list = set()
+        for sub_id in dag[node_id]:
+            # shadow size
+            size = node_kmer_sizes[sub_id]
+
+            if size < max_size:
+                node_list.add(sub_id)
+            else:
+                children = find_terminal_nodes(sub_id, max_size)
+                node_list.update(children)
+
+        return node_list
+
     print('finding terminal nodes for {}.'.format(args.maxsize))
 
-    terminal = set()
     terminal = find_terminal_nodes(top_node_id, args.maxsize)
     print('...got {}'.format(len(terminal)))
+    terminal = { n for n in terminal if node_kmer_sizes[n] > args.minsize }
+    print('...down to {} between {} and {} in size.'.format(len(terminal),
+                                                            args.minsize,
+                                                            args.maxsize))
 
     # now, go through and calculate total k-mers underneath.
     x = []
-    n_merged = 0
-    new_node_set = set()
     for node_id in terminal:
-        size = node_kmer_sizes[node_id]
-
-        # retrieve shadow size, calculate mh_size / shadow_size.
+        # calculate: how many k-mers per cDBG node?
+        kmer_size = node_kmer_sizes[node_id]
         shadow_size = node_shadow_sizes[node_id]
-        ratio = math.log(size, 2) - math.log(shadow_size, 2)
 
-        level = dag_levels[node_id]
+        ratio = math.log(kmer_size, 2) - math.log(shadow_size, 2)
 
         # track basic info
-        x.append((ratio, node_id, shadow_size, size, level))
-
-        # keep those with larger shadow than k-mers (somewhat arbitrary :)
-        # specifically: 10 k-mers per node, or fewer.
-
-        # THIS NEVER HAPPENS for small maxsize?!
-        if 2**ratio < 10:
-            new_node_set.add(node_id)
-
-            n_merged += 1
-        else:
-            shadow_size = node_shadow_sizes[node_id]
-            x.append((0, node_id, shadow_size, 0, level))
-            if shadow_size >= 3 or 1:
-                new_node_set.add(node_id)
-
-    terminal = new_node_set
+        x.append((ratio, node_id, shadow_size, kmer_size))
 
     print('terminal node stats for maxsize: {:g}'.format(args.maxsize))
-    print('n merged:', n_merged)
     print('n tnodes:', len(terminal))
     print('total k-mers:', node_kmer_sizes[top_node_id])
 
     x.sort(reverse=True)
-    for (k, v, a, b, c) in x:
-        print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b, '/ level:', c)
+    for (k, v, a, b) in x:
+        print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b)
+
+    if 0:
+        # keep only the last 10 (just for diagnostics/evaluation).
+        keep_num = 10
+        print('keeping last {} for examination.'.format(keep_num))
+        keep_terminal = { n for (k, n, a, b) in x[-keep_num:] }
+    elif 1:
+        # keep the last 500kb for examination
+        keep_sum_kmer = 500000
+        sofar = 0
+        keep_terminal = set()
+        for (k, v, a, b) in reversed(x):
+            sofar += b
+            if sofar > keep_sum_kmer:
+                break
+            keep_terminal.add(v)
+
+        print('keeping last {} k-mers worth of nodes for examination.'.format(sofar))
 
     # build cDBG shadow ID list.
     cdbg_shadow = set()
-    terminal_shadow = find_shadow(terminal, dag)
+    terminal_shadow = find_shadow(keep_terminal, dag)
     for x in terminal_shadow:
         cdbg_shadow.update(layer1_to_cdbg.get(x))
 
-    #### extract reads
-    print('extracting contigs')
+    #### extract contigs
+    print('extracting contigs & building a sourmash signature')
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
     # track results as signature
-    contigs_mh = sourmash_lib.MinHash(n=0, ksize=args.ksize, seed=42,
-                                      scaled=1000)
+    contigs_mh = sourmash_lib.MinHash(n=0, ksize=args.ksize, scaled=1000)
 
     total_bp = 0
     total_seqs = 0

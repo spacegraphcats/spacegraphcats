@@ -65,10 +65,7 @@ def main(args=sys.argv[1:]):
 
     # ...and catlas node sizes
     print('loading contig size info')
-    contigs_info = pandas.read_csv(os.path.join(args.catlas_prefix, 'contigs.fa.gz.info.csv'))
-    cdbg_kmer_sizes = {}
-    for _, row in contigs_info.iterrows():
-        cdbg_kmer_sizes[int(row.contig_id)] = int(row.n_kmers)
+    cdbg_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix)
 
     x = []
     for (node_id, level) in dag_levels.items():
@@ -91,7 +88,7 @@ def main(args=sys.argv[1:]):
 
     ### everything is loaded!
 
-    # find highest nodes with shadow size less than given max_size
+    # find highest nodes with kmer size less than given max_size
     def find_terminal_nodes(node_id, max_size):
         node_list = set()
         for sub_id in dag[node_id]:
@@ -103,7 +100,7 @@ def main(args=sys.argv[1:]):
             else:
                 children = find_terminal_nodes(sub_id, max_size)
                 node_list.update(children)
-            
+
         return node_list
 
     print('finding terminal nodes for {}.'.format(args.maxsize))
