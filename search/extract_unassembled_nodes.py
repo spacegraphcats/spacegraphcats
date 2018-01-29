@@ -72,6 +72,10 @@ def main(args=sys.argv[1:]):
     print('=> containment: {:.1f}%'.format(f_found * 100))
     print('done loading & counting query k-mers in cDBG.')
 
+    if total_match_kmers == 0:
+        print('no match k-mers!?')
+        sys.exit(-1)
+
     # calculate the cDBG matching k-mers sizes for each catlas node.
     catlas_match_counts = kmer_idx.build_catlas_match_counts(cdbg_match_counts, dag, dag_levels, layer1_to_cdbg)
 
