@@ -74,7 +74,6 @@ def main(args=sys.argv[1:]):
     def find_terminal_nodes(node_id, max_size):
         node_list = set()
         for sub_id in dag[node_id]:
-            # shadow size
             size = node_kmer_sizes[sub_id]
 
             if size < max_size:
