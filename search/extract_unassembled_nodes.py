@@ -84,6 +84,8 @@ def main(args=sys.argv[1:]):
 
             f_assembled = n_matched / size
 
+            # if the fraction of unassembled k-mers under this node is below
+            # our threshold, KEEP the node. Otherwise, descend into children.
             if f_assembled <= threshold:
                 node_list.add(sub_id)
             else:
@@ -110,6 +112,26 @@ def main(args=sys.argv[1:]):
             w.writerow([str(n), str(f_contained), str(node_kmer_sizes[n]),
                         str(node_weighted_kmer_sizes[n]),
                         str(node_shadow_sizes[n])])
+
+    print('writing level1 node info to {}'.format(args.output + '.level1.csv'))
+    with open(args.output + '.level1.csv', 'wt') as fp:
+        w = csv.writer(fp)
+
+        terminal_shadow = find_shadow(terminal, dag)
+
+        w.writerow(['node_id', 'contained', 'n_kmers', 'n_weighted_kmers', 'shadow_size', 'unassembled'])
+        for n in terminal_shadow:
+            f_contained = catlas_match_counts.get(n, 0) / node_kmer_sizes[n]
+            w.writerow([str(n), str(f_contained), str(node_kmer_sizes[n]),
+                        str(node_weighted_kmer_sizes[n]),
+                        str(node_shadow_sizes[n]), '1'])
+
+        complement_shadow = set(layer1_to_cdbg) - terminal_shadow
+        for n in complement_shadow:
+            f_contained = catlas_match_counts.get(n, 0) / node_kmer_sizes[n]
+            w.writerow([str(n), str(f_contained), str(node_kmer_sizes[n]),
+                        str(node_weighted_kmer_sizes[n]),
+                        str(node_shadow_sizes[n]), '0'])
 
     # build cDBG shadow ID list.
     cdbg_shadow = set()
