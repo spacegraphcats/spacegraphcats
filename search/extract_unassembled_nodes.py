@@ -99,7 +99,7 @@ def main(args=sys.argv[1:]):
     terminal = find_unassembled_nodes(top_node_id, args.threshold)
     sum_kmers = sum([ node_kmer_sizes[n] for n in terminal ])
     sum_match_kmers = sum([ catlas_match_counts.get(n, 0) for n in terminal ])
-    print('...got {} nodes, representing {} k-mers ({} matched - {:.1f}'.format(len(terminal), sum_kmers, sum_match_kmers, sum_match_kmers / sum_kmers * 100))
+    print('...got {} nodes, representing {} k-mers ({} matched - {:.1f}%)'.format(len(terminal), sum_kmers, sum_match_kmers, sum_match_kmers / sum_kmers * 100))
 
     # now, go through all nodes and print out characteristics
     print('writing node info to {}'.format(args.output + '.csv'))
