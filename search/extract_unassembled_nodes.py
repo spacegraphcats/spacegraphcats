@@ -22,7 +22,7 @@ def main(args=sys.argv[1:]):
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('query')
     p.add_argument('output')
-    p.add_argument('--threshold', default=0.0)
+    p.add_argument('--threshold', default=0.0, type=float)
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     args = p.parse_args(args)
