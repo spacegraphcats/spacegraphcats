@@ -104,19 +104,22 @@ def main(args=sys.argv[1:]):
     terminal = find_unassembled_nodes(top_node_id, args.threshold)
     sum_kmers = sum([ node_kmer_sizes[n] for n in terminal ])
     sum_match_kmers = sum([ catlas_match_counts.get(n, 0) for n in terminal ])
-    print('...got {} nodes, representing {} k-mers ({} matched - {:.1f}%)'.format(len(terminal), sum_kmers, sum_match_kmers, sum_match_kmers / sum_kmers * 100))
+    print('...got {} nodes, representing {} k-mers'.format(len(terminal), sum_kmers))
 
     # now, go through all nodes and print out characteristics
     print('writing node info to {}'.format(args.output + '.csv'))
     with open(args.output + '.csv', 'wt') as fp:
         w = csv.writer(fp)
 
-        w.writerow(['node_id', 'contained', 'n_kmers', 'n_weighted_kmers', 'shadow_size'])
+        w.writerow(['node_id', 'contained', 'n_kmers', 'n_weighted_kmers', 'average_weight','shadow_size'])
         for n in terminal:
             f_contained = catlas_match_counts.get(n, 0) / node_kmer_sizes[n]
-            w.writerow([str(n), str(f_contained), str(node_kmer_sizes[n]),
-                        str(node_weighted_kmer_sizes[n]),
-                        str(node_shadow_sizes[n])])
+            w.writerow([n,
+                        '{:.3f}'.format(f_contained),
+                        node_kmer_sizes[n],
+                        '{:.1f}'.format(node_weighted_kmer_sizes[n]),
+                        '{:.2f}'.format(node_weighted_kmer_sizes[n] / node_kmer_sizes[n]),
+                        node_shadow_sizes[n]])
 
     if args.minsize:
         print('minsize set: {}. filtering.'.format(args.minsize))
@@ -125,35 +128,18 @@ def main(args=sys.argv[1:]):
             if node_kmer_sizes[n] >= args.minsize:
                 new_terminal.add(n)
 
-        print('removed {} nodes => {}'.format(len(terminal) - len(new_terminal),
+        print('removed {} nodes => {}'.format(len(terminal)-len(new_terminal),
                                               len(new_terminal)))
         terminal = new_terminal
 
-    print('writing level1 node info to {}'.format(args.output + '.level1.csv'))
-    with open(args.output + '.level1.csv', 'wt') as fp:
-        w = csv.writer(fp)
-
-        terminal_shadow = find_shadow(terminal, dag)
-
-        w.writerow(['node_id', 'contained', 'n_kmers', 'n_weighted_kmers', 'shadow_size', 'unassembled'])
-        for n in terminal_shadow:
-            f_contained = catlas_match_counts.get(n, 0) / node_kmer_sizes[n]
-            w.writerow([str(n), str(f_contained), str(node_kmer_sizes[n]),
-                        str(node_weighted_kmer_sizes[n]),
-                        str(node_shadow_sizes[n]), '1'])
-
-        complement_shadow = set(layer1_to_cdbg) - terminal_shadow
-        for n in complement_shadow:
-            f_contained = catlas_match_counts.get(n, 0) / node_kmer_sizes[n]
-            w.writerow([str(n), str(f_contained), str(node_kmer_sizes[n]),
-                        str(node_weighted_kmer_sizes[n]),
-                        str(node_shadow_sizes[n]), '0'])
-
-    # build cDBG shadow ID list.
-    cdbg_shadow = set()
-    terminal_shadow = find_shadow(terminal, dag)
-    for x in terminal_shadow:
-        cdbg_shadow.update(layer1_to_cdbg.get(x))
+    # build cDBG shadow ID list, tagged by parent catlas node.
+    cdbg_id_to_node = {}
+    for n in terminal:
+        this_shadow = find_shadow([n], dag)
+        for x in this_shadow:
+            v = layer1_to_cdbg[x]
+            for vv in v:
+                cdbg_id_to_node[vv] = n
 
     #### extract contigs
     print('extracting contigs & building a sourmash signature')
@@ -169,17 +155,18 @@ def main(args=sys.argv[1:]):
     outfp = open(args.output + '.fa', 'wt')
     for n, record in enumerate(screed.open(contigs)):
         if n and n % 10000 == 0:
-            offset_f = total_seqs / len(cdbg_shadow)
+            offset_f = total_seqs / len(cdbg_id_to_node)
             print('...at n {} ({:.1f}% of shadow)'.format(total_seqs,
                   offset_f * 100),
                   end='\r')
 
         # contig names == cDBG IDs
         contig_id = int(record.name)
-        if contig_id not in cdbg_shadow:
+        catlas_parent = cdbg_id_to_node.get(contig_id)
+        if catlas_parent is None:
             continue
 
-        outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
+        outfp.write('>{} {}\n{}\n'.format(record.name, catlas_parent, record.sequence))
         contigs_mh.add_sequence(record.sequence)
 
         # track retrieved sequences in a minhash
