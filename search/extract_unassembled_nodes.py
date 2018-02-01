@@ -23,6 +23,7 @@ def main(args=sys.argv[1:]):
     p.add_argument('query')
     p.add_argument('output')
     p.add_argument('--threshold', default=0.0, type=float)
+    p.add_argument('--minsize', default=0, type=int)
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     args = p.parse_args(args)
@@ -116,6 +117,17 @@ def main(args=sys.argv[1:]):
             w.writerow([str(n), str(f_contained), str(node_kmer_sizes[n]),
                         str(node_weighted_kmer_sizes[n]),
                         str(node_shadow_sizes[n])])
+
+    if args.minsize:
+        print('minsize set: {}. filtering.'.format(args.minsize))
+        new_terminal = set()
+        for n in terminal:
+            if node_kmer_sizes[n] >= args.minsize:
+                new_terminal.add(n)
+
+        print('removed {} nodes => {}'.format(len(terminal) - len(new_terminal),
+                                              len(new_terminal)))
+        terminal = new_terminal
 
     print('writing level1 node info to {}'.format(args.output + '.level1.csv'))
     with open(args.output + '.level1.csv', 'wt') as fp:
