@@ -3,7 +3,7 @@
     "input_sequences": ["SRR1976948.abundtrim.fq.gz"],
     "_other_data": ["SRR1976948.abundtrim.fq.gz", "SRR1977304.abundtrim.fq.gz", "SRR1977249.abundtrim.fq.gz", "SRR1977357.abundtrim.fq.gz", "SRR1977296.abundtrim.fq.gz", "SRR1977365.abundtrim.fq.gz"],
     "ksize": 31,
-    "radius": 3,
+    "radius": 1,
 
     "searchquick": ["hu-genomes/hu-genome00.fa", "hu-genomes/hu-genome01.fa"],
 
