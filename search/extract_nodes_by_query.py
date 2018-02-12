@@ -172,7 +172,7 @@ def main():
 
             cdbg_sim = total_match_kmers / total_kmers_in_cdbg_matches
             print('cdbg match node similarity: {:.1f}%'.format(cdbg_sim * 100))
-            cdbg_min_overhead = (total_kmers_in_cdbg_matches - total_match_kmers) / total_match_kmers
+            cdbg_min_overhead = (total_kmers_in_cdbg_matches - total_match_kmers) / total_kmers_in_cdbg_matches
             print('min cdbg overhead: {}'.format(cdbg_min_overhead))
 
             # calculate the cDBG matching k-mers sizes for each catlas node.
@@ -194,7 +194,7 @@ def main():
                     if level == 1 and catlas_match_counts.get(node_id):
                         total_kmers_in_query_nodes += node_sizes[node_id]
 
-                catlas_min_overhead = (total_kmers_in_query_nodes - all_query_kmers) / all_query_kmers
+                catlas_min_overhead = (total_kmers_in_query_nodes - all_query_kmers) / total_kmers_in_query_nodes
                 print('minimum catlas overhead: {}'.format(catlas_min_overhead))
 
             # gather results of all queries
