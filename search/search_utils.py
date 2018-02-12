@@ -182,7 +182,7 @@ class CatlasDB(object):
             if node_id in seen_nodes:
                 return
             seen_nodes.add(node_id)
-            
+
             children_ids = self.get_children(node_id)
             if not len(children_ids):
                 shadow.add(node_id)
@@ -638,7 +638,7 @@ def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
     # @CTB: ask Mike what he wants here :)
 
     with open(outname, 'wt') as fp:
-        fp.write('sum_cont relative_cont relative_overhead sum_cont2 sum_oh catlas_id')
+        fp.write('sum_cont relative_cont relative_overhead sum_cont2 sum_oh catlas_id\n')
 
         # only output ~200 points
         sampling_rate = max(int(len(curve) / 200), 1)
