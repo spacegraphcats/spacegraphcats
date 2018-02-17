@@ -14,6 +14,7 @@ from sourmash_lib._minhash import hash_murmur
 import time
 import numpy
 import pandas
+import pickle
 
 import screed
 from . import search_utils
@@ -73,6 +74,11 @@ def main(args=sys.argv[1:]):
     # find highest nodes with kmer size less than given max_size
     def find_terminal_nodes(node_id, max_size):
         node_list = set()
+
+        if not dag[node_id]:
+            node_list.add(node_id)
+            return node_list
+
         for sub_id in dag[node_id]:
             size = node_kmer_sizes[sub_id]
 
@@ -93,7 +99,7 @@ def main(args=sys.argv[1:]):
     print('containing {} level1 nodes of {} total'.format(len(find_shadow(nodes, dag)), len(layer1_to_cdbg)))
 
     node_kmers = sum([ node_kmer_sizes[n] for n in nodes ])
-    print('containing {} kmers of {} total'.format(node_kmers, node_kmer_sizes[top_node_id]))
+    print('containing {} kmers of {} total ({:.1f}%)'.format(node_kmers, node_kmer_sizes[top_node_id], node_kmers / node_kmer_sizes[top_node_id] * 100))
 
     ### now build cdbg -> subtree/group ID
 
@@ -108,9 +114,11 @@ def main(args=sys.argv[1:]):
     # record group info - here we are using the MinHash class to track
     # k-mer abundances.
     group_info = {}
+    group_ident = {}
     for n in nodes:
         group_info[n] = sourmash_lib.MinHash(n=0, ksize=args.ksize,
                                              scaled=1, track_abundance=1)
+        group_ident[n] = sourmash_lib.MinHash(n=0, ksize=31, scaled=1000)
 
     # aaaaaand iterate over contigs, collecting abundances from all contigs
     # in a group.
@@ -124,6 +132,7 @@ def main(args=sys.argv[1:]):
             # keep/measure!
             mh = group_info[group_id]
             mh.add_sequence(record.sequence, True)
+            group_ident[group_id].add_sequence(record.sequence, True)
 
     # ok, now we have a pile of k-mer vectors of size 4**args.ksize;
     # output in numpy format.
@@ -137,6 +146,7 @@ def main(args=sys.argv[1:]):
     # now, build a matrix of GROUP_N rows x 4**ksize columns, where each
     # row will be the set of k-mer abundances associated with each group.
     V = numpy.zeros((len(group_info), 4**args.ksize), dtype=numpy.uint16)
+    node_id_to_group_idx = {}
     for i, n in enumerate(group_info):
         mh = group_info[n]
         vec = dict(mh.get_mins(with_abundance=True))
@@ -144,10 +154,18 @@ def main(args=sys.argv[1:]):
         vec = numpy.array(vec)
         V[i] = vec
 
+        node_id_to_group_idx[n] = i
+
     # save!
     print('saving matrix of size {} to {}'.format(str(V.shape), args.output))
     with open(args.output, 'wb') as fp:
         numpy.save(fp, V)
+
+    with open(args.output + '.node_ids', 'wb') as fp:
+        pickle.dump(node_id_to_group_idx, fp)
+
+    with open(args.output + '.node_mh', 'wb') as fp:
+        pickle.dump(group_ident, fp)
 
 
 if __name__ == '__main__':
