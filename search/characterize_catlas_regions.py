@@ -35,6 +35,21 @@ def make_all(ksize):
     add("", ksize)
     return x
 
+
+def partition_catlas(dag, top_node, shadow_sizes, max_size):
+    roots = []
+
+    def partition_recursive(node):
+        if shadow_sizes[node] > max_size and dag[node]:
+            for u in dag[node]:
+                partition_recursive(u)
+        else:
+            roots.append(node)
+
+    partition_recursive(top_node)
+    return roots
+
+
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
@@ -71,30 +86,11 @@ def main(args=sys.argv[1:]):
 
     ### everything is loaded!
 
-    # find highest nodes with kmer size less than given max_size
-    def find_terminal_nodes(node_id, max_size):
-        node_list = set()
-
-        if not dag[node_id]:
-            node_list.add(node_id)
-            return node_list
-
-        for sub_id in dag[node_id]:
-            size = node_kmer_sizes[sub_id]
-
-            if size < max_size:
-                node_list.add(sub_id)
-            else:
-                children = find_terminal_nodes(sub_id, max_size)
-                node_list.update(children)
-
-        return node_list
-
     print('finding terminal nodes for {}.'.format(args.maxsize))
-    nodes = find_terminal_nodes(top_node_id, args.maxsize)
-
-    nodes = { n for n in nodes if node_kmer_sizes[n] > args.minsize }
+    nodes = partition_catlas(dag, top_node_id, node_kmer_sizes, args.maxsize)
     
+    nodes = { n for n in nodes if node_kmer_sizes[n] > args.minsize }
+
     print('{} nodes between {} and {} in k-mer size'.format(len(nodes), args.minsize, args.maxsize))
     print('containing {} level1 nodes of {} total'.format(len(find_shadow(nodes, dag)), len(layer1_to_cdbg)))
 
