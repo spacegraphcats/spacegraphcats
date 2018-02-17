@@ -1,4 +1,11 @@
 #! /usr/bin/env python
+"""
+Convert a bcalm unitigs.fa output (a cDBG) into spacegraphcats files.
+
+Outputs a GXT file (containing an undirected graph), a BGZF file
+containing the sequences, and a .info.csv file containing
+the BGZF offset, mean abundance, and length of each contig.
+"""
 import screed
 import sys
 import collections
@@ -12,6 +19,7 @@ def main():
     parser.add_argument('gxt_out')
     parser.add_argument('contigs_out')
     parser.add_argument('-k', '--ksize', type=int, default=31)
+    parser.add_argument('-d', '--debug', action='store_true')
     args = parser.parse_args()
 
     ksize = args.ksize
@@ -48,12 +56,17 @@ def main():
         link_ids = [ x.split(':')[2] for x in links ]
         link_ids = [ int(x) for x in link_ids ]
 
+        if args.debug:
+            print('link_ids for {} are {}'.format(contig_id, link_ids))
+
         link_d[contig_id].update(link_ids)
 
         # get mean abund
         abund = [ x for x in name_split[1:] if x.startswith('km:') ]
         assert len(abund) == 1, abund
-        abund = float(abund[0].split(':')[2])
+        abund = abund[0].split(':')
+        assert len(abund) == 3
+        abund = float(abund[2])
 
         mean_abunds[contig_id] = abund
 
@@ -79,11 +92,11 @@ def main():
 
     # write out all of the links, in 'from to' format.
     n_edges = 0
-    for k, v in link_d.items():
-        for vv in v:
-            assert k <= n
-            assert vv <= n
-            gxtfp.write('{} {}\n'.format(k, vv))
+    for node, edgelist in link_d.items():
+        for next_node in edgelist:
+            assert node <= max_contig_id
+            assert next_node <= max_contig_id
+            gxtfp.write('{} {}\n'.format(node, next_node))
             n_edges += 1
 
     print('{} vertices, {} edges'.format(n, n_edges))
