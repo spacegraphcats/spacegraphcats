@@ -2,7 +2,7 @@
     "catlas_base": "podarV",
     "input_sequences": ["SRR606249.k31.abundtrim.fq.gz"],
     "ksize": 31,
-    "radius": 3,
+    "radius": 1,
 
     "searchquick": ["data/2.fa.gz"],
 
