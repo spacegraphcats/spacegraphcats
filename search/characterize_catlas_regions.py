@@ -112,7 +112,8 @@ def main(args=sys.argv[1:]):
                 cdbg_to_group[cdbg_id] = n
 
     # record group info - here we are using the MinHash class to track
-    # k-mer abundances.
+    # k-mer abundances in group_info, as well as using group_ident to
+    # to track k=31 MinHashes for identification of each group.
     group_info = {}
     group_ident = {}
     for n in nodes:
@@ -127,11 +128,14 @@ def main(args=sys.argv[1:]):
             print('...', record_n, end='\r')
         cdbg_id = int(record.name)
         group_id = cdbg_to_group.get(cdbg_id)
-        
+
+        # if this is under a node that meets minsize criteria, track:
         if group_id is not None:
-            # keep/measure!
+            # keep/measure abundances!
             mh = group_info[group_id]
             mh.add_sequence(record.sequence, True)
+
+            # update group idents.
             group_ident[group_id].add_sequence(record.sequence, True)
 
     # ok, now we have a pile of k-mer vectors of size 4**args.ksize;
@@ -150,7 +154,7 @@ def main(args=sys.argv[1:]):
     for i, n in enumerate(group_info):
         mh = group_info[n]
         vec = dict(mh.get_mins(with_abundance=True))
-        vec = [ vec.get(hashval,0) for hashval in all_kmer_hashes ]
+        vec = [ vec.get(hashval, 0) for hashval in all_kmer_hashes ]
         vec = numpy.array(vec)
         V[i] = vec
 
