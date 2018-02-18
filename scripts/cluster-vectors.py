@@ -4,6 +4,8 @@ import pickle
 import itertools
 import sourmash_lib
 import time
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 import hdbscan
 from sklearn.manifold import TSNE
@@ -27,9 +29,20 @@ def main():
 
     print('loaded data of shape {}'.format(str(data.shape)))
 
+
+    print('standardizing')
+    data_std = StandardScaler().fit_transform(data)
+
+    print('running PCA...')
+    start = time.time()
+    pca = PCA(n_components=50, svd_solver='full')
+    data_pca = pca.fit_transform(data_std)
+    end = time.time()
+    print('done! ({:.1f}s total)'.format(end - start))
+
     print('running tSNE...')
     start = time.time()
-    t = TSNE(n_components=2, perplexity=50).fit_transform(data)
+    t = TSNE(n_components=2, perplexity=50).fit_transform(data_pca)
     end = time.time()
     print('done! ({:.1f}s total)'.format(end - start))
 
@@ -41,9 +54,9 @@ def main():
     print('done! ({:.1f}s total)'.format(end - start))
     print('got {} clusters'.format(max(h) + 1))
 
-    print('saving tSNE and HDBSCAN results to \'{}\''.format(args.output.name))
+    print('saving PCA, tSNE and HDBSCAN results to \'{}\''.format(args.output.name))
 
-    pickle.dump((t, h), args.output)
+    pickle.dump((data_pca, t, h), args.output)
 
 
 if __name__ == '__main__':
