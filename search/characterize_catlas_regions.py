@@ -56,6 +56,7 @@ def main(args=sys.argv[1:]):
     p.add_argument('output')
     p.add_argument('--maxsize', type=float, default=10000)
     p.add_argument('--minsize', type=float, default=2000)
+    p.add_argument('--min-abund', type=float, default=2.1)
     p.add_argument('-k', '--ksize', default=5, type=int,
                    help='k-mer size for vectors')
     args = p.parse_args(args)
@@ -63,6 +64,7 @@ def main(args=sys.argv[1:]):
     print('minsize: {:g}'.format(args.minsize))
     print('maxsize: {:g}'.format(args.maxsize))
     print('ksize: {}'.format(args.ksize))
+    print('min_abund: {}'.format(args.min_abund))
 
     basename = os.path.basename(args.catlas_prefix)
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
@@ -81,7 +83,7 @@ def main(args=sys.argv[1:]):
 
     # ...and catlas node sizes
     print('loading contig size info')
-    cdbg_kmer_sizes, cdbg_weighted_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix)
+    cdbg_kmer_sizes, cdbg_weighted_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix, min_abund=args.min_abund)
     node_kmer_sizes, node_weighted_kmer_sizes = search_utils.decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes)
 
     ### everything is loaded!
@@ -104,8 +106,9 @@ def main(args=sys.argv[1:]):
         shadow = find_shadow([n], dag)
         for level1_node in shadow:
             for cdbg_id in layer1_to_cdbg[level1_node]:
-                assert cdbg_id not in cdbg_to_group
-                cdbg_to_group[cdbg_id] = n
+                if cdbg_kmer_sizes.get(cdbg_id):
+                    assert cdbg_id not in cdbg_to_group
+                    cdbg_to_group[cdbg_id] = n
 
     # record group info - here we are using the MinHash class to track
     # k-mer abundances in group_info, as well as using group_ident to
