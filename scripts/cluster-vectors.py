@@ -16,7 +16,7 @@ def main():
     parser.add_argument('-o', '--output', type=argparse.FileType('wb'))
     args = parser.parse_args()
 
-    assert args.output
+    assert args.output, "please specify output filename for clusters"
 
     data = numpy.load(args.vectors_file)
 

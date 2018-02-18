@@ -22,7 +22,7 @@ def main():
                    help='k-mer size for vectors')
     args = parser.parse_args()
 
-    assert args.output
+    assert args.output, "please specify -o"
 
     n = 0
     genome_n = 0
