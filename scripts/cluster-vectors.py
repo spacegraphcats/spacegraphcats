@@ -1,22 +1,12 @@
 #! /usr/bin/env python
 import numpy
-from matplotlib import pyplot
-import pandas
 import pickle
 import itertools
 import sourmash_lib
 import time
 
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import hdbscan
-import numpy as np
 from sklearn.manifold import TSNE
-from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
-import palettable as pal
-import pandas as pd
 
 
 def main():
