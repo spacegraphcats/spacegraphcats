@@ -536,7 +536,7 @@ def load_kmer_index(catlas_prefix):
     return MPHF_KmerIndex(mphf, mphf_to_kmer, mphf_to_cdbg, cdbg_sizes)
 
 
-def load_cdbg_size_info(catlas_prefix):
+def load_cdbg_size_info(catlas_prefix, min_abund=0.0):
     filename = os.path.join(catlas_prefix, 'contigs.fa.gz.info.csv')
     with open(filename, 'rt') as fp:
         cdbg_kmer_sizes = {}
@@ -546,8 +546,9 @@ def load_cdbg_size_info(catlas_prefix):
             contig_id = int(row['contig_id'])
             n_kmers = int(row['n_kmers'])
             mean_abund = float(row['mean_abund'])
-            cdbg_kmer_sizes[contig_id] = n_kmers
-            cdbg_weighted_kmer_sizes[contig_id] = mean_abund*n_kmers
+            if not min_abund or mean_abund >= min_abund:
+                cdbg_kmer_sizes[contig_id] = n_kmers
+                cdbg_weighted_kmer_sizes[contig_id] = mean_abund*n_kmers
 
     return cdbg_kmer_sizes, cdbg_weighted_kmer_sizes
 
@@ -584,8 +585,8 @@ def decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_s
             total_kmers = 0
             total_weighted_kmers = 0
             for cdbg_node in layer1_to_cdbg.get(node_id):
-                total_kmers += cdbg_kmer_sizes[cdbg_node]
-                total_weighted_kmers += cdbg_weighted_kmer_sizes[cdbg_node]
+                total_kmers += cdbg_kmer_sizes.get(cdbg_node, 0)
+                total_weighted_kmers += cdbg_weighted_kmer_sizes.get(cdbg_node, 0)
 
             node_kmer_sizes[node_id] = total_kmers
             node_weighted_kmer_sizes[node_id] = total_weighted_kmers
