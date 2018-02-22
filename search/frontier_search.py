@@ -158,9 +158,24 @@ def frontier_search(top_node_id,
             heapq.heappush(frontier,
                            (child_precision, child_match, child_total, child))
 
-    return frontier
+    if len(frontier) > 0:
+        frontier = list(zip(*frontier))[3]
+    return frontier, 0, 0, None
+
+
+def main(args):
+    pass
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
-    parser.add_argument("catlasfile", type=str, help="file location of catlas")
+    p = argparse.ArgumentParser()
+    p.add_argument('catlas_prefix', help='catlas prefix')
+    p.add_argument('--overhead', help='\% of overhead', type=float,
+                   default=0.0)
+    p.add_argument('output')
+    p.add_argument('--query', help='query sequences', nargs='+')
+    p.add_argument('--no-empty', action='store_true')
+    p.add_argument('-k', '--ksize', default=31, type=int,
+                   help='k-mer size (default: 31)')
+    p.add_argument('--scaled', default=1000, type=float)
+    p.add_argument('-v', '--verbose', action='store_true')
