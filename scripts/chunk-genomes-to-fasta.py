@@ -9,6 +9,7 @@ from pickle import dump
 import pickle
 
 SIZE=10000
+OVERLAP=100
 
 
 def make_all(ksize):
@@ -35,7 +36,7 @@ def main():
         genome_n += 1
         for record in screed.open(genome):
             for start in range(0, len(record.sequence), SIZE):
-                outfp.write('>chunk{}\n{}\n.'.format(n, record.sequence[start:start+SIZE]))
+                outfp.write('>chunk{}\n{}\n.'.format(n, record.sequence[start:start + SIZE + OVERLAP]))
                 n += 1
 
 
