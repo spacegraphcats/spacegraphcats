@@ -2,6 +2,7 @@
 """
 Calculate the "taxonomic purity" of bins built by characterize_catlas_regions.
 """
+import sys
 import screed
 import argparse
 import sourmash_lib
@@ -30,6 +31,13 @@ def main():
     # load the LCA database
     dblist, ksize, scaled = lca_utils.load_databases([args.lca_db], None)
     db = dblist[0]
+
+    # double check scaled requirements
+    some_mh = next(iter(group_ident.values()))
+    mh_scaled = some_mh.scaled
+    if scaled >= mh_scaled:
+        print('** warning: many minhashes will go unclassified because LCA database scaled is {}'.format(scaled), file=sys.stderr)
+        print('** warning: the minhash scaled is {}'.format(mh_scaled), file=sys.stderr)
 
     n_empty = 0
     pure_at_rank = collections.defaultdict(int)
