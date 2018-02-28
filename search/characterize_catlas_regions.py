@@ -56,7 +56,7 @@ def main(args=sys.argv[1:]):
     p.add_argument('output')
     p.add_argument('--maxsize', type=float, default=10000)
     p.add_argument('--minsize', type=float, default=2000)
-    p.add_argument('--min-abund', type=float, default=2.1)
+    p.add_argument('--min-abund', type=float, default=0)
     p.add_argument('-k', '--ksize', default=5, type=int,
                    help='k-mer size for vectors')
     p.add_argument('--scaled', type=int, default=1000)
