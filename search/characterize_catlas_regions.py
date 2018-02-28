@@ -59,6 +59,7 @@ def main(args=sys.argv[1:]):
     p.add_argument('--min-abund', type=float, default=2.1)
     p.add_argument('-k', '--ksize', default=5, type=int,
                    help='k-mer size for vectors')
+    p.add_argument('--scaled', type=int, default=1000)
     args = p.parse_args(args)
 
     print('minsize: {:g}'.format(args.minsize))
@@ -119,7 +120,7 @@ def main(args=sys.argv[1:]):
     for n in nodes:
         group_info[n] = sourmash_lib.MinHash(n=0, ksize=args.ksize,
                                              scaled=1, track_abundance=1)
-        group_ident[n] = sourmash_lib.MinHash(n=0, ksize=31, scaled=1000)
+        group_ident[n] = sourmash_lib.MinHash(n=0, ksize=31, scaled=args.scaled)
 
     # aaaaaand iterate over contigs, collecting abundances from all contigs
     # in a group.
