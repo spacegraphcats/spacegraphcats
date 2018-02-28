@@ -33,7 +33,7 @@ def main():
     # double check scaled requirements
     some_mh = next(iter(group_ident.values()))
     mh_scaled = some_mh.scaled
-    if scaled >= mh_scaled:
+    if scaled > mh_scaled:
         print('** warning: many minhashes will go unclassified because LCA database scaled is {}'.format(scaled), file=sys.stderr)
         print('** warning: the minhash scaled is {}'.format(mh_scaled), file=sys.stderr)
 
