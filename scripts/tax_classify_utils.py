@@ -65,7 +65,7 @@ def summarize_taxonomic_purity(minhash_collections, lca_db, verbose=False):
                 assert 0, assignments
 
             # if we have a 100% pure bin, quit now.
-            if len(level_counter) == 1:
+            if top_count / total_hashes == 1.0:
                 pure_at_rank[rank] += 1
 
                 # print out the egregiously bad ones just to double check...
