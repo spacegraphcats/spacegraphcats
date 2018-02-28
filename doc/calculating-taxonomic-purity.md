@@ -46,3 +46,14 @@ Then:
 ```
 scripts/tax-classify.py twofoo.vec podar-ref.scaled100.lca.json
 ```
+
+## Running tax-classify-sigs on catlas search output
+
+You can run the same code as in `tax-classify.py` on signatures produced by `search.extract_nodes_by_query`, using a different front-end script:
+
+```
+scripts/tax-classify-sigs.py ./podarV_k31_r1_search_oh0_jan19/[012].fa.contigs.sig \
+    ~/dev/sourmash/podar-ref.1k.lca.json 
+```
+
+Here, the output is more detailed because we expect more of these bins to be low purity.
