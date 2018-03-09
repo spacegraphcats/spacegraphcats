@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 from copy import copy
+import heapq
 
 import sourmash_lib
 from sourmash_lib import MinHash, signature
@@ -78,7 +79,7 @@ def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, m
 
         if node_id in seen_nodes:
             return
-            
+
         seen_nodes.add(node_id)
 
         containment = node_containment(node_id)
@@ -110,3 +111,71 @@ def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, m
     print('search truncated at {}'.format(n_truncated))
 
     return frontier, num_leaves, num_empty, frontier_minhash
+
+
+def frontier_search(top_node_id,
+                    dag,
+                    node_kmer_sizes,
+                    node_query_kmers,
+                    max_overhead,
+                    min_containment):
+    # the initial frontier is just the root
+    root_match = node_query_kmers.get(top_node_id, 0)
+    root_total = node_kmer_sizes[top_node_id]
+    root_precision = root_match/root_total
+
+    # since python implements heaps as min-heaps but we want to prioritize the
+    # largest overheads, we store the precision (matches/total), since that is
+    # 1 - overhead
+    frontier = [(root_precision, root_match, root_total, top_node_id)]
+    f_match = root_match
+    f_total = root_total
+
+    # keep refining until we either get the frontier overhead low enough, the
+    # containment gets too low, or we run out of vertices
+    while frontier and\
+            1.0 - f_match/f_total > max_overhead and\
+            f_match/root_match > min_containment:
+        # remove worst overhead from the frontier
+        _, curr_match, curr_total, curr = heapq.heappop(frontier)
+        # update the quality metrics to reflect removal
+        f_total = f_total - curr_total
+        f_match = f_match - curr_match
+        # descend into children
+        for child in dag[curr]:
+            child_match = node_query_kmers.get(child, 0)
+            # if the child has no match, we don't want to include it
+            if child_match == 0:
+                continue
+
+            # compute the other metrics
+            child_total = node_kmer_sizes[child]
+            child_precision = child_match/child_total
+            f_total += child_total
+            f_match += child_match
+
+            # add to frontier
+            heapq.heappush(frontier,
+                           (child_precision, child_match, child_total, child))
+
+    if len(frontier) > 0:
+        frontier = list(zip(*frontier))[3]
+    return frontier, 0, 0, None
+
+
+def main(args):
+    pass
+
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser()
+    p.add_argument('catlas_prefix', help='catlas prefix')
+    p.add_argument('--overhead', help='\% of overhead', type=float,
+                   default=0.0)
+    p.add_argument('output')
+    p.add_argument('--query', help='query sequences', nargs='+')
+    p.add_argument('--no-empty', action='store_true')
+    p.add_argument('-k', '--ksize', default=31, type=int,
+                   help='k-mer size (default: 31)')
+    p.add_argument('--scaled', default=1000, type=float)
+    p.add_argument('-v', '--verbose', action='store_true')

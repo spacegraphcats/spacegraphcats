@@ -37,7 +37,7 @@ def main():
         print('** warning: many minhashes will go unclassified because LCA database scaled is {}'.format(scaled), file=sys.stderr)
         print('** warning: the minhash scaled is {}'.format(mh_scaled), file=sys.stderr)
 
-    summarize_taxonomic_purity(group_ident.values(), db)
+    summarize_taxonomic_purity(group_ident.values(), db, verbose=True)
 
 
 if __name__ == '__main__':
