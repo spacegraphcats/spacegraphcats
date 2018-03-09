@@ -89,9 +89,10 @@ def main(args=sys.argv[1:]):
 
     ### everything is loaded!
 
+    # find highest nodes with kmer size less than given max_size
     print('finding terminal nodes for {}.'.format(args.maxsize))
     nodes = partition_catlas(dag, top_node_id, node_kmer_sizes, args.maxsize)
-    
+
     nodes = { n for n in nodes if node_kmer_sizes[n] > args.minsize }
 
     print('{} nodes between {} and {} in k-mer size'.format(len(nodes), args.minsize, args.maxsize))
