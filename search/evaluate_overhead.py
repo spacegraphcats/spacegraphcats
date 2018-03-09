@@ -15,7 +15,6 @@ import screed
 
 from spacegraphcats.logging import log
 from . import search_utils
-from .frontier_search import load_minhash
 
 
 def main():
