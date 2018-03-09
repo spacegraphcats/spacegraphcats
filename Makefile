@@ -51,17 +51,7 @@ twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
 #
 
 dory-test: data/dory-subset.fa data/dory-head.fa
-	rm -fr dory
-	load-graph.py -k 21 -M 1e8 dory-subset.ng data/dory-subset.fa
-	python -m spacegraphcats.build_contracted_dbg -l dory-subset.ng data/dory-subset.fa -o dory
-	python -m spacegraphcats.catlas dory 1
-	python -m search.make_catlas_minhashes -k 21 --seed=43 --scaled=1000 dory
-	python -m search.extract_nodes_by_query dory dory-head --overhead 0.2 -k 21 --query data/dory-head.fa
-	sourmash compute -k 21 -f data/dory-head.fa --scaled=1000
-	sourmash compare dory-head/dory-head.fa.contigs.sig dory-head.fa.sig
-
-	#python -m search.make_bgzf data/dory-subset.fa
-	#python -m search.label_cdbg dory dory-subset.fa.bgz dory.labels -k 21
+	conf/run dory-test
 
 twofoo-test:
 	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa -k 31

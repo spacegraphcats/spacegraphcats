@@ -59,7 +59,9 @@ def main(args):
                                  dryrun=args.dry_run,
                                  lock=not args.nolock, config=config)
 
-    return status
+    if status: # translate "success" into shell exit code of 0
+       return 0
+    return 1
 
 
 if __name__ == '__main__':
