@@ -2,8 +2,8 @@ import pickle
 import collections
 import os
 import json
+import csv
 
-import leveldb
 import sqlite3
 
 import screed
@@ -13,6 +13,10 @@ from screed.screedRecord import Record
 from screed.utils import to_str
 
 from .bgzf.bgzf import BgzfReader
+
+import bbhash
+import numpy
+import pandas
 
 
 def load_layer1_to_cdbg(cdbg_to_catlas, domfile):
@@ -178,7 +182,7 @@ class CatlasDB(object):
             if node_id in seen_nodes:
                 return
             seen_nodes.add(node_id)
-            
+
             children_ids = self.get_children(node_id)
             if not len(children_ids):
                 shadow.add(node_id)
@@ -200,12 +204,6 @@ class CatlasDB(object):
                 cdbg_nodes.update(cdbg_id)
 
         return cdbg_nodes
-
-
-def load_minhash(node_id: int, minhash_db: leveldb.LevelDB) -> MinHash:
-    "Load an individual node's MinHash from the leveldb."
-    mh = minhash_db.load_mh(node_id)
-    return mh
 
 
 def calc_node_shadow_sizes(dag, dag_levels, layer1_to_cdbg):
@@ -239,50 +237,6 @@ def remove_empty_catlas_nodes(nodes, minhash_db):
     print('removed {} empty catlas nodes ({:.1f} s)'.format(len(nodes) - len(nonempty_frontier), time.time() - start))
 
     return nonempty_frontier
-
-
-def boost_frontier(frontier, frontier_mh, dag, dag_up, minhash_db, top_node_id):
-    """
-    Find an internal frontier that covers the given frontier with no add'l
-    overhead.
-    """
-    boosted_frontier = set()
-
-    for node in frontier:
-        while 1:
-            node_up = dag_up.get(node)
-            if not node_up:               # top!
-                assert node == top_node_id, node
-                break
-
-            assert len(node_up) == 1          # with minor construction
-            node_up = node_up.pop()
-
-            node_up_mh = load_minhash(node_up, minhash_db)
-            node_up_mh = node_up_mh.downsample_scaled(frontier_mh.scaled)
-            if node_up_mh.contained_by(frontier_mh) < 1.0:
-                break
-
-            node = node_up
-
-        # try one more...
-        node_up = dag_up[node]
-        if node_up:
-            node_up = node_up.pop()
-            if node_up != top_node_id:
-                node_up_mh = load_minhash(node_up, minhash_db)
-                node_up_mh = node_up_mh.downsample_scaled(frontier_mh.scaled)
-                print('FOO!!', node_up_mh.contained_by(frontier_mh))
-                if node_up_mh.contained_by(frontier_mh) > 0.8:
-                    node = node_up
-            else:
-                print('next node up is top!')
-        else:
-            print('WTF?', node, node_up, top_node_id)
-
-        boosted_frontier.add(node)
-
-    return boosted_frontier
 
 
 def sqlite_get_max_offset(cursor):
@@ -472,135 +426,230 @@ def get_reads_by_cdbg(sqlite_filename, reads_filename, cdbg_ids):
         yield record, offset_f
 
 
-class MinhashSqlDB(object):
-    def __init__(self, filename):
-        self.dbfilename = filename
-        self.db = sqlite3.connect(self.dbfilename)
-        self.cursor = self.db.cursor()
-        self.cursor.execute('PRAGMA cache_size=1000000')
-        self.cursor.execute('PRAGMA synchronous = OFF')
-        self.cursor.execute('PRAGMA journal_mode = MEMORY')
-        self.cursor.execute('BEGIN TRANSACTION')
+### MPHF stuff
 
-    def create(self):
-        self.cursor.execute('CREATE TABLE minhashes (catlas_node_id INTEGER PRIMARY KEY, mh_pickle BLOB)')
+class MPHF_KmerIndex(object):
+    "Support kmer -> cDBG node id queries enabled by search.contigs_by_kmer."
+    def __init__(self, mphf, mphf_to_kmer, mphf_to_cdbg_id, cdbg_sizes):
+        self.mphf = mphf
+        self.mphf_to_kmer = mphf_to_kmer
+        self.mphf_to_cdbg_id = mphf_to_cdbg_id
+        self.cdbg_sizes = cdbg_sizes
 
-    def commit(self):
-        self.db.commit()
+    def get_cdbg_size(self, cdbg_id):
+        return self.cdbg_sizes[cdbg_id]
 
-    def save_mh(self, catlas_id, mh):
-        pdata = pickle.dumps(mh)
-        self.cursor.execute('INSERT INTO minhashes (catlas_node_id, mh_pickle) VALUES (?, ?)', (catlas_id, sqlite3.Binary(pdata)))
-
-    def load_mh(self, catlas_id):
-        self.cursor.execute('SELECT mh_pickle FROM minhashes WHERE catlas_node_id=? LIMIT 1', (catlas_id,))
-        results = list(self.cursor)
-        if results:
-            pdata = results[0][0]
-            mh = pickle.loads(pdata)
-            return mh
+    def get_cdbg_id(self, kmer_hash):
+        mphf_hash = self.mphf.lookup(kmer_hash)
+        if mphf_hash is None:
+            return None
+        elif self.mphf_to_kmer[mphf_hash] == kmer_hash:
+            cdbg_id = self.mphf_to_cdbg_id[mphf_hash]
+            return cdbg_id
         return None
 
+    def build_catlas_node_sizes(self, dag, dag_levels, layer1_to_cdbg):
+        x = []
+        for (node_id, level) in dag_levels.items():
+            x.append((level, node_id))
+        x.sort()
 
-def get_minhashdb_name(catlas_prefix, ksize, scaled, track_abundance, seed,
-                       must_exist=True):
-    """
-    Construct / return the name of the minhash db given the parameters.
-    """
-    track_abundance = bool(track_abundance)
+        node_kmer_sizes = {}
+        for level, node_id in x:
+            if level == 1:
+                total_kmers = 0
+                for cdbg_node in layer1_to_cdbg.get(node_id):
+                    total_kmers += self.get_cdbg_size(cdbg_node)
 
-    # first, check if it's in minhashes_info.json
-    if must_exist:
-        infopath = os.path.join(catlas_prefix, 'minhashes_info.json')
-        if not os.path.exists(infopath):
-            return None
+                node_kmer_sizes[node_id] = total_kmers
+            else:
+                sub_size = 0
+                for child_id in dag[node_id]:
+                    sub_size += node_kmer_sizes[child_id]
+                node_kmer_sizes[node_id] = sub_size
 
-        info = []
-        with open(infopath, 'rt') as fp:
-            info = json.loads(fp.read())
+        return node_kmer_sizes
 
-        matches = []
-        for d in info:
-            if d['ksize'] == ksize and d['seed'] == seed and \
-              d['track_abundance'] == track_abundance:
-                matches.append(d['scaled'])
+    def get_match_counts(self, query_kmers):
+        "Return a dictionary containing cdbg_id -> # of matches in query_kmers"
+        match_counts = {}
+        n_matched = 0
+        for n, hashval in enumerate(query_kmers):
+            if n % 1000000 == 0:
+                print('matching ...', n, end='\r')
 
-        if not matches:
-            return None
+            cdbg_id = self.get_cdbg_id(hashval)
+            if cdbg_id is not None:
+                match_counts[cdbg_id] = match_counts.get(cdbg_id, 0) + 1
+                n_matched += 1
 
-        matches.sort(reverse=True)
-        found = False
-        for db_scaled in matches:
-            if not scaled or db_scaled <= scaled:
-                 found = True
-                 scaled = db_scaled
-                 break
+        print('... found {} matches to {} k-mers total.'.format(n_matched,
+                                                                n + 1))
 
-        if not found:
-            return None
+        return match_counts
 
-    # ok, now create name.
-    is_abund = 0
-    if track_abundance:
-        is_abund = 1
+    def build_catlas_match_counts(self, match_counts, dag, dag_levels, layer1_to_cdbg):
+        x = []
+        for (node_id, level) in dag_levels.items():
+            x.append((level, node_id))
+        x.sort()
 
-    name = 'minhashes.db.k{}.s{}.abund{}.seed{}'
-    name = name.format(ksize, scaled, is_abund, seed)
-    path = os.path.join(catlas_prefix, name)
+        node_match_counts = {}
+        total_kmers_in_query_nodes = 0.
+        for level, node_id in x:
+            if level == 1:
+                query_kmers = 0
+                all_kmers_in_node = 0
+                for cdbg_node in layer1_to_cdbg.get(node_id):
+                    query_kmers += match_counts.get(cdbg_node, 0)
+                    all_kmers_in_node += self.get_cdbg_size(cdbg_node)
 
-    if must_exist and not os.path.exists(path):
-        return None
+                if query_kmers:
+                    node_match_counts[node_id] = query_kmers
+                    total_kmers_in_query_nodes += all_kmers_in_node
 
-    return path
+                    assert all_kmers_in_node >= query_kmers
 
+            else:
+                sub_size = 0
+                for child_id in dag[node_id]:
+                    sub_size += node_match_counts.get(child_id, 0)
 
-def update_minhash_info(catlas_prefix, ksize, scaled, track_abundance, seed):
-    """
-    Update minhashes_info with new db info.
-    """
-    infopath = os.path.join(catlas_prefix, 'minhashes_info.json')
-    info = []
-    if os.path.exists(infopath):
-        with open(infopath, 'rt') as fp:
-            info = json.loads(fp.read())
+                if sub_size:
+                    node_match_counts[node_id] = sub_size
 
-    this_info = dict(ksize=ksize, scaled=scaled,
-                     track_abundance=track_abundance, seed=seed)
-    if this_info not in info:
-        info.append(this_info)
-
-        with open(infopath, 'wt') as fp:
-            fp.write(json.dumps(info))
-
-
-def build_queries_for_seeds(seeds, ksize, scaled, query_seq_file):
-    seed_mh_list = []
-
-    for seed in seeds:
-        mh = MinHash(0, ksize, scaled=scaled, seed=seed)
-        seed_mh_list.append(mh)
-
-    name = None
-    for record in screed.open(query_seq_file):
-        if not name:
-            name = record.name
-        for seed_mh in seed_mh_list:
-            seed_mh.add_sequence(record.sequence, True)
-
-    seed_queries = [sourmash_lib.SourmashSignature(seed_mh, name=name) for \
-                        seed_mh in seed_mh_list]
-    return seed_queries
+        return node_match_counts
 
 
-def parse_seeds_arg(seeds_str):
-    seeds = []
-    seeds_str = seeds_str.split(',')
-    for seed in seeds_str:
-        if '-' in seed:
-            (start, end) = seed.split('-')
-            for s in range(int(start), int(end) + 1):
-                seeds.append(s)
+def load_kmer_index(catlas_prefix):
+    "Load kmer index created by search.contigs_by_kmer."
+    mphf_filename = os.path.join(catlas_prefix, 'contigs.fa.gz.mphf')
+    array_filename = os.path.join(catlas_prefix, 'contigs.fa.gz.indices')
+    mphf = bbhash.load_mphf(mphf_filename)
+    with open(array_filename, 'rb') as fp:
+        np_dict = numpy.load(fp)
+
+        mphf_to_kmer = np_dict['mphf_to_kmer']
+        mphf_to_cdbg = np_dict['kmer_to_cdbg']
+        cdbg_sizes = np_dict['sizes']
+
+    return MPHF_KmerIndex(mphf, mphf_to_kmer, mphf_to_cdbg, cdbg_sizes)
+
+
+def load_cdbg_size_info(catlas_prefix, min_abund=0.0):
+    filename = os.path.join(catlas_prefix, 'contigs.fa.gz.info.csv')
+    with open(filename, 'rt') as fp:
+        cdbg_kmer_sizes = {}
+        cdbg_weighted_kmer_sizes = {}
+        r = csv.DictReader(fp)
+        for row in r:
+            contig_id = int(row['contig_id'])
+            n_kmers = int(row['n_kmers'])
+            mean_abund = float(row['mean_abund'])
+            if not min_abund or mean_abund >= min_abund:
+                cdbg_kmer_sizes[contig_id] = n_kmers
+                cdbg_weighted_kmer_sizes[contig_id] = mean_abund*n_kmers
+
+    return cdbg_kmer_sizes, cdbg_weighted_kmer_sizes
+
+
+def decorate_catlas_with_shadow_sizes(layer1_to_cdbg, dag, dag_levels):
+    x = []
+    for (node_id, level) in dag_levels.items():
+        x.append((level, node_id))
+    x.sort()
+
+    node_shadow_sizes = {}
+    for level, node_id in x:
+        if level == 1:
+            node_shadow_sizes[node_id] = len(layer1_to_cdbg[node_id])
         else:
-            seeds.append(int(seed))
+            sub_size = 0
+            for child_id in dag[node_id]:
+                sub_size += node_shadow_sizes[child_id]
+            node_shadow_sizes[node_id] = sub_size
 
-    return seeds
+    return node_shadow_sizes
+
+
+def decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes):
+    x = []
+    for (node_id, level) in dag_levels.items():
+        x.append((level, node_id))
+    x.sort()
+
+    node_kmer_sizes = {}
+    node_weighted_kmer_sizes = {}
+    for level, node_id in x:
+        if level == 1:                    # aggregate across cDBG nodes
+            total_kmers = 0
+            total_weighted_kmers = 0
+            for cdbg_node in layer1_to_cdbg.get(node_id):
+                total_kmers += cdbg_kmer_sizes.get(cdbg_node, 0)
+                total_weighted_kmers += cdbg_weighted_kmer_sizes.get(cdbg_node, 0)
+
+            node_kmer_sizes[node_id] = total_kmers
+            node_weighted_kmer_sizes[node_id] = total_weighted_kmers
+        else:                             # aggregate across children
+            sub_size = 0
+            sub_weighted_size = 0
+            for child_id in dag[node_id]:
+                sub_size += node_kmer_sizes[child_id]
+                sub_weighted_size += node_weighted_kmer_sizes[child_id]
+            node_kmer_sizes[node_id] = sub_size
+            node_weighted_kmer_sizes[node_id] = sub_weighted_size
+
+    return node_kmer_sizes, node_weighted_kmer_sizes
+
+
+def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
+    curve = []
+
+    # track total containment
+    total = 0
+
+    # walk over all layer1 nodes
+    for node_id, cdbg_nodes in layer1_to_cdbg.items():
+        n_matches = 0
+        n_kmers = 0
+
+        # aggregate counts across cDBG nodes under this layer1 node.
+        for cdbg_node in cdbg_nodes:
+            n_matches += match_counts.get(cdbg_node, 0)
+            n_kmers += kmer_idx.get_cdbg_size(cdbg_node)
+
+        # do we keep this layer1 node, i.e. does it have positive containment?
+        if n_matches:
+            n_cont = n_matches
+            n_oh = (n_kmers - n_matches)
+
+            total += n_cont
+            curve.append((n_cont, n_oh, node_id))
+
+    # sort by absolute containment
+    curve.sort(reverse=True)
+
+    # track total containment etc
+    sofar = 0
+    total_oh = 0
+    total_cont = 0
+
+    # @CTB: remove redundant sum_cont fields
+    # @CTB: switch to CSV output
+    # @CTB: ask Mike what he wants here :)
+
+    with open(outname, 'wt') as fp:
+        fp.write('sum_cont relative_cont relative_overhead sum_cont2 sum_oh catlas_id\n')
+
+        # only output ~200 points
+        sampling_rate = max(int(len(curve) / 200), 1)
+
+        # do the output thing
+        for pos, (n_cont, n_oh, node_id) in enumerate(curve):
+            sofar += n_cont
+            total_oh += n_oh
+            total_cont += n_cont
+
+            # output first and last points, as well as at sampling rate.
+            if pos % sampling_rate == 0 or pos == 0 or pos+1 == len(curve):
+                fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))

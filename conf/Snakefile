@@ -1,0 +1,190 @@
+#
+# Snakemake configuration file for running spacegraphcats pipelines.
+#
+# see script 'run' in this directory for a convenient entry point.
+#
+# Quickstart: `snakeconf/run snakeconf/dory-test.json searchquick`
+#
+
+## pull values in from config file:
+
+# name of catlas
+catlas_base = config['catlas_base']
+
+# sequence files to use when building catlas
+input_sequences = config['input_sequences']
+
+# k-mer size to use for everything
+ksize = config['ksize']
+
+# radius for catlas building
+radius = config['radius']
+
+# search overhead
+overhead = config.get('overhead', 0.0)
+
+# suffix to add to search output
+experiment = config.get('experiment', '')
+search_out_suffix = ''
+if experiment:
+    search_out_suffix = '_' + experiment
+
+### build some variables for internal use
+
+catlas_dir = '{}_k{}_r{}'.format(catlas_base, ksize, radius)
+search_dir = '{}_k{}_r{}_search_oh{}{}'.format(catlas_base, ksize, radius, int(overhead*100), search_out_suffix)
+
+# internal definitions for convenience:
+python=sys.executable  # define as the version of Python running snakemake
+
+onsuccess:
+    import os
+    print('\n-------- DONE --------\n')
+    if os.path.exists(catlas_dir):
+        print('catlas output directory: {}'.format(catlas_dir))
+        if os.path.exists(search_dir):
+            print('search output directory: {}'.format(search_dir))
+        print('')
+
+
+###############################################################################
+
+### rules!
+
+# build catlas needed for search
+rule build:
+    input:
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.mphf", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.indices", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.info.csv", catlas_dir=catlas_dir),
+
+rule clean:
+    shell:
+        "rm -fr {catlas_dir} {search_dir}"
+
+# build cDBG using bcalm
+rule bcalm_cdbg:
+     input:
+        "bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+     output:
+        "{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa"
+     shell:
+        "bcalm -in bcalm.{catlas_base}.k{ksize}.inputlist.txt -out {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt"
+
+# create list of input files for bcalm
+rule bcalm_cdbg_inpfiles:
+     input:
+        input_sequences
+     output:
+        "bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+     run:
+        with open("bcalm.{catlas_base}.k{ksize}.inputlist.txt".format(catlas_base=catlas_base, ksize=ksize), 'wt') as fp:
+            for name in input_sequences:
+                fp.write('{}\n'.format(name))
+
+# build catlas input from bcalm output by reformatting
+rule bcalm_catlas_input:
+     input:
+        expand("{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa", ksize=ksize, catlas_base=catlas_base)
+     output:
+        "{catlas_dir}/cdbg.gxt",
+        "{catlas_dir}/contigs.fa.gz",
+        "{catlas_dir}/contigs.fa.gz.info.csv"
+     shell:
+        "{python} -m search.bcalm_to_gxt -k {ksize} {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
+
+#print(expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir))
+
+rule label_reads:
+     input:
+        expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir)
+
+# label the reads by contig
+rule label_reads_action:
+     input:
+        "{catlas_dir}/reads.fq.bgz"
+     output:
+        "{catlas_dir}/reads.fq.bgz.labels"
+     shell:
+        "{python} -m search.label_cdbg {catlas_dir} {input} {output}"
+
+
+# build catlas!
+rule build_catlas:
+     input:
+        "{catlas_dir}/cdbg.gxt",
+        "{catlas_dir}/contigs.fa.gz",
+     output:
+        "{catlas_dir}/first_doms.txt",
+        "{catlas_dir}/catlas.csv"
+     shell:
+        "{python} -m spacegraphcats.catlas --no_checkpoint {catlas_dir} {radius}"
+
+# index contigs, count node sizes
+rule make_contigs_kmer_index:
+     input:
+        "{catlas_dir}/contigs.fa.gz"
+     output:
+        "{catlas_dir}/contigs.fa.gz.mphf",
+        "{catlas_dir}/contigs.fa.gz.indices"
+     shell:
+        "{python} -m search.index_contigs_by_kmer -k {ksize} {catlas_dir}"
+
+### Search rules.
+
+def make_query_base(searchfiles, suffix=''):
+    x = []
+    for filename in searchfiles:
+        x.append("{}{}/{}.contigs.sig".format(search_dir, suffix, os.path.basename(filename)))
+        x.append("{}{}/{}.cdbg_ids.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
+        x.append("{}{}/{}.frontier.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
+    return x
+
+# do a quick search!
+rule searchquick:
+    input:
+        config['searchquick'],
+        expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.mphf", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.indices", catlas_dir=catlas_dir)
+    output:
+        expand("{search_dir}/results.csv", search_dir=search_dir),
+        make_query_base(config['searchquick']),
+    shell:
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} -k {ksize} --overhead={overhead}"
+
+
+# do a full search!
+rule search:
+    input:
+        config['search'],
+        expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.mphf", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/contigs.fa.gz.indices", catlas_dir=catlas_dir)
+    output:
+        expand("{search_dir}/results.csv", search_dir=search_dir),
+        make_query_base(config['search']),
+    shell:
+        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[search]} -k {ksize} --overhead={overhead}"
+
+ruleorder: search > searchquick
+
+### shadow ratio stuff
+
+rule shadow_ratio:
+    input:
+        expand("{catlas_dir}.shadow.{maxsize}.fa",
+               catlas_dir=catlas_dir,
+               maxsize=config.get('shadow_ratio_maxsize', 1000))
+
+rule extract_by_shadow_ratio_rule:
+    input:
+        expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+    output:
+        "{catlas_dir}.shadow.{shadow_ratio_maxsize}.fa"
+    shell:
+        "{python} -m search.extract_nodes_by_shadow_ratio --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}"

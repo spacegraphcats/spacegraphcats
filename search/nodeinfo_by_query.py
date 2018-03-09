@@ -9,7 +9,8 @@ import sys
 import collections
 import math
 import sourmash_lib
-import pandas
+import khmer
+import csv
 
 import screed
 from . import search_utils
@@ -19,12 +20,12 @@ from .frontier_search import find_shadow
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
+    p.add_argument('query')
     p.add_argument('output')
     p.add_argument('--minsize', type=float, default=100)
     p.add_argument('--maxsize', type=float, default=10000)
-    p.add_argument('--keep-fraction', type=float, default=0.1)
     p.add_argument('-k', '--ksize', default=31, type=int,
-                        help='k-mer size (default: 31)')
+                   help='k-mer size (default: 31)')
     args = p.parse_args(args)
 
     print('minsize: {:g}'.format(args.minsize))
@@ -54,13 +55,43 @@ def main(args=sys.argv[1:]):
     print('decorating catlas with contig size info.')
     node_kmer_sizes, node_weighted_kmer_sizes = search_utils.decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes)
 
+    # load k-mer index, query, etc. etc.
+    kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
+
+    bf = khmer.Nodetable(args.ksize, 1, 1)
+
+    query_kmers = set()
+    for record in screed.open(args.query):
+        query_kmers.update(bf.get_kmer_hashes(record.sequence))
+
+    print('got {}'.format(len(query_kmers)))
+
+    # construct dict cdbg_id -> # of query k-mers
+    cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
+
+    total_match_kmers = sum(cdbg_match_counts.values())
+    f_found = total_match_kmers / len(query_kmers)
+    print('=> containment: {:.1f}%'.format(f_found * 100))
+    print('done loading & counting query k-mers in cDBG.')
+
+    total_kmers_in_cdbg_matches = 0
+    for cdbg_id in set(cdbg_match_counts.keys()):
+        total_kmers_in_cdbg_matches += kmer_idx.get_cdbg_size(cdbg_id)
+
+    cdbg_sim = total_match_kmers / total_kmers_in_cdbg_matches
+    print('cdbg match node similarity: {:.1f}%'.format(cdbg_sim * 100))
+    cdbg_min_overhead = (total_kmers_in_cdbg_matches - total_match_kmers) / total_match_kmers
+    print('min cdbg overhead: {}'.format(cdbg_min_overhead))
+
+    # calculate the cDBG matching k-mers sizes for each catlas node.
+    catlas_match_counts = kmer_idx.build_catlas_match_counts(cdbg_match_counts, dag, dag_levels, layer1_to_cdbg)
+
     ### ok, the real work: look at articulation of cDBG graph.
 
     # find highest nodes with kmer size less than given max_size
     def find_terminal_nodes(node_id, max_size):
         node_list = set()
         for sub_id in dag[node_id]:
-            # shadow size
             size = node_kmer_sizes[sub_id]
 
             if size < max_size:
@@ -80,85 +111,16 @@ def main(args=sys.argv[1:]):
                                                             args.minsize,
                                                             args.maxsize))
 
-    # now, go through and calculate ratios
-    x = []
-    for node_id in terminal:
-        # calculate: how many k-mers per cDBG node?
-        kmer_size = node_kmer_sizes[node_id]
-        shadow_size = node_shadow_sizes[node_id]
+    # now, go through all nodes and print out characteristics
+    with open(args.output, 'wt') as fp:
+        w = csv.writer(fp)
 
-        ratio = math.log(kmer_size, 2) - math.log(shadow_size, 2)
-
-        # track basic info
-        x.append((ratio, node_id, shadow_size, kmer_size))
-
-    print('terminal node stats for maxsize: {:g}'.format(args.maxsize))
-    print('n tnodes:', len(terminal))
-    print('total k-mers:', node_kmer_sizes[top_node_id])
-
-    x.sort(reverse=True)
-    for (k, v, a, b) in x[:10]:
-        print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b)
-    print('... eliding {} nodes'.format(len(x) - 20))
-    for (k, v, a, b) in x[-10:]:
-        print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b)
-
-    # keep the last keep-fraction (default 10%) for examination
-    keep_sum_kmer = args.keep_fraction * node_kmer_sizes[top_node_id]
-    sofar = 0
-    keep_terminal = set()
-    for (k, v, a, b) in reversed(x):
-        sofar += b
-        if sofar > keep_sum_kmer:
-            break
-        keep_terminal.add(v)
-
-    print('keeping last {} k-mers worth of nodes for examination.'.format(sofar))
-
-    # build cDBG shadow ID list.
-    cdbg_shadow = set()
-    terminal_shadow = find_shadow(keep_terminal, dag)
-    for x in terminal_shadow:
-        cdbg_shadow.update(layer1_to_cdbg.get(x))
-
-    #### extract contigs
-    print('extracting contigs & building a sourmash signature')
-    contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
-
-    # track results as signature
-    contigs_mh = sourmash_lib.MinHash(n=0, ksize=args.ksize, scaled=1000)
-
-    total_bp = 0
-    total_seqs = 0
-
-    outfp = open(args.output, 'wt')
-    for n, record in enumerate(screed.open(contigs)):
-        if n and n % 10000 == 0:
-            offset_f = total_seqs / len(cdbg_shadow)
-            print('...at n {} ({:.1f}% of shadow)'.format(total_seqs,
-                  offset_f * 100),
-                  end='\r')
-
-        # contig names == cDBG IDs
-        contig_id = int(record.name)
-        if contig_id not in cdbg_shadow:
-            continue
-
-        outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
-        contigs_mh.add_sequence(record.sequence)
-
-        # track retrieved sequences in a minhash
-        total_bp += len(record.sequence)
-        total_seqs += 1
-
-    # done - got all contigs!
-    print('')
-    print('fetched {} contigs, {} bp.'.format(total_seqs, total_bp))
-
-    print('wrote contigs to {}'.format(args.output))
-    with open(args.output + '.sig', 'wt') as fp:
-        ss = sourmash_lib.SourmashSignature(contigs_mh)
-        sourmash_lib.save_signatures([ss], fp)
+        w.writerow(['node_id', 'contained', 'n_kmers', 'n_weighted_kmers', 'shadow_size'])
+        for n in terminal:
+            f_contained = catlas_match_counts.get(n, 0) / node_kmer_sizes[n]
+            w.writerow([str(n), str(f_contained), str(node_kmer_sizes[n]),
+                        str(node_weighted_kmer_sizes[n]),
+                        str(node_shadow_sizes[n])])
 
 
 if __name__ == '__main__':

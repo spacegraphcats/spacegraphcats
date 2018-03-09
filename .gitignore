@@ -9,6 +9,15 @@ objectdb
 acido
 15genome
 tr-cross
+podar*
+dory*
+twofoo*
+data/SSR606249*
+data/hu
+data/mircea*
+data/tr-cross*
+aai*
+SRR*
 build/
 dist/
 spacegraphcats.egg-info/
@@ -17,3 +26,11 @@ spacegraphcats.egg-info/
 .mypy_cache/
 *.bgz
 *.sig
+.snakemake
+aws_setup.sh
+bcalm*
+*.gz
+*.vec
+*.vec.*
+*.tar
+strain_results
