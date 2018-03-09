@@ -16,15 +16,12 @@ import gzip
 import screed
 
 import sourmash_lib
-from sourmash_lib import MinHash
 from sourmash_lib.sourmash_args import load_query_signature
 
-from .search_utils import (get_minhashdb_name, get_reads_by_cdbg,
-                           build_queries_for_seeds, MinhashSqlDB)
+from .search_utils import get_reads_by_cdbg
+
 from spacegraphcats.logging import log
-from search.frontier_search import (frontier_search, compute_overhead, find_shadow)
 from . import search_utils
-from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
 
 
 def main():

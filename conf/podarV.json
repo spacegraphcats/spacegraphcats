@@ -1,0 +1,10 @@
+{
+    "catlas_base": "podarV",
+    "input_sequences": ["SRR606249.k31.abundtrim.fq.gz"],
+    "ksize": 31,
+    "radius": 1,
+
+    "searchquick": ["data/2.fa.gz"],
+
+    "search": ["podar-ref/0.fa", "podar-ref/1.fa", "podar-ref/10.fa", "podar-ref/11.fa", "podar-ref/12.fa", "podar-ref/13.fa", "podar-ref/14.fa", "podar-ref/15.fa", "podar-ref/16.fa", "podar-ref/17.fa", "podar-ref/18.fa", "podar-ref/19.fa", "podar-ref/2.fa", "podar-ref/20.fa", "podar-ref/21.fa", "podar-ref/22.fa", "podar-ref/23.fa", "podar-ref/24.fa", "podar-ref/25.fa", "podar-ref/26.fa", "podar-ref/27.fa", "podar-ref/28.fa", "podar-ref/29.fa", "podar-ref/3.fa", "podar-ref/30.fa", "podar-ref/31.fa", "podar-ref/32.fa", "podar-ref/33.fa", "podar-ref/34.fa", "podar-ref/35.fa", "podar-ref/36.fa", "podar-ref/37.fa", "podar-ref/38.fa", "podar-ref/39.fa", "podar-ref/4.fa", "podar-ref/40.fa", "podar-ref/41.fa", "podar-ref/42.fa", "podar-ref/43.fa", "podar-ref/44.fa", "podar-ref/45.fa", "podar-ref/46.fa", "podar-ref/47.fa", "podar-ref/48.fa", "podar-ref/49.fa", "podar-ref/5.fa", "podar-ref/50.fa", "podar-ref/51.fa", "podar-ref/52.fa", "podar-ref/53.fa", "podar-ref/54.fa", "podar-ref/55.fa", "podar-ref/56.fa", "podar-ref/57.fa", "podar-ref/58.fa", "podar-ref/59.fa", "podar-ref/6.fa", "podar-ref/60.fa", "podar-ref/61.fa", "podar-ref/62.fa", "podar-ref/63.fa", "podar-ref/7.fa", "podar-ref/8.fa", "podar-ref/9.fa"]
+}

@@ -4,8 +4,7 @@ import os
 import sys
 import leveldb
 
-from .search_utils import (load_dag, load_layer1_to_cdbg, load_minhash)
-from .search_utils import get_minhashdb_name, MinhashSqlDB
+from .search_utils import (load_dag, load_layer1_to_cdbg)
 from .frontier_search import find_shadow
 
 
@@ -34,31 +33,7 @@ def main():
     total_cdbg_count = len(x)
     print('{} layer 1 catlas nodes, corresponding to {} cDBG nodes.'.format(len(layer1_to_cdbg), len(x)))
 
-    db_path = get_minhashdb_name(args.catlas_prefix, args.ksize, 0, 0, 43)
-    if not db_path:
-        print('** ERROR, minhash DB does not exist for {}'.format(ksize),
-              file=sys.stderr)
-        sys.exit(-1)
-    minhash_db = MinhashSqlDB(db_path)
-
-    top_mh = load_minhash(top_node_id, minhash_db)
-    print('top node minhash has {} mins, k={} scaled={}'.format(len(top_mh.get_mins()), top_mh.ksize, top_mh.scaled))
-    print(' => ~{:g} {}-mers total.'.format(len(top_mh.get_mins()) * top_mh.scaled, top_mh.ksize))
-
-    num_empty = 0
-    total_shadow = set()
-    for child_node in dag[top_node_id]:
-        mh = load_minhash(child_node, minhash_db)
-        if not mh or not mh.get_mins():
-            num_empty += 1
-            total_shadow.update(find_shadow([child_node], dag))
-
-    cdbg_shadow = set()
-    for x in total_shadow:
-        cdbg_shadow.update(layer1_to_cdbg.get(x))
-
-    print('{} empty child nodes (of {}) beneath top node'.format(num_empty, len(dag[top_node_id])))
-    print('Total cDBG shadow size under these empty nodes: {} of {} ({:.1f}%)'.format(len(cdbg_shadow), total_cdbg_count, len(cdbg_shadow) / total_cdbg_count*100))
+    # @CTB: could put size distribution of those nodes here...?
 
 
 if __name__ == '__main__':
