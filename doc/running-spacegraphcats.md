@@ -2,6 +2,24 @@
 
 ## Installing the spacegraphcats software and its dependencies
 
+### If starting on a blank Ubuntu machine
+
+e.g. on AWS, ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20180126 (ami-79873901), you'll need to make sure you have Python 3, a dev environment, and other stuff:
+
+```
+sudo apt-get update
+sudo apt-get -y install python3 python3-dev zlib1g-dev g++ \
+    python3-venv make cmake
+```
+
+and then do
+
+```
+python3 -m venv catsenv
+```
+
+instead of the first command below.
+
 ### First, clone repo and configure/install requirements
 
 Change to a working directory, and create a virtualenv; you'll need Python 3.5 or up.
@@ -205,3 +223,63 @@ The `run` script has several targets, in addition to `search` and `searchquick`.
 * `conf/run twofoo clean` should remove the build targets.
 
 You can also specify `--radius <n>` to override the radius defined in the JSON config file; `--overhead <fraction>` to specify an overhead for searches; and `--experiment foo` to append a `_foo` to the search directory.)
+
+Last, but not least: snakemake locks the directory to make sure processes don't step on each other. This is important when catlases need to be built (you don't want two different `search` commands stepping on each other during the catlas building phase) but once you have built catlases you can do searches in parallel.  To enable this add `--nolock` to the run command. 
+
+## Characterizing the catlas
+
+### Extracting high articulated bits of the cDBG
+
+First, build the twofoo data set with r5:
+
+```
+conf/run twofoo build --radius=5
+```
+
+Then, extract nodes with many cDBG nodes and few k-mers (by ratio):
+
+```
+python -m search.extract_nodes_by_shadow_ratio twofoo_k31_r5 zzz.fq
+```
+
+Now, look at the content of the extracted nodes -- the presence of the Akkermansia genome is essentially nil,
+because there is no strain variation in this part of the graph / the assembly is quite good:
+
+```
+sourmash search --containment zzz.fq.sig data/2-akker.sig --threshold=0
+```
+
+should yield
+```
+similarity   match
+----------   -----
+  0.2%       CP001071.1 Akkermansia muciniphila ATCC BAA-835, complete...
+```
+
+while the two Shewanella genomes interfere with each other, creating a highly articulated cDBG that leads to poor assembly.  Thus the command above extracts the Shewanella bits of the catlas preferentially; so
+
+```
+sourmash search --containment zzz.fq.sig data/47-os185.sig --threshold=0
+```
+
+should yield
+
+```
+similarity   match
+----------   -----
+ 54.1%       NC_009665.1 Shewanella baltica OS185, complete genome
+```
+
+and
+
+```
+sourmash search --containment zzz.fq.sig data/63-os223.sig --threshold=0
+```
+
+should yield
+
+```
+similarity   match
+----------   -----
+ 59.1%       NC_011663.1 Shewanella baltica OS223, complete genome
+```
