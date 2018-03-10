@@ -13,14 +13,14 @@ import argparse
 from search.bgzf import bgzf
 
 
-def main():
+def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('bcalm_unitigs')
     parser.add_argument('gxt_out')
     parser.add_argument('contigs_out')
     parser.add_argument('-k', '--ksize', type=int, default=31)
     parser.add_argument('-d', '--debug', action='store_true')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     ksize = args.ksize
 
@@ -109,4 +109,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
