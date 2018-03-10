@@ -8,12 +8,12 @@ from .search_utils import (load_dag, load_layer1_to_cdbg)
 from .frontier_search import find_shadow
 
 
-def main():
+def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix')
     p.add_argument('-k', '--ksize', default=21, type=int,
                    help='list of k-mer sizes (default: 31)')
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     basename = os.path.basename(args.catlas_prefix)
     catlas = os.path.join(args.catlas_prefix, 'catlas.csv')

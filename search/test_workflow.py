@@ -6,6 +6,9 @@ import screed
 from spacegraphcats import catlas
 import search.index_contigs_by_kmer
 import search.extract_nodes_by_query
+import search.characterize_catlas_regions
+import search.extract_unassembled_nodes
+import search.catlas_info
 import sourmash_lib
 
 
@@ -94,3 +97,14 @@ def test_dory():
 
             last_line = lines[-1].strip()
             assert last_line == 'data/dory-head.fa,1.0,1.0,1671,2,21,1631,1.0,0.0,0.0'
+
+        # run characterize_catlas_regions
+        args = 'dory_k21_r1 dory_k1_r1.vec'.split()
+        search.characterize_catlas_regions.main(args)
+
+        # run extract_unassembled_regions
+        args = 'dory_k21_r1 data/dory-head.fa dory.regions -k 21'.split()
+        search.extract_unassembled_nodes.main(args)
+
+        # run catlas info
+        search.catlas_info.main(['dory_k21_r1'])
