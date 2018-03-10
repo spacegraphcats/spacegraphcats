@@ -2,10 +2,8 @@
 import argparse
 import os
 import sys
-import leveldb
 
 from .search_utils import (load_dag, load_layer1_to_cdbg)
-from .frontier_search import find_shadow
 
 
 def main(argv=sys.argv[1:]):
