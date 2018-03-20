@@ -153,6 +153,8 @@ def main(args=sys.argv[1:]):
     V = numpy.zeros((len(group_info), 4**args.ksize), dtype=numpy.uint16)
     node_id_to_group_idx = {}
     for i, n in enumerate(group_info):
+        if i % 1000 == 0:
+            print('...', i, len(group_info))
         mh = group_info[n]
         vec = dict(mh.get_mins(with_abundance=True))
         vec = [ vec.get(hashval, 0) for hashval in all_kmer_hashes ]
