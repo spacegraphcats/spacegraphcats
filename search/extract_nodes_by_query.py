@@ -360,7 +360,7 @@ def main():
             sig_filename = os.path.basename(query) + '.contigs.sig'
             with open(os.path.join(args.output, sig_filename), 'wt') as fp:
                 ss = sourmash_lib.SourmashSignature(contigs_minhash,
-                                                    name=query_name,
+                                                    name='nbhd:'+query_name,
                                                     filename=sig_filename)
                 sourmash_lib.save_signatures([ss], fp)
 
