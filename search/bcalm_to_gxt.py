@@ -12,6 +12,7 @@ import collections
 import argparse
 from search.bgzf import bgzf
 
+TRIM_CUTOFF = 1.1
 
 def main():
     parser = argparse.ArgumentParser()
@@ -90,10 +91,16 @@ def main():
     # start the gxt file by writing the number of nodes (unitigs))
     gxtfp.write('{}\n'.format(max(link_d.keys()) + 1))
 
+    pendants = set(v for v, N in link_d.items() if len(N)==1)
+
     # write out all of the links, in 'from to' format.
     n_edges = 0
     for node, edgelist in link_d.items():
+        if node in pendants and mean_abunds[node] < TRIM_CUTOFF:
+            continue
         for next_node in edgelist:
+            if next_node in pendants and mean_abunds[next_node] < TRIM_CUTOFF:
+                continue
             assert node <= max_contig_id
             assert next_node <= max_contig_id
             gxtfp.write('{} {}\n'.format(node, next_node))
