@@ -37,6 +37,7 @@ def main():
     offsets = {}
     mean_abunds = {}
     sizes = {}
+    sequences = {}
 
     # walk the input unitigs file, tracking links between contigs and
     # writing them to contigs_out.
@@ -73,46 +74,44 @@ def main():
 
         # where are we in the output file?
         assert contig_id not in offsets
-        offsets[contig_id] = contigsfp.tell()
 
-        # write out contig in boring format
-        contigsfp.write('>{}\n{}\n'.format(contig_id, record.sequence))
-
-        max_contig_id = max(contig_id, max_contig_id)
+        sequences[contig_id] = record.sequence
 
         sizes[contig_id] = len(record.sequence) - ksize + 1
 
+    non_pendants = [x for x, N in links_d.items() if len(N) > 1 and \
+                    mean_abunds[x] > TRIM_CUTOFF]
+    aliases = {x: i for i, x in enumerate(non_pendants)}
+    n = len(aliases)
+
+    for x, i in aliases.items():
+        contigsfp.write('>{}\n{}\n'.format(i, sequences[x]))
+        offsets[x] = contigsfp.tell()
     contigsfp.close()
 
     print('... done! {} unitigs'.format(n))
-    assert max_contig_id == n
-    assert max(link_d.keys()) <= n
 
     # start the gxt file by writing the number of nodes (unitigs))
-    gxtfp.write('{}\n'.format(max(link_d.keys()) + 1))
-
-    pendants = set(v for v, N in link_d.items() if len(N)==1)
+    gxtfp.write('{}\n'.format(n))
 
     # write out all of the links, in 'from to' format.
     n_edges = 0
     for node, edgelist in link_d.items():
-        if node in pendants and mean_abunds[node] < TRIM_CUTOFF:
+        if node not in aliases:
             continue
         for next_node in edgelist:
-            if next_node in pendants and mean_abunds[next_node] < TRIM_CUTOFF:
+            if next_node not in aliases:
                 continue
-            assert node <= max_contig_id
-            assert next_node <= max_contig_id
-            gxtfp.write('{} {}\n'.format(node, next_node))
+            gxtfp.write('{} {}\n'.format(aliases[node], aliases[next_node]))
             n_edges += 1
 
     print('{} vertices, {} edges'.format(n, n_edges))
 
     info_fp.write('contig_id,offset,mean_abund,n_kmers\n')
-    for contig_id in range(max_contig_id + 1):
-        info_fp.write('{},{},{:.3f},{}\n'.format(contig_id, offsets[contig_id],
-                                                 mean_abunds[contig_id],
-                                                 sizes[contig_id]))
+    for i, v in enumerate(non_pendants):
+        info_fp.write('{},{},{:.3f},{}\n'.format(i, offsets[v],
+                                                 mean_abunds[v],
+                                                 sizes[v]))
 
 
 if __name__ == '__main__':
