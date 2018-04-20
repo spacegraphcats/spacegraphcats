@@ -79,7 +79,7 @@ def main():
 
         sizes[contig_id] = len(record.sequence) - ksize + 1
 
-    non_pendants = [x for x, N in links_d.items() if len(N) > 1 and \
+    non_pendants = [x for x, N in link_d.items() if len(N) > 1 and \
                     mean_abunds[x] > TRIM_CUTOFF]
     aliases = {x: i for i, x in enumerate(non_pendants)}
     n = len(aliases)
