@@ -21,9 +21,13 @@ def main():
     parser.add_argument('contigs_out')
     parser.add_argument('-k', '--ksize', type=int, default=31)
     parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-P', '--pendants', action="store_true",
+                        help="don't remove low abundance pendants")
     args = parser.parse_args()
 
     ksize = args.ksize
+
+    trim = not args.pendants
 
     # track links between contig IDs
     link_d = collections.defaultdict(set)
@@ -79,8 +83,14 @@ def main():
 
         sizes[contig_id] = len(record.sequence) - ksize + 1
 
-    non_pendants = [x for x, N in link_d.items() if len(N) > 1 and \
-                    mean_abunds[x] > TRIM_CUTOFF]
+    # if we are removing pendants, we need to relabel the contigs so they are
+    # consecutive integers starting from 0.  If not, we create dummy data
+    # structures to make the interface the same elsewhere in the data
+    if trim:
+        non_pendants = [x for x, N in link_d.items() if len(N) > 1 and \
+                        mean_abunds[x] > TRIM_CUTOFF]
+    else:
+        non_pendants = list(link_d.keys())
     aliases = {x: i for i, x in enumerate(non_pendants)}
     n = len(aliases)
 
@@ -108,7 +118,7 @@ def main():
     print('{} vertices, {} edges'.format(n, n_edges))
 
     info_fp.write('contig_id,offset,mean_abund,n_kmers\n')
-    for i, v in enumerate(non_pendants):
+    for v, i in aliases.items():
         info_fp.write('{},{},{:.3f},{}\n'.format(i, offsets[v],
                                                  mean_abunds[v],
                                                  sizes[v]))
