@@ -150,6 +150,7 @@ def main(args=sys.argv[1:]):
 
     # now, build a matrix of GROUP_N rows x 4**ksize columns, where each
     # row will be the set of k-mer abundances associated with each group.
+    print('creating', len(group_info), 4**args.ksize)
     V = numpy.zeros((len(group_info), 4**args.ksize), dtype=numpy.uint16)
     node_id_to_group_idx = {}
     for i, n in enumerate(group_info):
