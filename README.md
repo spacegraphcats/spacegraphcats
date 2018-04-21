@@ -1,4 +1,5 @@
-# spacegraphcats [![Build Status](https://travis-ci.org/spacegraphcats/spacegraphcats.svg?branch=travis)](https://travis-ci.org/spacegraphcats/spacegraphcats) [![codecov](https://codecov.io/gh/spacegraphcats/spacegraphcats/branch/master/graph/badge.svg)](https://codecov.io/gh/spacegraphcats/spacegraphcats)
+# spacegraphcats [![Build Status](https://travis-ci.org/spacegraphcats/spacegraphcats.svg?branch=travis)](https://travis-ci.org/spacegraphcats/spacegraphcats) [![codecov](https://codecov.io/gh/spacegraphcats/spacegraphcats/branch/master/graph/badge.svg)](https://codecov.io/gh/spacegraphcats/spacegraphcats) [![DOI](https://zenodo.org/badge/58208221.svg)](https://zenodo.org/badge/latestdoi/58208221)
+
 
 Explore large, annoying graphs using hierarchies of dominating sets - because
 in space, no one can hear you miao!

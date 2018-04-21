@@ -210,7 +210,10 @@ def main(argv):
             bf = khmer.Nodetable(ksize, 1, 1)
 
             query_kmers = set()
+            query_name = None
             for record in screed.open(query):
+                if query_name is None:
+                    query_name = record.name
                 query_kmers.update(bf.get_kmer_hashes(record.sequence))
 
             print('got {}'.format(len(query_kmers)))
@@ -357,7 +360,8 @@ def main(argv):
             sig_filename = os.path.basename(query) + '.contigs.sig'
             with open(os.path.join(args.output, sig_filename), 'wt') as fp:
                 ss = sourmash_lib.SourmashSignature(contigs_minhash,
-                                                    name=sig_filename)
+                                                    name='nbhd:'+query_name,
+                                                    filename=sig_filename)
                 sourmash_lib.save_signatures([ss], fp)
 
             # write out cDBG IDs

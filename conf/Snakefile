@@ -29,6 +29,11 @@ search_out_suffix = ''
 if experiment:
     search_out_suffix = '_' + experiment
 
+# remove pendants from bcalm graph? default YES
+remove_pendants = ""
+if config.get('keep_graph_pendants', False):
+    remove_pendants = "-P"
+
 ### build some variables for internal use
 
 catlas_dir = '{}_k{}_r{}'.format(catlas_base, ksize, radius)
@@ -92,7 +97,7 @@ rule bcalm_catlas_input:
         "{catlas_dir}/contigs.fa.gz",
         "{catlas_dir}/contigs.fa.gz.info.csv"
      shell:
-        "{python} -m search.bcalm_to_gxt -k {ksize} {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
+        "{python} -m search.bcalm_to_gxt {remove_pendants} -k {ksize} {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
 
 #print(expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir))
 
