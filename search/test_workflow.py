@@ -4,6 +4,11 @@ import shutil
 import screed
 
 from spacegraphcats import catlas
+import search.index_contigs_by_kmer
+import search.extract_nodes_by_query
+import search.characterize_catlas_regions
+import search.extract_unassembled_nodes
+import search.catlas_info
 import sourmash_lib
 
 
@@ -35,25 +40,71 @@ class Args(object):
     pass
 
 
-def test_simple_tr():
+def test_dory():
     with TempDirectory() as location:
-        return
-    
-        projpath = os.path.join(location, 'tr')
+        import search.bcalm_to_gxt
 
-        import imp
+        # make the output directory
+        try:
+            os.mkdir('dory_k21_r1')
+        except FileExistsError:
+            pass
 
-        # For illustrative purposes.
-        runscript = relative_filename('conf/run')
-        module = imp.load_source('run', runscript)
+        # convert the bcalm file to gxt
+        args = ['-k', '-21', '-P',
+                relative_filename('dory/bcalm.dory.k21.unitigs.fa'),
+                'dory_k21_r1/cdbg.gxt',
+                'dory_k21_r1/contigs.fa.gz']
 
-        run_args = Args()
-        run_args.configfile = 'dory-test'
-        run_args.target = 'build'
-        run_args.overhead = 0
-        run_args.experiment = None
-        run_args.radius = 1
-        run_args.nolock = False
-        run_args.dry_run = False
+        search.bcalm_to_gxt.main(args)
 
-        module.main(run_args)
+        # build catlas
+
+        args = Args()
+        args.no_checkpoint = True
+        args.level = 0
+        args.radius = 1
+        args.project = 'dory_k21_r1'
+
+        catlas.main(args)
+
+        # make k-mer search index
+        args = '-k 21 dory_k21_r1'.split()
+        search.index_contigs_by_kmer.main(args)
+
+        # do search!!
+        search.extract_nodes_by_query
+
+        args='dory_k21_r1 dory_k21_r1_search_oh0 --query data/dory-head.fa -k 21 --overhead=0.0'.split()
+
+        try:
+            search.extract_nodes_by_query.main(args)
+        except SystemExit as e:
+            assert e.code == 0, str(e)
+
+        # check output!
+        output_path = 'dory_k21_r1_search_oh0/'
+        assert os.path.exists(output_path + 'command.txt')
+        assert os.path.exists(output_path + 'dory-head.fa.frontier.txt.gz')
+        assert os.path.exists(output_path + 'dory-head.fa.cdbg_ids.txt.gz')
+        assert os.path.exists(output_path + 'dory-head.fa.response.txt')
+        assert os.path.exists(output_path + 'dory-head.fa.contigs.sig')
+        assert os.path.exists(output_path + 'results.csv')
+
+        with open(output_path + 'results.csv') as fp:
+            lines = fp.readlines()
+            assert len(lines) == 2
+
+            last_line = lines[-1].strip()
+            assert last_line == 'data/dory-head.fa,1.0,1.0,1671,2,21,1631,1.0,0.0,0.0'
+
+        # run characterize_catlas_regions
+        args = 'dory_k21_r1 dory_k1_r1.vec'.split()
+        search.characterize_catlas_regions.main(args)
+
+        # run extract_unassembled_regions
+        args = 'dory_k21_r1 data/dory-head.fa dory.regions -k 21'.split()
+        search.extract_unassembled_nodes.main(args)
+
+        # run catlas info
+        search.catlas_info.main(['dory_k21_r1'])

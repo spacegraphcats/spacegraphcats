@@ -14,7 +14,7 @@ from search.bgzf import bgzf
 
 TRIM_CUTOFF = 1.1
 
-def main():
+def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('bcalm_unitigs')
     parser.add_argument('gxt_out')
@@ -23,7 +23,7 @@ def main():
     parser.add_argument('-d', '--debug', action='store_true')
     parser.add_argument('-P', '--pendants', action="store_true",
                         help="don't remove low abundance pendants")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     ksize = args.ksize
 
@@ -125,4 +125,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
