@@ -313,17 +313,12 @@ def main():
 
             # walk through the contigs, retrieving.
             print('extracting contigs...')
-            for n, record in enumerate(screed.open(contigs)):
+            for n, record in enumerate(search_utils.get_contigs_by_cdbg(contigs, cdbg_shadow)):
                 if n and n % 10000 == 0:
                     offset_f = total_seqs / len(cdbg_shadow)
                     print('...at n {} ({:.1f}% of shadow)'.format(total_seqs,
                           offset_f * 100),
                           end='\r')
-
-                # contig names == cDBG IDs
-                contig_id = int(record.name)
-                if contig_id not in cdbg_shadow:
-                    continue
 
                 # track retrieved sequences in a minhash
                 contigs_minhash.add_sequence(str(record.sequence), True)

@@ -426,6 +426,19 @@ def get_reads_by_cdbg(sqlite_filename, reads_filename, cdbg_ids):
         yield record, offset_f
 
 
+def get_contigs_by_cdbg(contigs_filename, cdbg_ids):
+    """
+    Given a list of cDBG IDs, retrieve the actual contig sequences
+    corresponding to them by using offsets into a BGZF file.
+    """
+    for record in screed.open(contigs_filename):
+        contig_id = int(record.name)
+        if contig_id not in cdbg_ids:
+            continue
+
+        yield record
+
+
 ### MPHF stuff
 
 class MPHF_KmerIndex(object):
