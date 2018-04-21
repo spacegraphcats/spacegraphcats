@@ -95,8 +95,8 @@ def main():
     n = len(aliases)
 
     for x, i in aliases.items():
-        contigsfp.write('>{}\n{}\n'.format(i, sequences[x]))
         offsets[x] = contigsfp.tell()
+        contigsfp.write('>{}\n{}\n'.format(i, sequences[x]))
     contigsfp.close()
 
     print('... done! {} unitigs'.format(n))
