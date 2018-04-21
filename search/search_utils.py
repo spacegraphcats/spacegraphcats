@@ -426,6 +426,33 @@ def get_reads_by_cdbg(sqlite_filename, reads_filename, cdbg_ids):
         yield record, offset_f
 
 
+def get_contigs_by_cdbg(contigs_filename, cdbg_ids):
+    """
+    Given a list of cDBG IDs, retrieve the actual contig sequences
+    corresponding to them by using offsets into a BGZF file.
+
+    This works by iterating over the contig offsets in contigs.fa.gz.info.csv,
+    which is created by bcalm_to_gxt; and then seeking into the contigs.fa.gz
+    BGZF file to extract the specific sequence.
+    """
+    info_filename = contigs_filename + '.info.csv'
+    reads_grabber = GrabBGZF_Random(contigs_filename)
+
+    with open(info_filename, 'rt') as info_fp:
+        r = csv.DictReader(info_fp)
+
+        for row in r:
+            contig_id = int(row['contig_id'])
+            if contig_id in cdbg_ids:
+                offset = int(row['offset'])
+
+                record, xx = reads_grabber.get_sequence_at(offset)
+                assert xx == offset
+                assert int(record.name) == contig_id, (record.name,contig_id)
+
+                yield record
+
+
 ### MPHF stuff
 
 class MPHF_KmerIndex(object):
