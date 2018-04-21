@@ -53,6 +53,12 @@ twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
 dory-test: data/dory-subset.fa data/dory-head.fa
 	conf/run dory-test
 
-twofoo-test:
-	python -m search.extract_reads_by_shadow_ratio twofoo twofoo.fq.gz.bgz twofoo.labels twofoo.shadow.out.fa -k 31
-	python -m search.extract_nodes_by_query twofoo foo --query data/2.fa.gz -k 31
+twofoo/bcalm.twofoo.k31.unitigs.fa:
+	mkdir -p twofoo
+	curl -L -o twofoo/bcalm.twofoo.k31.unitigs.fa.gz https://osf.io/zp49s/download
+	gunzip twofoo/bcalm.twofoo.k31.unitigs.fa.gz
+
+twofoo-test: twofoo/bcalm.twofoo.k31.unitigs.fa
+	conf/run twofoo search
+	python -m search.characterize_catlas_regions twofoo_k31_r1 twofoo_k31_r1.vec
+

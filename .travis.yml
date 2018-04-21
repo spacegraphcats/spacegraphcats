@@ -12,7 +12,7 @@ install:
   - python setup.py build_ext --inplace
 script:
   - make lint
-  - make dory-test
+  - make twofoo-test
   - py.test spacegraphcats search --cov=.
 
 after_success:

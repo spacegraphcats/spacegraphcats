@@ -3,6 +3,7 @@
     "input_sequences": ["data/dory-subset.fa"],
     "ksize": 21,
     "radius": 1,
+    "keep_graph_pendants": true,
 
     "searchquick": ["data/dory-head.fa"],
     "search": ["data/dory-head.fa"]

@@ -119,7 +119,7 @@ def collect_frontier_exact(dag,
     return total_frontier
 
 
-def main():
+def main(argv):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('--overhead', help='\% of overhead', type=float,
@@ -136,7 +136,7 @@ def main():
     p.add_argument('--scaled', default=1000, type=float)
     p.add_argument('-v', '--verbose', action='store_true')
 
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     # make sure all of the query sequences exist.
     for filename in args.query:
@@ -394,4 +394,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
