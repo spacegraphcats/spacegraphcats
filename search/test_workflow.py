@@ -51,7 +51,7 @@ def test_dory():
             pass
 
         # convert the bcalm file to gxt
-        args = ['-k', '-21',
+        args = ['-k', '-21', '-P',
                 relative_filename('dory/bcalm.dory.k21.unitigs.fa'),
                 'dory_k21_r1/cdbg.gxt',
                 'dory_k21_r1/contigs.fa.gz']
