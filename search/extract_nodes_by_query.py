@@ -6,15 +6,12 @@ the retrieved contigs.
 import argparse
 import sys
 import os
-import sys
-import gc
 import csv
 import traceback
 import gzip
 from collections import defaultdict
 import time
 import khmer
-import pickle
 
 import screed
 
@@ -24,7 +21,6 @@ from sourmash_lib.sourmash_args import load_query_signature
 from sourmash_lib._minhash import hash_murmur
 
 from .search_utils import get_reads_by_cdbg, load_kmer_index
-from spacegraphcats.logging import log
 from search.frontier_search import (frontier_search,
                                     frontier_search_exact,
                                     find_shadow,

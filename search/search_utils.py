@@ -1,13 +1,9 @@
-import pickle
 import collections
 import os
-import json
 import csv
 
 import sqlite3
 
-import screed
-import sourmash_lib
 from sourmash_lib import MinHash
 from screed.screedRecord import Record
 from screed.utils import to_str
@@ -16,7 +12,6 @@ from .bgzf.bgzf import BgzfReader
 
 import bbhash
 import numpy
-import pandas
 
 
 def load_layer1_to_cdbg(cdbg_to_catlas, domfile):
