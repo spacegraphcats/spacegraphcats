@@ -1,3 +1,5 @@
+# TODO: delete me?
+
 #! /usr/bin/env python
 """
 Build an index that can be used to retrieve individual reads or contigs
@@ -30,6 +32,7 @@ import collections
 import sqlite3
 from . import search_utils
 
+# FIXME: who am I? what does it mean?
 sys.path.insert(0, '/Users/t/dev/khmer')
 
 # graph settings
