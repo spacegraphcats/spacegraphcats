@@ -3,7 +3,7 @@
 #
 # see script 'run' in this directory for a convenient entry point.
 #
-# Quickstart: `snakeconf/run snakeconf/dory-test.json searchquick`
+# Quickstart: `conf/run dory-test searchquick`
 #
 
 ## pull values in from config file:

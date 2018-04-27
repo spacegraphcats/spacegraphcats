@@ -1,8 +1,8 @@
 # Boot something like ubuntu-wily-15.10-amd64-server-20160222 (ami-05384865).
 
 # install required Debian packages
-sudo apt-get update && \
-     sudo apt-get -y install python-dev python-pip python-virtualenv
+sudo apt update && \
+     sudo apt -y install python-dev python-pip python-virtualenv
 
 # activate virtualenv
 python -m virtualenv env
