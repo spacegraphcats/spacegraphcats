@@ -57,7 +57,8 @@ def main(args):
     status = snakemake.snakemake(snakefile, configfile=configfile,
                                  targets=[args.target], printshellcmds=True,
                                  dryrun=args.dry_run,
-                                 lock=not args.nolock, config=config)
+                                 lock=not args.nolock, config=config,
+                                 verbose=args.verbose, debug_dag=args.debug)
 
     if status: # translate "success" into shell exit code of 0
        return 0
@@ -74,6 +75,8 @@ Targets:
    build            - builds catlas (default)
    searchquick      - do a quick search (only a few files)
    search           - do a full search for this data set (many files)
+   extract_reads    - extract reads for search results (many files)
+   extract_contigs  - extract contigs for search results (many files)
    clean            - remove the primary catlas build files
 
 For a quickstart, run this:
@@ -87,6 +90,8 @@ from the main spacegraphcats directory.
     parser.add_argument('configfile')
     parser.add_argument('target', nargs='?', default='build')
     parser.add_argument('-n', '--dry-run', action='store_true')
+    parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('-d', '--debug', action='store_true')
     parser.add_argument('--nolock', action='store_true')
     parser.add_argument('--overhead', type=float, default=None)
     parser.add_argument('--experiment', default=None)

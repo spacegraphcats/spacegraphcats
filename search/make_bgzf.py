@@ -10,20 +10,25 @@ import argparse
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument('input_file')
+    p.add_argument('input_files', nargs='+')
+    p.add_argument('-o', '--output')
     args = p.parse_args()
 
-    output_filename = os.path.basename(args.input_file) + '.bgz'
+    assert args.output, "must specify -o"
+
+    output_filename = args.output
     outfp = bgzf.open(output_filename, 'wb')
 
-    print('turning {} into a block-gzipped (BGZF) file'.format(args.input_file))
     print('output file will be {}'.format(output_filename))
 
-    for n, record in enumerate(screed.open(args.input_file)):
-        offset = outfp.tell()
-        outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
-        if n % 10000 == 0:
-            print('offset for {} is {}'.format(n, offset))
+    for input_file in args.input_files:
+        print('turning {} into a block-gzipped (BGZF) file'.format(input_file))
+        for n, record in enumerate(screed.open(input_file)):
+            offset = outfp.tell()
+            outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
+            if n % 100000 == 0:
+                print('offset for {} is {}'.format(n, offset), end='\r')
+        print('')
 
     outfp.close()
 
