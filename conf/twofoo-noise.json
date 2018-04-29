@@ -1,0 +1,13 @@
+{
+    "catlas_base": "twofoo-noise",
+    "input_sequences": ["twofoo.fq.gz"],
+    "ksize": 31,
+    "radius": 1,
+    "keep_graph_pendants": true,
+
+    "searchquick": ["data/63.fa.gz"],
+
+    "search": ["data/2.fa.gz", "data/47.fa.gz", "data/63.fa.gz"],
+
+    "shadow_ratio_maxsize": 1000
+}

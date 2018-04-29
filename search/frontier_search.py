@@ -1,19 +1,19 @@
 #! /usr/bin/env python
 import argparse
+import heapq
 import os
 import sys
 from copy import copy
-import heapq
+from typing import Dict, List, Set, Tuple, Union
 
 import sourmash_lib
 from sourmash_lib import MinHash, signature
 from sourmash_lib.sourmash_args import load_query_signature
-from typing import Dict, List, Set, Union, Tuple
 
-from .memoize import memoize
+from spacegraphcats.logging import log
+
 from . import search_utils
 from .search_utils import load_dag
-from spacegraphcats.logging import log
 
 
 class NoContainment(ValueError):
@@ -161,21 +161,3 @@ def frontier_search(top_node_id,
     if len(frontier) > 0:
         frontier = list(zip(*frontier))[3]
     return frontier, 0, 0, None
-
-
-def main(args):
-    pass
-
-
-if __name__ == "__main__":
-    p = argparse.ArgumentParser()
-    p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('--overhead', help='\% of overhead', type=float,
-                   default=0.0)
-    p.add_argument('output')
-    p.add_argument('--query', help='query sequences', nargs='+')
-    p.add_argument('--no-empty', action='store_true')
-    p.add_argument('-k', '--ksize', default=31, type=int,
-                   help='k-mer size (default: 31)')
-    p.add_argument('--scaled', default=1000, type=float)
-    p.add_argument('-v', '--verbose', action='store_true')

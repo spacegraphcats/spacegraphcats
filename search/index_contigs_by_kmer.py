@@ -20,11 +20,11 @@ import bbhash
 import numpy
 
 
-def main():
+def main(argv):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix')
     p.add_argument('-k', '--ksize', default=31, type=int)
-    a = p.parse_args()
+    a = p.parse_args(argv)
     
     kh = khmer.Nodetable(a.ksize, 1, 1)
 
@@ -92,4 +92,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

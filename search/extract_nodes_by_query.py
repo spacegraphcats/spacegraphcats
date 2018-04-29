@@ -4,33 +4,26 @@ Do a frontier search, and retrieve cDBG node IDs and MinHash signature for
 the retrieved contigs.
 """
 import argparse
-import sys
+import csv
+import gzip
 import os
 import sys
-import gc
-import csv
-import traceback
-import gzip
-from collections import defaultdict
 import time
+import traceback
+from collections import defaultdict
+
 import khmer
-import pickle
-
 import screed
-
 import sourmash_lib
 from sourmash_lib import MinHash
-from sourmash_lib.sourmash_args import load_query_signature
 from sourmash_lib._minhash import hash_murmur
+from sourmash_lib.sourmash_args import load_query_signature
 
-from .search_utils import get_reads_by_cdbg, load_kmer_index
-from spacegraphcats.logging import log
-from search.frontier_search import (frontier_search,
-                                    frontier_search_exact,
-                                    find_shadow,
-                                    NoContainment)
+from search.frontier_search import (NoContainment, find_shadow,
+                                    frontier_search, frontier_search_exact)
+
 from . import search_utils
-from .search_utils import (load_dag, load_layer1_to_cdbg)
+from .search_utils import load_dag, load_kmer_index, load_layer1_to_cdbg
 
 
 def build_query_mh_for_seed(seed, ksize, scaled, query_seq_file):
@@ -119,7 +112,7 @@ def collect_frontier_exact(dag,
     return total_frontier
 
 
-def main():
+def main(argv):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('--overhead', help='\% of overhead', type=float,
@@ -136,7 +129,7 @@ def main():
     p.add_argument('--scaled', default=1000, type=float)
     p.add_argument('-v', '--verbose', action='store_true')
 
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     # make sure all of the query sequences exist.
     for filename in args.query:
@@ -313,17 +306,12 @@ def main():
 
             # walk through the contigs, retrieving.
             print('extracting contigs...')
-            for n, record in enumerate(screed.open(contigs)):
+            for n, record in enumerate(search_utils.get_contigs_by_cdbg(contigs, cdbg_shadow)):
                 if n and n % 10000 == 0:
                     offset_f = total_seqs / len(cdbg_shadow)
                     print('...at n {} ({:.1f}% of shadow)'.format(total_seqs,
                           offset_f * 100),
                           end='\r')
-
-                # contig names == cDBG IDs
-                contig_id = int(record.name)
-                if contig_id not in cdbg_shadow:
-                    continue
 
                 # track retrieved sequences in a minhash
                 contigs_minhash.add_sequence(str(record.sequence), True)
@@ -343,8 +331,6 @@ def main():
                   ' {:.3f}%'.format(containment*100))
             print('query similarity to retrieved contigs:'
                   ' {:.3f}%'.format(similarity*100))
-
-            num_seeds = 0
 
             # recover from above.
             best_containment = f_found
@@ -399,4 +385,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
