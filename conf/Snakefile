@@ -223,7 +223,7 @@ rule extract_reads:
 # get all the reads
 rule extract_contigs:
     input:
-       make_extract_reads_base(config['search'])
+       make_extract_contigs_base(config['search'])
 
 ### shadow ratio stuff
 
