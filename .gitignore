@@ -34,3 +34,4 @@ bcalm.*
 *.vec.*
 *.tar
 strain_results
+.pytest_cache/*

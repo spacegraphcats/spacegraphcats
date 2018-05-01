@@ -1,22 +1,16 @@
-import pickle
 import collections
-import os
-import json
 import csv
-
+import os
 import sqlite3
 
-import screed
-import sourmash_lib
-from sourmash_lib import MinHash
+import numpy
 from screed.screedRecord import Record
 from screed.utils import to_str
-
-from .bgzf.bgzf import BgzfReader
+from sourmash_lib import MinHash
 
 import bbhash
-import numpy
-import pandas
+
+from .bgzf.bgzf import BgzfReader
 
 
 def load_layer1_to_cdbg(cdbg_to_catlas, domfile):
@@ -128,7 +122,7 @@ def load_just_dag(catlas_file):
 
     return max_node, dag, cdbg_to_catlas
 
-
+# TODO: delete me?
 class CatlasDB(object):
     """
     Wrapper class for accessing catlas DAG in sqlite.
@@ -223,20 +217,6 @@ def calc_node_shadow_sizes(dag, dag_levels, layer1_to_cdbg):
             node_shadow_sizes[node_id] = sub_size
 
     return node_shadow_sizes
-
-
-def remove_empty_catlas_nodes(nodes, minhash_db):
-    import time
-    start = time.time()
-    nonempty_frontier = set()
-    for node in nodes:
-        mh = load_minhash(node, minhash_db)
-        if mh and len(mh.get_mins()) > 0:
-            nonempty_frontier.add(node)
-
-    print('removed {} empty catlas nodes ({:.1f} s)'.format(len(nodes) - len(nonempty_frontier), time.time() - start))
-
-    return nonempty_frontier
 
 
 def sqlite_get_max_offset(cursor):
