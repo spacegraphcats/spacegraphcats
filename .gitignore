@@ -28,7 +28,7 @@ spacegraphcats.egg-info/
 *.sig
 .snakemake
 aws_setup.sh
-bcalm*
+bcalm.*
 *.gz
 *.vec
 *.vec.*
