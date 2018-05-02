@@ -11,6 +11,7 @@ import search.extract_unassembled_nodes
 import search.catlas_info
 import search.extract_contigs
 import search.make_bgzf
+import search.label_cdbg
 import search.extract_reads
 import sourmash_lib
 
@@ -124,6 +125,11 @@ def test_dory():
         # run make_bgzf
         args = ['data/dory-subset.fa', '-o', 'dory/dory.reads.bgz']
         search.make_bgzf.main(args)
+
+        # run label_cdbg
+        args = ['dory_k21_r1',
+                'dory/dory.reads.bgz', 'dory_k21_r1/reads.bgz.labels']
+        search.label_cdbg.main(args)
 
         # run extract_reads
         args = ['dory/dory.reads.bgz',

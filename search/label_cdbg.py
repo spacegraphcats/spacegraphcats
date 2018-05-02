@@ -32,14 +32,11 @@ import collections
 import sqlite3
 from . import search_utils
 
-# FIXME: who am I? what does it mean?
-sys.path.insert(0, '/Users/t/dev/khmer')
-
 # graph settings
 DEFAULT_KSIZE = 31
 DEFAULT_MEMORY = 1e9
 
-def main():
+def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('reads')
@@ -47,7 +44,7 @@ def main():
     p.add_argument('-k', '--ksize', default=DEFAULT_KSIZE, type=int)
     p.add_argument('-M', '--memory', default=DEFAULT_MEMORY,
                             type=float)
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     dbfilename = args.savename
     if os.path.exists(dbfilename):
@@ -129,5 +126,7 @@ def main():
     db.close()
     print('done!')
 
+    return 0
+
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
