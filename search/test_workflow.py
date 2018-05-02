@@ -10,6 +10,7 @@ import search.characterize_catlas_regions
 import search.extract_unassembled_nodes
 import search.catlas_info
 import search.extract_contigs
+import search.make_bgzf
 import search.extract_reads
 import sourmash_lib
 
@@ -119,3 +120,15 @@ def test_dory():
         search.extract_contigs.main(args)
 
         assert os.path.exists('dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.contigs.fa.gz')
+
+        # run make_bgzf
+        args = ['data/dory-subset.fa', '-o', 'dory/dory.reads.bgz']
+        search.make_bgzf.main(args)
+
+        # run extract_reads
+        args = ['dory/dory.reads.bgz',
+                'dory_k21_r1/reads.bgz.labels',
+                'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz',
+                '-o',
+                'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz']
+        search.extract_reads.main(args)

@@ -6,13 +6,14 @@ import screed
 from search.bgzf import bgzf
 import os.path
 import argparse
+import sys
 
 
-def main():
+def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('input_files', nargs='+')
     p.add_argument('-o', '--output')
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     assert args.output, "must specify -o"
 
@@ -36,4 +37,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
