@@ -9,6 +9,8 @@ import search.extract_nodes_by_query
 import search.characterize_catlas_regions
 import search.extract_unassembled_nodes
 import search.catlas_info
+import search.extract_contigs
+import search.extract_reads
 import sourmash_lib
 
 
@@ -108,3 +110,12 @@ def test_dory():
 
         # run catlas info
         search.catlas_info.main(['dory_k21_r1'])
+
+        # run extract_contigs
+        args = ['dory_k21_r1',
+                'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz',
+                '-o',
+                'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.contigs.fa.gz']
+        search.extract_contigs.main(args)
+
+        assert os.path.exists('dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.contigs.fa.gz')
