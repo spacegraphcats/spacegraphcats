@@ -15,9 +15,6 @@ import gzip
 
 import screed
 
-import sourmash_lib
-from sourmash_lib.sourmash_args import load_query_signature
-
 from .search_utils import get_reads_by_cdbg
 
 from spacegraphcats.logging import log
