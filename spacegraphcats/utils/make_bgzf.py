@@ -3,7 +3,7 @@
 Convert an input file into a BGZF file that supports random indexing by offset.
 """
 import screed
-from search.bgzf import bgzf
+from .bgzf import bgzf
 import os.path
 import argparse
 import sys

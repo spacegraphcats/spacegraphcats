@@ -10,7 +10,7 @@ import screed
 import sys
 import collections
 import argparse
-from search.bgzf import bgzf
+from spacegraphcats.utils.bgzf import bgzf
 import logging
 from typing import List, Dict, Set, Text
 

@@ -10,7 +10,7 @@ import sourmash_lib
 from sourmash_lib import MinHash, signature
 from sourmash_lib.sourmash_args import load_query_signature
 
-from spacegraphcats.logging import log
+from spacegraphcats.utils.logging import log
 
 from . import search_utils
 from .search_utils import load_dag

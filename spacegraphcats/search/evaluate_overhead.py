@@ -13,7 +13,7 @@ import gzip
 
 import screed
 
-from spacegraphcats.logging import log
+from spacegraphcats.utils.logging import log
 from . import search_utils
 
 
@@ -22,7 +22,7 @@ def main():
     p.add_argument('catlas_prefix')
     p.add_argument('query')
     p.add_argument('cdbg_nodefile')
-    
+
     p.add_argument('-o', '--output', type=argparse.FileType('wt'))
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')

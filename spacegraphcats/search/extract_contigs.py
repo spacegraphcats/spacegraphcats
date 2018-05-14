@@ -10,7 +10,7 @@ import gzip
 
 import screed
 
-from spacegraphcats.logging import log
+from spacegraphcats.utils.logging import log
 from . import search_utils
 
 
