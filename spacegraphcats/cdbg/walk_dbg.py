@@ -5,7 +5,7 @@ import khmer, khmer.utils
 import screed
 from collections import OrderedDict, defaultdict
 import os, os.path
-from .graph_parser import write
+from spacegraphcats.catlas.graph_parser import write
 import gzip
 
 

@@ -17,7 +17,7 @@ import screed
 
 from .search_utils import get_reads_by_cdbg
 
-from spacegraphcats.logging import log
+from spacegraphcats.utils.logging import log
 from . import search_utils
 
 
@@ -48,7 +48,7 @@ def main(argv=sys.argv[1:]):
     print('extracting reads to {}.'.format(outname))
 
     start = time.time()
-    
+
     total_bp = 0
     total_seqs = 0
 

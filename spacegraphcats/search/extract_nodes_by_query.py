@@ -19,7 +19,7 @@ from sourmash_lib import MinHash
 from sourmash_lib._minhash import hash_murmur
 from sourmash_lib.sourmash_args import load_query_signature
 
-from search.frontier_search import (NoContainment, find_shadow,
+from .frontier_search import (NoContainment, find_shadow,
                                     frontier_search, frontier_search_exact)
 
 from . import search_utils

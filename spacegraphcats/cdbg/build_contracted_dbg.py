@@ -3,7 +3,7 @@
 import argparse
 import sys
 from .walk_dbg import run
-from .logging import log
+from spacegraphcats.utils.logging import log
 
 # graph settings
 DEFAULT_KSIZE = 31

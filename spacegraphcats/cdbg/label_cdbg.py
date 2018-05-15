@@ -30,7 +30,7 @@ import screed
 import khmer
 import collections
 import sqlite3
-from . import search_utils
+from spacegraphcats.search import search_utils
 
 # graph settings
 DEFAULT_KSIZE = 31
@@ -122,7 +122,7 @@ def main(argv=sys.argv[1:]):
             cursor.execute('INSERT INTO sequences (offset, label) VALUES (?, ?)', (offset, lb))
 
     db.commit()
-            
+
     db.close()
     print('done!')
 

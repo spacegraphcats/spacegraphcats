@@ -10,7 +10,7 @@ from sourmash_lib import MinHash
 
 import bbhash
 
-from .bgzf.bgzf import BgzfReader
+from spacegraphcats.utils.bgzf.bgzf import BgzfReader
 
 
 def load_layer1_to_cdbg(cdbg_to_catlas, domfile):
