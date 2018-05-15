@@ -5,7 +5,8 @@ with a collection of other sequences.
 
 e.g.
 
-    python -m search.make_donut neighborhood.fa genome1.fa genome2.fa
+    python -m search.make_donut --query nbhd1.fa nbhd2.fa \
+              --subtract genome1.fa genome2.fa
 
 would subtract genome1.fa and genome2.fa from neighborhood.fa
 """
