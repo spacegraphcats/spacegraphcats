@@ -1,0 +1,130 @@
+from collections import defaultdict
+import csv
+from typing import Dict, Set, List
+
+
+class CAtlas:
+    """CAtlas class for searching."""
+    def __init__(self, catlas_file, domfile=None,
+                 sizefile=None, min_abund=0.0):
+        self.parent = {}  # type: Dict[Int, Int]
+        self.children = defaultdict(set)  # type: Dict[Int, Set[Int]]
+        self.levels = {}  # type: Dict[Int, Int]
+        self.cdbg_to_catlas = {}  # type: Dict[Int, Int]
+
+        self.__load_catlas(catlas_file)
+        if domfile is not None:
+            self.__load_first_level(domfile)
+        if sizefile is not None:
+            self.__load_size_info(sizefile, min_abund)
+
+    def __load_catlas(self, catlas_file):
+        self.max_level = -1
+        self.root = -1
+        # load everything from the catlas file
+        for line in open(catlas_file, 'rt'):
+            node_id, cdbg_id, level, children = line.strip().split(',')
+            # parse out the children
+            node_id = int(node_id)
+            children = children.strip()
+            if children:
+                children = children.split(' ')
+                children = set(map(int, children))
+
+                # save node -> children, and level
+                self.children[node_id] = children
+                for child in children:
+                    self.parent[child].add(node_id)
+            # since self.children is a defaultdict, we don't have to do
+            # anything at the leaves when there are no children
+
+            level = int(level)
+            self.levels[node_id] = level
+            # update max_node/max_level
+            if level > self.max_level:
+                self.max_level = level
+                self.root = node_id
+
+            # save cdbg_to_catlas mapping
+            if level == 1:
+                self.cdbg_to_catlas[int(cdbg_id)] = node_id
+
+    def __load_first_level(self, domfile):
+        """
+        Load the mapping between first layer catlas and the original DBG nodes.
+        """
+        # mapping from catlas node IDs to cdbg nodes
+        self.layer1_to_cdbg = {}  # type: Dict[Int, Set[Int]]
+
+        fp = open(domfile, 'rt')
+        for line in fp:
+            dom_node, *beneath = line.strip().split(' ')
+
+            dom_node = int(dom_node)
+            beneath = map(int, beneath)
+
+            equiv_cdbg_to_catlas = self.cdbg_to_catlas[dom_node]
+            self.layer1_to_cdbg[equiv_cdbg_to_catlas] = set(beneath)
+
+    def __load_size_info(self, sizefile, min_abund):
+        kmer_sizes = {}
+        weighted_kmer_sizes = {}
+        # load size information from file
+        with open(sizefile, 'rt') as fp:
+            reader = csv.DictReader(fp)
+            for row in reader:
+                contig_id = int(row['contig_id'])
+                n_kmers = int(row['n_kmers'])
+                mean_abund = float(row['mean_abund'])
+                if not min_abund or mean_abund >= min_abund:
+                    kmer_sizes[contig_id] = n_kmers
+                    weighted_kmer_sizes[contig_id] = mean_abund*n_kmers
+        # propagate upwards
+        self.kmer_sizes = {}
+        self.weighted_kmer_sizes = {}
+        for node_id in self:
+            level = self.levels[node_id]
+            if level == 1:                    # aggregate across cDBG nodes
+                total_kmers = 0
+                total_weighted_kmers = 0
+                for cdbg_node in self.cdbg_to_catlas.get(node_id):
+                    total_kmers += kmer_sizes.get(cdbg_node, 0)
+                    total_weighted_kmers += weighted_kmer_sizes.get(cdbg_node,
+                                                                    0)
+
+                self.kmer_sizes[node_id] = total_kmers
+                self.weighted_kmer_sizes[node_id] = total_weighted_kmers
+            else:                             # aggregate across children
+                sub_size = 0
+                sub_weighted_size = 0
+                for child_id in self.children[node_id]:
+                    sub_size += self.kmer_sizes[child_id]
+                    sub_weighted_size += self.weighted_kmer_sizes[child_id]
+                self.kmer_sizes[node_id] = sub_size
+                self.weighted_kmer_sizes[node_id] = sub_weighted_size
+
+    def __iter__(self):
+        """
+        Iterate through the nodes of the CAtlas such that each node is
+        processed after its children.
+        """
+        Q = [self.root]
+        pos = 0
+        while pos < len(self.levels):
+            v = Q[pos]
+            Q.extend(self.children[v])
+            pos += 1
+        for v in reversed(Q):
+            yield self.level[v], v
+
+    def decorate_with_shadow_sizes(self):
+        self.shadow_sizes = {}
+        for node_id in self:
+            level = self.levels[node_id]
+            if level == 1:
+                self.shadow_sizes[node_id] = len(self.cdbg_to_catlas[node_id])
+            else:
+                sub_size = 0
+                for child_id in self.children[node_id]:
+                    sub_size += self.shadow_sizes[child_id]
+                self.shadow_sizes[node_id] = sub_size
