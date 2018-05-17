@@ -7,6 +7,7 @@ class CAtlas:
     """CAtlas class for searching."""
     def __init__(self, catlas_file, domfile=None,
                  sizefile=None, min_abund=0.0):
+        self.name = catlas_file
         self.parent = {}  # type: Dict[Int, Int]
         self.children = defaultdict(set)  # type: Dict[Int, Set[Int]]
         self.levels = {}  # type: Dict[Int, Int]
@@ -34,7 +35,7 @@ class CAtlas:
                 # save node -> children, and level
                 self.children[node_id] = children
                 for child in children:
-                    self.parent[child].add(node_id)
+                    self.parent[child] = node_id
             # since self.children is a defaultdict, we don't have to do
             # anything at the leaves when there are no children
 
@@ -115,7 +116,10 @@ class CAtlas:
             Q.extend(self.children[v])
             pos += 1
         for v in reversed(Q):
-            yield self.level[v], v
+            yield v
+
+    def __len__(self):
+        return len(self.parent)
 
     def decorate_with_shadow_sizes(self):
         self.shadow_sizes = {}
@@ -128,3 +132,45 @@ class CAtlas:
                 for child_id in self.children[node_id]:
                     sub_size += self.shadow_sizes[child_id]
                 self.shadow_sizes[node_id] = sub_size
+
+    def decorate_with_index_sizes(self, index):
+        self.index_sizes = index.build_catlas_node_sizes(self)
+
+    def leaves(self, nodes: List[int]=None) -> Set[int]:
+        """
+        Return leaves of this CAtlas.
+        If nodes is specified, return only those leaves that are descendants of
+        the specified nodes; otherwise, return all of them.
+        """
+        if nodes is None:
+            nodes = [self.root]
+        leaves = set()  # type: Set[int]
+        seen_nodes = set()  # type: Set[int]
+
+        def add_to_shadow(node_id: int):
+            if node_id in seen_nodes:
+                return
+            seen_nodes.add(node_id)
+
+            children_ids = self.children[node_id]
+
+            if len(children_ids) == 0:
+                leaves.add(node_id)
+            else:
+                for child in children_ids:
+                    add_to_shadow(child)
+
+        for node in nodes:
+            add_to_shadow(node)
+
+        return leaves
+
+    def shadow(self, nodes: List[int]) -> Set[int]:
+        """
+        Return the cDBG vertices in the shadow of the specified nodes.
+        """
+        leaves = self.leaves(nodes)
+        shadow = set()
+        for leaf in leaves:
+            shadow.update(self.layer1_to_cdbg[leaf])
+        return shadow

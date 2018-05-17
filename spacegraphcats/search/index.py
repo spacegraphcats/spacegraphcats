@@ -25,23 +25,19 @@ class MPHF_KmerIndex(object):
             return cdbg_id
         return None
 
-    def build_catlas_node_sizes(self, dag, dag_levels, layer1_to_cdbg):
-        x = []
-        for (node_id, level) in dag_levels.items():
-            x.append((level, node_id))
-        x.sort()
-
+    def build_catlas_node_sizes(self, catlas):
         node_kmer_sizes = {}
-        for level, node_id in x:
+        for node_id in catlas:
+            level = catlas.levels[node_id]
             if level == 1:
                 total_kmers = 0
-                for cdbg_node in layer1_to_cdbg.get(node_id):
+                for cdbg_node in catlas.layer1_to_cdbg.get(node_id):
                     total_kmers += self.get_cdbg_size(cdbg_node)
 
                 node_kmer_sizes[node_id] = total_kmers
             else:
                 sub_size = 0
-                for child_id in dag[node_id]:
+                for child_id in catlas.children[node_id]:
                     sub_size += node_kmer_sizes[child_id]
                 node_kmer_sizes[node_id] = sub_size
 
@@ -66,18 +62,14 @@ class MPHF_KmerIndex(object):
         return match_counts
 
     def build_catlas_match_counts(self, match_counts, catlas):
-        x = []
-        for (node_id, level) in catlas.levels.items():
-            x.append((level, node_id))
-        x.sort()
-
         node_match_counts = {}
         total_kmers_in_query_nodes = 0.
-        for level, node_id in x:
+        for node_id in catlas:
+            level = catlas.levels[node_id]
             if level == 1:
                 query_kmers = 0
                 all_kmers_in_node = 0
-                for cdbg_node in catlas.cdbg_to_catlas.get(node_id):
+                for cdbg_node in catlas.layer1_to_cdbg.get(node_id):
                     query_kmers += match_counts.get(cdbg_node, 0)
                     all_kmers_in_node += self.get_cdbg_size(cdbg_node)
 

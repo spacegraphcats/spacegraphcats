@@ -1,19 +1,6 @@
 #! /usr/bin/env python
-import argparse
 import heapq
-import os
-import sys
-from copy import copy
 from typing import Dict, List, Set, Tuple, Union
-
-import sourmash_lib
-from sourmash_lib import MinHash, signature
-from sourmash_lib.sourmash_args import load_query_signature
-
-from spacegraphcats.utils.logging import log
-
-from . import search_utils
-from .search_utils import load_dag
 
 
 class NoContainment(ValueError):
@@ -44,7 +31,9 @@ def find_shadow(nodes: List[int], dag: Dict[int, List[int]]) -> Set[int]:
     return shadow
 
 
-def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, max_overhead):
+def frontier_search_exact(catlas,
+                          node_query_kmers,
+                          max_overhead):
 
     # nodes and minhases that are in the frontier
     frontier = []  # type: List[int]
@@ -58,7 +47,7 @@ def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, m
 
     def node_containment(node_id):
         query_kmers = node_query_kmers.get(node_id, 0)
-        total_kmers = node_kmer_sizes[node_id]
+        total_kmers = catlas.index_sizes[node_id]
         containment = query_kmers / total_kmers
         assert query_kmers <= total_kmers
 
@@ -92,7 +81,7 @@ def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, m
             n_truncated += 1
             return
 
-        children_ids = dag[node_id]
+        children_ids = catlas.children[node_id]
 
         # leaf node: some containment? keep.
         if not children_ids and containment > 0.0:
@@ -103,7 +92,7 @@ def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, m
         for child_id in children_ids:
             add_to_frontier4(child_id)
 
-    add_to_frontier4(top_node_id)
+    add_to_frontier4(catlas.root)
 
     frontier = set(frontier)
 
@@ -113,21 +102,19 @@ def frontier_search_exact(top_node_id, dag, node_kmer_sizes, node_query_kmers, m
     return frontier, num_leaves, num_empty, frontier_minhash
 
 
-def frontier_search(top_node_id,
-                    dag,
-                    node_kmer_sizes,
+def frontier_search(catlas,
                     node_query_kmers,
                     max_overhead,
                     min_containment):
     # the initial frontier is just the root
-    root_match = node_query_kmers.get(top_node_id, 0)
-    root_total = node_kmer_sizes[top_node_id]
+    root_match = node_query_kmers.get(catlas.root, 0)
+    root_total = catlas.index_sizes[catlas.root]
     root_precision = root_match/root_total
 
     # since python implements heaps as min-heaps but we want to prioritize the
     # largest overheads, we store the precision (matches/total), since that is
     # 1 - overhead
-    frontier = [(root_precision, root_match, root_total, top_node_id)]
+    frontier = [(root_precision, root_match, root_total, catlas.root)]
     f_match = root_match
     f_total = root_total
 
@@ -142,14 +129,14 @@ def frontier_search(top_node_id,
         f_total = f_total - curr_total
         f_match = f_match - curr_match
         # descend into children
-        for child in dag[curr]:
+        for child in catlas.children[curr]:
             child_match = node_query_kmers.get(child, 0)
             # if the child has no match, we don't want to include it
             if child_match == 0:
                 continue
 
             # compute the other metrics
-            child_total = node_kmer_sizes[child]
+            child_total = catlas.index_sizes[child]
             child_precision = child_match/child_total
             f_total += child_total
             f_match += child_match
