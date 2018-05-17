@@ -6,13 +6,10 @@ them, as a likely sign of strain variation.
 import argparse
 import os
 import sys
-import collections
 import math
 import sourmash_lib
-import pandas
 
 import screed
-from . import search_utils
 from .catlas import CAtlas
 
 
