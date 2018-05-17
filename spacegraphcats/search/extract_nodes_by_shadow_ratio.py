@@ -13,7 +13,7 @@ import pandas
 
 import screed
 from . import search_utils
-from .frontier_search import find_shadow
+from .catlas import CAtlas
 
 
 def main(args=sys.argv[1:]):
@@ -24,44 +24,33 @@ def main(args=sys.argv[1:]):
     p.add_argument('--maxsize', type=float, default=10000)
     p.add_argument('--keep-fraction', type=float, default=0.1)
     p.add_argument('-k', '--ksize', default=31, type=int,
-                        help='k-mer size (default: 31)')
+                   help='k-mer size (default: 31)')
     args = p.parse_args(args)
 
     print('minsize: {:g}'.format(args.minsize))
     print('maxsize: {:g}'.format(args.maxsize))
 
-    basename = os.path.basename(args.catlas_prefix)
-    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
+    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
+    sizefile = os.path.join(args.catlas_prefix, 'contigs.fa.gz.info.csv')
 
     # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = search_utils.load_dag(catlas)
-    print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
-
-    # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = search_utils.load_layer1_to_cdbg(cdbg_to_catlas, domfile)
-    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
+    catlas = CAtlas(catlas_file, domfile=domfile, sizefile=sizefile)
+    print('loaded {} nodes from catlas {}'.format(len(catlas), catlas_file))
+    print('loaded {} layer 1 catlas nodes'.format(len(catlas.layer1_to_cdbg)))
 
     # calculate the cDBG shadow sizes for each catlas node.
     print('decorating catlas with shadow size info.')
-    node_shadow_sizes = search_utils.decorate_catlas_with_shadow_sizes(layer1_to_cdbg, dag, dag_levels)
+    catlas.decorate_with_shadow_sizes()
 
-    # ...and load cdbg node sizes
-    print('loading contig size info')
-    cdbg_kmer_sizes, cdbg_weighted_kmer_sizes = search_utils.load_cdbg_size_info(args.catlas_prefix)
-
-    # decorate catlas with cdbg node sizes underneath them
-    print('decorating catlas with contig size info.')
-    node_kmer_sizes, node_weighted_kmer_sizes = search_utils.decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes)
-
-    ### ok, the real work: look at articulation of cDBG graph.
+    # ok, the real work: look at articulation of cDBG graph.
 
     # find highest nodes with kmer size less than given max_size
     def find_terminal_nodes(node_id, max_size):
         node_list = set()
-        for sub_id in dag[node_id]:
+        for sub_id in catlas.children[node_id]:
             # shadow size
-            size = node_kmer_sizes[sub_id]
+            size = catlas.kmer_sizes[sub_id]
 
             if size < max_size:
                 node_list.add(sub_id)
@@ -73,9 +62,9 @@ def main(args=sys.argv[1:]):
 
     print('finding terminal nodes for {}.'.format(args.maxsize))
 
-    terminal = find_terminal_nodes(top_node_id, args.maxsize)
+    terminal = find_terminal_nodes(catlas.root, args.maxsize)
     print('...got {}'.format(len(terminal)))
-    terminal = { n for n in terminal if node_kmer_sizes[n] > args.minsize }
+    terminal = {n for n in terminal if catlas.kmer_sizes[n] > args.minsize}
     print('...down to {} between {} and {} in size.'.format(len(terminal),
                                                             args.minsize,
                                                             args.maxsize))
@@ -84,8 +73,8 @@ def main(args=sys.argv[1:]):
     x = []
     for node_id in terminal:
         # calculate: how many k-mers per cDBG node?
-        kmer_size = node_kmer_sizes[node_id]
-        shadow_size = node_shadow_sizes[node_id]
+        kmer_size = catlas.kmer_sizes[node_id]
+        shadow_size = catlas.shadow_sizes[node_id]
 
         ratio = math.log(kmer_size, 2) - math.log(shadow_size, 2)
 
@@ -94,7 +83,7 @@ def main(args=sys.argv[1:]):
 
     print('terminal node stats for maxsize: {:g}'.format(args.maxsize))
     print('n tnodes:', len(terminal))
-    print('total k-mers:', node_kmer_sizes[top_node_id])
+    print('total k-mers:', catlas.kmer_sizes[catlas.root])
 
     x.sort(reverse=True)
     for (k, v, a, b) in x[:10]:
@@ -104,7 +93,7 @@ def main(args=sys.argv[1:]):
         print('ratio: {:.3f}'.format(2**k), '/ shadow size:', a, '/ kmers:', b)
 
     # keep the last keep-fraction (default 10%) for examination
-    keep_sum_kmer = args.keep_fraction * node_kmer_sizes[top_node_id]
+    keep_sum_kmer = args.keep_fraction * catlas.kmer_sizes[catlas.root]
     sofar = 0
     keep_terminal = set()
     for (k, v, a, b) in reversed(x):
@@ -113,15 +102,13 @@ def main(args=sys.argv[1:]):
             break
         keep_terminal.add(v)
 
-    print('keeping last {} k-mers worth of nodes for examination.'.format(sofar))
+    print('keeping last {} k-mers worth of nodes for'
+          'examination.'.format(sofar))
 
     # build cDBG shadow ID list.
-    cdbg_shadow = set()
-    terminal_shadow = find_shadow(keep_terminal, dag)
-    for x in terminal_shadow:
-        cdbg_shadow.update(layer1_to_cdbg.get(x))
+    cdbg_shadow = catlas.shadow(keep_terminal)
 
-    #### extract contigs
+    # extract contigs
     print('extracting contigs & building a sourmash signature')
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 

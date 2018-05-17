@@ -43,7 +43,7 @@ def main(argv=sys.argv[1:]):
         outfp = gzip.open(outname, 'wt')
 
     with gzip.open(args.node_list_file, 'rt') as fp:
-        cdbg_shadow = set([ int(x.strip()) for x in fp ])
+        cdbg_shadow = set([int(x.strip()) for x in fp])
 
     print('extracting reads to {}.'.format(outname))
 
@@ -65,7 +65,8 @@ def main(argv=sys.argv[1:]):
         total_seqs += 1
 
     print('')
-    print('fetched {} reads, {} bp matching nodes.'.format(total_seqs, total_bp))
+    print('fetched {} reads, {} bp matching nodes.'.format(total_seqs,
+                                                           total_bp))
     end = time.time()
     print('total read retrieval time (including database query): {:.2f}s'.format(end - start))
 

@@ -88,7 +88,7 @@ class CAtlas:
             if level == 1:                    # aggregate across cDBG nodes
                 total_kmers = 0
                 total_weighted_kmers = 0
-                for cdbg_node in self.cdbg_to_catlas.get(node_id):
+                for cdbg_node in self.layer1_to_cdbg.get(node_id):
                     total_kmers += kmer_sizes.get(cdbg_node, 0)
                     total_weighted_kmers += weighted_kmer_sizes.get(cdbg_node,
                                                                     0)
@@ -126,7 +126,7 @@ class CAtlas:
         for node_id in self:
             level = self.levels[node_id]
             if level == 1:
-                self.shadow_sizes[node_id] = len(self.cdbg_to_catlas[node_id])
+                self.shadow_sizes[node_id] = len(self.layer1_to_cdbg[node_id])
             else:
                 sub_size = 0
                 for child_id in self.children[node_id]:
