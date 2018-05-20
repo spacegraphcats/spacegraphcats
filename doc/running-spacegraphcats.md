@@ -42,6 +42,7 @@ and now install the requirements:
 
 ```
 cd spacegraphcats
+pip install -U setuptools pip
 pip install Cython
 pip install -r requirements.txt
 ```
