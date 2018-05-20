@@ -8,6 +8,7 @@ install:
   - "pip install -U pip setuptools"
   - "pip install -U Cython"
   - "pip install -r requirements.txt"
+  - "pip install https://github.com/dib-lab/khmer/archive/master.zip"
   - "pip install codecov pytest-cov"
   - python setup.py build_ext --inplace
 script:
