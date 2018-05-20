@@ -30,6 +30,10 @@ def main():
 
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
+    assert args.output, 'must specify -o'
+    outfp = args.output
+    outname = args.output.name
+
     # load k-mer MPHF index
     kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
 
@@ -45,29 +49,35 @@ def main():
         query_kmers.update(bf.get_kmer_hashes(record.sequence))
 
     cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
-    cdbg_shadow = set(cdbg_match_counts.keys())
-    cdbg_node_sizes = {}
 
-    for cdbg_id in cdbg_shadow:
-        cdbg_node_sizes[cdbg_id] = kmer_idx.get_cdbg_size(cdbg_id)
-
-    total_found = sum(cdbg_match_counts.values())
-    f_found = total_found / len(query_kmers)
+    f_found = sum(cdbg_match_counts.values()) / len(query_kmers)
     print('...done loading & counting query k-mers in cDBG.')
     print('containment: {:.1f}%'.format(f_found * 100))
 
-    total_kmers_in_cdbg_nodes = sum(cdbg_node_sizes.values())
-    sim = total_found / total_kmers_in_cdbg_nodes
-    print('similarity: {:.1f}%'.format(sim * 100))
+    print('loading catlas...', end=' ')
+    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
+    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
+    top_node_id, dag, dag_up, dag_levels, catlas_to_cdbg = search_utils.load_dag(catlas)
+    layer1_to_cdbg = search_utils.load_layer1_to_cdbg(catlas_to_cdbg, domfile)
+    print('done.')
 
-    if not args.output:
-        sys.exit(0)
-
-    outfp = args.output
-    outname = args.output.name
-
+    cdbg_shadow = set()
+    catlas_nodes = set()
+    for layer1_node, cdbg_list in layer1_to_cdbg.items():
+        for cdbg_node in cdbg_list:
+            if cdbg_match_counts.get(cdbg_node, 0):
+                # keep catlas node & all associated cdbg nodes
+                catlas_nodes.add(layer1_node)
+                cdbg_shadow.update(cdbg_list)
+                break
+    
     total_bp = 0
     total_seqs = 0
+
+    # do some nodelist post-processing & output a response curve
+    response_curve_filename = os.path.basename(outname) + '.response.txt'
+    search_utils.output_response_curve(response_curve_filename,
+                                       cdbg_match_counts, kmer_idx, layer1_to_cdbg)
 
     print('extracting contigs to {}.'.format(outname))
     for n, record in enumerate(screed.open(contigs)):

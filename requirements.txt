@@ -3,7 +3,7 @@ mypy
 screed
 pytest
 https://github.com/dib-lab/sourmash/archive/spacegraphcats.zip
-khmer>=2.1.1,<3
+https://github.com/dib-lab/khmer/archive/master.zip
 numpy
 https://github.com/dib-lab/pybbhash/archive/master.zip
 pandas

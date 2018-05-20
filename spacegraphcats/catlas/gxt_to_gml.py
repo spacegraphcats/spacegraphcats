@@ -8,7 +8,8 @@ import screed
 class GmlWriter:
     """Similar to the writer for gxt above but for gml."""
 
-    def __init__(self, file, vertex_attributes=None, edge_attributes=None, directed=False):
+    def __init__(self, file, vertex_attributes=None, edge_attributes=None,
+                 directed=False):
         """Initialize graph writer."""
         self.file = file
 
@@ -30,7 +31,8 @@ class GmlWriter:
             return '"{}"'.format(value)
         return value
 
-    def add_vertex(self, id, size, attribute_values=[], vertex_attributes=None):
+    def add_vertex(self, id, size, attribute_values=[],
+                   vertex_attributes=None):
         """Add a vertex to the output."""
         if not hasattr(self, 'vertex_attributes'):
             self.vertex_attributes = vertex_attributes
@@ -112,6 +114,6 @@ if __name__ == '__main__':
     for line in infp:
         u, v = line.split()
         writer.add_edge(int(u), int(v))
-    
+
     writer.done()
     print('...done!')

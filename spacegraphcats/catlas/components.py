@@ -5,6 +5,7 @@ from typing import Set, List, ValuesView, Dict
 from .Eppstein import UnionFind
 from .graph import Graph
 
+
 def component_index(graph: Graph) -> UnionFind:
     """
     Return a union-find data structure associating each vertex with an id

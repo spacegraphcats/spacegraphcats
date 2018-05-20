@@ -10,7 +10,7 @@ import copy
 from .rdomset import rdomset, domination_graph
 from .graph_io import read_from_gxt, write_to_gxt
 from .graph import Graph
-from .logging import log
+from spacegraphcats.utils.logging import log
 from io import TextIOWrapper
 from collections import defaultdict
 from typing import List, Dict, Set

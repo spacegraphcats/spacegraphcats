@@ -66,7 +66,7 @@ rule build:
 
 rule clean:
     shell:
-        "rm -fr {catlas_dir} {search_dir}"
+        "rm -fr {catlas_base} {catlas_dir} {search_dir}"
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
@@ -97,22 +97,25 @@ rule bcalm_catlas_input:
         "{catlas_dir}/contigs.fa.gz",
         "{catlas_dir}/contigs.fa.gz.info.csv"
      shell:
-        "{python} -m search.bcalm_to_gxt {remove_pendants} -k {ksize} {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
+        "{python} -m spacegraphcats.cdbg.bcalm_to_gxt {remove_pendants} -k {ksize} {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
 
-#print(expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir))
-
-rule label_reads:
+rule reads_bgzf:
      input:
-        expand("{catlas_dir}/reads.fq.bgz.labels", catlas_dir=catlas_dir)
+        input_sequences
+     output:
+        "{catlas_base}/{catlas_base}.reads.bgz"
+     shell:
+        "{python} -m spacegraphcats.cdbg.make_bgzf {input} -o {output}"
+
 
 # label the reads by contig
-rule label_reads_action:
+rule label_reads:
      input:
-        "{catlas_dir}/reads.fq.bgz"
+        expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base)
      output:
-        "{catlas_dir}/reads.fq.bgz.labels"
+        "{catlas_dir}/reads.bgz.labels"
      shell:
-        "{python} -m search.label_cdbg {catlas_dir} {input} {output}"
+        "{python} -m spacegraphcats.cdbg.label_cdbg {catlas_dir} {input} {output}"
 
 
 # build catlas!
@@ -124,7 +127,7 @@ rule build_catlas:
         "{catlas_dir}/first_doms.txt",
         "{catlas_dir}/catlas.csv"
      shell:
-        "{python} -m spacegraphcats.catlas --no_checkpoint {catlas_dir} {radius}"
+        "{python} -m spacegraphcats.catlas.catlas --no_checkpoint {catlas_dir} {radius}"
 
 # index contigs, count node sizes
 rule make_contigs_kmer_index:
@@ -134,16 +137,16 @@ rule make_contigs_kmer_index:
         "{catlas_dir}/contigs.fa.gz.mphf",
         "{catlas_dir}/contigs.fa.gz.indices"
      shell:
-        "{python} -m search.index_contigs_by_kmer -k {ksize} {catlas_dir}"
+        "{python} -m spacegraphcats.index.index_contigs_by_kmer -k {ksize} {catlas_dir}"
 
 ### Search rules.
 
-def make_query_base(searchfiles, suffix=''):
+def make_query_base(searchfiles):
     x = []
     for filename in searchfiles:
-        x.append("{}{}/{}.contigs.sig".format(search_dir, suffix, os.path.basename(filename)))
-        x.append("{}{}/{}.cdbg_ids.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
-        x.append("{}{}/{}.frontier.txt.gz".format(search_dir, suffix, os.path.basename(filename)))
+        x.append("{}/{}.contigs.sig".format(search_dir, os.path.basename(filename)))
+        x.append("{}/{}.cdbg_ids.txt.gz".format(search_dir, os.path.basename(filename)))
+        x.append("{}/{}.frontier.txt.gz".format(search_dir, os.path.basename(filename)))
     return x
 
 # do a quick search!
@@ -158,7 +161,7 @@ rule searchquick:
         expand("{search_dir}/results.csv", search_dir=search_dir),
         make_query_base(config['searchquick']),
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} -k {ksize} --overhead={overhead}"
+        "{python} -m spacegraphcats.search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[searchquick]} -k {ksize} --overhead={overhead}"
 
 
 # do a full search!
@@ -173,9 +176,54 @@ rule search:
         expand("{search_dir}/results.csv", search_dir=search_dir),
         make_query_base(config['search']),
     shell:
-        "{python} -m search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[search]} -k {ksize} --overhead={overhead}"
+        "{python} -m spacegraphcats.search.extract_nodes_by_query {catlas_dir} {search_dir} --query {config[search]} -k {ksize} --overhead={overhead}"
 
 ruleorder: search > searchquick
+
+### Extract contigs and reads.
+
+def make_extract_contigs_base(searchfiles):
+    x = []
+    for filename in searchfiles:
+        x.append("{}/{}.cdbg_ids.contigs.fa.gz".format(search_dir, os.path.basename(filename)))
+    return x
+
+def make_extract_reads_base(searchfiles):
+    x = []
+    for filename in searchfiles:
+        x.append("{}/{}.cdbg_ids.reads.fa.gz".format(search_dir, os.path.basename(filename)))
+    return x
+
+# get contigs for a single query
+rule extract_contigs_single_file:
+    input:
+        expand("{catlas_dir}/contigs.fa.gz", catlas_dir=catlas_dir),
+        expand("{search_dir}/{{queryname}}.cdbg_ids.txt.gz", search_dir=search_dir)
+    output:
+        "{search_dir}/{queryname}.cdbg_ids.contigs.fa.gz"
+    shell:
+        "{python} -m spacegraphcats.search.extract_contigs {catlas_dir} {input[1]} -o {output}"
+
+# get reads for a single query
+rule extract_reads_single_file:
+    input:
+        expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base),
+        expand("{catlas_dir}/reads.bgz.labels", catlas_dir=catlas_dir),
+        expand("{search_dir}/{{queryname}}.cdbg_ids.txt.gz", search_dir=search_dir)
+    output:
+        "{search_dir}/{queryname}.cdbg_ids.reads.fa.gz"
+    shell:
+        "{python} -m spacegraphcats.search.extract_reads {input[0]} {input[1]} {input[2]} -o {output}"
+
+# get all the reads
+rule extract_reads:
+    input:
+       make_extract_reads_base(config['search'])
+
+# get all the reads
+rule extract_contigs:
+    input:
+       make_extract_contigs_base(config['search'])
 
 ### shadow ratio stuff
 
@@ -192,4 +240,4 @@ rule extract_by_shadow_ratio_rule:
     output:
         "{catlas_dir}.shadow.{shadow_ratio_maxsize}.fa"
     shell:
-        "{python} -m search.extract_nodes_by_shadow_ratio --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}"
+        "{python} -m spacegraphcats.search.extract_nodes_by_shadow_ratio --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}"

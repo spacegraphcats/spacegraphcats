@@ -15,23 +15,20 @@ import gzip
 
 import screed
 
-import sourmash_lib
-from sourmash_lib.sourmash_args import load_query_signature
-
 from .search_utils import get_reads_by_cdbg
 
-from spacegraphcats.logging import log
+from spacegraphcats.utils.logging import log
 from . import search_utils
 
 
-def main():
+def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('readsfile')
     p.add_argument('labeled_reads_sqlite')
     p.add_argument('node_list_file', help='a cdbg_ids.txt.gz file')
     p.add_argument('-o', '--output', type=argparse.FileType('wt'))
     p.add_argument('-v', '--verbose', action='store_true')
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     dbfilename = args.labeled_reads_sqlite
     if not os.path.exists(dbfilename):
@@ -51,7 +48,7 @@ def main():
     print('extracting reads to {}.'.format(outname))
 
     start = time.time()
-    
+
     total_bp = 0
     total_seqs = 0
 
@@ -72,8 +69,8 @@ def main():
     end = time.time()
     print('total read retrieval time (including database query): {:.2f}s'.format(end - start))
 
-    sys.exit(0)
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

@@ -10,17 +10,17 @@ import gzip
 
 import screed
 
-from spacegraphcats.logging import log
+from spacegraphcats.utils.logging import log
 from . import search_utils
 
 
-def main():
+def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('node_list_file', help='a cdbg_ids.txt.gz file')
     p.add_argument('-o', '--output', type=argparse.FileType('wt'))
     p.add_argument('-v', '--verbose', action='store_true')
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
@@ -57,8 +57,8 @@ def main():
     print('')
     print('fetched {} contigs, {} bp matching node list.'.format(total_seqs, total_bp))
 
-    sys.exit(0)
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
