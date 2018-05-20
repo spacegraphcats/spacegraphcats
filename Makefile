@@ -4,7 +4,7 @@ flakes:
 	pyflakes search/*.py
 
 lint:
-	mypy spacegraphcats/*.py search/*.py --ignore-missing-imports
+	#mypy spacegraphcats/*.py
 
 test:
 	py.test spacegraphcats search
