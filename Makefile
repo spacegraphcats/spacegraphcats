@@ -7,7 +7,7 @@ lint:
 	#mypy spacegraphcats/*.py
 
 test:
-	py.test spacegraphcats search
+	py.test spacegraphcats
 
 #
 # akker-reads.abundtrim.gz is a collection of reads from podar data
