@@ -33,9 +33,9 @@ Activate the virtualenv:
 . catsenv/bin/activate
 ```
 
-Next, clone spacegraphcats. We're using the `mphf` branch for the moment --
+Next, clone spacegraphcats.
 ```
-git clone https://github.com/spacegraphcats/spacegraphcats/ -b mphf
+git clone https://github.com/spacegraphcats/spacegraphcats/
 ```
 
 and now install the requirements:
