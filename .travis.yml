@@ -15,7 +15,7 @@ script:
   - make lint
   - make test
   - make twofoo-test
-  - py.test spacegraphcats search --cov=.
+  - py.test spacegraphcats --cov=.
 
 after_success:
   - codecov
