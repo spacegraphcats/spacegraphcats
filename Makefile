@@ -51,7 +51,9 @@ twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
 #
 
 dory-test: data/dory-subset.fa data/dory-head.fa
-	conf/run dory-test
+	conf/run dory-test search
+	conf/run dory-test extract_reads
+	conf/run dory-test extract_contigs
 
 twofoo/bcalm.twofoo.k31.unitigs.fa:
 	mkdir -p twofoo
