@@ -105,7 +105,7 @@ rule reads_bgzf:
      output:
         "{catlas_base}/{catlas_base}.reads.bgz"
      shell:
-        "{python} -m spacegraphcats.cdbg.make_bgzf {input} -o {output}"
+        "{python} -m spacegraphcats.utils.make_bgzf {input} -o {output}"
 
 
 # label the reads by contig
