@@ -4,10 +4,10 @@ flakes:
 	pyflakes search/*.py
 
 lint:
-	mypy spacegraphcats/*.py search/*.py --ignore-missing-imports
+	#mypy spacegraphcats/*.py
 
 test:
-	py.test spacegraphcats search
+	py.test spacegraphcats
 
 #
 # akker-reads.abundtrim.gz is a collection of reads from podar data
@@ -51,7 +51,9 @@ twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
 #
 
 dory-test: data/dory-subset.fa data/dory-head.fa
-	conf/run dory-test
+	conf/run dory-test search
+	conf/run dory-test extract_reads
+	conf/run dory-test extract_contigs
 
 twofoo/bcalm.twofoo.k31.unitigs.fa:
 	mkdir -p twofoo
@@ -60,5 +62,5 @@ twofoo/bcalm.twofoo.k31.unitigs.fa:
 
 twofoo-test: twofoo/bcalm.twofoo.k31.unitigs.fa
 	conf/run twofoo search
-	python -m search.characterize_catlas_regions twofoo_k31_r1 twofoo_k31_r1.vec
+	python -m spacegraphcats.search.characterize_catlas_regions twofoo_k31_r1 twofoo_k31_r1.vec
 

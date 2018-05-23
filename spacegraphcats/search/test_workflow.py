@@ -3,16 +3,16 @@ import tempfile
 import shutil
 import screed
 
-from spacegraphcats import catlas
-import search.index_contigs_by_kmer
-import search.extract_nodes_by_query
-import search.characterize_catlas_regions
-import search.extract_unassembled_nodes
-import search.catlas_info
-import search.extract_contigs
-import search.make_bgzf
-import search.label_cdbg
-import search.extract_reads
+from spacegraphcats.catlas import catlas
+from spacegraphcats.index import index_contigs_by_kmer
+from spacegraphcats.search import extract_nodes_by_query
+from spacegraphcats.search import characterize_catlas_regions
+from spacegraphcats.search import extract_unassembled_nodes
+from spacegraphcats.search import catlas_info
+from spacegraphcats.search import extract_contigs
+from spacegraphcats.utils import make_bgzf
+from spacegraphcats.cdbg import label_cdbg
+from spacegraphcats.search import extract_reads
 import sourmash_lib
 
 
@@ -35,7 +35,7 @@ class TempDirectory(object):
 
 def relative_filename(filename):
     thisdir = os.path.dirname(__file__)
-    pkgdir = os.path.join(thisdir, '..')
+    pkgdir = os.path.join(thisdir, '../..')
     newpath = os.path.join(pkgdir, filename)
     return os.path.abspath(newpath)
 
@@ -46,7 +46,7 @@ class Args(object):
 
 def test_dory():
     with TempDirectory() as location:
-        import search.bcalm_to_gxt
+        from spacegraphcats.cdbg import bcalm_to_gxt
 
         # make the output directory
         try:
@@ -60,7 +60,7 @@ def test_dory():
                 'dory_k21_r1/cdbg.gxt',
                 'dory_k21_r1/contigs.fa.gz']
 
-        search.bcalm_to_gxt.main(args)
+        bcalm_to_gxt.main(args)
 
         # build catlas
 
@@ -74,15 +74,15 @@ def test_dory():
 
         # make k-mer search index
         args = '-k 21 dory_k21_r1'.split()
-        search.index_contigs_by_kmer.main(args)
+        index_contigs_by_kmer.main(args)
 
         # do search!!
-        search.extract_nodes_by_query
+        extract_nodes_by_query
 
         args='dory_k21_r1 dory_k21_r1_search_oh0 --query data/dory-head.fa -k 21 --overhead=0.0'.split()
 
         try:
-            search.extract_nodes_by_query.main(args)
+            extract_nodes_by_query.main(args)
         except SystemExit as e:
             assert e.code == 0, str(e)
 
@@ -104,32 +104,32 @@ def test_dory():
 
         # run characterize_catlas_regions
         args = 'dory_k21_r1 dory_k1_r1.vec'.split()
-        search.characterize_catlas_regions.main(args)
+        characterize_catlas_regions.main(args)
 
         # run extract_unassembled_regions
         args = 'dory_k21_r1 data/dory-head.fa dory.regions -k 21'.split()
-        search.extract_unassembled_nodes.main(args)
+        extract_unassembled_nodes.main(args)
 
         # run catlas info
-        search.catlas_info.main(['dory_k21_r1'])
+        catlas_info.main(['dory_k21_r1'])
 
         # run extract_contigs
         args = ['dory_k21_r1',
                 'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz',
                 '-o',
                 'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.contigs.fa.gz']
-        search.extract_contigs.main(args)
+        extract_contigs.main(args)
 
         assert os.path.exists('dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.contigs.fa.gz')
 
         # run make_bgzf
         args = ['data/dory-subset.fa', '-o', 'dory/dory.reads.bgz']
-        search.make_bgzf.main(args)
+        make_bgzf.main(args)
 
         # run label_cdbg
         args = ['dory_k21_r1',
                 'dory/dory.reads.bgz', 'dory_k21_r1/reads.bgz.labels']
-        search.label_cdbg.main(args)
+        label_cdbg.main(args)
 
         # run extract_reads
         args = ['dory/dory.reads.bgz',
@@ -137,4 +137,4 @@ def test_dory():
                 'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz',
                 '-o',
                 'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz']
-        search.extract_reads.main(args)
+        extract_reads.main(args)

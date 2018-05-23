@@ -1,2 +1,1 @@
-- [ ] Does this PR change the contracted DBG, catlas, or minhash DB formats?
-      If so, merge with care as this will require rebuilding some big files.
+**Please note** if this PR requires a rebuild of catlas or other big files.
