@@ -123,11 +123,13 @@ def main(argv):
     p.add_argument('--max_overhead', help="largest overhead allowed",
                    type=float, default=1.0)
     p.add_argument('--query', help='query sequences', nargs='+')
-    p.add_argument('--no-empty', action='store_true')
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
-    p.add_argument('--scaled', default=1000, type=float)
+    p.add_argument('--scaled', default=1000, type=float,
+                   help="scaled value for contigs minhash output")
     p.add_argument('-v', '--verbose', action='store_true')
+    p.add_argument('--cdbg-only', action='store_true',
+                   help="(for paper evaluation) do not expand query using domset)")
 
     args = p.parse_args(argv)
 
@@ -282,9 +284,10 @@ def main(argv):
             total_shadow = find_shadow(total_frontier, dag)
 
             # calculate associated cDBG nodes
-            cdbg_shadow = set()
-            for x in total_shadow:
-                cdbg_shadow.update(layer1_to_cdbg.get(x))
+            if not args.cdbg_only:
+                cdbg_shadow = set()
+                for x in total_shadow:
+                    cdbg_shadow.update(layer1_to_cdbg.get(x))
 
             # done with main loop! now extract contigs using cDBG shadow
             # node list.
