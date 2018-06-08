@@ -54,8 +54,8 @@ def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('output')
-    p.add_argument('--maxsize', type=float, default=10000)
-    p.add_argument('--minsize', type=float, default=2000)
+    p.add_argument('--maxsize', type=float, default=20000)
+    p.add_argument('--minsize', type=float, default=5000)
     p.add_argument('--min-abund', type=float, default=0)
     p.add_argument('-k', '--ksize', default=5, type=int,
                    help='k-mer size for vectors')
