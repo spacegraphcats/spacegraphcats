@@ -240,7 +240,7 @@ def main(argv):
                 kmer_idx.build_catlas_match_counts(cdbg_match_counts, dag,
                                                    dag_levels, layer1_to_cdbg)
 
-            # check a few things - we've propogated properly:
+            # check a few things - we've propagated properly:
             assert sum(cdbg_match_counts.values()) == \
                 catlas_match_counts[top_node_id]
             # ...and all nodes have no more matches than total k-mers.
@@ -284,7 +284,11 @@ def main(argv):
             total_shadow = find_shadow(total_frontier, dag)
 
             # calculate associated cDBG nodes
-            if not args.cdbg_only:
+            if args.cdbg_only:
+                # forget all the dag/catlas stuff, just use the cDBG nodes
+                # with a match. (this is for paper evaluation purposes.)
+                cdbg_shadow = set(cdbg_match_counts.keys())
+            else:
                 cdbg_shadow = set()
                 for x in total_shadow:
                     cdbg_shadow.update(layer1_to_cdbg.get(x))

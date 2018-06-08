@@ -43,6 +43,8 @@ def main(args):
         config['experiment'] = args.experiment
     if args.radius is not None:
         config['radius'] = args.radius
+    if args.cdbg_only:
+        config['cdbg_only'] = True
 
     print('--------')
     print('details!')
@@ -96,6 +98,8 @@ from the main spacegraphcats directory.
     parser.add_argument('--overhead', type=float, default=None)
     parser.add_argument('--experiment', default=None)
     parser.add_argument('--radius', type=int, default=None)
+    parser.add_argument('--cdbg-only', action='store_true',
+                        help='for paper evaluation purposes')
     args = parser.parse_args()
 
     sys.exit(main(args))
