@@ -332,12 +332,16 @@ def main(argv):
                                       retrieve_start))
 
             # calculate summary values of extracted contigs
-            containment = query_sig.minhash.contained_by(contigs_minhash)
-            similarity = query_sig.minhash.similarity(contigs_minhash)
-            print('query inclusion by retrieved contigs:'
-                  ' {:.3f}%'.format(containment*100))
-            print('query similarity to retrieved contigs:'
-                  ' {:.3f}%'.format(similarity*100))
+            try:
+                containment = query_sig.minhash.contained_by(contigs_minhash)
+                similarity = query_sig.minhash.similarity(contigs_minhash)
+                print('query inclusion by retrieved contigs:'
+                      ' {:.3f}%'.format(containment*100))
+                print('query similarity to retrieved contigs:'
+                      ' {:.3f}%'.format(similarity*100))
+            except ZeroDivisionError:
+                containment = 0.
+                similarity = 0.
 
             # recover from above.
             best_containment = f_found
