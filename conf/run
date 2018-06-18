@@ -50,14 +50,14 @@ def main(args):
     print('details!')
     print('\tsnakefile: {}'.format(snakefile))
     print('\tconfig: {}'.format(configfile))
-    print('\ttarget: {}'.format(args.target))
+    print('\ttargets: {}'.format(repr(args.targets)))
     if config:
         print('\toverride: {}'.format(pprint.pformat(config)))
     print('--------')
 
     # run!!
     status = snakemake.snakemake(snakefile, configfile=configfile,
-                                 targets=[args.target], printshellcmds=True,
+                                 targets=args.targets, printshellcmds=True,
                                  dryrun=args.dry_run,
                                  lock=not args.nolock, config=config,
                                  verbose=args.verbose, debug_dag=args.debug)
@@ -68,7 +68,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='run snakemake workflows for spacegraphcats', usage='''run <configfile.json> [<target>]
+    parser = argparse.ArgumentParser(description='run snakemake workflows for spacegraphcats', usage='''run <configfile.json> [<target1> ...]
 
 Run snakemake workflows for spacegraphcats, using the given config file.
 
@@ -90,7 +90,7 @@ from the main spacegraphcats directory.
 ''')
 
     parser.add_argument('configfile')
-    parser.add_argument('target', nargs='?', default='build')
+    parser.add_argument('targets', nargs='*', default=['build'])
     parser.add_argument('-n', '--dry-run', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-d', '--debug', action='store_true')
