@@ -123,11 +123,13 @@ def main(argv):
     p.add_argument('--max_overhead', help="largest overhead allowed",
                    type=float, default=1.0)
     p.add_argument('--query', help='query sequences', nargs='+')
-    p.add_argument('--no-empty', action='store_true')
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
-    p.add_argument('--scaled', default=1000, type=float)
+    p.add_argument('--scaled', default=1000, type=float,
+                   help="scaled value for contigs minhash output")
     p.add_argument('-v', '--verbose', action='store_true')
+    p.add_argument('--cdbg-only', action='store_true',
+                   help="(for paper evaluation) do not expand query using domset)")
 
     args = p.parse_args(argv)
 
@@ -238,7 +240,7 @@ def main(argv):
                 kmer_idx.build_catlas_match_counts(cdbg_match_counts, dag,
                                                    dag_levels, layer1_to_cdbg)
 
-            # check a few things - we've propogated properly:
+            # check a few things - we've propagated properly:
             assert sum(cdbg_match_counts.values()) == \
                 catlas_match_counts[top_node_id]
             # ...and all nodes have no more matches than total k-mers.
@@ -282,9 +284,14 @@ def main(argv):
             total_shadow = find_shadow(total_frontier, dag)
 
             # calculate associated cDBG nodes
-            cdbg_shadow = set()
-            for x in total_shadow:
-                cdbg_shadow.update(layer1_to_cdbg.get(x))
+            if args.cdbg_only:
+                # forget all the dag/catlas stuff, just use the cDBG nodes
+                # with a match. (this is for paper evaluation purposes.)
+                cdbg_shadow = set(cdbg_match_counts.keys())
+            else:
+                cdbg_shadow = set()
+                for x in total_shadow:
+                    cdbg_shadow.update(layer1_to_cdbg.get(x))
 
             # done with main loop! now extract contigs using cDBG shadow
             # node list.
@@ -325,12 +332,16 @@ def main(argv):
                                       retrieve_start))
 
             # calculate summary values of extracted contigs
-            containment = query_sig.minhash.contained_by(contigs_minhash)
-            similarity = query_sig.minhash.similarity(contigs_minhash)
-            print('query inclusion by retrieved contigs:'
-                  ' {:.3f}%'.format(containment*100))
-            print('query similarity to retrieved contigs:'
-                  ' {:.3f}%'.format(similarity*100))
+            try:
+                containment = query_sig.minhash.contained_by(contigs_minhash)
+                similarity = query_sig.minhash.similarity(contigs_minhash)
+                print('query inclusion by retrieved contigs:'
+                      ' {:.3f}%'.format(containment*100))
+                print('query similarity to retrieved contigs:'
+                      ' {:.3f}%'.format(similarity*100))
+            except ZeroDivisionError:
+                containment = 0.
+                similarity = 0.
 
             # recover from above.
             best_containment = f_found
