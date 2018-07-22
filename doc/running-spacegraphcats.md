@@ -2,54 +2,9 @@
 
 ## Installing the spacegraphcats software and its dependencies
 
-### If starting on a blank Ubuntu machine
+Please see [Installing spacegraphcats](installing-spacegraphcats.md).
 
-e.g. on AWS, ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20180126 (ami-79873901), you'll need to make sure you have Python 3, a dev environment, and other stuff:
-
-```
-sudo apt-get update
-sudo apt-get -y install python3 python3-dev zlib1g-dev g++ \
-    python3-venv make cmake
-```
-
-and then do
-
-```
-python3 -m venv catsenv
-```
-
-instead of the first command below.
-
-### First, clone repo and configure/install requirements
-
-Change to a working directory, and create a virtualenv; you'll need Python 3.5 or up.
-
-```
-python -m virtualenv -p python3.5 catsenv 
-```
-
-Activate the virtualenv:
-```
-. catsenv/bin/activate
-```
-
-Next, clone spacegraphcats.
-```
-git clone https://github.com/spacegraphcats/spacegraphcats/
-```
-
-and now install the requirements:
-
-```
-cd spacegraphcats
-pip install -U setuptools pip
-pip install Cython
-pip install -r requirements.txt
-```
-
-You will also need to install BCALM and put the bcalm binary in your path; [see instructions](https://github.com/GATB/bcalm#installation).
-
-### Now, run a small test.
+## Running spacegraphcats search & output files
 
 ```
 conf/run dory-test search
