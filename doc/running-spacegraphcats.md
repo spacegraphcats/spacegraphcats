@@ -145,29 +145,12 @@ This will plot the distribution of similarity and containment in the results.
 
 ## Extracting the sequences that match search results
 
-You can get the cDBG sequences by using `search.extract_contigs`; this will extract all of the contigs matched by the `2.fa.gz` query from the `twofoo_k31_r1` catlas:
+You can get the cDBG unitigs and the reads corresponding to each by using
+the targets `extract_reads` and `extract_contigs`.
 
 ```
-python -m search.extract_contigs twofoo_k31_r1 twofoo_k31_r1_search_oh0/2.fa.gz.cdbg_ids.txt.gz -o xxx.2.query.fa
+conf/run twofoo extract_contigs extract_reads
 ```
-
-You can also extract the reads, but this is a little rougher at the moment. For that, you will first need to put all the reads into a .bgz file:
-
-```
-python -m search.make_bgzf twofoo.fq.gz
-```
-
-and then index that file by contig:
-
-```
-python -m search.label_cdbg twofoo_k31_r1 twofoo.fq.gz.bgz twofoo.labels
-```
-
-and NOW FINALLY you can run
-```
-python -m search.extract_reads twofoo.fq.gz.bgz twofoo.labels twofoo_k31_r1_search_oh0/2.fa.gz.cdbg_ids.txt.gz
-```
-to extract the reads belonging to the cDBG ids returned from the query with `data/2.fa.gz`.
 
 ## Other information
 
@@ -177,12 +160,16 @@ The `run` script has several targets, in addition to `search` and `searchquick`.
 
 * `conf/run twofoo build` will build the catlas
 * `conf/run twofoo clean` should remove the build targets.
+* `conf/run twofoo extract_contigs` -- get contigs for search results; see above.
+* `conf/run twofoo extract_reads` -- get reads for search results; see above.
 
 You can also specify `--radius <n>` to override the radius defined in the JSON config file; `--overhead <fraction>` to specify an overhead for searches; and `--experiment foo` to append a `_foo` to the search directory.)
 
 Last, but not least: snakemake locks the directory to make sure processes don't step on each other. This is important when catlases need to be built (you don't want two different `search` commands stepping on each other during the catlas building phase) but once you have built catlases you can do searches in parallel.  To enable this add `--nolock` to the run command. 
 
 ## Characterizing the catlas
+
+(The below may not be working. - CTB 7/22/2018.)
 
 ### Extracting high articulated bits of the cDBG
 
