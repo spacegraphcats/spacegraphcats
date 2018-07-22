@@ -145,12 +145,27 @@ This will plot the distribution of similarity and containment in the results.
 
 ## Extracting the sequences that match search results
 
-You can get the cDBG unitigs and the reads corresponding to each by using
-the targets `extract_reads` and `extract_contigs`.
+You can get the cDBG unitigs for the searches, and the reads
+corresponding to them, by using the targets `extract_reads` and
+`extract_contigs`.
 
 ```
 conf/run twofoo extract_contigs extract_reads
 ```
+
+This will produce the files:
+
+```
+twofoo_k31_r1_search_oh0/2.fa.gz.cdbg_ids.contigs.fa.gz
+twofoo_k31_r1_search_oh0/47.fa.gz.cdbg_ids.contigs.fa.gz
+twofoo_k31_r1_search_oh0/63.fa.gz.cdbg_ids.contigs.fa.gz
+
+twofoo_k31_r1_search_oh0/2.fa.gz.cdbg_ids.reads.fa.gz
+twofoo_k31_r1_search_oh0/47.fa.gz.cdbg_ids.reads.fa.gz
+twofoo_k31_r1_search_oh0/63.fa.gz.cdbg_ids.reads.fa.gz
+```
+which are (respectively) the contigs for the neighborhoods around each
+query, and the reads for the neighborhoods around each query.
 
 ## Other information
 

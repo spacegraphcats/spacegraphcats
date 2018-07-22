@@ -43,6 +43,7 @@ cd spacegraphcats
 pip install -U setuptools pip
 pip install Cython
 pip install -r requirements.txt
+pip install https://github.com/dib-lab/khmer/archive/master.zip
 ```
 
 You will also need to install BCALM and put the bcalm binary in your path; [see instructions](https://github.com/GATB/bcalm#installation).
