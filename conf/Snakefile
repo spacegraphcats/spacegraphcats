@@ -144,7 +144,6 @@ rule make_contigs_kmer_index:
      output:
         "{catlas_dir}/contigs.fa.gz.mphf",
         "{catlas_dir}/contigs.fa.gz.indices",
-        "{catlas_dir}/contigs.fa.gz.info.csv"
      shell:
         "{python} -m spacegraphcats.index.index_contigs_by_kmer -k {ksize} {catlas_dir}"
 
