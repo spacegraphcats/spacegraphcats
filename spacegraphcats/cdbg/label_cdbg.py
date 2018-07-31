@@ -1,5 +1,3 @@
-# TODO: delete me?
-
 #! /usr/bin/env python
 """
 Build an index that can be used to retrieve individual reads or contigs
