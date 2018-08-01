@@ -43,19 +43,21 @@ def main(args):
         config['experiment'] = args.experiment
     if args.radius is not None:
         config['radius'] = args.radius
+    if args.cdbg_only:
+        config['cdbg_only'] = True
 
     print('--------')
     print('details!')
     print('\tsnakefile: {}'.format(snakefile))
     print('\tconfig: {}'.format(configfile))
-    print('\ttarget: {}'.format(args.target))
+    print('\ttargets: {}'.format(repr(args.targets)))
     if config:
         print('\toverride: {}'.format(pprint.pformat(config)))
     print('--------')
 
     # run!!
     status = snakemake.snakemake(snakefile, configfile=configfile,
-                                 targets=[args.target], printshellcmds=True,
+                                 targets=args.targets, printshellcmds=True,
                                  dryrun=args.dry_run,
                                  lock=not args.nolock, config=config,
                                  verbose=args.verbose, debug_dag=args.debug)
@@ -66,7 +68,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='run snakemake workflows for spacegraphcats', usage='''run <configfile.json> [<target>]
+    parser = argparse.ArgumentParser(description='run snakemake workflows for spacegraphcats', usage='''run <configfile.json> [<target1> ...]
 
 Run snakemake workflows for spacegraphcats, using the given config file.
 
@@ -88,7 +90,7 @@ from the main spacegraphcats directory.
 ''')
 
     parser.add_argument('configfile')
-    parser.add_argument('target', nargs='?', default='build')
+    parser.add_argument('targets', nargs='*', default=['build'])
     parser.add_argument('-n', '--dry-run', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-d', '--debug', action='store_true')
@@ -96,6 +98,8 @@ from the main spacegraphcats directory.
     parser.add_argument('--overhead', type=float, default=None)
     parser.add_argument('--experiment', default=None)
     parser.add_argument('--radius', type=int, default=None)
+    parser.add_argument('--cdbg-only', action='store_true',
+                        help='for paper evaluation purposes')
     args = parser.parse_args()
 
     sys.exit(main(args))

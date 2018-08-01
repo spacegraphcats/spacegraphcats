@@ -1,0 +1,10 @@
+{
+    "catlas_base": "podarV",
+    "input_sequences": ["SRR606249.k31.abundtrim.fq.gz"],
+    "ksize": 31,
+    "radius": 1,
+    "experiment": "fuso",
+
+    "searchquick": ["fuso/GCA_000524235.1_FspOBRC1v1.0_genomic.fna.gz", "fuso/GCA_000007325.1_ASM732v1_genomic.fna.gz", "fuso/GCA_000292935.1_ASM29293v1_genomic.fna.gz", "fuso/GCA_001455125.1_ASM145512v1_cds_from_genomic.fna.gz", "fuso/GCA_000523555.1_Fuso_nucl_13_3C_V1_genomic.fna.gz", "fuso/GCA_000158255.2_Fuso_sp_4_1_13_V2_genomic.fna.gz", "fuso/GCA_001815715.1_ASM181571v1_genomic.fna.gz"],
+    "search": ["fuso/GCA_000524235.1_FspOBRC1v1.0_genomic.fna.gz", "fuso/GCA_000007325.1_ASM732v1_genomic.fna.gz", "fuso/GCA_000292935.1_ASM29293v1_genomic.fna.gz", "fuso/GCA_001455125.1_ASM145512v1_cds_from_genomic.fna.gz", "fuso/GCA_000523555.1_Fuso_nucl_13_3C_V1_genomic.fna.gz", "fuso/GCA_000158255.2_Fuso_sp_4_1_13_V2_genomic.fna.gz", "fuso/GCA_001815715.1_ASM181571v1_genomic.fna.gz", "fuso/Fuso_nbhd.contigs.fa.gz"]
+}

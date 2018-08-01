@@ -12,7 +12,7 @@ import collections
 import argparse
 from spacegraphcats.utils.bgzf import bgzf
 import logging
-from typing import List, Dict, Set, Text
+from typing import List, Dict, Set
 
 
 def end_match(s, t, k, direction='sp'):
