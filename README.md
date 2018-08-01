@@ -69,5 +69,3 @@ files, is available in
 and
 [search/search_utils.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/spacegraphcats/search/search_utils.py),
 `get_reads_by_cdbg`, respectively.
-
-CTB 31.7.2018
