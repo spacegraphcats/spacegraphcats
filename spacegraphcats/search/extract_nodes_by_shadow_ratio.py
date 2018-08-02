@@ -2,6 +2,8 @@
 """
 Look for catlas nodes that have few k-mers but many cDBG nodes underneath
 them, as a likely sign of strain variation.
+
+EXPERIMENTAL.
 """
 import argparse
 import os

@@ -132,7 +132,8 @@ rule build_catlas:
         "{catlas_dir}/contigs.fa.gz",
      output:
         "{catlas_dir}/first_doms.txt",
-        "{catlas_dir}/catlas.csv"
+        "{catlas_dir}/catlas.csv",
+        "{catlas_dir}/commands.log"
      shell:
         "{python} -m spacegraphcats.catlas.catlas --no_checkpoint {catlas_dir} {radius}"
 
@@ -142,7 +143,7 @@ rule make_contigs_kmer_index:
         "{catlas_dir}/contigs.fa.gz"
      output:
         "{catlas_dir}/contigs.fa.gz.mphf",
-        "{catlas_dir}/contigs.fa.gz.indices"
+        "{catlas_dir}/contigs.fa.gz.indices",
      shell:
         "{python} -m spacegraphcats.index.index_contigs_by_kmer -k {ksize} {catlas_dir}"
 

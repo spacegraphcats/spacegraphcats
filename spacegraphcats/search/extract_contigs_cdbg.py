@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 """
-Retrieve the contigs for a list of cDBG nodes using exact/MPHF code.
+Retrieve the unitigs containing a set of k-mers, using exact/MPHF code.
+
+This _does not_ use the domset or neighborhood, merely recovers exactly the
+unitigs that contain the query k-mers.
 """
 import argparse
 import os
@@ -44,13 +47,18 @@ def main():
     for record in screed.open(args.query):
         query_kmers.update(bf.get_kmer_hashes(record.sequence))
 
+    # find the list of cDBG nodes that contain at least one query k-mer
     cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
-    cdbg_shadow = set(cdbg_match_counts.keys())
-    cdbg_node_sizes = {}
 
+    # calculate number of nodes found -
+    cdbg_shadow = set(cdbg_match_counts.keys())
+
+    # calculate the sum total k-mers across all of the matching nodes
+    cdbg_node_sizes = {}
     for cdbg_id in cdbg_shadow:
         cdbg_node_sizes[cdbg_id] = kmer_idx.get_cdbg_size(cdbg_id)
 
+    # output some stats
     total_found = sum(cdbg_match_counts.values())
     f_found = total_found / len(query_kmers)
     print('...done loading & counting query k-mers in cDBG.')
@@ -63,6 +71,7 @@ def main():
     if not args.output:
         sys.exit(0)
 
+    # if output requested, extract unitigs.
     outfp = args.output
     outname = args.output.name
 

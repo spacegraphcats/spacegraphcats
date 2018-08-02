@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 """
-Retrieve the contigs for a list of cDBG nodes.  Consumes the output of
-extract_nodes_by_query to get the list of nodes.
+Retrieve the unitig sequences for a given list of cDBG nodes.  Consumes the
+output of extract_nodes_by_query to get the list of nodes.
 """
 import argparse
 import os
