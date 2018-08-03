@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 import heapq
+import time
+from collections import defaultdict
 from typing import Dict, List, Set, Tuple, Union
 
 
@@ -148,3 +150,64 @@ def frontier_search(catlas,
     if len(frontier) > 0:
         frontier = list(zip(*frontier))[3]
     return frontier, 0, 0, None
+
+
+def collect_frontier(catlas,
+                     catlas_match_counts,
+                     max_overhead,
+                     min_containment,
+                     verbose=False):
+    start = time.time()
+
+    # gather results into total_frontier
+    total_frontier = defaultdict(set)
+
+    # do queries!
+    try:
+        frontier, num_leaves, num_empty, frontier_mh = \
+          frontier_search(catlas,
+                          catlas_match_counts,
+                          max_overhead,
+                          min_containment)
+    except NoContainment:
+        print('** WARNING: no containment!?')
+        frontier = []
+
+    # record which seed (always 0, here) contributed to which node
+    for node in frontier:
+        total_frontier[node].add(0)
+
+    end = time.time()
+    print('catlas query time: {:.1f}s'.format(end-start))
+
+    return total_frontier
+
+
+def collect_frontier_exact(catlas,
+                           catlas_match_counts,
+                           overhead=0.0,
+                           verbose=False):
+    start = time.time()
+
+    # gather results into total_frontier
+    total_frontier = defaultdict(set)
+
+    # do queries!
+    try:
+        frontier, num_leaves, num_empty, frontier_mh = \
+          frontier_search_exact(catlas,
+                                catlas_match_counts,
+                                overhead)
+
+    except NoContainment:
+        print('** WARNING: no containment!?')
+        frontier = []
+
+    # record which seed (always 0, here) contributed to which node
+    for node in frontier:
+        total_frontier[node].add(0)
+
+    end = time.time()
+    print('catlas query time: {:.1f}s'.format(end-start))
+
+    return total_frontier

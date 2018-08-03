@@ -9,18 +9,13 @@ import gzip
 import os
 import sys
 import time
-from collections import defaultdict
 
 import khmer
 import screed
 import sourmash_lib
 from sourmash_lib import MinHash
-from sourmash_lib._minhash import hash_murmur
-from sourmash_lib.sourmash_args import load_query_signature
 
-from .frontier_search import (NoContainment,
-                              frontier_search, frontier_search_exact)
-
+from .frontier_search import (collect_frontier, collect_frontier_exact)
 from . import search_utils
 # from .search_utils import load_dag, load_kmer_index, load_layer1_to_cdbg
 from .index import MPHF_KmerIndex
@@ -245,67 +240,6 @@ class Query:
         return best_containment, cdbg_min_overhead, catlas_min_overhead
 
 
-def collect_frontier(catlas,
-                     catlas_match_counts,
-                     max_overhead,
-                     min_containment,
-                     verbose=False):
-    start = time.time()
-
-    # gather results into total_frontier
-    total_frontier = defaultdict(set)
-
-    # do queries!
-    try:
-        frontier, num_leaves, num_empty, frontier_mh = \
-          frontier_search(catlas,
-                          catlas_match_counts,
-                          max_overhead,
-                          min_containment)
-    except NoContainment:
-        print('** WARNING: no containment!?')
-        frontier = []
-
-    # record which seed (always 0, here) contributed to which node
-    for node in frontier:
-        total_frontier[node].add(0)
-
-    end = time.time()
-    print('catlas query time: {:.1f}s'.format(end-start))
-
-    return total_frontier
-
-
-def collect_frontier_exact(catlas,
-                           catlas_match_counts,
-                           overhead=0.0,
-                           verbose=False):
-    start = time.time()
-
-    # gather results into total_frontier
-    total_frontier = defaultdict(set)
-
-    # do queries!
-    try:
-        frontier, num_leaves, num_empty, frontier_mh = \
-          frontier_search_exact(catlas,
-                                catlas_match_counts,
-                                overhead)
-
-    except NoContainment:
-        print('** WARNING: no containment!?')
-        frontier = []
-
-    # record which seed (always 0, here) contributed to which node
-    for node in frontier:
-        total_frontier[node].add(0)
-
-    end = time.time()
-    print('catlas query time: {:.1f}s'.format(end-start))
-
-    return total_frontier
-
-
 def main(argv):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
@@ -323,7 +257,7 @@ def main(argv):
                    help="scaled value for contigs minhash output")
     p.add_argument('-v', '--verbose', action='store_true')
     p.add_argument('--cdbg-only', action='store_true',
-                   help="(for paper evaluation) do not expand query using domset)")
+                   help="(for paper eval) do not expand query using domset)")
 
     args = p.parse_args(argv)
     outdir = args.output
