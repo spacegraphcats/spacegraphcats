@@ -6,5 +6,6 @@
     "experiment": "ruminis",
 
     "searchquick": ["ruminis/P_ruminis_CGMCC_1.5058.fna.gz", "ruminis/P_ruminis_DSM_24773.fna.gz", "ruminis/P_ruminis_ML2.fna.gz"],
-    "search": ["ruminis/P_ruminis_CGMCC_1.5058.fna.gz", "ruminis/P_ruminis_DSM_24773.fna.gz", "ruminis/P_ruminis_ML2.fna.gz", "ruminis/P_ruminis_nbhd_contigs.fa.gz"]
+    "search": ["ruminis/P_ruminis_CGMCC_1.5058.fna.gz", "ruminis/P_ruminis_DSM_24773.fna.gz", "ruminis/P_ruminis_ML2.fna.gz"],
+    "_unused": ["ruminis/P_ruminis_nbhd_contigs.fa.gz"]
 }

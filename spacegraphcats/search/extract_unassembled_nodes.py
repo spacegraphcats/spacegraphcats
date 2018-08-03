@@ -2,6 +2,8 @@
 """
 Extract information about catlas nodes after splitting them into "assembled"
 and "not".
+
+EXPERIMENTAL.
 """
 import argparse
 import os

@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 """
-Retrieve the contigs for a list of cDBG nodes.  Consumes the output of
-extract_nodes_by_query to get the list of nodes.
-
-Uses the output of label_cdbg to do its magic.
+Retrieve the reads for a list of cDBG nodes.  Consumes the output of
+extract_nodes_by_query to get the list of nodes, and then uses the
+labeled cDBG output by .cdbg.label_cdbg to find reads that overlap with
+the unitigs in those nodes.
 """
 import argparse
 import os
