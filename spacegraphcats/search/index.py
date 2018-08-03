@@ -26,6 +26,7 @@ class MPHF_KmerIndex(object):
         return None
 
     def build_catlas_node_sizes(self, catlas):
+        """Count the number of kmers in the shadow of each catlas node."""
         node_kmer_sizes = {}
         for node_id in catlas:
             level = catlas.levels[node_id]
