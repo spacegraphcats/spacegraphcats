@@ -272,7 +272,8 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     # distance d-1 are assigned in order to pick an appropriate assignment (a
     # dominator already found in its neighborhood).
     for _ in range(radius):
-        for v, label in assigned_dominator.items():
+        for v in graph:
+            label = assigned_dominator[v]
             if label >= 0:
                 # Push value to unassigned in-neighbors
                 for u in graph.in_neighbors(v, 1):
