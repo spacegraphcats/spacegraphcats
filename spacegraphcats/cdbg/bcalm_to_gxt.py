@@ -182,8 +182,7 @@ def read_bcalm(unitigs, debug, k):
         link_ids = [x.split(':')[2] for x in links]
         link_ids = [int(x) for x in link_ids if int(x) != contig_id]
 
-        if debug:
-            print('link_ids for {} are {}'.format(contig_id, link_ids))
+        logging.debug('link_ids for {} are {}'.format(contig_id, link_ids))
 
         neighbors[contig_id].update(link_ids)
 
@@ -213,8 +212,6 @@ def read_bcalm(unitigs, debug, k):
 
 
 def main(argv):
-    logging.basicConfig(filename='bcalm_to_gxt.log', filemode='w',
-                        level=logging.DEBUG)
     parser = argparse.ArgumentParser()
     parser.add_argument('bcalm_unitigs')
     parser.add_argument('gxt_out')
@@ -233,6 +230,15 @@ def main(argv):
     trim_cutoff = args.abundance
     unitigs = args.bcalm_unitigs
     debug = args.debug
+
+    if args.debug:
+        logging.basicConfig(filename='bcalm_to_gxt.log', filemode='w',
+                            level=logging.DEBUG)
+    else:
+        logging.basicConfig(filename='bcalm_to_gxt.log', filemode='w',
+                            level=logging.WARNING)
+
+    logging.debug("starting bcalm_to_gxt run.")
 
     gxtfp = open(args.gxt_out, 'wt')
     contigsfp = bgzf.open(args.contigs_out, 'wb')
