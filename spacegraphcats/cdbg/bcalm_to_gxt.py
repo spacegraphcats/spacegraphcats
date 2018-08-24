@@ -5,6 +5,9 @@ Convert a bcalm unitigs.fa output (a cDBG) into spacegraphcats files.
 Outputs a GXT file (containing an undirected graph), a BGZF file
 containing the sequences, and a .info.csv file containing
 the BGZF offset, mean abundance, and length of each contig.
+
+Also outputs sourmash k=31 scaled=1000 signatures for both input and
+output files.
 """
 import screed
 import sys
@@ -13,6 +16,7 @@ import argparse
 from spacegraphcats.utils.bgzf import bgzf
 import logging
 from typing import List, Dict, Set
+import sourmash
 
 
 def end_match(s, t, k, direction='sp'):
@@ -244,9 +248,14 @@ def main(argv):
     contigsfp = bgzf.open(args.contigs_out, 'wb')
     info_filename = args.contigs_out + '.info.csv'
     info_fp = open(info_filename, 'wt')
+    in_mh = sourmash.MinHash(0, 31, scaled=1000)
+    out_mh = sourmash.MinHash(0, 31, scaled=1000)
 
     # load in the basic graph structure from the BCALM output file
     neighbors, sequences, mean_abunds, sizes = read_bcalm(unitigs, debug, k)
+
+    for seq in sequences.values():
+        in_mh.add_sequence(seq)
 
     # if we are removing pendants, we need to relabel the contigs so they are
     # consecutive integers starting from 0.  If not, we create dummy data
@@ -266,6 +275,7 @@ def main(argv):
     for x, i in aliases.items():
         offsets[x] = contigsfp.tell()
         contigsfp.write('>{}\n{}\n'.format(i, sequences[x]))
+        out_mh.add_sequence(sequences[x])
     contigsfp.close()
 
     print('... done! {} unitigs'.format(n))
@@ -287,6 +297,16 @@ def main(argv):
         info_fp.write('{},{},{:.3f},{}\n'.format(i, offsets[v],
                                                  mean_abunds[v],
                                                  sizes[v]))
+
+    # output two sourmash signatures: one for input contigs, one for
+    # output contigs.
+    in_sig = sourmash.SourmashSignature(in_mh, filename=args.bcalm_unitigs)
+    sourmash.save_signatures([ in_sig ],
+                             open(args.bcalm_unitigs + '.sig', 'wt'))
+
+    out_sig = sourmash.SourmashSignature(out_mh, filename=args.contigs_out)
+    sourmash.save_signatures([ out_sig ],
+                             open(args.contigs_out + '.sig', 'wt'))
 
 
 if __name__ == '__main__':
