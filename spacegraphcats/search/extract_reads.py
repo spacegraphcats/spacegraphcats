@@ -26,7 +26,7 @@ def main(argv=sys.argv[1:]):
     p.add_argument('readsfile')
     p.add_argument('labeled_reads_sqlite')
     p.add_argument('node_list_file', help='a cdbg_ids.txt.gz file')
-    p.add_argument('-o', '--output', type=argparse.FileType('wt'))
+    p.add_argument('-o', '--output')
     p.add_argument('-v', '--verbose', action='store_true')
     args = p.parse_args(argv)
 
@@ -35,12 +35,16 @@ def main(argv=sys.argv[1:]):
         print('sqlite file {} does not exist'.format(dbfilename))
         sys.exit(-1)
 
-    if args.output:
-        outfp = args.output
-        outname = args.output.name
-    else:
+
+    if not args.output:
         outname = args.node_list_file + '.reads.fa.gz'
+    else:
+        outname = args.output
+
+    if outname.endswith('.gz'):
         outfp = gzip.open(outname, 'wt')
+    else:
+        outfp = open(outname, 'wt')
 
     with gzip.open(args.node_list_file, 'rt') as fp:
         cdbg_shadow = set([ int(x.strip()) for x in fp ])
