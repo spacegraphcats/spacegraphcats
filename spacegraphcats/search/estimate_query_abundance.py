@@ -24,12 +24,13 @@ from . import search_utils
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('query')
+    p.add_argument('queries', nargs='+')
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     p.add_argument('-o', '--output', type=argparse.FileType('wt'))
-    p.add_argument('-v', '--verbose', action='store_true')
     args = p.parse_args()
+
+    assert args.output, "must supply -o"
 
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
     x = search_utils.load_cdbg_size_info(args.catlas_prefix)
@@ -42,40 +43,41 @@ def main():
     print('loading query kmers...')
     bf = khmer.Nodetable(args.ksize, 1, 1)
 
-    x = set()
-    n = 0
+    print('queryfile,containment,mean_abundance', file=args.output)
 
-    query_kmers = set()
-    for record in screed.open(args.query):
-        query_kmers.update(bf.get_kmer_hashes(record.sequence))
+    for query in args.queries:
+        print('loading', query)
+        query_kmers = set()
+        for record in screed.open(query):
+            query_kmers.update(bf.get_kmer_hashes(record.sequence))
 
-    # find the list of cDBG nodes that contain at least one query k-mer
-    cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
+        # find the list of cDBG nodes that contain at least one query k-mer
+        cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
 
-    # calculate number of nodes found -
-    cdbg_shadow = set(cdbg_match_counts.keys())
+        # calculate number of nodes found -
+        cdbg_shadow = set(cdbg_match_counts.keys())
 
-    # calculate the sum total k-mers across all of the matching nodes
-    cdbg_node_sizes = {}
-    cdbg_total_weighted = 0.
-    for cdbg_id in cdbg_shadow:
-        cdbg_node_sizes[cdbg_id] = kmer_idx.get_cdbg_size(cdbg_id)
-        cdbg_total_weighted += cdbg_weighted_kmer_sizes[cdbg_id]
+        # calculate the sum total k-mers across all of the matching nodes
+        cdbg_node_sizes = {}
+        cdbg_total_weighted = 0.
+        for cdbg_id in cdbg_shadow:
+            cdbg_node_sizes[cdbg_id] = kmer_idx.get_cdbg_size(cdbg_id)
+            cdbg_total_weighted += cdbg_weighted_kmer_sizes[cdbg_id]
 
-    # output some stats
-    total_found = sum(cdbg_match_counts.values())
-    f_found = total_found / len(query_kmers)
-    print('...done loading & counting query k-mers in cDBG.')
-    print('containment: {:.1f}%'.format(f_found * 100))
+        # output some stats
+        total_found = sum(cdbg_match_counts.values())
+        f_found = total_found / len(query_kmers)
+        print('...done loading & counting query k-mers in cDBG.')
+        print('containment: {:.1f}%'.format(f_found * 100))
 
-    total_kmers_in_cdbg_nodes = sum(cdbg_node_sizes.values())
-    sim = total_found / total_kmers_in_cdbg_nodes
-    print('similarity: {:.1f}%'.format(sim * 100))
+        weight = cdbg_total_weighted / total_found
+        print('weight:', weight)
 
-    print('weight:', cdbg_total_weighted, cdbg_total_weighted / len(query_kmers))
+        if f_found < 0.5:
+            print('skipping output for {}; low containment.'.format(query))
+            continue
 
-    if not args.output:
-        sys.exit(0)
+        print('{},{},{}'.format(query, f_found, weight), file=args.output)
 
     sys.exit(0)
 
