@@ -168,8 +168,7 @@ def read_bcalm(unitigs, debug, k):
     sizes = {}  # type: Dict[int, int]
     sequences = {}  # type: Dict[int, Text]
 
-    # walk the input unitigs file, tracking links between contigs and
-    # writing them to contigs_out.
+    # walk the input unitigs file, tracking links between contigs.
     print('reading unitigs from {}'.format(unitigs))
     for n, record in enumerate(screed.open(unitigs)):
         if n % 10000 == 0:
@@ -201,6 +200,8 @@ def read_bcalm(unitigs, debug, k):
         mean_abunds[contig_id] = abund
         sequences[contig_id] = record.sequence
         sizes[contig_id] = len(record.sequence) - k + 1
+
+    print('...read {} unitigs'.format(len(sequences)))
 
     fail = False
     for source in neighbors:
@@ -253,6 +254,53 @@ def main(argv):
 
     # load in the basic graph structure from the BCALM output file
     neighbors, sequences, mean_abunds, sizes = read_bcalm(unitigs, debug, k)
+
+    # make order deterministic by reordering around min value of first, last,
+    # and reverse complementing sequences appropriately
+    print('reordering...')
+    reordering = {}
+    for key, v in sequences.items():
+        first_hash = sourmash._minhash.hash_murmur(v[:k], 42)
+        last_hash = sourmash._minhash.hash_murmur(v[-k:], 42)
+        hashval = min(first_hash, last_hash)
+        reordering[v] = key
+
+    sorted_reordering = list(sorted(reordering))
+    remapping = {}
+    for new_key, hashval in enumerate(sorted_reordering):
+        old_key = reordering[hashval]
+        remapping[old_key] = new_key
+
+    new_neighbors = collections.defaultdict(set)
+    for old_key, vv in neighbors.items():
+        new_vv = [ remapping[v] for v in vv ]
+        new_neighbors[remapping[old_key]] = set(new_vv)
+
+    new_mean_abunds = {}
+    for old_key, value in mean_abunds.items():
+        new_mean_abunds[remapping[old_key]] = value
+
+    new_sizes = {}
+    for old_key, value in sizes.items():
+        new_sizes[remapping[old_key]] = value
+
+    new_sequences = {}
+    for old_key, new_key in remapping.items():
+        seq = sequences[old_key]
+        first_hash = sourmash._minhash.hash_murmur(seq[:k], 42)
+        last_hash = sourmash._minhash.hash_murmur(seq[-k:], 42)
+        if first_hash > last_hash:
+            seq = screed.rc(seq)          # reverse complement
+        new_sequences[new_key] = seq
+        del sequences[old_key]
+
+    assert len(sequences) == 0
+    print('...done')
+
+    sequences = new_sequences
+    mean_abunds = new_mean_abunds
+    sizes = new_sizes
+    neighbors = new_neighbors
 
     for seq in sequences.values():
         in_mh.add_sequence(seq)
