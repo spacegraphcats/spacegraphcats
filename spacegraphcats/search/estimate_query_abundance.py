@@ -21,14 +21,14 @@ from spacegraphcats.utils.logging import log
 from . import search_utils
 
 
-def main():
+def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('queries', nargs='+')
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     p.add_argument('-o', '--output', type=argparse.FileType('wt'))
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     assert args.output, "must supply -o"
 
@@ -79,8 +79,8 @@ def main():
 
         print('{},{},{}'.format(query, f_found, weight), file=args.output)
 
-    sys.exit(0)
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
