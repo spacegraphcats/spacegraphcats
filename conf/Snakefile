@@ -82,7 +82,7 @@ rule bcalm_cdbg:
      output:
         "{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa"
      shell:
-        "bcalm -in bcalm.{catlas_base}.k{ksize}.inputlist.txt -out {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt"
+        "bcalm -in bcalm.{catlas_base}.k{ksize}.inputlist.txt -out {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt && rm -f {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize}.{{h5,unitigs.fa.glue*}}"
 
 # create list of input files for bcalm
 rule bcalm_cdbg_inpfiles:
