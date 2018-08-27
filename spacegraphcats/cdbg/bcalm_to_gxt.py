@@ -121,7 +121,7 @@ def contract_neighbor(x, u, neighbors, sequences, mean_abunds, sizes, k):
 def contract_degree_two(non_pendants, neighbors, sequences, mean_abunds, sizes,
                         k):
     deg_2 = list()
-    for v, N in neighbors.items():
+    for v, N in sorted(neighbors.items()):   # do we need sorted here!?
         if v in non_pendants or len(N) == 0:
             continue
         u = list(N)[0]
