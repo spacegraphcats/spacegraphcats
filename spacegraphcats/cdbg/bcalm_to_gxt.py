@@ -347,8 +347,8 @@ def main(argv):
 
     # write out all of the links, in 'from to' format.
     n_edges = 0
-    for v, N in neighbors.items():
-        for u in N:
+    for v, N in sorted(neighbors.items()):
+        for u in sorted(N):
             gxtfp.write('{} {}\n'.format(aliases[v], aliases[u]))
             n_edges += 1
 

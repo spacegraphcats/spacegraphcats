@@ -365,16 +365,16 @@ def main(argv):
             cdbg_listname = os.path.basename(query) + '.cdbg_ids.txt.gz'
             with gzip.open(os.path.join(args.output, cdbg_listname),
                            'wt') as fp:
-                fp.write("\n".join([str(x) for x in cdbg_shadow]))
+                fp.write("\n".join([str(x) for x in sorted(cdbg_shadow)]))
 
             # write out frontier nodes by seed
             frontier_listname = os.path.basename(query) + '.frontier.txt.gz'
             with gzip.open(os.path.join(args.output, frontier_listname),
                            'wt') as fp:
-                for node, seedlist in total_frontier.items():
+                for node, seedlist in sorted(total_frontier.items()):
                     fp.write('{},{}\n'.format(node,
                                               " ".join([str(x) for x in
-                                                        seedlist])))
+                                                        sorted(seedlist)])))
 
             # write response curve
             response_curve_filename = os.path.basename(query) + '.response.txt'
