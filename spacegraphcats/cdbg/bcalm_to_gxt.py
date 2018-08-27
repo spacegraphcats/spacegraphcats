@@ -227,6 +227,7 @@ def main(argv):
                         help="don't remove low abundance pendants")
     parser.add_argument('-a', '--abundance', nargs='?', type=float,
                         default=1.1)
+    parser.add_argument('--randomize', help='randomize cDBG order')
     args = parser.parse_args(argv)
 
     k = args.ksize
@@ -255,22 +256,46 @@ def main(argv):
     # load in the basic graph structure from the BCALM output file
     neighbors, sequences, mean_abunds, sizes = read_bcalm(unitigs, debug, k)
 
+    # record input k-mers in a minhash
+    for seq in sequences.values():
+        in_mh.add_sequence(seq)
+
     # make order deterministic by reordering around min value of first, last,
     # and reverse complementing sequences appropriately
     print('reordering...')
     reordering = {}
-    for key, v in sequences.items():
-        first_hash = sourmash._minhash.hash_murmur(v[:k], 42)
-        last_hash = sourmash._minhash.hash_murmur(v[-k:], 42)
-        hashval = min(first_hash, last_hash)
-        reordering[v] = key
 
-    sorted_reordering = list(sorted(reordering))
+    # first, put sequences in specific orientation
+    sequence_list = []
+    for key in neighbors:
+        v = sequences[key]
+
+        # pick lexicographically smaller of forward & reverse complement.
+        v2 = screed.rc(v)
+        if v > v2:
+            v = v2
+        sequence_list.append((v, key))
+        del sequences[key]
+
+    # sort all sequences:
+    sequence_list.sort(reverse=True)
+    if args.randomize:
+        print('(!! randomizing order per --randomize !!)')
+        random.shuffle(sequence_list)
+
+    # ok, now remap all the things.
     remapping = {}
-    for new_key, hashval in enumerate(sorted_reordering):
-        old_key = reordering[hashval]
-        remapping[old_key] = new_key
+    new_sequences = {}
 
+    # remap sequences
+    new_key = 0
+    while sequence_list:                  # consume while iterating
+        sequence, old_key = sequence_list.pop()
+        remapping[old_key] = new_key
+        new_sequences[new_key] = sequence
+        new_key += 1
+
+    # remap other things
     new_neighbors = collections.defaultdict(set)
     for old_key, vv in neighbors.items():
         new_vv = [ remapping[v] for v in vv ]
@@ -284,16 +309,6 @@ def main(argv):
     for old_key, value in sizes.items():
         new_sizes[remapping[old_key]] = value
 
-    new_sequences = {}
-    for old_key, new_key in remapping.items():
-        seq = sequences[old_key]
-        first_hash = sourmash._minhash.hash_murmur(seq[:k], 42)
-        last_hash = sourmash._minhash.hash_murmur(seq[-k:], 42)
-        if first_hash > last_hash:
-            seq = screed.rc(seq)          # reverse complement
-        new_sequences[new_key] = seq
-        del sequences[old_key]
-
     assert len(sequences) == 0
     print('...done')
 
@@ -302,25 +317,24 @@ def main(argv):
     sizes = new_sizes
     neighbors = new_neighbors
 
-    for seq in sequences.values():
-        in_mh.add_sequence(seq)
-
     # if we are removing pendants, we need to relabel the contigs so they are
     # consecutive integers starting from 0.  If not, we create dummy data
     # structures to make the interface the same elsewhere in the data
     if trim:
+        print('removing pendants...')
         non_pendants = set(v for v, N in neighbors.items() if len(N) > 1 or
                            mean_abunds[v] > trim_cutoff)
         contract_degree_two(non_pendants, neighbors, sequences, mean_abunds,
                             sizes, k)
     else:
         non_pendants = list(neighbors.keys())
-    aliases = {x: i for i, x in enumerate(non_pendants)}
+    aliases = {x: i for i, x in enumerate(sorted(non_pendants))}
     n = len(aliases)
 
-    # compute offsets
+    # write out sequences & compute offsets
     offsets = {}
-    for x, i in aliases.items():
+    kv_list = sorted(aliases.items(), key=lambda x:x[1])
+    for x, i in kv_list:
         offsets[x] = contigsfp.tell()
         contigsfp.write('>{}\n{}\n'.format(i, sequences[x]))
         out_mh.add_sequence(sequences[x])
