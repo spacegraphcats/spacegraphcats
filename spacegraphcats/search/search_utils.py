@@ -616,7 +616,7 @@ def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
     total = 0
 
     # walk over all layer1 nodes
-    for node_id, cdbg_nodes in layer1_to_cdbg.items():
+    for node_id, cdbg_nodes in sorted(layer1_to_cdbg.items()):
         n_matches = 0
         n_kmers = 0
 

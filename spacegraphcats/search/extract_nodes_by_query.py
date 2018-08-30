@@ -95,7 +95,7 @@ class QueryOutput:
         sig_filename = os.path.basename(q_name) + '.contigs.sig'
         with open(os.path.join(outdir, sig_filename), 'wt') as fp:
             ss = sourmash_lib.SourmashSignature(self.contigs_minhash,
-                                                name='nbhd:'+q_name,
+                                                name='nbhd:'+self.query.name,
                                                 filename=sig_filename)
             sourmash_lib.save_signatures([ss], fp)
 
