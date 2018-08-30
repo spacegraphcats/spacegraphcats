@@ -8,3 +8,4 @@ numpy
 https://github.com/dib-lab/pybbhash/archive/master.zip
 pandas
 snakemake
+sortedcontainers

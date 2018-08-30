@@ -5,6 +5,8 @@ from .graph import Graph, DictGraph
 from typing import List, Set, Dict, Any, Union
 import itertools
 
+from sortedcontainers import SortedSet, SortedDict
+
 
 def low_degree_orientation(graph: Graph):
     """
@@ -197,7 +199,7 @@ def compute_domset(graph: Graph, radius: int):
     for dtf-graphs (see `Structural Sparseness and Complex Networks').
     Graph needs a distance-d dtf augmentation (see rdomset() for usage).
     """
-    domset = set()
+    domset = SortedSet()
     infinity = float('inf')
     # minimum distance to a dominating vertex, obviously infinite at start
     domdistance = defaultdict(lambda: infinity)  # type: Dict[int, float]
@@ -255,7 +257,7 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     (at radius radius) of the original graph.
     """
     print("assigning to dominators")
-    domgraph = DictGraph(nodes=set(domset))
+    domgraph = DictGraph(nodes=SortedSet(domset))
 
     # We need to assign each vertex to a unique closest dominator.  A value of
     # -1 indicates this vertex has not yet been assigned to a dominator.
@@ -272,7 +274,8 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     # distance d-1 are assigned in order to pick an appropriate assignment (a
     # dominator already found in its neighborhood).
     for _ in range(radius):
-        for v, label in assigned_dominator.items():
+        for v in graph:
+            label = assigned_dominator[v]
             if label >= 0:
                 # Push value to unassigned in-neighbors
                 for u in graph.in_neighbors(v, 1):
@@ -299,7 +302,7 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
             domgraph.add_arc(dv, du)
 
     # map of dominators to vertices they dominate
-    dominated = {x: set() for x in domset}  # type: Dict[int, Set[int]]
+    dominated = SortedDict({x: SortedSet() for x in domset})  # type: Dict[int, Set[int]]
     for v, x in assigned_dominator.items():
         dominated[x].add(v)
 

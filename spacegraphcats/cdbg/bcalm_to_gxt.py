@@ -121,7 +121,7 @@ def contract_neighbor(x, u, neighbors, sequences, mean_abunds, sizes, k):
 def contract_degree_two(non_pendants, neighbors, sequences, mean_abunds, sizes,
                         k):
     deg_2 = list()
-    for v, N in neighbors.items():
+    for v, N in sorted(neighbors.items()):   # do we need sorted here!?
         if v in non_pendants or len(N) == 0:
             continue
         u = list(N)[0]
@@ -168,8 +168,7 @@ def read_bcalm(unitigs, debug, k):
     sizes = {}  # type: Dict[int, int]
     sequences = {}  # type: Dict[int, Text]
 
-    # walk the input unitigs file, tracking links between contigs and
-    # writing them to contigs_out.
+    # walk the input unitigs file, tracking links between contigs.
     print('reading unitigs from {}'.format(unitigs))
     for n, record in enumerate(screed.open(unitigs)):
         if n % 10000 == 0:
@@ -202,6 +201,8 @@ def read_bcalm(unitigs, debug, k):
         sequences[contig_id] = record.sequence
         sizes[contig_id] = len(record.sequence) - k + 1
 
+    print('...read {} unitigs'.format(len(sequences)))
+
     fail = False
     for source in neighbors:
         for nbhd in neighbors[source]:
@@ -226,6 +227,7 @@ def main(argv):
                         help="don't remove low abundance pendants")
     parser.add_argument('-a', '--abundance', nargs='?', type=float,
                         default=1.1)
+    parser.add_argument('--randomize', help='randomize cDBG order')
     args = parser.parse_args(argv)
 
     k = args.ksize
@@ -254,25 +256,85 @@ def main(argv):
     # load in the basic graph structure from the BCALM output file
     neighbors, sequences, mean_abunds, sizes = read_bcalm(unitigs, debug, k)
 
+    # record input k-mers in a minhash
     for seq in sequences.values():
         in_mh.add_sequence(seq)
+
+    # make order deterministic by reordering around min value of first, last,
+    # and reverse complementing sequences appropriately
+    print('reordering...')
+    reordering = {}
+
+    # first, put sequences in specific orientation
+    sequence_list = []
+    for key in neighbors:
+        v = sequences[key]
+
+        # pick lexicographically smaller of forward & reverse complement.
+        v2 = screed.rc(v)
+        if v > v2:
+            v = v2
+        sequence_list.append((v, key))
+        del sequences[key]
+
+    # sort all sequences:
+    sequence_list.sort(reverse=True)
+    if args.randomize:
+        print('(!! randomizing order per --randomize !!)')
+        random.shuffle(sequence_list)
+
+    # ok, now remap all the things.
+    remapping = {}
+    new_sequences = {}
+
+    # remap sequences
+    new_key = 0
+    while sequence_list:                  # consume while iterating
+        sequence, old_key = sequence_list.pop()
+        remapping[old_key] = new_key
+        new_sequences[new_key] = sequence
+        new_key += 1
+
+    # remap other things
+    new_neighbors = collections.defaultdict(set)
+    for old_key, vv in neighbors.items():
+        new_vv = [ remapping[v] for v in vv ]
+        new_neighbors[remapping[old_key]] = set(new_vv)
+
+    new_mean_abunds = {}
+    for old_key, value in mean_abunds.items():
+        new_mean_abunds[remapping[old_key]] = value
+
+    new_sizes = {}
+    for old_key, value in sizes.items():
+        new_sizes[remapping[old_key]] = value
+
+    assert len(sequences) == 0
+    print('...done')
+
+    sequences = new_sequences
+    mean_abunds = new_mean_abunds
+    sizes = new_sizes
+    neighbors = new_neighbors
 
     # if we are removing pendants, we need to relabel the contigs so they are
     # consecutive integers starting from 0.  If not, we create dummy data
     # structures to make the interface the same elsewhere in the data
     if trim:
+        print('removing pendants...')
         non_pendants = set(v for v, N in neighbors.items() if len(N) > 1 or
                            mean_abunds[v] > trim_cutoff)
         contract_degree_two(non_pendants, neighbors, sequences, mean_abunds,
                             sizes, k)
     else:
         non_pendants = list(neighbors.keys())
-    aliases = {x: i for i, x in enumerate(non_pendants)}
+    aliases = {x: i for i, x in enumerate(sorted(non_pendants))}
     n = len(aliases)
 
-    # compute offsets
+    # write out sequences & compute offsets
     offsets = {}
-    for x, i in aliases.items():
+    kv_list = sorted(aliases.items(), key=lambda x:x[1])
+    for x, i in kv_list:
         offsets[x] = contigsfp.tell()
         contigsfp.write('>{}\n{}\n'.format(i, sequences[x]))
         out_mh.add_sequence(sequences[x])
@@ -285,8 +347,8 @@ def main(argv):
 
     # write out all of the links, in 'from to' format.
     n_edges = 0
-    for v, N in neighbors.items():
-        for u in N:
+    for v, N in sorted(neighbors.items()):
+        for u in sorted(N):
             gxtfp.write('{} {}\n'.format(aliases[v], aliases[u]))
             n_edges += 1
 

@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from typing import Callable, List, Tuple, Set, Iterable, Any, Sized
 
+from sortedcontainers import SortedSet
 
 class Graph(Iterable, Sized):
     """
@@ -17,7 +18,7 @@ class Graph(Iterable, Sized):
         self.num_nodes = num_nodes
         self.radius = radius
         # lookup the neighbors of a vertex with a given weight
-        self.inarcs_by_weight = [[set() for i in range(self.num_nodes)]
+        self.inarcs_by_weight = [[SortedSet() for i in range(self.num_nodes)]
                                  for j in range(self.radius)]  # type: Any
 
     def __iter__(self):
@@ -136,11 +137,11 @@ class DictGraph(Graph):
     def __init__(self, nodes: Set[int]=None, r: int=1) -> None:
         """Make a new graph."""
         if nodes is None:
-            self.nodes = set()  # type: Set[int]
+            self.nodes = SortedSet()  # type: Set[int]
         else:
             self.nodes = nodes
         self.radius = r
-        self.inarcs_by_weight = [defaultdict(set) for _ in range(self.radius)]
+        self.inarcs_by_weight = [defaultdict(SortedSet) for _ in range(self.radius)]
 
     def __len__(self):
         """len() support."""
@@ -165,13 +166,13 @@ class DictGraph(Graph):
         restrict to a given weight when provided
         """
         if weight:
-            return [(x, y) for x, N in self.inarcs_by_weight[weight-1].items()
-                    for y in N]
+            return [(x, y) for x in self.nodes
+                    for y in self.inarcs_by_weight[weight-1][x]]
         else:
             return [(x, y, w+1) for w, arc_list in
                     enumerate(self.inarcs_by_weight)
-                    for x, N in arc_list.items()
-                    for y in N]
+                    for x in self.nodes
+                    for y in arc_list[x]]
 
     def remove_isolates(self) -> List[int]:
         """
