@@ -102,15 +102,15 @@ class QueryOutput:
         # write out cDBG IDs
         cdbg_listname = os.path.basename(q_name) + '.cdbg_ids.txt.gz'
         with gzip.open(os.path.join(outdir, cdbg_listname), 'wt') as fp:
-            fp.write("\n".join([str(x) for x in self.shadow]))
+            fp.write("\n".join([str(x) for x in sorted(self.shadow)]))
 
         # write out frontier nodes by seed
         frontier_listname = os.path.basename(q_name) + '.frontier.txt.gz'
         with gzip.open(os.path.join(outdir, frontier_listname), 'wt') as fp:
-            for node, seedlist in self.frontier.items():
+            for node, seedlist in sorted(self.frontier.items()):
                 fp.write('{},{}\n'.format(node,
                                           " ".join([str(x) for x in
-                                                    seedlist])))
+                                                    sorted(seedlist)])))
 
         # write response curve
         response_curve_filename = os.path.basename(q_name) + '.response.txt'

@@ -29,6 +29,7 @@ def main(argv=sys.argv[1:]):
     p.add_argument('-o', '--output-suffix')
     p.add_argument('--threshold', type=float, default=DEFAULT_THRESHOLD)
     p.add_argument('-k', '--ksize', type=int, default=31)
+    p.add_argument('--directory', default='')
     args = p.parse_args(argv)
 
     if not args.query:
@@ -64,6 +65,8 @@ def main(argv=sys.argv[1:]):
     # next, iterate over each input and do subtract
     for queryfile in args.query:
         output = os.path.basename(queryfile) + output_suffix
+        if args.directory:
+            output = os.path.join(args.directory, output)
         print('subtracting from {} -> {}'.format(queryfile, output))
         outfp = open(output, 'wt')
         n = 0
