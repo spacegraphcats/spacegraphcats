@@ -262,6 +262,10 @@ def main(argv):
     args = p.parse_args(argv)
     outdir = args.output
 
+    if not args.query:
+        print('must specify at least one query file using --query.')
+        sys.exit(-1)
+
     # make sure all of the query sequences exist.
     for filename in args.query:
         if not os.path.exists(filename):
@@ -319,6 +323,10 @@ def main(argv):
     for query_file in args.query:
         start_time = time.time()
         query = Query(query_file, ksize)
+        if not len(query.kmers):
+            print('query {} is empty; skipping.'.format(query_file))
+            continue
+
         q_output = query.execute(catlas, kmer_idx, scaled, args.overhead,
                                  args.verbose, args.max_overhead,
                                  args.min_containment)
