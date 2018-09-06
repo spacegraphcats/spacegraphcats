@@ -155,7 +155,7 @@ class CAtlas(object):
         self.level = level
 
     @staticmethod
-    def build(proj):
+    def build(proj, benchmark_only=False):
         """Build a CAtlas at a given radius."""
         # keep creating progressively smaller graphs until we hit the level
         # threshold or steady state
@@ -209,6 +209,9 @@ class CAtlas(object):
 
             # write level results to the checkpoint file if applicable
             proj.save_checkpoint()
+
+            if benchmark_only:
+                return None
 
         # place all remaining nodes as children of the root
         proj.root.children.extend(nodes.values())
