@@ -20,22 +20,12 @@ import bbhash
 import numpy
 
 
-def main(argv):
-    p = argparse.ArgumentParser()
-    p.add_argument('catlas_prefix')
-    p.add_argument('-k', '--ksize', default=31, type=int)
-    a = p.parse_args(argv)
-    
-    kh = khmer.Nodetable(a.ksize, 1, 1)
-
-    contigs_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz')
-    mphf_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz.mphf')
-    array_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz.indices')
-
+def build_mphf(kh, records_iter_fn):
     # build a list of all k-mers in the cDBG
     all_kmers = list()
-    print('reading cDBG nodes from {}'.format(contigs_filename))
-    for n, record in enumerate(screed.open(contigs_filename)):
+
+    records_iter = records_iter_fn()
+    for n, record in enumerate(records_iter):
         if n % 50000 == 0 and n:
             print('... contig', n, end='\r')
 
@@ -58,8 +48,9 @@ def main(argv):
     mphf_to_cdbg = numpy.zeros(len(all_kmers), numpy.uint32)
     sizes = numpy.zeros(n_contigs, numpy.uint32)
 
-    print('second pass; reading cDBG nodes from {}'.format(contigs_filename))
-    for n, record in enumerate(screed.open(contigs_filename)):
+    print('second pass.')
+    records_iter = records_iter_fn()
+    for n, record in enumerate(records_iter):
         if n % 50000 == 0 and n:
             print('... contig {} of {}'.format(n, n_contigs), end='\r')
 
@@ -80,6 +71,27 @@ def main(argv):
 
     print('loaded {} contigs in pass2.\n'.format(n_contigs))
     assert n == max(mphf_to_cdbg), (n, max(mphf_to_cdbg))
+
+    return x, mphf_to_kmer, mphf_to_cdbg, sizes
+
+
+def main(argv):
+    p = argparse.ArgumentParser()
+    p.add_argument('catlas_prefix')
+    p.add_argument('-k', '--ksize', default=31, type=int)
+    a = p.parse_args(argv)
+
+    kh = khmer.Nodetable(a.ksize, 1, 1)
+
+    contigs_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz')
+    mphf_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz.mphf')
+    array_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz.indices')
+
+    def create_records_iter():
+        print('reading cDBG nodes from {}'.format(contigs_filename))
+        return screed.open(contigs_filename)
+
+    x, mphf_to_kmer, mphf_to_cdbg, sizes = build_mphf(kh, create_records_iter)
 
     print('done! saving to {} and {}'.format(mphf_filename, array_filename))
 
