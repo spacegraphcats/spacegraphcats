@@ -34,8 +34,8 @@ def main():
     outfp = sys.stdout
     if args.output:
         outfp = open(args.output, 'at')
-    print("{},{},{},rdomset".format(nodes_in_layer_0, args.radius,
-                                    end - start), file=outfp)
+    print("{},{},{},{},rdomset".format(nodes_in_layer_0, args.radius,
+                                    end - start, args.project), file=outfp)
 
 
 if __name__ == '__main__':
