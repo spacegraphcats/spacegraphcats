@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import spacegraphcats
 from spacegraphcats.search.catlas import CAtlas
 from spacegraphcats.index.index_contigs_by_kmer import build_mphf
+from collections import defaultdict
 import argparse
 import sys
 import time
@@ -47,19 +48,20 @@ def main():
     def create_records_iter():
         return contigs.values()
 
-    # build the two indices (kmer to cdbg node, cdbg node ID to catlas)
+    # build the two indices (kmer to cdbg node, cdbg node ID to pieces)
     start = time.time()
     print('building MPHF index.')
     x, mphf_to_kmer, mphf_to_cdbg, sizes = build_mphf(kh, create_records_iter)
     print('done! {:.1f}s.'.format(time.time() - start))
 
-    print('building index 2 (cdbg node ID to catlas layer 0)')
-    cdbg_to_catlas = {}
+    print('building index 2 (cdbg node ID to pieces)')
+    cdbg_to_pieces = defaultdict(set)
     for node_id in catlas:
         level = catlas.levels[node_id]
         if level == 1:
-            for cdbg_node in catlas.layer1_to_cdbg.get(node_id):
-                cdbg_to_catlas[cdbg_node] = node_id
+            pieces = catlas.layer1_to_cdbg.get(node_id)
+            for cdbg_node in pieces:
+                cdbg_to_pieces[cdbg_node] = set(pieces)
     end = time.time()
 
     outfp = sys.stdout
