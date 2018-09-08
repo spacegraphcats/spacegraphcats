@@ -46,6 +46,9 @@ class QueryOutput:
         return self.query_sig.minhash.similarity(self.contigs_minhash)
 
     def retrieve_contigs(self, contigs):
+        "extract contigs using cDBG shadow."
+
+        # node list.
         # track extracted info
         retrieve_start = time.time()
         # walk through the contigs, retrieving.
@@ -166,7 +169,7 @@ class Query:
             kmer_idx.build_catlas_match_counts(self.cdbg_match_counts[cat_id],
                                                catlas)
 
-        # check a few things - we've propogated properly:
+        # check a few things - we've propagated properly:
         assert sum(self.cdbg_match_counts[cat_id].values()) ==\
             self.catlas_match_counts[cat_id][catlas.root]
         # ...and all nodes have no more matches than total k-mers.
@@ -193,8 +196,6 @@ class Query:
         # calculate associated cDBG nodes
         cdbg_shadow = catlas.shadow(leaves)
 
-        # done with main loop! now extract contigs using cDBG shadow
-        # node list.
         print('done searching! {} frontier, {} catlas shadow nodes, {}'
               ' cdbg nodes.'.format(len(frontier), len(leaves),
                                     len(cdbg_shadow)))
