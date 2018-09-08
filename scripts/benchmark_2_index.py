@@ -48,6 +48,7 @@ def main():
     def create_records_iter():
         return contigs.values()
 
+    # BENCHMARK:
     # build the two indices (kmer to cdbg node, cdbg node ID to pieces)
     start = time.time()
     print('building MPHF index.')
@@ -63,6 +64,8 @@ def main():
             for cdbg_node in pieces:
                 cdbg_to_pieces[cdbg_node] = set(pieces)
     end = time.time()
+
+    # done. output.
 
     outfp = sys.stdout
     if args.output:
