@@ -22,6 +22,7 @@ def main():
     parser.add_argument("query", nargs='+')
     parser.add_argument("-o", "--output", type=str)
     parser.add_argument('-k', '--ksize', default=31, type=int)
+    parser.add_argument('--validate', action='store_true')
     args = parser.parse_args()
 
     # figure out catlas and domfile information.
@@ -43,6 +44,15 @@ def main():
     # calculate the k-mer sizes for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)
 
+    print('building index 2 (cdbg node ID to pieces) - untimed')
+    cdbg_to_pieces = defaultdict(set)
+    for node_id in catlas:
+        level = catlas.levels[node_id]
+        if level == 1:
+            pieces = catlas.layer1_to_cdbg.get(node_id)
+            for cdbg_node in pieces:
+                cdbg_to_pieces[cdbg_node] = set(pieces)
+
     # get a single ksize
     ksize = int(args.ksize)
 
@@ -57,10 +67,21 @@ def main():
         query = Query(query_file, ksize)
         assert len(query.kmers)
 
-        q_output = query.execute(catlas, kmer_idx, 1000, 0.0, True, 1.0, 1.0)
+        pieces = set()
+        for kmer in query.kmers:
+            cdbg_node = kmer_idx.get_cdbg_id(kmer)
+            if cdbg_node != None:
+                pieces.update(cdbg_to_pieces[cdbg_node])
+
+        print('found {} pieces for query.'.format(len(pieces)))
 
         total_kmers += len(query.kmers)
-        total_matched_nodes += len(q_output.shadow)
+        total_matched_nodes += len(pieces)
+
+        if args.validate:
+            print('validating...')
+            q_output = query.execute(catlas, kmer_idx, 1000, 0.0, True, 1.0, 1.0)
+            assert len(q_output.shadow) == total_matched_nodes, (q_output.shadow, total_matched_nodes)
     # end main loop!
     
     end = time.time()
