@@ -177,7 +177,7 @@ class CAtlas(object):
 
             # at the bottom level we need to write out the domination
             # assignment
-            if proj.level == 1:
+            if proj.level == 1 and not benchmark_only:
                 with open(proj.domfilename, 'w') as domfile:
                     for v, shadow in dominated.items():
                         domstr = str(v)
