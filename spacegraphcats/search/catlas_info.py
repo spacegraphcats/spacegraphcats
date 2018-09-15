@@ -37,11 +37,9 @@ def main(argv=sys.argv[1:]):
     with open(gxtfile, 'rt') as fp:
         graph = read_from_gxt(fp, 1, False)
 
-    n = 0
-    for x, y, w in graph.arcs():
-        n += 1
+    num_arcs = graph.num_arcs()
 
-    print('{} nodes, {} arcs, {:.1f} average.'.format(len(graph), n, n / len(graph)))
+    print('{} nodes, {} arcs, {:.1f} average.'.format(len(graph), num_arcs, num_arcs / len(graph)))
 
     # @CTB: could put size distribution of those nodes here...?
 
