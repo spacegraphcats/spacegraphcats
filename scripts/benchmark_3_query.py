@@ -91,7 +91,7 @@ def main():
     outfp = sys.stdout
     if args.output:
         outfp = open(args.output, 'at')
-    print("{},{},{},{},search".format(total_kmers / len(args.query),
+    print("{},{},{:.1f},{},search".format(total_kmers / len(args.query),
                                     total_matched_nodes / len(args.query),
                                     end - start, args.project), file=outfp)
 

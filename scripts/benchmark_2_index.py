@@ -70,7 +70,7 @@ def main():
     outfp = sys.stdout
     if args.output:
         outfp = open(args.output, 'at')
-    print("{},{},{},{},indexPieces".format(len(mphf_to_kmer),
+    print("{},{},{:.1f},{},indexPieces".format(len(mphf_to_kmer),
                                            len(catlas),
                                     end - start, args.project), file=outfp)
 

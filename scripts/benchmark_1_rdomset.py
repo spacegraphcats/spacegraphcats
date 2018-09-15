@@ -34,7 +34,7 @@ def main():
     outfp = sys.stdout
     if args.output:
         outfp = open(args.output, 'at')
-    print("{},{},{},{},rdomset".format(nodes_in_layer_0, args.radius,
+    print("{},{},{:.1f},{},rdomset".format(nodes_in_layer_0, args.radius,
                                     end - start, args.project), file=outfp)
 
 
