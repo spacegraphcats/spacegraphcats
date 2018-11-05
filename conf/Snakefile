@@ -118,7 +118,8 @@ rule reads_bgzf:
 # label the reads by contig
 rule label_reads:
      input:
-        expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base)
+        expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base),
+        expand("{catlas_base}/contigs.fa.gz", catlas_base=catlas_base)
      output:
         "{catlas_dir}/reads.bgz.labels"
      shell:
