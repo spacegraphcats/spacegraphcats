@@ -100,9 +100,9 @@ rule bcalm_catlas_input:
      input:
         expand("{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa", ksize=ksize, catlas_base=catlas_base)
      output:
-        "{catlas_dir}/cdbg.gxt",
-        "{catlas_dir}/contigs.fa.gz",
-        "{catlas_dir}/contigs.fa.gz.info.csv"
+        catlas_dir + "/cdbg.gxt",
+        catlas_dir + "/contigs.fa.gz",
+        catlas_dir + "/contigs.fa.gz.info.csv"
      shell:
         "{python} -m spacegraphcats.cdbg.bcalm_to_gxt {remove_pendants} -k {ksize} {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
 
@@ -119,9 +119,9 @@ rule reads_bgzf:
 rule label_reads:
      input:
         expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base),
-        expand("{catlas_base}/contigs.fa.gz", catlas_base=catlas_base)
+        #expand("{catlas_dir}/contigs.fa.gz", catlas_dir=catlas_dir)
      output:
-        "{catlas_dir}/reads.bgz.labels"
+        catlas_dir + "/reads.bgz.labels"
      shell:
         "{python} -m spacegraphcats.cdbg.label_cdbg {catlas_dir} {input} {output}"
 
@@ -129,22 +129,22 @@ rule label_reads:
 # build catlas!
 rule build_catlas:
      input:
-        "{catlas_dir}/cdbg.gxt",
-        "{catlas_dir}/contigs.fa.gz",
+        catlas_dir + "/cdbg.gxt",
+        catlas_dir + "/contigs.fa.gz",
      output:
-        "{catlas_dir}/first_doms.txt",
-        "{catlas_dir}/catlas.csv",
-        "{catlas_dir}/commands.log"
+        catlas_dir + "/first_doms.txt",
+        catlas_dir + "/catlas.csv",
+        catlas_dir + "/commands.log"
      shell:
         "{python} -m spacegraphcats.catlas.catlas --no_checkpoint {catlas_dir} {radius}"
 
 # index contigs, count node sizes
 rule make_contigs_kmer_index:
      input:
-        "{catlas_dir}/contigs.fa.gz"
+        catlas_dir + "/contigs.fa.gz"
      output:
-        "{catlas_dir}/contigs.fa.gz.mphf",
-        "{catlas_dir}/contigs.fa.gz.indices",
+        catlas_dir +  "/contigs.fa.gz.mphf",
+        catlas_dir + "/contigs.fa.gz.indices",
      shell:
         "{python} -m spacegraphcats.index.index_contigs_by_kmer -k {ksize} {catlas_dir}"
 
