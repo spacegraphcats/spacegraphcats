@@ -5,6 +5,7 @@
 #
 # Quickstart: `conf/run dory-test searchquick`
 #
+from os.path import join
 
 ## pull values in from config file:
 
@@ -100,9 +101,9 @@ rule bcalm_catlas_input:
      input:
         expand("{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa", ksize=ksize, catlas_base=catlas_base)
      output:
-        catlas_dir + "/cdbg.gxt",
-        catlas_dir + "/contigs.fa.gz",
-        catlas_dir + "/contigs.fa.gz.info.csv"
+        join(catlas_dir, "cdbg.gxt"),
+        join(catlas_dir, "contigs.fa.gz"),
+        join(catlas_dir, "contigs.fa.gz.info.csv")
      shell:
         "{python} -m spacegraphcats.cdbg.bcalm_to_gxt {remove_pendants} -k {ksize} {input} {catlas_dir}/cdbg.gxt {catlas_dir}/contigs.fa.gz"
 
@@ -121,7 +122,7 @@ rule label_reads:
         expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base),
         #expand("{catlas_dir}/contigs.fa.gz", catlas_dir=catlas_dir)
      output:
-        catlas_dir + "/reads.bgz.labels"
+        join(catlas_dir, "reads.bgz.labels")
      shell:
         "{python} -m spacegraphcats.cdbg.label_cdbg {catlas_dir} {input} {output}"
 
@@ -129,22 +130,22 @@ rule label_reads:
 # build catlas!
 rule build_catlas:
      input:
-        catlas_dir + "/cdbg.gxt",
-        catlas_dir + "/contigs.fa.gz",
+        join(catlas_dir, "cdbg.gxt"),
+        join(catlas_dir, "contigs.fa.gz"),
      output:
-        catlas_dir + "/first_doms.txt",
-        catlas_dir + "/catlas.csv",
-        catlas_dir + "/commands.log"
+        join(catlas_dir, "first_doms.txt"),
+        join(catlas_dir, "catlas.csv"),
+        join(catlas_dir, "commands.log")
      shell:
         "{python} -m spacegraphcats.catlas.catlas --no_checkpoint {catlas_dir} {radius}"
 
 # index contigs, count node sizes
 rule make_contigs_kmer_index:
      input:
-        catlas_dir + "/contigs.fa.gz"
+        join(catlas_dir, "contigs.fa.gz")
      output:
-        catlas_dir +  "/contigs.fa.gz.mphf",
-        catlas_dir + "/contigs.fa.gz.indices",
+        join(catlas_dir, "contigs.fa.gz.mphf"),
+        join(catlas_dir, "contigs.fa.gz.indices"),
      shell:
         "{python} -m spacegraphcats.index.index_contigs_by_kmer -k {ksize} {catlas_dir}"
 
@@ -209,7 +210,7 @@ rule extract_contigs_single_file:
         expand("{catlas_dir}/contigs.fa.gz", catlas_dir=catlas_dir),
         expand("{search_dir}/{{queryname}}.cdbg_ids.txt.gz", search_dir=search_dir)
     output:
-        "{search_dir}/{queryname}.cdbg_ids.contigs.fa.gz"
+        join(search_dir, "{queryname}.cdbg_ids.contigs.fa.gz")
     shell:
         "{python} -m spacegraphcats.search.extract_contigs {catlas_dir} {input[1]} -o {output}"
 
@@ -220,7 +221,7 @@ rule extract_reads_single_file:
         expand("{catlas_dir}/reads.bgz.labels", catlas_dir=catlas_dir),
         expand("{search_dir}/{{queryname}}.cdbg_ids.txt.gz", search_dir=search_dir)
     output:
-        "{search_dir}/{queryname}.cdbg_ids.reads.fa.gz"
+        join(search_dir, "{queryname}.cdbg_ids.reads.fa.gz"
     shell:
         "{python} -m spacegraphcats.search.extract_reads {input[0]} {input[1]} {input[2]} -o {output}"
 
@@ -247,6 +248,6 @@ rule extract_by_shadow_ratio_rule:
         expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
     output:
-        "{catlas_dir}.shadow.{shadow_ratio_maxsize}.fa"
+        catlas_dir +  ".shadow.{shadow_ratio_maxsize}.fa"
     shell:
         "{python} -m spacegraphcats.search.extract_nodes_by_shadow_ratio --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}"
