@@ -25,4 +25,8 @@ setup(
     license="BSD 3-clause",
     packages = find_packages(),
     classifiers = CLASSIFIERS,
+    entry_points = {'console_scripts': [
+        'spacegraphcats  = spacegraphcats.__main__:main'
+        ]
+    },
 )
