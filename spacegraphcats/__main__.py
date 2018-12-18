@@ -13,9 +13,9 @@ thisdir = os.path.abspath(os.path.dirname(__file__))
 
 
 def main():
-    parser = argparse.ArgumentParser(description='run snakemake workflows for spacegraphcats', usage='''run <configfile.yaml> [<target1> ...]
+    parser = argparse.ArgumentParser(description='run snakemake workflows for spacegraphcats', usage='''spacegraphcats <configfile.yaml> [<target1> ...]
 
-Run snakemake workflows for spacegraphcats, using the given config file.
+Run workflows for spacegraphcats, using the given config file.
 
 Targets:
 
