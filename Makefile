@@ -51,9 +51,9 @@ twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
 #
 
 dory-test: data/dory-subset.fa data/dory-head.fa
-	conf/run dory-test search
-	conf/run dory-test extract_reads
-	conf/run dory-test extract_contigs
+	python -m spacegraphcats dory-test search
+	python -m spacegraphcats dory-test extract_reads
+	python -m spacegraphcats dory-test extract_contigs
 
 twofoo/bcalm.twofoo.k31.unitigs.fa:
 	mkdir -p twofoo
@@ -61,6 +61,6 @@ twofoo/bcalm.twofoo.k31.unitigs.fa:
 	gunzip twofoo/bcalm.twofoo.k31.unitigs.fa.gz
 
 twofoo-test: twofoo/bcalm.twofoo.k31.unitigs.fa
-	conf/run twofoo search
+	python -m spacegraphcats twofoo search
 	python -m spacegraphcats.search.characterize_catlas_regions twofoo_k31_r1 twofoo_k31_r1.vec
 
