@@ -24,7 +24,7 @@ def main(args):
     if os.path.exists(args.configfile) and not os.path.isdir(args.configfile):
         configfile = args.configfile
     else:
-        for suffix in ('', '.json'):
+        for suffix in ('', '.json', '.yaml'):
             tryfile = os.path.join(thisdir, args.configfile + suffix)
             if os.path.exists(tryfile) and not os.path.isdir(tryfile):
                 sys.stderr.write('Found configfile at {}\n'.format(tryfile))
