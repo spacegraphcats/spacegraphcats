@@ -7,6 +7,8 @@ import os.path
 import snakemake
 import sys
 import pprint
+import yaml
+import json
 
 
 thisdir = os.path.abspath(os.path.dirname(__file__))
@@ -25,10 +27,15 @@ Targets:
    extract_reads    - extract reads for search results (many files)
    extract_contigs  - extract contigs for search results (many files)
    clean            - remove the primary catlas build files
+   show             - parse and display the config file
 
 For a quickstart, run this:
 
-   conf/run dory-test searchquick
+   spacegraphcats dory-test searchquick
+
+For an example config file, run:
+
+   spacegraphcats dory-test show
 
 from the main spacegraphcats directory.
 .
@@ -80,14 +87,21 @@ from the main spacegraphcats directory.
     if args.cdbg_only:
         config['cdbg_only'] = True
 
-    print('--------')
-    print('details!')
-    print('\tsnakefile: {}'.format(snakefile))
-    print('\tconfig: {}'.format(configfile))
-    print('\ttargets: {}'.format(repr(args.targets)))
+    print('--------', file=sys.stderr)
+    print('details!', file=sys.stderr)
+    print('\tsnakefile: {}'.format(snakefile), file=sys.stderr)
+    print('\tconfig: {}'.format(configfile), file=sys.stderr)
+    print('\ttargets: {}'.format(repr(args.targets)), file=sys.stderr)
     if config:
-        print('\toverride: {}'.format(pprint.pformat(config)))
-    print('--------')
+        print('\toverride: {}'.format(pprint.pformat(config)), file=sys.stderr)
+    print('--------', file=sys.stderr)
+
+    if 'show' in args.targets:
+        if configfile.endswith('json'):
+            print(yaml.dump(yaml.load(json.dumps(json.loads(open(configfile).read()))), default_flow_style=False))
+        else:
+            print(yaml.dump(yaml.load(open(configfile).read()), default_flow_style=False))
+        return 0
 
     # run!!
     status = snakemake.snakemake(snakefile, configfile=configfile,
