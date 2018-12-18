@@ -29,4 +29,6 @@ setup(
         'spacegraphcats  = spacegraphcats.__main__:main'
         ]
     },
+    include_package_data=True,
+    package_data = { "spacegraphcats": ["Snakefile", "*.yaml", "*.json"] }
 )

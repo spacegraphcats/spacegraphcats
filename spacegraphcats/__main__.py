@@ -48,7 +48,7 @@ from the main spacegraphcats directory.
     args = parser.parse_args()
 
     # first, find the Snakefile
-    snakefile = os.path.join(thisdir, '../conf', 'Snakefile')
+    snakefile = os.path.join(thisdir, './conf', 'Snakefile')
     if not os.path.exists(snakefile):
         sys.stderr.write('Error: cannot find Snakefile at {}\n'.format(snakefile))
         sys.exit(-1)
@@ -59,7 +59,7 @@ from the main spacegraphcats directory.
         configfile = args.configfile
     else:
         for suffix in ('', '.json', '.yaml'):
-            tryfile = os.path.join(thisdir, '../conf', args.configfile + suffix)
+            tryfile = os.path.join(thisdir, './conf', args.configfile + suffix)
             if os.path.exists(tryfile) and not os.path.isdir(tryfile):
                 sys.stderr.write('Found configfile at {}\n'.format(tryfile))
                 configfile = tryfile
