@@ -13,7 +13,7 @@ thisdir = os.path.abspath(os.path.dirname(__file__))
 
 
 def main():
-    parser = argparse.ArgumentParser(description='run snakemake workflows for spacegraphcats', usage='''run <configfile.json> [<target1> ...]
+    parser = argparse.ArgumentParser(description='run snakemake workflows for spacegraphcats', usage='''run <configfile.yaml> [<target1> ...]
 
 Run snakemake workflows for spacegraphcats, using the given config file.
 
@@ -58,7 +58,7 @@ from the main spacegraphcats directory.
     if os.path.exists(args.configfile) and not os.path.isdir(args.configfile):
         configfile = args.configfile
     else:
-        for suffix in ('', '.json'):
+        for suffix in ('', '.json', '.yaml'):
             tryfile = os.path.join(thisdir, '../conf', args.configfile + suffix)
             if os.path.exists(tryfile) and not os.path.isdir(tryfile):
                 sys.stderr.write('Found configfile at {}\n'.format(tryfile))
