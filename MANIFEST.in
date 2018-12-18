@@ -1,0 +1,6 @@
+include LICENSE README.md requirements.txt
+recursive-include spacegraphcats *
+recursive-include conf *
+global-exclude *.orig
+global-exclude *.pyc
+global-exclude *.so
