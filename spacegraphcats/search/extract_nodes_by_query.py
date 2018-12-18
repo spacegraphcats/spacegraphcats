@@ -142,7 +142,8 @@ class Query:
         for record in screed.open(self.filename):
             if self.name is None:
                 self.name = record.name
-            self.kmers.update(bf.get_kmer_hashes(record.sequence))
+            if len(record.sequence) >= int(ksize):
+                self.kmers.update(bf.get_kmer_hashes(record.sequence))
 
         print('got {}'.format(len(self.kmers)))
 
