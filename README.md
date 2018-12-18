@@ -21,6 +21,8 @@ For help or support with this software, please
 [file an issue on GitHub](https://github.com/spacegraphcats/spacegraphcats/issues). Thank
 you!
 
+There are two examples available: [dory-example](https://github.com/spacegraphcats/spacegraphcats-dory-example) and [twofoo-example](https://github.com/spacegraphcats/spacegraphcats-twofoo-example). The latter example includes [a snakemake Snakefile](https://snakemake.readthedocs.io/en/stable/).
+
 ### Notable dependencies
 
 spacegraphcats uses code from
@@ -36,9 +38,7 @@ spacegraphcats also uses functionality from
 
 ## Citation information
 
-This is *pre-publication* code; a manuscript is in preparation.
-Please contact the authors for the current citation information if you
-wish to use it and cite it.
+See the biorxiv preprint [Exploring neighborhoods in large metagenome assembly graphs reveals hidden sequence diversity](https://biorxiv.org/content/early/2018/11/05/462788), Brown et al., 2018, doi: https://doi.org/10.1101/462788.
 
 ## Pointers to interesting code
 
