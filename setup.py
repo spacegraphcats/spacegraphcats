@@ -37,5 +37,5 @@ setup(
         'pandas',
         'snakemake',
         'sortedcontainers',
-        'sourmash', 'khmer', 'pybbhash']
+        'sourmash', 'khmer', 'bbhash']
 )
