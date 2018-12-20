@@ -33,7 +33,7 @@ setup(
     package_data = { "spacegraphcats": ["Snakefile", "*.yaml", "*.json"] },
     install_requires = [
         'Cython', 'mypy', 'screed', 'pytest',
-        'numpy'
+        'numpy',
         'pandas',
         'snakemake',
         'sortedcontainers'],
