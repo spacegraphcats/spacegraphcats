@@ -51,7 +51,7 @@ You will also need to install BCALM and put the bcalm binary in your path; [see 
 ### Now, run a small test: dory.
 
 ```
-conf/run dory-test search
+python -m spacegraphcats dory-test search
 ```
 
 This should run in a few seconds, and you should see something like this in the output:
@@ -101,7 +101,7 @@ which will take a few minutes.
 
 Then, run:
 ```
-conf/run twofoo search
+python -m spacegraphcats twofoo search
 ```
 
 which will generate searches of the twofoo synthetic data set with `data/2.fa.gz`, `data/47.fa.gz`, and `data/63.fa.gz`.

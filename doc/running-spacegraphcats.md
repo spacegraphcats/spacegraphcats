@@ -7,7 +7,7 @@ Please see [Installing spacegraphcats](installing-spacegraphcats.md).
 ## Running spacegraphcats search & output files
 
 ```
-conf/run dory-test search
+python -m spacegraphcats dory-test search
 ```
 
 This should run in a few seconds, and you should see something like this in the output:
@@ -45,7 +45,7 @@ You will have a bunch of new output files:
 
 There are three important top-level files.
 
-1. The script `conf/run` uses [snakemake](https://snakemake.readthedocs.io/en/stable/) to run the pipeline.
+1. The script `python -m spacegraphcats` uses [snakemake](https://snakemake.readthedocs.io/en/stable/) to run the pipeline.
 
 2. The Snakefile itself is under `conf/Snakefile`, and is not intended to be particularly human readable :). The snakemake run is configured by a JSON config file.
 
@@ -108,7 +108,7 @@ which will take a few minutes.
 
 Then, run:
 ```
-conf/run twofoo search
+python -m spacegraphcats twofoo search
 ```
 
 which will generate searches of the twofoo synthetic data set with `data/2.fa.gz`, `data/47.fa.gz`, and `data/63.fa.gz`.
@@ -150,7 +150,7 @@ corresponding to them, by using the targets `extract_reads` and
 `extract_contigs`.
 
 ```
-conf/run twofoo extract_contigs extract_reads
+python -m spacegraphcats twofoo extract_contigs extract_reads
 ```
 
 This will produce the files:
@@ -169,14 +169,14 @@ query, and the reads for the neighborhoods around each query.
 
 ## Other information
 
-### The `run` script
+### The `spacegraphcats` script
 
-The `run` script has several targets, in addition to `search` and `searchquick`.
+The `spacegraphcats` script has several targets, in addition to `search` and `searchquick`.
 
-* `conf/run twofoo build` will build the catlas
-* `conf/run twofoo clean` should remove the build targets.
-* `conf/run twofoo extract_contigs` -- get contigs for search results; see above.
-* `conf/run twofoo extract_reads` -- get reads for search results; see above.
+* `python -m spacegraphcats twofoo build` will build the catlas
+* `python -m spacegraphcats twofoo clean` should remove the build targets.
+* `python -m spacegraphcats twofoo extract_contigs` -- get contigs for search results; see above.
+* `python -m spacegraphcats twofoo extract_reads` -- get reads for search results; see above.
 
 You can also specify `--radius <n>` to override the radius defined in the JSON config file; `--overhead <fraction>` to specify an overhead for searches; and `--experiment foo` to append a `_foo` to the search directory.)
 
@@ -191,7 +191,7 @@ Last, but not least: snakemake locks the directory to make sure processes don't 
 First, build the twofoo data set with r5:
 
 ```
-conf/run twofoo build --radius=5
+python -m spacegraphcats twofoo build --radius=5
 ```
 
 Then, extract nodes with many cDBG nodes and few k-mers (by ratio):

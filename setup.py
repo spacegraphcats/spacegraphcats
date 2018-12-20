@@ -17,7 +17,7 @@ CLASSIFIERS = [
 
 setup(
     name = 'spacegraphcats',
-    version = "1.0",
+    version = "1.1",
     description="tools for biological assembly graph neighborhood analysis",
     url="https://github.com/spacegraphcats/spacegraphcats",
     author="C. Titus Brown, Dominik Moritz, Michael P. O'Brien, Felix Reidl, Taylor Reiter, and Blair D. Sullivan",
@@ -25,4 +25,17 @@ setup(
     license="BSD 3-clause",
     packages = find_packages(),
     classifiers = CLASSIFIERS,
+    entry_points = {'console_scripts': [
+        'spacegraphcats  = spacegraphcats.__main__:main'
+        ]
+    },
+    include_package_data=True,
+    package_data = { "spacegraphcats": ["Snakefile", "*.yaml", "*.json"] },
+    install_requires = [
+        'Cython', 'mypy', 'screed', 'pytest',
+        'numpy',
+        'pandas',
+        'snakemake',
+        'sortedcontainers',
+        'sourmash', 'khmer', 'bbhash']
 )

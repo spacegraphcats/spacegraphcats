@@ -74,7 +74,7 @@ rule build:
 
 rule clean:
     shell:
-        "rm -fr {catlas_base} {catlas_dir} {search_dir}"
+        "rm -fr {catlas_base} {catlas_dir} {search_dir} bcalm.{catlas_base}.k{ksize}.inputlist.txt bcalm_to_gxt.log"
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
@@ -120,11 +120,11 @@ rule reads_bgzf:
 rule label_reads:
      input:
         expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base),
-        #expand("{catlas_dir}/contigs.fa.gz", catlas_dir=catlas_dir)
+        expand("{catlas_dir}/contigs.fa.gz", catlas_dir=catlas_dir)
      output:
         join(catlas_dir, "reads.bgz.labels")
      shell:
-        "{python} -m spacegraphcats.cdbg.label_cdbg {catlas_dir} {input} {output}"
+        "{python} -m spacegraphcats.cdbg.label_cdbg {catlas_dir} {input[0]} {output}"
 
 
 # build catlas!
