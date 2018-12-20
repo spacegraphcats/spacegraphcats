@@ -30,7 +30,7 @@ setup(
         ]
     },
     include_package_data=True,
-    package_data = { "spacegraphcats": ["Snakefile", "*.yaml", "*.json"] }
+    package_data = { "spacegraphcats": ["Snakefile", "*.yaml", "*.json"] },
     install_requires = [
         'Cython', 'mypy', 'screed', 'pytest',
         'numpy'
