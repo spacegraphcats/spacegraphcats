@@ -31,4 +31,14 @@ setup(
     },
     include_package_data=True,
     package_data = { "spacegraphcats": ["Snakefile", "*.yaml", "*.json"] }
+    install_requires = [
+        'Cython', 'mypy', 'screed', 'pytest',
+        'numpy'
+        'pandas',
+        'snakemake',
+        'sortedcontainers'
+        'https://github.com/dib-lab/sourmash/archive/spacegraphcats.zip',
+        'https://github.com/dib-lab/khmer/archive/master.zip',
+        'https://github.com/dib-lab/pybbhash/archive/master.zip',
+        ]
 )
