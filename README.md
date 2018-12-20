@@ -21,7 +21,14 @@ For help or support with this software, please
 [file an issue on GitHub](https://github.com/spacegraphcats/spacegraphcats/issues). Thank
 you!
 
-There are two examples available: [dory-example](https://github.com/spacegraphcats/spacegraphcats-dory-example) and [twofoo-example](https://github.com/spacegraphcats/spacegraphcats-twofoo-example). The latter example includes [a snakemake Snakefile](https://snakemake.readthedocs.io/en/stable/).
+### Quickstart
+
+There are two quickstart examples available! Please see
+[dory-example](https://github.com/spacegraphcats/spacegraphcats-dory-example)
+and
+[twofoo-example](https://github.com/spacegraphcats/spacegraphcats-twofoo-example). The
+latter example includes
+[a snakemake Snakefile](https://snakemake.readthedocs.io/en/stable/).
 
 ### Notable dependencies
 
