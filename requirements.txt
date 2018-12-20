@@ -2,10 +2,10 @@ Cython
 mypy
 screed
 pytest
-https://github.com/dib-lab/sourmash/archive/spacegraphcats.zip
-https://github.com/dib-lab/khmer/archive/master.zip
 numpy
-https://github.com/dib-lab/pybbhash/archive/master.zip
 pandas
 snakemake
 sortedcontainers
+https://github.com/dib-lab/pybbhash/archive/spacegraphcats.zip
+https://github.com/dib-lab/khmer/archive/master.zip
+git+https://github.com/dib-lab/sourmash@master#egg=sourmash
