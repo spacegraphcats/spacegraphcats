@@ -99,7 +99,12 @@ def main(argv=sys.argv[1:]):
     cursor.execute('PRAGMA cache_size=1000000')
     cursor.execute('PRAGMA synchronous = OFF')
     cursor.execute('PRAGMA journal_mode = MEMORY')
-    cursor.execute('BEGIN TRANSACTION')
+    
+    # some sqlite installs start in transactions    
+    try:
+        cursor.execute('BEGIN TRANSACTION')
+    except sqlite3.OperationalError:
+        pass
 
     reader = search_utils.BgzfReader(args.reads)
     for record, offset in search_utils.iterate_bgzf(reader):

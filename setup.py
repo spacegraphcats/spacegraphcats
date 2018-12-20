@@ -36,10 +36,6 @@ setup(
         'numpy',
         'pandas',
         'snakemake',
-        'sortedcontainers'],
-    dependency_links = [
-        'https://github.com/dib-lab/sourmash/archive/spacegraphcats.zip',
-        'https://github.com/dib-lab/khmer/archive/master.zip',
-        'https://github.com/dib-lab/pybbhash/archive/master.zip',
-        ]
+        'sortedcontainers',
+        'sourmash', 'khmer', 'pybbhash']
 )
