@@ -74,7 +74,7 @@ rule build:
 
 rule clean:
     shell:
-        "rm -fr {catlas_base} {catlas_dir} {search_dir}"
+        "rm -fr {catlas_base} {catlas_dir} {search_dir} bcalm.{catlas_base}.k{ksize}.inputlist.txt bcalm_to_gxt.log"
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
