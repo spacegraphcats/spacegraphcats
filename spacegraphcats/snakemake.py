@@ -14,14 +14,14 @@ def catlas_build(conf_file):
 
     z = []
     z.append(os.path.join(catlas_base,
-                          '/bcalm.{}.k31.unitigs.fa'.format(catlas_base)))
-    z.append(os.path.join(dirname, '/catlas.csv'))
-    z.append(os.path.join(dirname, '/cdbg.gxt'))
-    z.append(os.path.join(dirname, '/contigs.fa.gz'))
-    z.append(os.path.join(dirname, '/contigs.fa.gz.indices'))
-    z.append(os.path.join(dirname, '/contigs.fa.gz.info.csv'))
-    z.append(os.path.join(dirname, '/contigs.fa.gz.mphf'))
-    z.append(os.path.join(dirname, '/first_doms.txt'))
+                          'bcalm.{}.k31.unitigs.fa'.format(catlas_base)))
+    z.append(os.path.join(dirname, 'catlas.csv'))
+    z.append(os.path.join(dirname, 'cdbg.gxt'))
+    z.append(os.path.join(dirname, 'contigs.fa.gz'))
+    z.append(os.path.join(dirname, 'contigs.fa.gz.indices'))
+    z.append(os.path.join(dirname, 'contigs.fa.gz.info.csv'))
+    z.append(os.path.join(dirname, 'contigs.fa.gz.mphf'))
+    z.append(os.path.join(dirname, 'first_doms.txt'))
     return z
 
 
@@ -44,12 +44,12 @@ def catlas_search(conf_file, cdbg_only=False, suffix=''):
     z = []
     for x in filenames:
         x = os.path.basename(x)
-        z.append(os.path.join(dirname, '/{}.cdbg_ids.txt.gz'.format(x)))
-        z.append(os.path.join(dirname, '/{}.contigs.sig'.format(x)))
-        z.append(os.path.join(dirname, '/{}.frontier.txt.gz'.format(x)))
-        z.append(os.path.join(dirname, '/{}.response.txt'.format(x)))
+        z.append(os.path.join(dirname, '{}.cdbg_ids.txt.gz'.format(x)))
+        z.append(os.path.join(dirname, '{}.contigs.sig'.format(x)))
+        z.append(os.path.join(dirname, '{}.frontier.txt.gz'.format(x)))
+        z.append(os.path.join(dirname, '{}.response.txt'.format(x)))
 
-    z.append(os.path.join(dirname, '/results.csv'))
+    z.append(os.path.join(dirname, 'results.csv'))
 
     return z
 
@@ -73,8 +73,8 @@ def catlas_extract(conf_file, cdbg_only=False, suffix=''):
     z = []
     for x in filenames:
         x = os.path.basename(x)
-        z.append(os.path.join(dirname, '/{}.cdbg_ids.reads.fa.gz'.format(x)))
-        z.append(os.path.join(dirname, '/{}.cdbg_ids.contigs.fa.gz'.format(x)))
+        z.append(os.path.join(dirname, '{}.cdbg_ids.reads.fa.gz'.format(x)))
+        z.append(os.path.join(dirname, '{}.cdbg_ids.contigs.fa.gz'.format(x)))
 
     return z
 
