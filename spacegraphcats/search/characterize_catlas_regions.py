@@ -36,7 +36,7 @@ def partition_catlas(catlas, max_size):
     roots = []
 
     def partition_recursive(node):
-        if catlas.shadow_sizes[node] > max_size and\
+        if catlas.shadow_sizes[node] > max_size and \
                 len(catlas.children[node]) > 0:
             for u in catlas.children[node]:
                 partition_recursive(u)
@@ -160,7 +160,7 @@ def main(args=sys.argv[1:]):
 
         # if this is under a node that meets minsize criteria, track:
         if group_id is not None:
-            # keep/measure abundances!
+            # keep/measure abundances! @CTB are actually doing anything abund?
             mh = group_info[group_id]
             mh.add_sequence(record.sequence, True)
 
