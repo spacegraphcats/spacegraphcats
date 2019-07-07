@@ -15,7 +15,7 @@ def main():
     sbt_obj = sourmash.load_sbt_index(args.sbt)
     databases = ((sbt_obj, args.sbt, 'SBT'),)
 
-    for v in node_mhs.values():
+    for k, v in node_mhs.items():
         ss = sourmash.SourmashSignature(v)
 
         sum_f_uniq = 0.0
@@ -26,7 +26,7 @@ def main():
 
             sum_f_uniq += result.f_unique_to_query
 
-        print('{} {:.1f}'.format(best_match.name, best_match.f_unique_to_query / sum_f_uniq * 100))
+        print('node {} matches {} {:.1f}'.format(k, best_match.name, best_match.f_unique_to_query / sum_f_uniq * 100))
 
 
 if __name__ == '__main__':
