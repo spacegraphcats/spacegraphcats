@@ -151,6 +151,8 @@ rule make_contigs_kmer_index:
 
 def make_query_base(searchfiles):
     x = []
+    if not searchfiles:
+        return x
     for filename in searchfiles:
         x.append("{}/{}.contigs.sig".format(search_dir, os.path.basename(filename)))
         x.append("{}/{}.cdbg_ids.txt.gz".format(search_dir, os.path.basename(filename)))
