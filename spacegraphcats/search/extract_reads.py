@@ -55,6 +55,7 @@ def main(argv=sys.argv[1:]):
 
     total_bp = 0
     total_seqs = 0
+    is_fastq = 0
 
     print('loading labels and querying for matching sequences..')
     reads_iter = get_reads_by_cdbg(dbfilename, args.readsfile, cdbg_shadow)
@@ -63,8 +64,17 @@ def main(argv=sys.argv[1:]):
             print('...at n {} ({:.1f}% of file)'.format(n, offset_f * 100),
                   end='\r')
 
+            if n == 0:
+                if hasattr(record, 'quality'):
+                    is_fastq = 1
+
         # output!
-        outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
+        if is_fastq:
+            outfp.write('@{}\n{}\n+\n{}\n'.format(record.name,
+                                                  record.sequence,
+                                                  record.quality))
+        else:
+            outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
         total_bp += len(record.sequence)
         total_seqs += 1
 
