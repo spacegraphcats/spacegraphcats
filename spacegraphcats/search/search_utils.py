@@ -275,7 +275,7 @@ def iterate_bgzf(reader):
     if ch == '>':
         iter_fn = my_fasta_iter
     elif ch == '@':
-        iter_fn = fastq_iter
+        iter_fn = my_fastq_iter
     else:
         raise Exception('unknown start chr {}'.format(ch))
 
@@ -332,53 +332,29 @@ def my_fastq_iter(handle, line=None, parse_description=False):
     """
     Iterator over the given FASTQ file handle returning records. handle
     is a handle to a file opened for reading
+
+    CTB: this relies on each FASTQ record being exactly 4 lines.
     """
-    if line is None:
+    while 1:
+        pos = handle.tell()
+
         line = handle.readline()
-    line = to_str(line.strip())
-    while line:
-        data = {}
+        if not line:
+            return
+        assert line.startswith('@'), line
+        name = to_str(line.strip())[1:]
 
-        if line and not line.startswith('@'):
-            raise IOError("Bad FASTQ format: no '@' at beginning of line")
+        line = handle.readline()
+        sequence = to_str(line.strip())
 
-        # Try to grab the name and (optional) annotations
-        if parse_description:
-            try:
-                data['name'], data['annotations'] = line[1:].split(' ', 1)
-            except ValueError:  # No optional annotations
-                data['name'] = line[1:]
-                data['annotations'] = ''
-                pass
-        else:
-            data['name'] = line[1:]
-            data['annotations'] = ''
+        line = handle.readline()
+        plus = to_str(line.strip())
+        assert plus == '+'
 
-        # Extract the sequence lines
-        sequence = []
-        line = to_str(handle.readline().strip())
-        while line and not line.startswith('+') and not line.startswith('#'):
-            sequence.append(line)
-            line = to_str(handle.readline().strip())
+        line = handle.readline()
+        quality = to_str(line.strip())
 
-        data['sequence'] = ''.join(sequence)
-
-        # Extract the quality lines
-        quality = []
-        line = to_str(handle.readline().strip())
-        seqlen = len(data['sequence'])
-        aclen = 0
-        while not line == '' and aclen < seqlen:
-            quality.append(line)
-            aclen += len(line)
-            line = to_str(handle.readline().strip())
-
-        data['quality'] = ''.join(quality)
-        if len(data['sequence']) != len(data['quality']):
-            raise IOError('sequence and quality strings must be '
-                          'of equal length')
-
-        yield Record(**data)
+        yield Record(name, sequence, quality=quality), pos
 
 
 def get_reads_by_cdbg(sqlite_filename, reads_filename, cdbg_ids):
