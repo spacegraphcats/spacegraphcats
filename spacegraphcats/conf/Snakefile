@@ -228,12 +228,34 @@ rule extract_reads_single_file:
 # get all the reads
 rule extract_reads:
     input:
-       make_extract_reads_base(config['search'])
+        make_extract_reads_base(config['search'])
 
-# get all the reads
+# get all the contigs
 rule extract_contigs:
     input:
-       make_extract_contigs_base(config['search'])
+        make_extract_contigs_base(config['search'])
+
+### catlas decomposition
+rule decompose_catlas:
+    input:
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+    output:
+        directory(expand("{catlas_dir}_decompose", catlas_dir=catlas_dir))
+    shell:
+        """{python} -m spacegraphcats.search.decompose_catlas {catlas_dir} \
+               --minsize=5000 --maxsize=50000 {output}"""
+
+rule extract_reads_for_decomposition:
+    input:
+        expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base),
+        expand("{catlas_dir}/reads.bgz.labels", catlas_dir=catlas_dir),
+        expand("{catlas_dir}_decompose", catlas_dir=catlas_dir)
+    shell:
+        """for i in {input[2]}/*.txt.gz; do
+              python -m spacegraphcats.search.extract_reads \
+                {input[0]} {input[1]} $i \
+                -o {input[2]}/$(basename $i .txt.gz).reads.gz;
+           done"""
 
 ### shadow ratio stuff
 

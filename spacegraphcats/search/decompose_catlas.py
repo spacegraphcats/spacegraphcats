@@ -8,9 +8,6 @@ import argparse
 import os
 import sys
 import sourmash_lib
-from sourmash_lib._minhash import hash_murmur
-import numpy
-import pickle
 import gzip
 
 import screed
@@ -35,12 +32,14 @@ def partition_catlas(catlas, max_size):
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('output_prefix')
+    p.add_argument('output_directory')
     p.add_argument('--maxsize', type=float, default=20000)
     p.add_argument('--minsize', type=float, default=5000)
     p.add_argument('--min-abund', type=float, default=0)
     p.add_argument('--scaled', type=int, default=1000)
     args = p.parse_args(args)
+
+    os.mkdir(args.output_directory)
 
     print('minsize: {:g}'.format(args.minsize))
     print('maxsize: {:g}'.format(args.maxsize))
@@ -76,10 +75,10 @@ def main(args=sys.argv[1:]):
     print('containing {} kmers of {} total ({:.1f}%)'.format(
           node_kmers, total_kmers, node_kmers / total_kmers * 100))
 
-    print('outputting cDBG node IDs to {}.*.txt.gz'.format(args.output_prefix))
+    print('outputting cDBG node IDs to directory {}'.format(args.output_directory))
 
     for n in nodes:
-        with gzip.open('{}.{}.txt.gz'.format(args.output_prefix, n), 'wt') as fp:
+        with gzip.open('{}/{}.txt.gz'.format(args.output_directory, n), 'wt') as fp:
             fp.write("\n".join([ str(x) for x in catlas.shadow([n]) ]))
 
 
