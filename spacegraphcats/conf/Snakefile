@@ -40,6 +40,10 @@ remove_pendants = ""
 if config.get('keep_graph_pendants', False):
     remove_pendants = "-P"
 
+# minsize/maxsize for decomposition
+decompose_minsize = config.get('decompose_minsize', 5000)
+decompose_maxsize = config.get('decompose_maxsize', 50000)
+
 ### build some variables for internal use
 
 catlas_dir = '{}_k{}_r{}{}'.format(catlas_base, ksize, radius, catlas_suffix)
@@ -243,7 +247,8 @@ rule decompose_catlas:
         directory(expand("{catlas_dir}_decompose", catlas_dir=catlas_dir))
     shell:
         """{python} -m spacegraphcats.search.decompose_catlas {catlas_dir} \
-               --minsize=5000 --maxsize=50000 {output}"""
+               --minsize={decompose_minsize} --maxsize={decompose_maxsize} \
+               {output}"""
 
 rule extract_reads_for_decomposition:
     input:
