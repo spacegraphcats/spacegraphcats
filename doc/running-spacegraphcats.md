@@ -27,7 +27,7 @@ You will have a bunch of new output files:
 * the `dory_k21_r1/` directory contains the various files of the catlas constructed by spacegraphcats:
     * cdbg.gxt - the cDBG connection graph, in a custom format
     * contigs.fa.gz - the unitigs from the cDBG
-    * contigs.fa.gz.indices - 
+    * contigs.fa.gz.indices - a numpy savez file containing mapping arrays
     * contigs.fa.gz.info.csv - summary information about the cDBG unitigs
     * contigs.fa.gz.mphf - Minimum Perfect Hash Function parameters for all of the k-mers in the cDBG
     * first_doms.txt - the dominating set information for the cDBG
