@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 """
-Do a frontier search, and retrieve cDBG node IDs and MinHash signature for
-the retrieved contigs.
+Do a frontier search with one or more query sequences, and retrieve
+cDBG node IDs and MinHash signature for the matching contigs.
 """
 import argparse
 import csv
