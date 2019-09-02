@@ -21,7 +21,7 @@ def main():
     d = {}
     n_pure95 = 0
     total = 0
-    
+
     for k, v in node_mhs.items():
         ss = sourmash.SourmashSignature(v)
 
@@ -33,7 +33,7 @@ def main():
             if result.f_unique_to_query < 0.10:
                 break
             keep_results.append(result)
-            
+
         if not keep_results:
             print('** no match for {}'.format(k))
             continue
