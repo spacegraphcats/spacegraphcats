@@ -25,21 +25,21 @@ You will have a bunch of new output files:
 
 * the `dory/` directory contains the BCALM assembly of the input files into a compact De Bruijn graph; the key file here is `dory/bcalm.dory.k21.unitigs.fa`. There is also an output log file, `bcalm.dory.k21.unitigs.fa.log.txt`, that contains the console output of BCALM's run.
 * the `dory_k21_r1/` directory contains the various files of the catlas constructed by spacegraphcats:
-    * cdbg.gxt
-    * contigs.fa.gz
-    * contigs.fa.gz.indices
-    * contigs.fa.gz.info.csv
-    * contigs.fa.gz.mphf
-    * first_doms.txt
-    * catlas.csv
-    * commands.log
+    * cdbg.gxt - the cDBG connection graph, in a custom format
+    * contigs.fa.gz - the unitigs from the cDBG
+    * contigs.fa.gz.indices - 
+    * contigs.fa.gz.info.csv - summary information about the cDBG unitigs
+    * contigs.fa.gz.mphf - Minimum Perfect Hash Function parameters for all of the k-mers in the cDBG
+    * first_doms.txt - the dominating set information for the cDBG
+    * catlas.csv - the catlas for the cDBG
+    * commands.log - a partial log of all of the commands
 * the `dory_k21_r1_search_oh0/` directory contains the output of a search:
-    * results.csv
-    * dory-head.fa.cdbg_ids.txt.gz
-    * dory-head.fa.contigs.sig
-    * dory-head.fa.frontier.txt.gz
-    * dory-head.fa.response.txt
-    * command.txt
+    * results.csv - summary results for the queries (containment, similarity, etc.)
+    * dory-head.fa.cdbg_ids.txt.gz - for the `dory-head.fa` query, the cDBG node IDs that were retrieved
+    * dory-head.fa.contigs.sig - the sourmash signature of the entire match in the cDBG
+    * dory-head.fa.frontier.txt.gz - (undefined for the moment)
+    * dory-head.fa.response.txt - response curve showing how much overhead is gained for each node
+    * command.txt - a partial log of the commands run
 
 ## Configuring and running spacegraphcats itself
 
