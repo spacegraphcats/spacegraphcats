@@ -18,7 +18,7 @@ from . import search_utils
 from .catlas import CAtlas
 
 
-def main():
+def main(argv):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix')
     p.add_argument('query')
@@ -28,7 +28,7 @@ def main():
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     p.add_argument('-v', '--verbose', action='store_true')
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
@@ -93,8 +93,8 @@ def main():
     print('n_homogeneous: {}'.format(n_homogeneous))
     print('pure overhead count: {} seqs / {} bp'.format(n_missing, bp_missing))
 
-    sys.exit(0)
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main(sys.argv[1:]))

@@ -8,6 +8,7 @@ from spacegraphcats.index import index_contigs_by_kmer
 from spacegraphcats.search import extract_nodes_by_query
 from spacegraphcats.search import characterize_catlas_regions
 from spacegraphcats.search import extract_unassembled_nodes
+from spacegraphcats.search import evaluate_overhead
 from spacegraphcats.search import catlas_info
 from spacegraphcats.search import extract_contigs
 from spacegraphcats.search import estimate_query_abundance
@@ -137,6 +138,13 @@ def test_dory():
                 '-o',
                 'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz']
         extract_reads.main(args)
+
+        # run evaluate_overhead
+        args = ['dory_k21_r1',
+                'data/dory-head.fa',
+                'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz',
+                '-o', 'xyz']
+        evaluate_overhead.main(args)
 
         # calculate query abundances
         args = 'dory_k21_r1 data/dory-head.fa -o abundances.csv -k 21'.split()

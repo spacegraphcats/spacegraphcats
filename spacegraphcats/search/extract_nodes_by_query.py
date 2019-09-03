@@ -337,8 +337,8 @@ def main(argv):
         q_output.write(csv_writer, csvoutfp, outdir)
     # end main loop!
 
-    sys.exit(0)
+    return 0
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    sys.exit(main(sys.argv[1:]))
