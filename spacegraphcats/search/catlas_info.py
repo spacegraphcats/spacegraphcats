@@ -4,7 +4,6 @@ import os
 import sys
 
 from .catlas import CAtlas
-from .search_utils import (load_dag, load_layer1_to_cdbg)
 from ..catlas.graph_io import read_from_gxt
 
 def main(argv=sys.argv[1:]):
@@ -29,7 +28,7 @@ def main(argv=sys.argv[1:]):
     print('top catlas node {} has {} children.'.format(top_node_id,
                                                        len(dag[top_node_id])))
 
-    layer1_to_cdbg = load_layer1_to_cdbg(cdbg_to_catlas, domfile)
+    layer1_to_cdbg = catlas.layer1_to_cdbg
     x = set()
     for v in layer1_to_cdbg.values():
         x.update(v)

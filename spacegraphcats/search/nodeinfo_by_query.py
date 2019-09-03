@@ -13,6 +13,7 @@ import khmer
 import csv
 
 import screed
+from .catlas import CAtlas
 from . import search_utils
 from .frontier_search import find_shadow
 
@@ -32,20 +33,24 @@ def main(args=sys.argv[1:]):
     print('maxsize: {:g}'.format(args.maxsize))
 
     basename = os.path.basename(args.catlas_prefix)
-    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
+    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = search_utils.load_dag(catlas)
+    catlas = CAtlas(catlas_file, domfile)
+    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = \
+       catlas.root, catlas.children, catlas.parent, catlas.levels, catlas.cdbg_to_catlas    
+
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 
     # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = search_utils.load_layer1_to_cdbg(cdbg_to_catlas, domfile)
+    layer1_to_cdbg = catlas.layer1_to_cdbg
     print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
 
     # calculate the cDBG shadow sizes for each catlas node.
     print('decorating catlas with shadow size info.')
-    node_shadow_sizes = search_utils.decorate_catlas_with_shadow_sizes(layer1_to_cdbg, dag, dag_levels)
+    catlas.decorate_with_shadow_sizes()
+    node_shadow_sizes = catlas.shadow_sizes
 
     # ...and load cdbg node sizes
     print('loading contig size info')

@@ -15,6 +15,7 @@ import screed
 
 from spacegraphcats.utils.logging import log
 from . import search_utils
+from .catlas import CAtlas
 
 
 def main():
@@ -41,10 +42,13 @@ def main():
     print('done.')
 
     print('loading catlas...', end=' ')
-    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
+    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
-    top_node_id, dag, dag_up, dag_levels, catlas_to_cdbg = search_utils.load_dag(catlas)
-    layer1_to_cdbg = search_utils.load_layer1_to_cdbg(catlas_to_cdbg, domfile)
+
+    catlas = CAtlas(catlas_file, domfile)
+    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = \
+       catlas.root, catlas.children, catlas.parent, catlas.levels, catlas.cdbg_to_catlas    
+    layer1_to_cdbg = catlas.layer1_to_cdbg
     print('done.')
 
     print('loading nodefile {}'.format(args.cdbg_nodefile))
