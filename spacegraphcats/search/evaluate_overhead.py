@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 """
-Retrieve the contigs for a list of cDBG nodes.  Consumes the output of
-extract_nodes_by_query to get the list of nodes.
+XXX
 """
 import argparse
 import os
