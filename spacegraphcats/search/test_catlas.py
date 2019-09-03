@@ -1,7 +1,31 @@
+import sys
 import os
+import io
 from .catlas import CAtlas
 
 thisdir = os.path.dirname(__file__)
+
+
+def test_catlas_info():
+    from .catlas_info import main as catlas_info_main
+    catlas_prefix = os.path.join(thisdir, 'test-data/catlas.dory_k21_r1')
+
+    try:
+        old_out, sys.stdout = sys.stdout, io.StringIO()
+        catlas_info_main([catlas_prefix])
+    finally:
+        output, sys.stdout = sys.stdout, old_out
+
+    expected = """\
+top catlas node 731 has 433 children.
+571 layer 1 catlas nodes, corresponding to 736 cDBG nodes.
+Sequential graph with 736 nodes
+736 nodes, 714 arcs, 1.0 average.
+""".splitlines()
+
+    actual = [ k.strip() for k in output.getvalue().splitlines() ]
+    for k in expected:
+        assert k in actual
 
 
 class Test_LoadCatlas(object):

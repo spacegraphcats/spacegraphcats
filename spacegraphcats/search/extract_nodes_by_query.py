@@ -17,7 +17,6 @@ from sourmash_lib import MinHash
 
 from .frontier_search import (collect_frontier, collect_frontier_exact)
 from . import search_utils
-# from .search_utils import load_dag, load_kmer_index, load_layer1_to_cdbg
 from .index import MPHF_KmerIndex
 from .catlas import CAtlas
 

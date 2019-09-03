@@ -3,25 +3,27 @@ import argparse
 import os
 import sys
 
+from .catlas import CAtlas
 from .search_utils import (load_dag, load_layer1_to_cdbg)
 from ..catlas.graph_io import read_from_gxt
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix')
-    p.add_argument('-k', '--ksize', default=21, type=int,
-                   help='list of k-mer sizes (default: 31)')
     args = p.parse_args(argv)
 
     assert args.catlas_prefix.split('_')[-1] == 'r1'
 
     basename = os.path.basename(args.catlas_prefix)
-    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
+    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
     contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
     gxtfile = os.path.join(args.catlas_prefix, 'cdbg.gxt')
 
-    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = load_dag(catlas)
+    catlas = CAtlas(catlas_file, domfile)
+    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = \
+       catlas.root, catlas.children, catlas.parent, catlas.levels, catlas.cdbg_to_catlas
+
     print('loaded {} nodes and {} layers from catlas {}'.format(len(dag), dag_levels[top_node_id], catlas))
 
     print('top catlas node {} has {} children.'.format(top_node_id,
