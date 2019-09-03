@@ -17,6 +17,7 @@ import csv
 import screed
 from . import search_utils
 from .frontier_search import find_shadow
+from .catlas import CAtlas
 
 
 def main(args=sys.argv[1:]):
@@ -33,20 +34,18 @@ def main(args=sys.argv[1:]):
     print('threshold: {:.3f}'.format(args.threshold))
 
     basename = os.path.basename(args.catlas_prefix)
-    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
+    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
-    # load catlas DAG
-    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = search_utils.load_dag(catlas)
-    print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
+    catlas = CAtlas(catlas_file, domfile=domfile)
 
-    # load mapping between dom nodes and cDBG/graph nodes:
-    layer1_to_cdbg = search_utils.load_layer1_to_cdbg(cdbg_to_catlas, domfile)
-    print('loaded {} layer 1 catlas nodes'.format(len(layer1_to_cdbg)))
+    # load catlas DAG
+    print('loaded {} nodes from catlas {}'.format(len(catlas), catlas))
+    print('loaded {} layer 1 catlas nodes'.format(len(catlas.layer1_to_cdbg)))
 
     # calculate the cDBG shadow sizes for each catlas node.
     print('decorating catlas with shadow size info.')
-    node_shadow_sizes = search_utils.decorate_catlas_with_shadow_sizes(layer1_to_cdbg, dag, dag_levels)
+    catlas.decorate_with_shadow_sizes()
 
     # ...and load cdbg node sizes
     print('loading contig size info')
@@ -54,7 +53,7 @@ def main(args=sys.argv[1:]):
 
     # decorate catlas with cdbg node sizes underneath them
     print('decorating catlas with contig size info.')
-    node_kmer_sizes, node_weighted_kmer_sizes = search_utils.decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes)
+    node_kmer_sizes, node_weighted_kmer_sizes = search_utils.decorate_catlas_with_kmer_sizes(catlas.layer1_to_cdbg, catlas.children, catlas.levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes)
 
     # load k-mer index, query, etc. etc.
     kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
@@ -80,12 +79,12 @@ def main(args=sys.argv[1:]):
         sys.exit(-1)
 
     # calculate the cDBG matching k-mers sizes for each catlas node.
-    catlas_match_counts = kmer_idx.build_catlas_match_counts(cdbg_match_counts, dag, dag_levels, layer1_to_cdbg)
+    catlas_match_counts = kmer_idx.build_catlas_match_counts(cdbg_match_counts, catlas)
 
     ### ok, the real work: find nodes that have low # of k-mers in the query.
     def find_unassembled_nodes(node_id, threshold=0.0):
         node_list = set()
-        for sub_id in dag[node_id]:
+        for sub_id in catlas.children[node_id]:
             n_matched = catlas_match_counts.get(sub_id, 0)
             size = node_kmer_sizes[sub_id]
 
@@ -103,7 +102,7 @@ def main(args=sys.argv[1:]):
 
     print('finding unassembled nodes for threshold {}.'.format(args.threshold))
 
-    terminal = find_unassembled_nodes(top_node_id, args.threshold)
+    terminal = find_unassembled_nodes(catlas.root, args.threshold)
     sum_kmers = sum([ node_kmer_sizes[n] for n in terminal ])
     sum_match_kmers = sum([ catlas_match_counts.get(n, 0) for n in terminal ])
     print('...got {} nodes, representing {} k-mers'.format(len(terminal), sum_kmers))
@@ -121,7 +120,7 @@ def main(args=sys.argv[1:]):
                         node_kmer_sizes[n],
                         '{:.1f}'.format(node_weighted_kmer_sizes[n]),
                         '{:.2f}'.format(node_weighted_kmer_sizes[n] / node_kmer_sizes[n]),
-                        node_shadow_sizes[n]])
+                        catlas.shadow_sizes[n]])
 
     if args.minsize:
         print('minsize set: {}. filtering.'.format(args.minsize))
@@ -137,9 +136,9 @@ def main(args=sys.argv[1:]):
     # build cDBG shadow ID list, tagged by parent catlas node.
     cdbg_id_to_node = {}
     for n in terminal:
-        this_shadow = find_shadow([n], dag)
+        this_shadow = find_shadow([n], catlas.children)
         for x in this_shadow:
-            v = layer1_to_cdbg[x]
+            v = catlas.layer1_to_cdbg[x]
             for vv in v:
                 cdbg_id_to_node[vv] = n
 
