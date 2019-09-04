@@ -9,6 +9,7 @@ import gzip
 import os
 import sys
 import time
+import pickle
 
 import khmer
 import screed
@@ -21,27 +22,17 @@ from .catlas import CAtlas
 
 
 class QueryOutput:
-    def __init__(self, query, catlas, kmer_idx, frontier, scaled):
-        self.query = query
+    def __init__(self, query_hashval, catlas, cdbg_shadow):
+        self.query_hashval = query_hashval
         self.catlas = catlas
-        self.kmer_idx = kmer_idx
-        self.frontier = frontier
-        self.shadow = self.catlas.shadow(self.frontier)
+        self.cdbg_shadow = cdbg_shadow
         self.total_bp = 0
         self.total_seq = 0
-        self.query_sig = self.query.build_query_mh_for_seed(42, scaled)
-        self.contigs_minhash = self.query_sig.minhash.copy_and_clear()
+        self.contigs = []
 
     def __add_sequence(self, sequence):
-        self.contigs_minhash.add_sequence(str(sequence), True)
         self.total_bp += len(sequence)
         self.total_seq += 1
-
-    def containment(self):
-        return self.query_sig.minhash.contained_by(self.contigs_minhash)
-
-    def similarity(self):
-        return self.query_sig.minhash.similarity(self.contigs_minhash)
 
     def retrieve_contigs(self, contigs):
         "extract contigs using cDBG shadow."
@@ -53,191 +44,60 @@ class QueryOutput:
         print('extracting contigs...')
         for n, record in enumerate(
                 search_utils.get_contigs_by_cdbg(contigs,
-                                                 self.shadow)):
+                                                 self.cdbg_shadow)):
             if n and n % 10000 == 0:
-                offset_f = self.total_seq / len(self.shadow)
+                offset_f = self.total_seq / len(self.cdbg_shadow)
                 print('...at n {} ({:.1f}% of shadow)'.format(self.total_seq,
                       offset_f * 100), end='\r')
 
-            # track retrieved sequences in a minhash
-            self.__add_sequence(record.sequence)
+            self.contigs.append((record.name, record.sequence))
 
         # done - got all contigs!
         print('...fetched {} contigs, {} bp matching combined frontiers. '
               ' ({:.1f}s)'.format(self.total_seq, self.total_bp,
                                   time.time() - retrieve_start))
 
-        # calculate summary values of extracted contigs
-        print('query inclusion by retrieved contigs:'
-              ' {:.3f}%'.format(self.containment()*100))
-        print('query similarity to retrieved contigs:'
-              ' {:.3f}%'.format(self.similarity()*100))
 
     def write(self, csv_writer, csvoutfp, outdir):
-        containment = self.containment()
-        similarity = self.similarity()
-        q_name = self.query.filename
+        hashval = self.query_hashval
         bp = self.total_bp
         seqs = self.total_seq
-        k = self.query.ksize
-        num_q_kmers = len(self.query.kmers)
-        (best_con,
-         cdbg_min_oh,
-         catlas_min_oh) = self.query.con_sim_upper_bounds(self.catlas,
-                                                          self.kmer_idx)
+        k = 0
+
         # output to results.csv!
-        csv_writer.writerow([q_name, containment, similarity, bp,
-                             seqs, k, num_q_kmers,
-                             best_con, cdbg_min_oh,
-                             catlas_min_oh])
+        csv_writer.writerow([hashval, bp, seqs, k])
         csvoutfp.flush()
 
-        # write out signature from retrieved contigs.
-        sig_filename = os.path.basename(q_name) + '.contigs.sig'
-        with open(os.path.join(outdir, sig_filename), 'wt') as fp:
-            ss = sourmash_lib.SourmashSignature(self.contigs_minhash,
-                                                name='nbhd:'+self.query.name,
-                                                filename=sig_filename)
-            sourmash_lib.save_signatures([ss], fp)
-
         # write out cDBG IDs
+        q_name = str(hashval)
         cdbg_listname = os.path.basename(q_name) + '.cdbg_ids.txt.gz'
         with gzip.open(os.path.join(outdir, cdbg_listname), 'wt') as fp:
-            fp.write("\n".join([str(x) for x in sorted(self.shadow)]))
+            fp.write("\n".join([str(x) for x in sorted(self.cdbg_shadow)]))
 
-        # write out frontier nodes by seed
-        frontier_listname = os.path.basename(q_name) + '.frontier.txt.gz'
-        with gzip.open(os.path.join(outdir, frontier_listname), 'wt') as fp:
-            for node, seedlist in sorted(self.frontier.items()):
-                fp.write('{},{}\n'.format(node,
-                                          " ".join([str(x) for x in
-                                                    sorted(seedlist)])))
-
-        # write response curve
-        response_curve_filename = os.path.basename(q_name) + '.response.txt'
-        response_curve_filename = os.path.join(outdir,
-                                               response_curve_filename)
-        cdbg_match_counts = self.query.cdbg_match_counts[self.catlas.name]
-        search_utils.output_response_curve(response_curve_filename,
-                                           cdbg_match_counts,
-                                           self.kmer_idx,
-                                           self.catlas.layer1_to_cdbg)
+        # write out contigs
+        contigs_outname = os.path.basename(q_name) + '.contigs.fa.gz'
+        with gzip.open(os.path.join(outdir, contigs_outname), 'wt') as fp:
+            for name, sequence in self.contigs:
+                fp.write('>{}\n{}\n'.format(name, sequence))
 
 
-class Query:
-    def __init__(self, query_file, ksize):
-        self.filename = query_file
-        self.ksize = ksize
-        self.kmers = set()
-        self.name = None
-        print('----')
-        print('QUERY FILE:', self.filename)
+def execute_query(hashval, catlas, hashval_to_contig_id):
+    cdbg_node = hashval_to_contig_id.get(hashval, None)
 
-        # build hashes for all the query k-mers
-        print('loading query kmers...', end=' ')
-        bf = khmer.Nodetable(ksize, 1, 1)
+    if not cdbg_node:
+        return None
 
-        for record in screed.open(self.filename):
-            if self.name is None:
-                self.name = record.name
-            if len(record.sequence) >= int(ksize):
-                self.kmers.update(bf.get_kmer_hashes(record.sequence))
+    print(len(catlas.cdbg_to_catlas))
+    node_id = catlas.cdbg_to_catlas[cdbg_node]
 
-        print('got {}'.format(len(self.kmers)))
+    # calculate level 1 nodes for this frontier in the catlas
+    leaves = catlas.leaves([node_id])
 
-        self.cdbg_match_counts = {}
-        self.catlas_match_counts = {}
+    # calculate associated cDBG nodes
+    cdbg_shadow = catlas.shadow(leaves)
 
-    def build_query_mh_for_seed(self, seed, scaled):
-        mh = MinHash(0, self.ksize, scaled=scaled, seed=seed)
-        for record in screed.open(self.filename):
-            mh.add_sequence(record.sequence, True)
-
-        return sourmash_lib.SourmashSignature(mh, name=self.name,
-                                              filename=self.filename)
-
-    def execute(self, catlas, kmer_idx, scaled, overhead, verbose,
-                max_overhead, min_containment):
-        cat_id = catlas.name
-        # construct dict cdbg_id -> # of query k-mers
-        self.cdbg_match_counts[cat_id] = kmer_idx.get_match_counts(self.kmers)
-        for k, v in self.cdbg_match_counts[cat_id].items():
-            assert v <= kmer_idx.get_cdbg_size(k), k
-        # calculate the cDBG matching k-mers sizes for each catlas node.
-        self.catlas_match_counts[cat_id] =\
-            kmer_idx.build_catlas_match_counts(self.cdbg_match_counts[cat_id],
-                                               catlas)
-
-        # check a few things - we've propagated properly:
-        assert sum(self.cdbg_match_counts[cat_id].values()) ==\
-            self.catlas_match_counts[cat_id][catlas.root]
-        # ...and all nodes have no more matches than total k-mers.
-        for v, match_amount in self.catlas_match_counts[cat_id].items():
-            assert match_amount <= catlas.index_sizes[v], v
-
-        self.con_sim_upper_bounds(catlas, kmer_idx)
-
-        # gather results of all queries
-        fuzzy = max_overhead != 1.0
-        if fuzzy:
-            frontier = collect_frontier(catlas,
-                                        self.catlas_match_counts[cat_id],
-                                        max_overhead=max_overhead,
-                                        min_containment=min_containment)
-        else:
-            frontier = collect_frontier_exact(catlas,
-                                              self.catlas_match_counts[cat_id],
-                                              overhead=overhead,
-                                              verbose=verbose)
-
-        # calculate level 1 nodes for this frontier in the catlas
-        leaves = catlas.leaves(frontier)
-        # calculate associated cDBG nodes
-        cdbg_shadow = catlas.shadow(leaves)
-
-        print('done searching! {} frontier, {} catlas shadow nodes, {}'
-              ' cdbg nodes.'.format(len(frontier), len(leaves),
-                                    len(cdbg_shadow)))
-        return QueryOutput(self, catlas, kmer_idx, frontier, scaled)
-
-    def con_sim_upper_bounds(self, catlas, kmer_idx):
-        """
-        Compute "best possible" bounds on the containment and similarity of the
-        output of this query."""
-        root = catlas.root
-
-        cdbg_match_counts = self.cdbg_match_counts[catlas.name]
-        catlas_match_counts = self.catlas_match_counts[catlas.name]
-        total_match_kmers = sum(cdbg_match_counts.values())
-        best_containment = total_match_kmers / len(self.kmers)
-        print('=> containment: {:.1f}%'.format(best_containment * 100))
-
-        total_kmers_in_cdbg_matches = 0
-        for cdbg_id in set(cdbg_match_counts.keys()):
-            total_kmers_in_cdbg_matches += kmer_idx.get_cdbg_size(cdbg_id)
-
-        cdbg_sim = total_match_kmers / total_kmers_in_cdbg_matches
-        print('cdbg match node similarity: {:.1f}%'.format(cdbg_sim * 100))
-        cdbg_min_overhead = (total_kmers_in_cdbg_matches-total_match_kmers) /\
-            total_kmers_in_cdbg_matches
-        print('min cdbg overhead: {}'.format(cdbg_min_overhead))
-
-        # calculate the minimum overhead of the search, based on level 1
-        # nodes.
-        catlas_min_overhead = 0
-        if catlas_match_counts[root]:
-            all_query_kmers = catlas_match_counts[root]
-            total_kmers_in_query_nodes = 0
-            for node_id, level in catlas.levels.items():
-                if level == 1 and catlas_match_counts.get(node_id):
-                    total_kmers_in_query_nodes += catlas.index_sizes[node_id]
-
-            catlas_min_overhead = (total_kmers_in_query_nodes -
-                                   all_query_kmers) /\
-                total_kmers_in_query_nodes
-            print('minimum catlas overhead: {}'.format(catlas_min_overhead))
-
-        return best_containment, cdbg_min_overhead, catlas_min_overhead
+    print('done searching!')
+    return QueryOutput(hashval, catlas, cdbg_shadow)
 
 
 def main(argv):
@@ -255,12 +115,25 @@ def main(argv):
     args = p.parse_args(argv)
 
     # create output directory if it doesn't exist.
+    outdir = args.output
     try:
         os.mkdir(outdir)
     except OSError:
         pass
     if not os.path.isdir(outdir):
         print('output {} is not a directory'.format(outdir))
+        sys.exit(-1)
+
+    # load picklefile
+    with open(args.mh_index_picklefile, 'rb') as fp:
+        hashval_to_contig_id = pickle.load(fp)
+
+    # load list of desired hashvals
+    hashvals = [ int(x.strip()) for x in open(args.hashval_list, 'rt') ]
+    hashvals = set(hashvals)
+
+    if not len(hashvals):
+        print('No hash values to search!', file=sys.stderr)
         sys.exit(-1)
 
     # figure out catlas and domfile information.
@@ -273,7 +146,7 @@ def main(argv):
     print('loaded {} layer 1 catlas nodes'.format(len(catlas.layer1_to_cdbg)))
 
     # find the contigs filename
-    contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
+    contigs_file = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
     # get a single ksize & scaled
     ksize = int(args.ksize)
@@ -285,13 +158,15 @@ def main(argv):
         fp.write("\n")
 
     # output results.csv in the output directory:
-    csvoutfp = open(os.path.join(outdir, 'results.csv'), 'wt')
+    csvoutfp = open(os.path.join(outdir, 'hashval_results.csv'), 'wt')
     csv_writer = csv.writer(csvoutfp)
-    csv_writer.writerow(['query', 'containment', 'similarity', 'bp', 'contigs',
-                         'ksize', 'num_query_kmers', 'best_containment',
-                         'cdbg_min_overhead', 'catlas_min_overhead'])
+    csv_writer.writerow(['hashval', 'bp', 'contigs', 'ksize'])
 
     # iterate over each query, do the thing.
+    for hashval in hashvals:
+        result = execute_query(hashval, catlas, hashval_to_contig_id)
+        result.retrieve_contigs(contigs_file)
+        result.write(csv_writer, csvoutfp, outdir)
     # @@@
     # end main loop!
 

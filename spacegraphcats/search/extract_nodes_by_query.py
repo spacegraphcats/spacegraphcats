@@ -172,6 +172,7 @@ class Query:
         # check a few things - we've propagated properly:
         assert sum(self.cdbg_match_counts[cat_id].values()) ==\
             self.catlas_match_counts[cat_id][catlas.root]
+
         # ...and all nodes have no more matches than total k-mers.
         for v, match_amount in self.catlas_match_counts[cat_id].items():
             assert match_amount <= catlas.index_sizes[v], v
