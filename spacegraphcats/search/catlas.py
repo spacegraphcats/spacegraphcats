@@ -8,10 +8,19 @@ class CAtlas:
     def __init__(self, catlas_file, domfile=None,
                  sizefile=None, min_abund=0.0):
         self.name = catlas_file
+
+        # catlas node ID -> parent
         self.parent = {}  # type: Dict[Int, Int]
+
+        # catlas node IDs -> { children node IDs }
         self.children = defaultdict(set)  # type: Dict[Int, Set[Int]]
+
+        # catlas node IDs -> catlas level
         self.levels = {}  # type: Dict[Int, Int]
-        self.cdbg_to_catlas = {}  # type: Dict[Int, Int]
+
+        # mapping from cDBG nodes to catlas node IDs, for internal use
+        # note: not all cDBG nodes are represented in catlas!
+        self._cdbg_to_catlas = {}  # type: Dict[Int, Int]
 
         self.__load_catlas(catlas_file)
         if domfile is not None:
@@ -46,9 +55,9 @@ class CAtlas:
                 self.max_level = level
                 self.root = node_id
 
-            # save cdbg_to_catlas mapping
+            # build _cdbg_to_catlas mapping
             if level == 1:
-                self.cdbg_to_catlas[int(cdbg_id)] = node_id
+                self._cdbg_to_catlas[int(cdbg_id)] = node_id
 
     def __load_first_level(self, domfile):
         """
@@ -64,7 +73,7 @@ class CAtlas:
             dom_node = int(dom_node)
             beneath = map(int, beneath)
 
-            equiv_cdbg_to_catlas = self.cdbg_to_catlas[dom_node]
+            equiv_cdbg_to_catlas = self._cdbg_to_catlas[dom_node]
             self.layer1_to_cdbg[equiv_cdbg_to_catlas] = set(beneath)
 
     def __load_size_info(self, sizefile, min_abund):

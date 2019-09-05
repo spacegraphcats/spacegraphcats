@@ -20,8 +20,8 @@ def main(argv=sys.argv[1:]):
     gxtfile = os.path.join(args.catlas_prefix, 'cdbg.gxt')
 
     catlas = CAtlas(catlas_file, domfile)
-    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = \
-       catlas.root, catlas.children, catlas.parent, catlas.levels, catlas.cdbg_to_catlas
+    top_node_id, dag, dag_levels = \
+       catlas.root, catlas.children, catlas.levels
 
     print('loaded {} nodes and {} layers from catlas {}'.format(len(dag), dag_levels[top_node_id], catlas))
 

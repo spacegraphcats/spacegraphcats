@@ -38,8 +38,8 @@ def main(args=sys.argv[1:]):
 
     # load catlas DAG
     catlas = CAtlas(catlas_file, domfile)
-    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = \
-       catlas.root, catlas.children, catlas.parent, catlas.levels, catlas.cdbg_to_catlas    
+    top_node_id, dag, dag_levels = \
+       catlas.root, catlas.children, catlas.levels
 
     print('loaded {} nodes from catlas {}'.format(len(dag), catlas))
 

@@ -45,8 +45,6 @@ def main(argv):
     domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
 
     catlas = CAtlas(catlas_file, domfile)
-    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = \
-       catlas.root, catlas.children, catlas.parent, catlas.levels, catlas.cdbg_to_catlas    
     layer1_to_cdbg = catlas.layer1_to_cdbg
     print('done.')
 
