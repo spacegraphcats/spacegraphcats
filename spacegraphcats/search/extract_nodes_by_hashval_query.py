@@ -45,6 +45,9 @@ class QueryOutput:
         for n, record in enumerate(
                 search_utils.get_contigs_by_cdbg(contigs,
                                                  self.cdbg_shadow)):
+            self.total_seq += 1
+            self.total_bp += len(record.sequence)
+
             if n and n % 10000 == 0:
                 offset_f = self.total_seq / len(self.cdbg_shadow)
                 print('...at n {} ({:.1f}% of shadow)'.format(self.total_seq,
@@ -87,11 +90,10 @@ def execute_query(hashval, catlas, hashval_to_contig_id):
     if not cdbg_node:
         return None
 
-    print(len(catlas.cdbg_to_catlas))
-    node_id = catlas.cdbg_to_catlas[cdbg_node]
+    catlas_node_id = catlas.cdbg_to_layer1[cdbg_node]
 
     # calculate level 1 nodes for this frontier in the catlas
-    leaves = catlas.leaves([node_id])
+    leaves = catlas.leaves([catlas_node_id])
 
     # calculate associated cDBG nodes
     cdbg_shadow = catlas.shadow(leaves)
@@ -138,7 +140,7 @@ def main(argv):
 
     # load catlas DAG
     catlas = CAtlas(args.catlas_prefix)
-    print('loaded {} nodes from catlas {}'.format(len(catlas), catlas_file))
+    print('loaded {} nodes from catlas {}'.format(len(catlas), args.catlas_prefix))
     print('loaded {} layer 1 catlas nodes'.format(len(catlas.layer1_to_cdbg)))
 
     # find the contigs filename

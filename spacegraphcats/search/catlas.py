@@ -70,15 +70,20 @@ class CAtlas:
         # mapping from catlas node IDs to cdbg nodes
         self.layer1_to_cdbg = {}  # type: Dict[Int, Set[Int]]
 
+        # mapping from cdbg nodes to catlas node IDs
+        self.cdbg_to_layer1 = {}  # type: Dict[Int, Int]
+
         fp = open(domfile, 'rt')
         for line in fp:
             dom_node, *beneath = line.strip().split(' ')
 
             dom_node = int(dom_node)
-            beneath = map(int, beneath)
+            beneath = set(map(int, beneath))
 
             equiv_cdbg_to_catlas = self._cdbg_to_catlas[dom_node]
-            self.layer1_to_cdbg[equiv_cdbg_to_catlas] = set(beneath)
+            self.layer1_to_cdbg[equiv_cdbg_to_catlas] = beneath
+            for cdbg_id in beneath:
+                self.cdbg_to_layer1[cdbg_id] = equiv_cdbg_to_catlas
 
     def __load_size_info(self, sizefile, min_abund):
         kmer_sizes = {}
