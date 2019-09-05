@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-XXX
+Evaluate the minimum overhead of a query into a catlas.
 """
 import argparse
 import os
@@ -18,7 +18,7 @@ from .catlas import CAtlas
 
 
 def main(argv):
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('catlas_prefix')
     p.add_argument('query')
     p.add_argument('cdbg_nodefile')
