@@ -41,10 +41,7 @@ def main(argv):
     print('done.')
 
     print('loading catlas...', end=' ')
-    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
-    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
-
-    catlas = CAtlas(catlas_file, domfile)
+    catlas = CAtlas(args.catlas_prefix)
     layer1_to_cdbg = catlas.layer1_to_cdbg
     print('done.')
 

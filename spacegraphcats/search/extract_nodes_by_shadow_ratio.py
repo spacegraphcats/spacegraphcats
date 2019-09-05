@@ -29,12 +29,8 @@ def main(args=sys.argv[1:]):
     print('minsize: {:g}'.format(args.minsize))
     print('maxsize: {:g}'.format(args.maxsize))
 
-    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
-    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
-    sizefile = os.path.join(args.catlas_prefix, 'contigs.fa.gz.info.csv')
-
     # load catlas DAG
-    catlas = CAtlas(catlas_file, domfile=domfile, sizefile=sizefile)
+    catlas = CAtlas(args.catlas_prefix, load_sizefile=True)
     print('loaded {} nodes from catlas {}'.format(len(catlas), catlas_file))
     print('loaded {} layer 1 catlas nodes'.format(len(catlas.layer1_to_cdbg)))
 

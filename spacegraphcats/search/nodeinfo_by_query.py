@@ -33,11 +33,8 @@ def main(args=sys.argv[1:]):
     print('maxsize: {:g}'.format(args.maxsize))
 
     basename = os.path.basename(args.catlas_prefix)
-    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
-    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
-
     # load catlas DAG
-    catlas = CAtlas(catlas_file, domfile)
+    catlas = CAtlas(args.catlas_prefix)
     top_node_id, dag, dag_levels = \
        catlas.root, catlas.children, catlas.levels
 

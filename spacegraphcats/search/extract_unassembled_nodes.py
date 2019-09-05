@@ -34,10 +34,7 @@ def main(args=sys.argv[1:]):
     print('threshold: {:.3f}'.format(args.threshold))
 
     basename = os.path.basename(args.catlas_prefix)
-    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
-    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
-
-    catlas = CAtlas(catlas_file, domfile=domfile)
+    catlas = CAtlas(args.catlas_prefix)
 
     # load catlas DAG
     print('loaded {} nodes from catlas {}'.format(len(catlas), catlas))

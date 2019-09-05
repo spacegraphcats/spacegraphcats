@@ -45,12 +45,9 @@ def main(args=sys.argv[1:]):
     print('maxsize: {:g}'.format(args.maxsize))
     print('min_abund: {}'.format(args.min_abund))
 
-    catlasfile = os.path.join(args.catlas_prefix, 'catlas.csv')
-    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
-    sizefile = os.path.join(args.catlas_prefix, 'contigs.fa.gz.info.csv')
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
-    catlas = CAtlas(catlasfile, domfile=domfile, sizefile=sizefile,
+    catlas = CAtlas(args.catlas_prefix, load_sizefile=True,
                     min_abund=args.min_abund)
     catlas.decorate_with_shadow_sizes()
 

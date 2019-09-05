@@ -136,12 +136,8 @@ def main(argv):
         print('No hash values to search!', file=sys.stderr)
         sys.exit(-1)
 
-    # figure out catlas and domfile information.
-    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
-    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
-
     # load catlas DAG
-    catlas = CAtlas(catlas_file, domfile=domfile)
+    catlas = CAtlas(args.catlas_prefix)
     print('loaded {} nodes from catlas {}'.format(len(catlas), catlas_file))
     print('loaded {} layer 1 catlas nodes'.format(len(catlas.layer1_to_cdbg)))
 

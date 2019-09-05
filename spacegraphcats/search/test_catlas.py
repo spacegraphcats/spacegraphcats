@@ -31,9 +31,7 @@ Sequential graph with 736 nodes
 class Test_LoadCatlas(object):
     def setup(self):
         catlas_prefix = os.path.join(thisdir, 'test-data/catlas.dory_k21_r1')
-        catlas_file = os.path.join(catlas_prefix, 'catlas.csv')
-        domfile = os.path.join(catlas_prefix, 'first_doms.txt')
-        self.catlas = CAtlas(catlas_file, domfile=domfile)
+        self.catlas = CAtlas(catlas_prefix)
         
     def test_root(self):
         assert self.catlas.root == 731

@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 import csv
 from typing import Dict, Set, List
@@ -5,9 +6,9 @@ from typing import Dict, Set, List
 
 class CAtlas:
     """CAtlas class for searching."""
-    def __init__(self, catlas_file, domfile=None,
-                 sizefile=None, min_abund=0.0):
-        self.name = catlas_file
+    def __init__(self, catlas_directory, load_domfile=True,
+                 load_sizefile=False, min_abund=0.0):
+        self.name = catlas_directory
 
         # catlas node ID -> parent
         self.parent = {}  # type: Dict[Int, Int]
@@ -22,10 +23,13 @@ class CAtlas:
         # note: not all cDBG nodes are represented in catlas!
         self._cdbg_to_catlas = {}  # type: Dict[Int, Int]
 
+        catlas_file = os.path.join(catlas_directory, 'catlas.csv')
         self.__load_catlas(catlas_file)
-        if domfile is not None:
+        if load_domfile:
+            domfile = os.path.join(catlas_directory, 'first_doms.txt')
             self.__load_first_level(domfile)
-        if sizefile is not None:
+        if load_sizefile is not None:
+            sizefile = os.path.join(catlas_directory, 'contigs.fa.gz.info.csv')
             self.__load_size_info(sizefile, min_abund)
 
     def __load_catlas(self, catlas_file):

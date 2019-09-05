@@ -14,14 +14,11 @@ def main(argv=sys.argv[1:]):
     assert args.catlas_prefix.split('_')[-1] == 'r1'
 
     basename = os.path.basename(args.catlas_prefix)
-    catlas_file = os.path.join(args.catlas_prefix, 'catlas.csv')
-    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
     contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
     gxtfile = os.path.join(args.catlas_prefix, 'cdbg.gxt')
 
-    catlas = CAtlas(catlas_file, domfile)
-    top_node_id, dag, dag_levels = \
-       catlas.root, catlas.children, catlas.levels
+    catlas = CAtlas(args.catlas_prefix)
+    top_node_id, dag, dag_levels = catlas.root, catlas.children, catlas.levels
 
     print('loaded {} nodes and {} layers from catlas {}'.format(len(dag), dag_levels[top_node_id], catlas))
 
