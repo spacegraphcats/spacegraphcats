@@ -10,8 +10,6 @@ e.g.
 
 would subtract genome1.fa and genome2.fa from neighborhood.fa
 """
-import sys
-sys.path.insert(0, '../pybbhash')
 import os
 from bbhash_table import BBHashTable
 import khmer

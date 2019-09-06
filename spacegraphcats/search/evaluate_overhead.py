@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 """
-Retrieve the contigs for a list of cDBG nodes.  Consumes the output of
-extract_nodes_by_query to get the list of nodes.
+Evaluate the minimum overhead of a query into a catlas.
 """
 import argparse
 import os
@@ -15,10 +14,11 @@ import screed
 
 from spacegraphcats.utils.logging import log
 from . import search_utils
+from .catlas import CAtlas
 
 
-def main():
-    p = argparse.ArgumentParser()
+def main(argv):
+    p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('catlas_prefix')
     p.add_argument('query')
     p.add_argument('cdbg_nodefile')
@@ -27,7 +27,7 @@ def main():
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     p.add_argument('-v', '--verbose', action='store_true')
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
@@ -41,10 +41,8 @@ def main():
     print('done.')
 
     print('loading catlas...', end=' ')
-    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
-    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
-    top_node_id, dag, dag_up, dag_levels, catlas_to_cdbg = search_utils.load_dag(catlas)
-    layer1_to_cdbg = search_utils.load_layer1_to_cdbg(catlas_to_cdbg, domfile)
+    catlas = CAtlas(args.catlas_prefix)
+    layer1_to_cdbg = catlas.layer1_to_cdbg
     print('done.')
 
     print('loading nodefile {}'.format(args.cdbg_nodefile))
@@ -89,8 +87,8 @@ def main():
     print('n_homogeneous: {}'.format(n_homogeneous))
     print('pure overhead count: {} seqs / {} bp'.format(n_missing, bp_missing))
 
-    sys.exit(0)
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main(sys.argv[1:]))

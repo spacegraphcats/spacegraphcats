@@ -3,31 +3,29 @@ import argparse
 import os
 import sys
 
-from .search_utils import (load_dag, load_layer1_to_cdbg)
+from .catlas import CAtlas
 from ..catlas.graph_io import read_from_gxt
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument('catlas_prefix')
-    p.add_argument('-k', '--ksize', default=21, type=int,
-                   help='list of k-mer sizes (default: 31)')
     args = p.parse_args(argv)
 
     assert args.catlas_prefix.split('_')[-1] == 'r1'
 
     basename = os.path.basename(args.catlas_prefix)
-    catlas = os.path.join(args.catlas_prefix, 'catlas.csv')
-    domfile = os.path.join(args.catlas_prefix, 'first_doms.txt')
     contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
     gxtfile = os.path.join(args.catlas_prefix, 'cdbg.gxt')
 
-    top_node_id, dag, dag_up, dag_levels, cdbg_to_catlas = load_dag(catlas)
+    catlas = CAtlas(args.catlas_prefix)
+    top_node_id, dag, dag_levels = catlas.root, catlas.children, catlas.levels
+
     print('loaded {} nodes and {} layers from catlas {}'.format(len(dag), dag_levels[top_node_id], catlas))
 
     print('top catlas node {} has {} children.'.format(top_node_id,
                                                        len(dag[top_node_id])))
 
-    layer1_to_cdbg = load_layer1_to_cdbg(cdbg_to_catlas, domfile)
+    layer1_to_cdbg = catlas.layer1_to_cdbg
     x = set()
     for v in layer1_to_cdbg.values():
         x.update(v)

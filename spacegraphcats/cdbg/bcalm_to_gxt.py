@@ -250,8 +250,8 @@ def main(argv):
     contigsfp = bgzf.open(args.contigs_out, 'wb')
     info_filename = args.contigs_out + '.info.csv'
     info_fp = open(info_filename, 'wt')
-    in_mh = sourmash.MinHash(0, 31, scaled=1000)
-    out_mh = sourmash.MinHash(0, 31, scaled=1000)
+    in_mh = sourmash.MinHash(0, args.ksize, scaled=1000)
+    out_mh = sourmash.MinHash(0, args.ksize, scaled=1000)
 
     # load in the basic graph structure from the BCALM output file
     neighbors, sequences, mean_abunds, sizes = read_bcalm(unitigs, debug, k)

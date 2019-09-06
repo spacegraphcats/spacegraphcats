@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 import csv
 from typing import Dict, Set, List
@@ -5,18 +6,30 @@ from typing import Dict, Set, List
 
 class CAtlas:
     """CAtlas class for searching."""
-    def __init__(self, catlas_file, domfile=None,
-                 sizefile=None, min_abund=0.0):
-        self.name = catlas_file
-        self.parent = {}  # type: Dict[Int, Int]
-        self.children = defaultdict(set)  # type: Dict[Int, Set[Int]]
-        self.levels = {}  # type: Dict[Int, Int]
-        self.cdbg_to_catlas = {}  # type: Dict[Int, Int]
+    def __init__(self, catlas_directory, load_domfile=True,
+                 load_sizefile=False, min_abund=0.0):
+        self.name = catlas_directory
 
+        # catlas node ID -> parent
+        self.parent = {}  # type: Dict[Int, Int]
+
+        # catlas node IDs -> { children node IDs }
+        self.children = defaultdict(set)  # type: Dict[Int, Set[Int]]
+
+        # catlas node IDs -> catlas level
+        self.levels = {}  # type: Dict[Int, Int]
+
+        # mapping from cDBG nodes to catlas node IDs, for internal use
+        # note: not all cDBG nodes are represented in catlas!
+        self._cdbg_to_catlas = {}  # type: Dict[Int, Int]
+
+        catlas_file = os.path.join(catlas_directory, 'catlas.csv')
         self.__load_catlas(catlas_file)
-        if domfile is not None:
+        if load_domfile:
+            domfile = os.path.join(catlas_directory, 'first_doms.txt')
             self.__load_first_level(domfile)
-        if sizefile is not None:
+        if load_sizefile is not None:
+            sizefile = os.path.join(catlas_directory, 'contigs.fa.gz.info.csv')
             self.__load_size_info(sizefile, min_abund)
 
     def __load_catlas(self, catlas_file):
@@ -46,9 +59,9 @@ class CAtlas:
                 self.max_level = level
                 self.root = node_id
 
-            # save cdbg_to_catlas mapping
+            # build _cdbg_to_catlas mapping
             if level == 1:
-                self.cdbg_to_catlas[int(cdbg_id)] = node_id
+                self._cdbg_to_catlas[int(cdbg_id)] = node_id
 
     def __load_first_level(self, domfile):
         """
@@ -57,15 +70,20 @@ class CAtlas:
         # mapping from catlas node IDs to cdbg nodes
         self.layer1_to_cdbg = {}  # type: Dict[Int, Set[Int]]
 
+        # mapping from cdbg nodes to catlas node IDs
+        self.cdbg_to_layer1 = {}  # type: Dict[Int, Int]
+
         fp = open(domfile, 'rt')
         for line in fp:
             dom_node, *beneath = line.strip().split(' ')
 
             dom_node = int(dom_node)
-            beneath = map(int, beneath)
+            beneath = set(map(int, beneath))
 
-            equiv_cdbg_to_catlas = self.cdbg_to_catlas[dom_node]
-            self.layer1_to_cdbg[equiv_cdbg_to_catlas] = set(beneath)
+            equiv_cdbg_to_catlas = self._cdbg_to_catlas[dom_node]
+            self.layer1_to_cdbg[equiv_cdbg_to_catlas] = beneath
+            for cdbg_id in beneath:
+                self.cdbg_to_layer1[cdbg_id] = equiv_cdbg_to_catlas
 
     def __load_size_info(self, sizefile, min_abund):
         kmer_sizes = {}
