@@ -17,7 +17,6 @@ import screed
 import sourmash
 from sourmash import MinHash
 
-from .frontier_search import (collect_frontier, collect_frontier_exact)
 from . import search_utils
 from .index import MPHF_KmerIndex
 from .catlas import CAtlas
@@ -182,19 +181,15 @@ class Query:
             # calculate best possible.
             self.con_sim_upper_bounds(catlas, kmer_idx)
 
-        # gather results of all queries
-        frontier = collect_frontier_exact(catlas,
-                                          self.catlas_match_counts[cat_id],
-                                          verbose=self.debug)
-
-        # calculate level 1 nodes for this frontier in the catlas
-        leaves = catlas.leaves(frontier)
-
-        # calculate associated cDBG nodes
-        cdbg_shadow = catlas.shadow(leaves)
+        # gather domset nodes matching query k-mers
+        cdbg_shadow = set()
+        leaves = set()
+        for cdbg_node in self.cdbg_match_counts[cat_id]:
+            cdbg_shadow.add(cdbg_node)
+            leaves.add(catlas.cdbg_to_layer1[cdbg_node])
 
         print('done searching! {} frontier, {} catlas shadow nodes, {}'
-              ' cdbg nodes.'.format(len(frontier), len(leaves),
+              ' cdbg nodes.'.format(len(leaves), len(leaves),
                                     len(cdbg_shadow)))
         return QueryOutput(self, catlas, kmer_idx, leaves)
 
@@ -239,19 +234,22 @@ class Query:
 
 
 def main(argv):
-    p = argparse.ArgumentParser(description=__doc__)
+    """\
+    Query a catlas with a sequence (read, contig, or genome), and retrieve
+    cDBG node IDs and MinHash signatures for the matching unitigs in the graph.
+    """
+
+    p = argparse.ArgumentParser(description=main.__doc__)
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('output')
-    p.add_argument('--min_containment', help="minimum containment",
-                   type=float, default=1.0)
     p.add_argument('--query', help='query sequences', nargs='+')
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     p.add_argument('--scaled', default=1000, type=float,
                    help="scaled value for contigs minhash output")
     p.add_argument('-v', '--verbose', action='store_true')
-    p.add_argument('--cdbg-only', action='store_true',
-                   help="(for paper eval) do not expand query using domset)")
+#    p.add_argument('--cdbg-only', action='store_true',
+#                   help="(for paper eval) do not expand query using domset)")
 
     args = p.parse_args(argv)
     outdir = args.output
