@@ -62,5 +62,7 @@ twofoo/bcalm.twofoo.k31.unitigs.fa:
 
 twofoo-test: twofoo/bcalm.twofoo.k31.unitigs.fa
 	python -m spacegraphcats twofoo search
+	scripts/verify-md5.py -q twofoo twofoo_k31_r1/*
+	scripts/verify-md5.py -q twofoo twofoo_k31_r1_search_oh0/*
 	python -m spacegraphcats.search.characterize_catlas_regions twofoo_k31_r1 twofoo_k31_r1.vec
 
