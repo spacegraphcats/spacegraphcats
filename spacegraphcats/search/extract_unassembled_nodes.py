@@ -16,7 +16,6 @@ import csv
 
 import screed
 from . import search_utils
-from .frontier_search import find_shadow
 from .catlas import CAtlas
 
 
@@ -133,11 +132,9 @@ def main(args=sys.argv[1:]):
     # build cDBG shadow ID list, tagged by parent catlas node.
     cdbg_id_to_node = {}
     for n in terminal:
-        this_shadow = find_shadow([n], catlas.children)
-        for x in this_shadow:
-            v = catlas.layer1_to_cdbg[x]
-            for vv in v:
-                cdbg_id_to_node[vv] = n
+        shadow = catlas.shadow([n])
+        for cdbg_id in shadow:
+            cdbg_id_to_node[cdbg_id] = n
 
     #### extract contigs
     print('extracting contigs & building a sourmash signature')

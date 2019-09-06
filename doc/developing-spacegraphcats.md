@@ -13,9 +13,9 @@
     * commands.log - a partial log of all of the commands
 * the `dory_k21_r1_search_oh0/` directory contains the output of a search:
     * results.csv - summary results for the queries (containment, similarity, etc.)
-    * dory-head.fa.cdbg_ids.txt.gz - for the `dory-head.fa` query, the cDBG node IDs that were retrieved
+    * dory-head.fa.cdbg_ids.txt.gz - cDBG node IDs (unitig IDs) matching query
     * dory-head.fa.contigs.sig - the sourmash signature of the entire match in the cDBG
-    * dory-head.fa.frontier.txt.gz - (undefined for the moment)
+    * dory-head.fa.frontier.txt.gz - catlas node IDs matching query
     * dory-head.fa.response.txt - response curve showing how much overhead is gained for each node
     * command.txt - a partial log of the commands run
 

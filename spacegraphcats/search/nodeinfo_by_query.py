@@ -15,7 +15,6 @@ import csv
 import screed
 from .catlas import CAtlas
 from . import search_utils
-from .frontier_search import find_shadow
 
 
 def main(args=sys.argv[1:]):

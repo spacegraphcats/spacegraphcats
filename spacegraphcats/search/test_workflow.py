@@ -5,7 +5,7 @@ import screed
 
 from spacegraphcats.catlas import catlas
 from spacegraphcats.index import index_contigs_by_kmer
-from spacegraphcats.search import extract_nodes_by_query
+from spacegraphcats.search import query_by_sequence
 from spacegraphcats.search import characterize_catlas_regions
 from spacegraphcats.search import extract_unassembled_nodes
 from spacegraphcats.search import evaluate_overhead
@@ -79,10 +79,10 @@ def test_dory():
         index_contigs_by_kmer.main(args)
 
         # do search!!
-        args='dory_k21_r1 dory_k21_r1_search_oh0 --query data/dory-head.fa -k 21 --overhead=0.0'.split()
+        args='dory_k21_r1 dory_k21_r1_search_oh0 --query data/dory-head.fa -k 21'.split()
 
         try:
-            extract_nodes_by_query.main(args)
+            query_by_sequence.main(args)
         except SystemExit as e:
             assert e.code == 0, str(e)
 

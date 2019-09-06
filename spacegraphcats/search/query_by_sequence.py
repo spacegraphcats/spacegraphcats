@@ -1,7 +1,9 @@
 #! /usr/bin/env python
 """
-Do a frontier search with one or more query sequences, and retrieve
-cDBG node IDs and MinHash signature for the matching contigs.
+Query a catlas with a sequence (read, contig, or genome), and retrieve
+cDBG node IDs and MinHash signatures for the matching unitigs in the graph.
+
+XX optionally retrieve contig sequences?
 """
 import argparse
 import csv
@@ -12,26 +14,25 @@ import time
 
 import khmer
 import screed
-import sourmash_lib
-from sourmash_lib import MinHash
+import sourmash
+from sourmash import MinHash
 
-from .frontier_search import (collect_frontier, collect_frontier_exact)
 from . import search_utils
 from .index import MPHF_KmerIndex
 from .catlas import CAtlas
 
 
 class QueryOutput:
-    def __init__(self, query, catlas, kmer_idx, frontier, scaled):
+    def __init__(self, query, catlas, kmer_idx, leaves):
         self.query = query
         self.catlas = catlas
         self.kmer_idx = kmer_idx
-        self.frontier = frontier
-        self.shadow = self.catlas.shadow(self.frontier)
+        self.leaves = leaves
+        self.shadow = self.catlas.shadow(leaves)
         self.total_bp = 0
         self.total_seq = 0
-        self.query_sig = self.query.build_query_mh_for_seed(42, scaled)
-        self.contigs_minhash = self.query_sig.minhash.copy_and_clear()
+        self.query_sig = self.query.sig
+        self.contigs_minhash = self.query.mh.copy_and_clear()
 
     def __add_sequence(self, sequence):
         self.contigs_minhash.add_sequence(str(sequence), True)
@@ -52,9 +53,9 @@ class QueryOutput:
         retrieve_start = time.time()
         # walk through the contigs, retrieving.
         print('extracting contigs...')
-        for n, record in enumerate(
-                search_utils.get_contigs_by_cdbg(contigs,
-                                                 self.shadow)):
+
+        contigs_iter = search_utils.get_contigs_by_cdbg(contigs, self.shadow)
+        for n, record in enumerate(contigs_iter):
             if n and n % 10000 == 0:
                 offset_f = self.total_seq / len(self.shadow)
                 print('...at n {} ({:.1f}% of shadow)'.format(self.total_seq,
@@ -96,23 +97,21 @@ class QueryOutput:
         # write out signature from retrieved contigs.
         sig_filename = os.path.basename(q_name) + '.contigs.sig'
         with open(os.path.join(outdir, sig_filename), 'wt') as fp:
-            ss = sourmash_lib.SourmashSignature(self.contigs_minhash,
+            ss = sourmash.SourmashSignature(self.contigs_minhash,
                                                 name='nbhd:'+self.query.name,
                                                 filename=sig_filename)
-            sourmash_lib.save_signatures([ss], fp)
+            sourmash.save_signatures([ss], fp)
 
         # write out cDBG IDs
         cdbg_listname = os.path.basename(q_name) + '.cdbg_ids.txt.gz'
         with gzip.open(os.path.join(outdir, cdbg_listname), 'wt') as fp:
             fp.write("\n".join([str(x) for x in sorted(self.shadow)]))
 
-        # write out frontier nodes by seed
+        # write out catlas nodes
         frontier_listname = os.path.basename(q_name) + '.frontier.txt.gz'
         with gzip.open(os.path.join(outdir, frontier_listname), 'wt') as fp:
-            for node, seedlist in sorted(self.frontier.items()):
-                fp.write('{},{}\n'.format(node,
-                                          " ".join([str(x) for x in
-                                                    sorted(seedlist)])))
+            for node in sorted(self.leaves):
+                fp.write('{}\n'.format(node))
 
         # write response curve
         response_curve_filename = os.path.basename(q_name) + '.response.txt'
@@ -126,15 +125,19 @@ class QueryOutput:
 
 
 class Query:
-    def __init__(self, query_file, ksize):
+    def __init__(self, query_file, ksize, scaled, debug=True):
         self.filename = query_file
         self.ksize = ksize
         self.kmers = set()
         self.name = None
+        mh = MinHash(0, ksize, scaled=scaled)
+        self.mh = mh
+        self.debug = debug
+        
         print('----')
         print('QUERY FILE:', self.filename)
 
-        # build hashes for all the query k-mers
+        # build hashes for all the query k-mers & create signature
         print('loading query kmers...', end=' ')
         bf = khmer.Nodetable(ksize, 1, 1)
 
@@ -143,64 +146,52 @@ class Query:
                 self.name = record.name
             if len(record.sequence) >= int(ksize):
                 self.kmers.update(bf.get_kmer_hashes(record.sequence))
+            mh.add_sequence(record.sequence, True)
+
+        self.sig = sourmash.SourmashSignature(mh, name=self.name,
+                                              filename=self.filename)
 
         print('got {}'.format(len(self.kmers)))
 
         self.cdbg_match_counts = {}
         self.catlas_match_counts = {}
 
-    def build_query_mh_for_seed(self, seed, scaled):
-        mh = MinHash(0, self.ksize, scaled=scaled, seed=seed)
-        for record in screed.open(self.filename):
-            mh.add_sequence(record.sequence, True)
-
-        return sourmash_lib.SourmashSignature(mh, name=self.name,
-                                              filename=self.filename)
-
-    def execute(self, catlas, kmer_idx, scaled, overhead, verbose,
-                max_overhead, min_containment):
+    def execute(self, catlas, kmer_idx):
         cat_id = catlas.name
+
         # construct dict cdbg_id -> # of query k-mers
         self.cdbg_match_counts[cat_id] = kmer_idx.get_match_counts(self.kmers)
         for k, v in self.cdbg_match_counts[cat_id].items():
             assert v <= kmer_idx.get_cdbg_size(k), k
+
         # calculate the cDBG matching k-mers sizes for each catlas node.
         self.catlas_match_counts[cat_id] =\
             kmer_idx.build_catlas_match_counts(self.cdbg_match_counts[cat_id],
                                                catlas)
 
-        # check a few things - we've propagated properly:
-        assert sum(self.cdbg_match_counts[cat_id].values()) ==\
-            self.catlas_match_counts[cat_id][catlas.root]
+        if self.debug:
+            # check a few things - we've propagated properly:
+            assert sum(self.cdbg_match_counts[cat_id].values()) ==\
+                self.catlas_match_counts[cat_id][catlas.root]
 
-        # ...and all nodes have no more matches than total k-mers.
-        for v, match_amount in self.catlas_match_counts[cat_id].items():
-            assert match_amount <= catlas.index_sizes[v], v
+            # ...and all nodes have no more matches than total k-mers.
+            for v, match_amount in self.catlas_match_counts[cat_id].items():
+                assert match_amount <= catlas.index_sizes[v], v
 
-        self.con_sim_upper_bounds(catlas, kmer_idx)
+            # calculate best possible.
+            self.con_sim_upper_bounds(catlas, kmer_idx)
 
-        # gather results of all queries
-        fuzzy = max_overhead != 1.0
-        if fuzzy:
-            frontier = collect_frontier(catlas,
-                                        self.catlas_match_counts[cat_id],
-                                        max_overhead=max_overhead,
-                                        min_containment=min_containment)
-        else:
-            frontier = collect_frontier_exact(catlas,
-                                              self.catlas_match_counts[cat_id],
-                                              overhead=overhead,
-                                              verbose=verbose)
-
-        # calculate level 1 nodes for this frontier in the catlas
-        leaves = catlas.leaves(frontier)
-        # calculate associated cDBG nodes
-        cdbg_shadow = catlas.shadow(leaves)
+        # gather domset nodes matching query k-mers
+        cdbg_shadow = set()
+        leaves = set()
+        for cdbg_node in self.cdbg_match_counts[cat_id]:
+            cdbg_shadow.add(cdbg_node)
+            leaves.add(catlas.cdbg_to_layer1[cdbg_node])
 
         print('done searching! {} frontier, {} catlas shadow nodes, {}'
-              ' cdbg nodes.'.format(len(frontier), len(leaves),
+              ' cdbg nodes.'.format(len(leaves), len(leaves),
                                     len(cdbg_shadow)))
-        return QueryOutput(self, catlas, kmer_idx, frontier, scaled)
+        return QueryOutput(self, catlas, kmer_idx, leaves)
 
     def con_sim_upper_bounds(self, catlas, kmer_idx):
         """
@@ -243,23 +234,22 @@ class Query:
 
 
 def main(argv):
-    p = argparse.ArgumentParser()
+    """\
+    Query a catlas with a sequence (read, contig, or genome), and retrieve
+    cDBG node IDs and MinHash signatures for the matching unitigs in the graph.
+    """
+
+    p = argparse.ArgumentParser(description=main.__doc__)
     p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('--overhead', help='\% of overhead', type=float,
-                   default=0.0)
     p.add_argument('output')
-    p.add_argument('--min_containment', help="minimum containment",
-                   type=float, default=1.0)
-    p.add_argument('--max_overhead', help="largest overhead allowed",
-                   type=float, default=1.0)
     p.add_argument('--query', help='query sequences', nargs='+')
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     p.add_argument('--scaled', default=1000, type=float,
                    help="scaled value for contigs minhash output")
     p.add_argument('-v', '--verbose', action='store_true')
-    p.add_argument('--cdbg-only', action='store_true',
-                   help="(for paper eval) do not expand query using domset)")
+#    p.add_argument('--cdbg-only', action='store_true',
+#                   help="(for paper eval) do not expand query using domset)")
 
     args = p.parse_args(argv)
     outdir = args.output
@@ -320,14 +310,12 @@ def main(argv):
     # iterate over each query, do the thing.
     for query_file in args.query:
         start_time = time.time()
-        query = Query(query_file, ksize)
+        query = Query(query_file, ksize, scaled)
         if not len(query.kmers):
             print('query {} is empty; skipping.'.format(query_file))
             continue
 
-        q_output = query.execute(catlas, kmer_idx, scaled, args.overhead,
-                                 args.verbose, args.max_overhead,
-                                 args.min_containment)
+        q_output = query.execute(catlas, kmer_idx)
         q_output.retrieve_contigs(contigs)
         print('total time: {:.1f}s'.format(time.time() - start_time))
 
