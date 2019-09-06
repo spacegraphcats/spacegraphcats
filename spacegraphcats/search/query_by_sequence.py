@@ -24,12 +24,12 @@ from .catlas import CAtlas
 
 
 class QueryOutput:
-    def __init__(self, query, catlas, kmer_idx, frontier):
+    def __init__(self, query, catlas, kmer_idx, leaves):
         self.query = query
         self.catlas = catlas
         self.kmer_idx = kmer_idx
-        self.frontier = frontier
-        self.shadow = self.catlas.shadow(self.frontier)
+        self.leaves = leaves
+        self.shadow = self.catlas.shadow(leaves)
         self.total_bp = 0
         self.total_seq = 0
         self.query_sig = self.query.sig
@@ -54,9 +54,9 @@ class QueryOutput:
         retrieve_start = time.time()
         # walk through the contigs, retrieving.
         print('extracting contigs...')
-        for n, record in enumerate(
-                search_utils.get_contigs_by_cdbg(contigs,
-                                                 self.shadow)):
+
+        contigs_iter = search_utils.get_contigs_by_cdbg(contigs, self.shadow)
+        for n, record in enumerate(contigs_iter):
             if n and n % 10000 == 0:
                 offset_f = self.total_seq / len(self.shadow)
                 print('...at n {} ({:.1f}% of shadow)'.format(self.total_seq,
@@ -108,13 +108,11 @@ class QueryOutput:
         with gzip.open(os.path.join(outdir, cdbg_listname), 'wt') as fp:
             fp.write("\n".join([str(x) for x in sorted(self.shadow)]))
 
-        # write out frontier nodes by seed
+        # write out catlas nodes
         frontier_listname = os.path.basename(q_name) + '.frontier.txt.gz'
         with gzip.open(os.path.join(outdir, frontier_listname), 'wt') as fp:
-            for node, seedlist in sorted(self.frontier.items()):
-                fp.write('{},{}\n'.format(node,
-                                          " ".join([str(x) for x in
-                                                    sorted(seedlist)])))
+            for node in sorted(self.leaves):
+                fp.write('{}\n'.format(node))
 
         # write response curve
         response_curve_filename = os.path.basename(q_name) + '.response.txt'
@@ -181,8 +179,8 @@ class Query:
             for v, match_amount in self.catlas_match_counts[cat_id].items():
                 assert match_amount <= catlas.index_sizes[v], v
 
-        # @CTB
-        # self.con_sim_upper_bounds(catlas, kmer_idx)
+            # calculate best possible.
+            self.con_sim_upper_bounds(catlas, kmer_idx)
 
         # gather results of all queries
         frontier = collect_frontier_exact(catlas,
@@ -198,7 +196,7 @@ class Query:
         print('done searching! {} frontier, {} catlas shadow nodes, {}'
               ' cdbg nodes.'.format(len(frontier), len(leaves),
                                     len(cdbg_shadow)))
-        return QueryOutput(self, catlas, kmer_idx, frontier)
+        return QueryOutput(self, catlas, kmer_idx, leaves)
 
     def con_sim_upper_bounds(self, catlas, kmer_idx):
         """
