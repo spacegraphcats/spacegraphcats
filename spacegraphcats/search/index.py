@@ -97,6 +97,8 @@ class MPHF_KmerIndex(object):
         "Load kmer index created by search.contigs_by_kmer."
         mphf_filename = os.path.join(catlas_prefix, 'contigs.fa.gz.mphf')
         array_filename = os.path.join(catlas_prefix, 'contigs.fa.gz.indices')
+        if not os.path.exists(mphf_filename):
+            raise FileNotFoundError(mphf_filename)
         mphf = bbhash.load_mphf(mphf_filename)
         with open(array_filename, 'rb') as fp:
             np_dict = numpy.load(fp)
