@@ -174,6 +174,11 @@ def test_dory_extract_reads(location):
     copy_dory_catlas()
     copy_dory_catlas_search()
 
+    # run make_bgzf - FIXTURE
+    print('** running make_bgzf')
+    args = ['dory-subset.fa', '-o', relative_file('dory/dory.reads.bgz')]
+    make_bgzf.main(args)
+
     # run label_cdbg - FIXTURE
     print('** running label_cdbg')
     args = ['dory_k21_r1',
