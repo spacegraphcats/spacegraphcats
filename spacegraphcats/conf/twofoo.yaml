@@ -11,3 +11,5 @@ searchquick:
 - data/63.fa.gz
 shadow_ratio_maxsize: 1000
 
+hashval_ksize: 51
+hashval_queries: data/twofoo-k51-hashval-queries.txt

@@ -226,6 +226,9 @@ def test_dory_estimate_query_abundance(location):
 
 @pytest_utils.in_tempdir
 def test_dory_query_by_hashval(location):
+    testdata = relative_file('data/dory-hashval-queries.txt')
+    shutil.copyfile(testdata, 'dory-hashval-queries.txt')
+
     copy_dory_catlas()
 
     # index by hashval
@@ -241,5 +244,6 @@ def test_dory_query_by_hashval(location):
 629309120813421
 1780496337566254
 """)
-    args = '-k 21 dory_k21_r1 dory_k21_r1_mh.pickle xxx.list xxx.list.dir'
+    args = '-k 21 dory_k21_r1 dory_k21_r1_mh.pickle dory-hashval-queries.txt dory_k21_r1_hashval_k21'
     query_by_hashval.main(args.split())
+    assert os.path.exists('dory_k21_r1_hashval_k21/hashval_results.csv')

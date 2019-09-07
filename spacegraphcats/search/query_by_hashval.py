@@ -59,7 +59,7 @@ class QueryOutput:
                 self.mh.add_sequence(record.sequence, force=True)
 
         # done - got all contigs!
-        notify('...fetched {} contigs, {} bp matching combined frontiers. '
+        notify('...fetched {} contigs, {} bp matching hashval domset. '
                ' ({:.1f}s)', self.total_seq, self.total_bp,
                time.time() - retrieve_start)
 
@@ -102,10 +102,12 @@ def execute_query(hashval, catlas, hashval_to_contig_id, mh=None):
     if not cdbg_node:
         return None
 
+    # find the dominating node in the catlas
     catlas_node_id = catlas.cdbg_to_layer1[cdbg_node]
 
-    # calculate level 1 nodes for this frontier in the catlas
+    # calculate the leaves (this _should_ just be catlas_node_id for now)
     leaves = catlas.leaves([catlas_node_id])
+    assert leaves == { catlas_node_id }
 
     # calculate associated cDBG nodes
     cdbg_shadow = catlas.shadow(leaves)
