@@ -9,3 +9,5 @@ search:
 searchquick:
 - data/dory-head.fa
 
+hashval_ksize: 21
+hashval_queries: xxx.list

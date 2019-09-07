@@ -91,7 +91,7 @@ class QueryOutput:
             ss = sourmash.SourmashSignature(self.mh,
                                       name='hashval query:{}'.format(q_name))
 
-            sigfile = os.path.join(outdir, q_name + 'contigs..sig')
+            sigfile = os.path.join(outdir, q_name + '.contigs.sig')
             with open(sigfile, 'wt') as fp:
                 sourmash.save_signatures([ss], fp)
 
