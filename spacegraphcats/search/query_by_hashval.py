@@ -68,10 +68,9 @@ class QueryOutput:
         hashval = self.query_hashval
         bp = self.total_bp
         seqs = self.total_seq
-        k = 0
 
         # output to results.csv!
-        csv_writer.writerow([hashval, bp, seqs, k])
+        csv_writer.writerow([hashval, bp, seqs])
         csvoutfp.flush()
 
         # write out cDBG IDs
@@ -176,7 +175,7 @@ def main(argv):
     # output results.csv in the output directory:
     csvoutfp = open(os.path.join(outdir, 'hashval_results.csv'), 'wt')
     csv_writer = csv.writer(csvoutfp)
-    csv_writer.writerow(['hashval', 'bp', 'contigs', 'ksize'])
+    csv_writer.writerow(['hashval', 'bp', 'contigs'])
 
     # iterate over each query, do the thing.
     n_found = 0
