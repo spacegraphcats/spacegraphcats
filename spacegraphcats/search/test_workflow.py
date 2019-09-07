@@ -15,7 +15,8 @@ from spacegraphcats.search import estimate_query_abundance
 from spacegraphcats.utils import make_bgzf
 from spacegraphcats.cdbg import label_cdbg
 from spacegraphcats.search import extract_reads
-import sourmash_lib
+from spacegraphcats.cdbg import index_cdbg_by_minhash
+from spacegraphcats.search import query_by_hashval
 
 
 class TempDirectory(object):
@@ -149,6 +150,22 @@ def test_dory():
         # calculate query abundances
         args = 'dory_k21_r1 data/dory-head.fa -o abundances.csv -k 21'.split()
         estimate_query_abundance.main(args)
+
+        # index by hashval
+        args = '-k 21 dory_k21_r1/contigs.fa.gz dory_k21_r1_mh.pickle'.split()
+        index_cdbg_by_minhash.main(args)
+
+        # query by hashval
+        with open('xxx.list', 'wt') as fp:
+            fp.write("""1432815083088457
+939339108487323
+660775515984191
+1056719064763796
+629309120813421
+1780496337566254
+""")
+        args = '-k 21 dory_k21_r1 dory_k21_r1_mh.pickle xxx.list xxx.list.dir'.split()
+        query_by_hashval.main(args)
 
         abunds = open('abundances.csv', 'rt').read()
 #        assert 'data/dory-head.fa,1.0,1.05' in abunds

@@ -175,10 +175,9 @@ def main(argv):
 
         result.retrieve_contigs(contigs_file)
         result.write(csv_writer, csvoutfp, outdir)
-    # @@@
     # end main loop!
 
-    sys.exit(0)
+    return 0
 
 
 if __name__ == '__main__':
