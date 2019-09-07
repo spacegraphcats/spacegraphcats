@@ -72,9 +72,9 @@ class QueryOutput:
 
         # calculate summary values of extracted contigs
         notify('query inclusion by retrieved contigs:'
-               ' {:.3f}%', self.containment()*100)
+               ' {:.1f}%', self.containment()*100)
         notify('query similarity to retrieved contigs:'
-              ' {:.3f}%', self.similarity()*100)
+              ' {:.1f}%', self.similarity()*100)
 
     def write(self, csv_writer, csvoutfp, outdir):
         containment = self.containment()
@@ -152,7 +152,7 @@ class Query:
         self.sig = sourmash.SourmashSignature(mh, name=self.name,
                                               filename=self.filename)
 
-        notify('got {}', len(self.kmers))
+        notify('got {} k-mers from query', len(self.kmers))
 
         self.cdbg_match_counts = {}
         self.catlas_match_counts = {}
@@ -189,8 +189,8 @@ class Query:
             cdbg_shadow.add(cdbg_node)
             leaves.add(catlas.cdbg_to_layer1[cdbg_node])
 
-        notify('done searching! {} frontier, {} catlas shadow nodes, {}'
-               ' cdbg nodes.', len(leaves), len(leaves), len(cdbg_shadow))
+        notify('done searching! {} catlas shadow nodes, {} cdbg nodes.',
+               len(leaves), len(cdbg_shadow))
         return QueryOutput(self, catlas, kmer_idx, leaves)
 
     def con_sim_upper_bounds(self, catlas, kmer_idx):
@@ -213,7 +213,7 @@ class Query:
         notify('cdbg match node similarity: {:.1f}%', cdbg_sim * 100)
         cdbg_min_overhead = (total_kmers_in_cdbg_matches-total_match_kmers) /\
             total_kmers_in_cdbg_matches
-        notify('min cdbg overhead: {}', cdbg_min_overhead)
+        notify('min cdbg overhead: {:.1f}%', cdbg_min_overhead * 100)
 
         # calculate the minimum overhead of the search, based on level 1
         # nodes.
@@ -228,7 +228,7 @@ class Query:
             catlas_min_overhead = (total_kmers_in_query_nodes -
                                    all_query_kmers) /\
                 total_kmers_in_query_nodes
-            notify('minimum catlas overhead: {}', catlas_min_overhead)
+            notify('minimum catlas overhead: {:.1f}%', catlas_min_overhead*100)
 
         return best_containment, cdbg_min_overhead, catlas_min_overhead
 
