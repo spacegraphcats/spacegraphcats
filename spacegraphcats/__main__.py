@@ -50,6 +50,8 @@ from the main spacegraphcats directory.
     parser.add_argument('--overhead', type=float, default=None)
     parser.add_argument('--experiment', default=None)
     parser.add_argument('--radius', type=int, default=None)
+    parser.add_argument('--delete-all-output', action='store_true',
+                        help='remove expected output from this rule')
     parser.add_argument('--cdbg-only', action='store_true',
                         help='for paper evaluation purposes')
     args = parser.parse_args()
@@ -107,6 +109,7 @@ from the main spacegraphcats directory.
     status = snakemake.snakemake(snakefile, configfile=configfile,
                                  targets=args.targets, printshellcmds=True,
                                  dryrun=args.dry_run,
+                                 delete_all_output=args.delete_all_output,
                                  lock=not args.nolock, config=config,
                                  verbose=args.verbose, debug_dag=args.debug)
 
