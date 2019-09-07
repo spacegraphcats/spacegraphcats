@@ -17,7 +17,7 @@ import screed
 
 from .search_utils import get_reads_by_cdbg
 
-from spacegraphcats.utils.logging import log
+from spacegraphcats.utils.logging import log_command
 from . import search_utils
 
 

@@ -17,7 +17,7 @@ from collections import defaultdict
 
 import screed
 
-from spacegraphcats.utils.logging import log
+from spacegraphcats.utils.logging import log_command
 from . import search_utils
 
 
