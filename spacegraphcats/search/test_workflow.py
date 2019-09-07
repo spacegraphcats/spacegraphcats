@@ -180,6 +180,7 @@ def test_dory_label_cdbg(location):
 def test_dory_extract_reads(location):
     copy_dory_catlas()
     copy_dory_catlas_search()
+    copy_dory_subset()
 
     # run make_bgzf - FIXTURE
     print('** running make_bgzf')
