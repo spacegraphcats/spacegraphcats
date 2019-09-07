@@ -1,0 +1,1 @@
+['/Users/t/dev/py36/bin/py.test', 'spacegraphcats']
