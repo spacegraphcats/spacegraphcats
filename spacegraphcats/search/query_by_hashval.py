@@ -19,6 +19,7 @@ from sourmash_lib import MinHash
 from . import search_utils
 from .index import MPHF_KmerIndex
 from .catlas import CAtlas
+from ..utils.logging import notify
 
 
 class QueryOutput:
@@ -103,7 +104,7 @@ def execute_query(hashval, catlas, hashval_to_contig_id):
 
 
 def main(argv):
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('mh_index_picklefile', help='pickled hashval index')
     p.add_argument('hashval_list', help='file with list of hashvals')
@@ -118,6 +119,7 @@ def main(argv):
 
     # create output directory if it doesn't exist.
     outdir = args.output
+    notify('putting output in {}', outdir)
     try:
         os.mkdir(outdir)
     except OSError:
@@ -129,10 +131,14 @@ def main(argv):
     # load picklefile
     with open(args.mh_index_picklefile, 'rb') as fp:
         hashval_to_contig_id = pickle.load(fp)
+    notify('loaded {} hash value -> cdbg_id mappings from {}',
+           len(hashval_to_contig_id), args.mh_index_picklefile)
 
     # load list of desired hashvals
     hashvals = [ int(x.strip()) for x in open(args.hashval_list, 'rt') ]
     hashvals = set(hashvals)
+    notify('loaded {} search hashvalues from {}',
+           len(hashvals), args.hashval_list)
 
     if not len(hashvals):
         print('No hash values to search!', file=sys.stderr)
@@ -163,6 +169,10 @@ def main(argv):
     # iterate over each query, do the thing.
     for hashval in hashvals:
         result = execute_query(hashval, catlas, hashval_to_contig_id)
+        if not result:
+            notify("no result for hashval {}", hashval)
+            continue
+
         result.retrieve_contigs(contigs_file)
         result.write(csv_writer, csvoutfp, outdir)
     # @@@
