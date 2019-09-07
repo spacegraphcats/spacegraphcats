@@ -10,7 +10,7 @@ import copy
 from .rdomset import rdomset, domination_graph
 from .graph_io import read_from_gxt, write_to_gxt
 from .graph import Graph
-from spacegraphcats.utils.logging import log
+from spacegraphcats.utils.logging import log_command
 from io import TextIOWrapper
 from collections import defaultdict
 from typing import List, Dict, Set
@@ -360,4 +360,4 @@ if __name__ == "__main__":
     # prof = cProfile.Profile()
     # prof.run("main(args)")
     # prof.print_stats('tottime')
-    log(args.project, sys.argv)
+    log_command(args.project, sys.argv)

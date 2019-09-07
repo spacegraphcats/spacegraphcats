@@ -12,7 +12,7 @@ import gzip
 
 import screed
 
-from spacegraphcats.utils.logging import log
+from spacegraphcats.utils.logging import log_command
 from . import search_utils
 from .catlas import CAtlas
 
