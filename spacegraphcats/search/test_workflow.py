@@ -151,12 +151,21 @@ def test_dory():
         args = 'dory_k21_r1 data/dory-head.fa -o abundances.csv -k 21'.split()
         estimate_query_abundance.main(args)
 
+        abunds = open('abundances.csv', 'rt').read()
+#        assert 'data/dory-head.fa,1.0,1.05' in abunds
+
+
+def test_dory_query_by_hashval():
+    with TempDirectory() as location:
+        shutil.copytree('spacegraphcats/search/test-data/catlas.dory_k21_r1',
+                        os.path.join(location, 'dory_k21_r1'))
+    
         # index by hashval
-        args = '-k 21 dory_k21_r1/contigs.fa.gz dory_k21_r1_mh.pickle'.split()
+        args = '-k 21 {}/dory_k21_r1/contigs.fa.gz {}/dory_k21_r1_mh.pickle'.format(location, location, location).split()
         index_cdbg_by_minhash.main(args)
 
         # query by hashval
-        with open('xxx.list', 'wt') as fp:
+        with open(os.path.join(location, 'xxx.list'), 'wt') as fp:
             fp.write("""1432815083088457
 939339108487323
 660775515984191
@@ -164,8 +173,5 @@ def test_dory():
 629309120813421
 1780496337566254
 """)
-        args = '-k 21 dory_k21_r1 dory_k21_r1_mh.pickle xxx.list xxx.list.dir'.split()
+        args = '-k 21 {}/dory_k21_r1 {}/dory_k21_r1_mh.pickle {}/xxx.list {}/xxx.list.dir'.format(*[location]*4).split()
         query_by_hashval.main(args)
-
-        abunds = open('abundances.csv', 'rt').read()
-#        assert 'data/dory-head.fa,1.0,1.05' in abunds
