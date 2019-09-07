@@ -1,7 +1,7 @@
 Cython
 mypy
 screed
-pytest
+pytest >= 5.1.2
 numpy
 pandas
 snakemake
