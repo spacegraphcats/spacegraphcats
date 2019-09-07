@@ -239,24 +239,15 @@ def test_dory_estimate_query_abundance(location):
 
 @pytest_utils.in_tempdir
 def test_dory_query_by_hashval(location):
-    testdata = relative_file('data/dory-hashval-queries.txt')
-    shutil.copyfile(testdata, 'dory-hashval-queries.txt')
+    testdata = relative_file('data/dory-k31-hashval-queries.txt')
+    shutil.copyfile(testdata, 'dory-k31-hashval-queries.txt')
 
     copy_dory_catlas()
 
     # index by hashval
-    args = '-k 21 dory_k21_r1/contigs.fa.gz dory_k21_r1_mh.pickle'
+    args = '-k 31 dory_k21_r1/contigs.fa.gz dory_k21_r1_mh.pickle'
     index_cdbg_by_minhash.main(args.split())
 
-    # query by hashval
-    with open('xxx.list', 'wt') as fp:
-        fp.write("""1432815083088457
-939339108487323
-660775515984191
-1056719064763796
-629309120813421
-1780496337566254
-""")
-    args = '-k 21 dory_k21_r1 dory_k21_r1_mh.pickle dory-hashval-queries.txt dory_k21_r1_hashval_k21'
+    args = '-k 31 dory_k21_r1 dory_k21_r1_mh.pickle dory-k31-hashval-queries.txt dory_k21_r1_hashval_k31'
     query_by_hashval.main(args.split())
-    assert os.path.exists('dory_k21_r1_hashval_k21/hashval_results.csv')
+    assert os.path.exists('dory_k21_r1_hashval_k31/hashval_results.csv')
