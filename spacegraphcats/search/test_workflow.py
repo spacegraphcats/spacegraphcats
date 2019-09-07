@@ -135,6 +135,7 @@ def test_dory_catlas_info(location):
 def test_dory_extract_contigs(location):
     copy_dory_catlas()
     copy_dory_catlas_search()
+    copy_dory_head()
 
     # run extract_contigs
     print('running extract_info')
@@ -160,6 +161,7 @@ def test_dory_make_bgzf(location):
 @pytest_utils.in_tempdir
 def test_dory_label_cdbg(location):
     copy_dory_catlas()
+    copy_dory_subset()
 
     # run make_bgzf - FIXTURE
     print('** running make_bgzf')
