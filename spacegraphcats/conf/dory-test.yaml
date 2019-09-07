@@ -9,5 +9,5 @@ search:
 searchquick:
 - data/dory-head.fa
 
-hashval_ksize: 21
-hashval_queries: data/dory-hashval-queries.txt
+hashval_ksize: 31
+hashval_queries: data/dory-k31-hashval-queries.txt

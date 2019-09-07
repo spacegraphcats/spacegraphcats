@@ -200,8 +200,8 @@ def main(argv):
     # end main loop!
 
     notify('----')
-    notify("Done! Found {} hashvals of {} in {}",
-           n_found, len(hashvals), args.catlas_prefix)
+    notify("Done! Found {} hashvals of {} in {} with k={}",
+           n_found, len(hashvals), args.catlas_prefix, ksize)
     notify("Results are in directory '{}'", outdir)
 
     return 0
