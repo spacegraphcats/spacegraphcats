@@ -60,7 +60,7 @@ twofoo/bcalm.twofoo.k31.unitigs.fa:
 	curl -L -o twofoo/bcalm.twofoo.k31.unitigs.fa.gz https://osf.io/zp49s/download
 	gunzip twofoo/bcalm.twofoo.k31.unitigs.fa.gz
 
-twofoo-test: twofoo/bcalm.twofoo.k31.unitigs.fa
+twofoo-test: twofoo.fq.gz twofoo/bcalm.twofoo.k31.unitigs.fa
 	python -m spacegraphcats twofoo search
 	python -m spacegraphcats twofoo hashval_query
 	python -m spacegraphcats twofoo extract_reads_for_hashvals
