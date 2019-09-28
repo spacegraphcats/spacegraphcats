@@ -36,3 +36,4 @@ bcalm.*
 *.tar
 strain_results
 .pytest_cache/*
+spacegraphcats/version.py
