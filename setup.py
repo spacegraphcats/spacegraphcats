@@ -31,6 +31,9 @@ setup(
     },
     include_package_data=True,
     package_data = { "spacegraphcats": ["Snakefile", "*.yaml", "*.json"] },
+    setup_requires = [ "setuptools>=38.6.0",
+                       'setuptools_scm', 'setuptools_scm_git_archive' ],
+    use_scm_version = {"write_to": "spacegraphcats/version.py"},
     install_requires = [
         'Cython', 'mypy', 'screed', 'pytest',
         'numpy',
