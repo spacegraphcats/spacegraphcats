@@ -9,6 +9,7 @@ import sys
 import pprint
 import yaml
 import json
+from .utils.logging import error, notify
 
 
 thisdir = os.path.abspath(os.path.dirname(__file__))
@@ -41,7 +42,7 @@ from the main spacegraphcats directory.
 .
 ''')
 
-    parser.add_argument('configfile')
+    parser.add_argument('configfile', nargs='?')
     parser.add_argument('targets', nargs='*', default=['build'])
     parser.add_argument('-n', '--dry-run', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -54,7 +55,21 @@ from the main spacegraphcats directory.
                         help='remove expected output from this rule')
     parser.add_argument('--cdbg-only', action='store_true',
                         help='for paper evaluation purposes')
+    parser.add_argument('--version', action='store_true',
+                        help='print version and other info.')
     args = parser.parse_args()
+
+    if args.version:
+        from . import VERSION
+        notify("spacegraphcats version {}", VERSION)
+        notify("code loaded from {}", os.path.dirname(__file__))
+
+        if not args.configfile:           # allow just --version
+            sys.exit(0)
+
+    if not args.configfile:
+        parser.print_usage()
+        sys.exit(-1)
 
     # first, find the Snakefile
     snakefile = os.path.join(thisdir, './conf', 'Snakefile')
