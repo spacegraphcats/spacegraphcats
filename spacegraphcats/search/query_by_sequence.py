@@ -3,7 +3,8 @@
 Query a catlas with a sequence (read, contig, or genome), and retrieve
 cDBG node IDs and MinHash signatures for the matching unitigs in the graph.
 
-XX optionally retrieve contig sequences?
+XX optionally retrieve/save contig sequences? It wouldn't add much time...
+Just disk space.
 """
 import argparse
 import csv

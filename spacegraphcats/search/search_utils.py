@@ -208,17 +208,7 @@ def get_contigs_by_cdbg(contigs_filename, cdbg_ids):
 
 def load_kmer_index(catlas_prefix):
     "Load kmer index created by search.contigs_by_kmer."
-    mphf_filename = os.path.join(catlas_prefix, 'contigs.fa.gz.mphf')
-    array_filename = os.path.join(catlas_prefix, 'contigs.fa.gz.indices')
-    mphf = bbhash.load_mphf(mphf_filename)
-    with open(array_filename, 'rb') as fp:
-        np_dict = numpy.load(fp)
-
-        mphf_to_kmer = np_dict['mphf_to_kmer']
-        mphf_to_cdbg = np_dict['kmer_to_cdbg']
-        cdbg_sizes = np_dict['sizes']
-
-    return MPHF_KmerIndex(mphf, mphf_to_kmer, mphf_to_cdbg, cdbg_sizes)
+    return MPHF_KmerIndex.from_catlas_directory(catlas_prefix)
 
 
 def load_cdbg_size_info(catlas_prefix, min_abund=0.0):

@@ -44,10 +44,15 @@ if config.get('keep_graph_pendants', False):
 decompose_minsize = config.get('decompose_minsize', 5000)
 decompose_maxsize = config.get('decompose_maxsize', 50000)
 
+# hashval queries / query_by_hashval
+hashval_ksize = config.get('hashval_ksize', ksize)
+hashval_queries = config.get('hashval_queries', '')
+
 ### build some variables for internal use
 
 catlas_dir = '{}_k{}_r{}{}'.format(catlas_base, ksize, radius, catlas_suffix)
 search_dir = '{}_search_oh{}{}'.format(catlas_dir, int(overhead*100), search_out_suffix)
+hashval_query_dir = '{}_hashval_k{}'.format(catlas_dir, hashval_ksize)
 
 # internal definitions for convenience:
 python=sys.executable  # define as the version of Python running snakemake
@@ -261,6 +266,60 @@ rule extract_reads_for_decomposition:
                 {input[0]} {input[1]} $i \
                 -o {input[2]}/$(basename $i .txt.gz).reads.gz;
            done"""
+
+### hashval query stuff
+
+# build hashval query index
+rule build_hashval_query_index:
+    input:
+        expand("{catlas_dir}/contigs.fa.gz", catlas_dir=catlas_dir)
+    output:
+        expand("{hashval_query_dir}/index.pickle", hashval_query_dir=hashval_query_dir)
+    shell:
+        "{python} -m spacegraphcats.cdbg.index_cdbg_by_minhash -k {hashval_ksize} {input[0]} {output}"
+
+# do a full search!
+rule hashval_query:
+    input:
+        hashval_queries,
+        expand("{hashval_query_dir}/index.pickle", hashval_query_dir=hashval_query_dir),
+        expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir)
+    output:
+        expand("{hashval_query_dir}/hashval_results.csv", hashval_query_dir=hashval_query_dir)
+#        make_query_base(config['search']),
+    shell:
+        "{python} -m spacegraphcats.search.query_by_hashval -k {hashval_ksize} {catlas_dir} {hashval_query_dir}/index.pickle {hashval_queries} {hashval_query_dir}"
+
+# get reads for a single hashval query
+rule extract_reads_single_hashval_file:
+    input:
+        expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base),
+        expand("{catlas_dir}/reads.bgz.labels", catlas_dir=catlas_dir),
+        expand("{hashval_query_dir}/{{hashval}}.cdbg_ids.txt.gz", hashval_query_dir=hashval_query_dir)
+    output:
+        join(hashval_query_dir, "{hashval}.cdbg_ids.reads.fa.gz")
+    shell:
+        "{python} -m spacegraphcats.search.extract_reads {input[0]} {input[1]} {input[2]} -o {output}"
+
+def make_hashval_cdbg_results(filename):
+    results_files = []
+    for hashval in open(filename, 'rt'):
+        hashval = hashval.strip()
+        cdbg_id_file = '{}.cdbg_ids.txt.gz'.format(hashval)
+        print(os.path.join(hashval_query_dir, cdbg_id_file))
+        if os.path.exists(os.path.join(hashval_query_dir, cdbg_id_file)):
+            reads_file = '{}.cdbg_ids.reads.fa.gz'.format(hashval)
+            results_files.append(os.path.join(hashval_query_dir, reads_file))
+
+    print(results_files)
+    return results_files
+
+# get reads for all the hashvals
+rule extract_reads_for_hashvals:
+    input:
+        hashval_queries,
+        expand("{hashval_query_dir}/hashval_results.csv", hashval_query_dir=hashval_query_dir),
+        make_hashval_cdbg_results(hashval_queries)
 
 ### shadow ratio stuff
 
