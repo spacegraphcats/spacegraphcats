@@ -37,6 +37,9 @@ def copy_dory_subset():
     testdata = relative_file('data/dory-subset.fa')
     shutil.copyfile(testdata, 'dory-subset.fa')
 
+    testdata = relative_file('data/dory-subset.fq')
+    shutil.copyfile(testdata, 'dory-subset.fq')
+
 ### actual tests
 
 @pytest_utils.in_tempdir
@@ -202,6 +205,45 @@ def test_dory_extract_reads(location):
             '-o',
             'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz']
     extract_reads.main(args)
+
+    reads_filename = 'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz'
+    reads = [ record for record in screed.open(reads_filename) ]
+    assert len(reads) == 2
+
+
+@pytest_utils.in_tempdir
+def test_dory_extract_reads_fq(location):
+    # check that FASTQ is passed through properly.
+
+    copy_dory_catlas()
+    copy_dory_catlas_search()
+    copy_dory_subset()
+
+    # run make_bgzf - FIXTURE
+    print('** running make_bgzf')
+    args = ['dory-subset.fq', '-o', relative_file('dory/dory.reads.bgz')]
+    make_bgzf.main(args)
+
+    # run label_cdbg - FIXTURE
+    print('** running label_cdbg')
+    args = ['dory_k21_r1',
+            relative_file('dory/dory.reads.bgz'),
+            'dory_k21_r1/reads.bgz.labels']
+    label_cdbg.main(args)
+
+    # run extract_reads
+    print('** running extract_reads')
+    args = [relative_file('dory/dory.reads.bgz'),
+            'dory_k21_r1/reads.bgz.labels',
+            'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz',
+            '-o',
+            'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz']
+    extract_reads.main(args)
+
+    reads_filename = 'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz'
+    reads = [ record for record in screed.open(reads_filename) ]
+    assert len(reads) == 2
+    assert len(reads[0].quality)          # FASTQ preserved!
 
 
 @pytest_utils.in_tempdir

@@ -1,6 +1,6 @@
 catlas_base: dory
 input_sequences:
-- data/dory-subset.fa
+- data/dory-subset.fq
 keep_graph_pendants: true
 ksize: 21
 radius: 1
