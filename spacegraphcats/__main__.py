@@ -47,6 +47,7 @@ from the main spacegraphcats directory.
     parser.add_argument('-n', '--dry-run', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('--unlock', action='store_true')
     parser.add_argument('--nolock', action='store_true')
     parser.add_argument('--overhead', type=float, default=None)
     parser.add_argument('--experiment', default=None)
@@ -123,7 +124,7 @@ from the main spacegraphcats directory.
     # run!!
     status = snakemake.snakemake(snakefile, configfile=configfile,
                                  targets=args.targets, printshellcmds=True,
-                                 dryrun=args.dry_run,
+                                 dryrun=args.dry_run, unlock=args.unlock,
                                  delete_all_output=args.delete_all_output,
                                  lock=not args.nolock, config=config,
                                  verbose=args.verbose, debug_dag=args.debug)
