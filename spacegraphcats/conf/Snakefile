@@ -285,15 +285,15 @@ checkpoint hashval_query:
         expand("{hashval_query_dir}/index.pickle", hashval_query_dir=hashval_query_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir)
     output:
-        directory(expand("{hashval_query_dir}", hashval_query_dir=hashval_query_dir))
+        directory(expand("{hashval_query_dir}/contigs", hashval_query_dir=hashval_query_dir))
 #        make_query_base(config['search']),
     shell:
-        "{python} -m spacegraphcats.search.query_by_hashval -k {hashval_ksize} {catlas_dir} {hashval_query_dir}/index.pickle {hashval_queries} {hashval_query_dir}"
+        "{python} -m spacegraphcats.search.query_by_hashval -k {hashval_ksize} {catlas_dir} {hashval_query_dir}/index.pickle {hashval_queries} {hashval_query_dir}/contigs"
 
 # using output of hashval_query, generate names for output of extract_reads_single_hashval_file
 def aggregate_hashval_query(wildcards): 
     checkpoint_output = checkpoints.hashval_query.get(**wildcards).output[0]
-    hashval_names = expand("{hashval_query_dir}/{hashval}.cdbg_ids.reads.fa.gz",
+    hashval_names = expand("{hashval_query_dir}/reads/{hashval}.cdbg_ids.reads.fa.gz",
                            hashval_query_dir = hashval_query_dir,
                            hashval = glob_wildcards(os.path.join(checkpoint_output, "{hashval}.contigs.fa.gz")).hashval)
     return hashval_names
@@ -303,21 +303,21 @@ rule extract_reads_single_hashval_file:
     input:
         expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base),
         expand("{catlas_dir}/reads.bgz.labels", catlas_dir=catlas_dir),
-        expand("{hashval_query_dir}/{{hashval}}.cdbg_ids.txt.gz", hashval_query_dir=hashval_query_dir)
-    output: expand("{hashval_query_dir}/{{hashval}}.cdbg_ids.reads.fa.gz", hashval_query_dir=hashval_query_dir)
+        expand("{hashval_query_dir}/contigs/{{hashval}}.cdbg_ids.txt.gz", hashval_query_dir=hashval_query_dir)
+    output: expand("{hashval_query_dir}/reads/{{hashval}}.cdbg_ids.reads.fa.gz", hashval_query_dir=hashval_query_dir)
     shell:
         "{python} -m spacegraphcats.search.extract_reads {input[0]} {input[1]} {input[2]} -o {output}"
-    
+
+# This function will not be needed if aggregate_hashval_query works         
 def make_hashval_cdbg_results(filename):
     results_files = []
     for hashval in open(filename, 'rt'):
         hashval = hashval.strip()
-        cdbg_id_file = '{}.cdbg_ids.txt.gz'.format(hashval)
+        cdbg_id_file = 'contigs/{}.cdbg_ids.txt.gz'.format(hashval)
         print(os.path.join(hashval_query_dir, cdbg_id_file))
         if os.path.exists(os.path.join(hashval_query_dir, cdbg_id_file)):
-            #reads_file = '{}.cdbg_ids.reads.fa.gz'.format(hashval)
-            #results_files.append(os.path.join(hashval_query_dir, reads_file))
-            aggregate_hashval_query
+            reads_file = 'reads/{}.cdbg_ids.reads.fa.gz'.format(hashval)
+            results_files.append(os.path.join(hashval_query_dir, reads_file))
             
     print(results_files)
     return results_files
@@ -327,8 +327,9 @@ rule extract_reads_for_hashvals:
     input:
         hashval_queries,
         expand("{hashval_query_dir}/hashval_results.csv", hashval_query_dir=hashval_query_dir),
-        make_hashval_cdbg_results(hashval_queries)
-
+        #make_hashval_cdbg_results(hashval_queries)
+        aggregate_hashval_query
+        
 ### shadow ratio stuff
 
 rule shadow_ratio:
