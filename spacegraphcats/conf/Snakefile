@@ -285,6 +285,7 @@ checkpoint hashval_query:
         expand("{hashval_query_dir}/index.pickle", hashval_query_dir=hashval_query_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir)
     output:
+        expand("{hashval_query_dir}/hashval_results.csv", hashval_query_dir=hashval_query_dir),
         directory(expand("{hashval_query_dir}/contigs", hashval_query_dir=hashval_query_dir))
 #        make_query_base(config['search']),
     shell:
