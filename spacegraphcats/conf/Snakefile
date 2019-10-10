@@ -285,7 +285,7 @@ checkpoint hashval_query:
         expand("{hashval_query_dir}/index.pickle", hashval_query_dir=hashval_query_dir),
         expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir)
     output:
-        expand("{hashval_query_dir}/hashval_results.csv", hashval_query_dir=hashval_query_dir),
+        expand("{hashval_query_dir}/contigs/hashval_results.csv", hashval_query_dir=hashval_query_dir),
         directory(expand("{hashval_query_dir}/contigs", hashval_query_dir=hashval_query_dir))
 #        make_query_base(config['search']),
     shell:
@@ -327,7 +327,7 @@ def make_hashval_cdbg_results(filename):
 rule extract_reads_for_hashvals:
     input:
         hashval_queries,
-        expand("{hashval_query_dir}/hashval_results.csv", hashval_query_dir=hashval_query_dir),
+        expand("{hashval_query_dir}/contigs/hashval_results.csv", hashval_query_dir=hashval_query_dir),
         #make_hashval_cdbg_results(hashval_queries)
         aggregate_hashval_query
         
