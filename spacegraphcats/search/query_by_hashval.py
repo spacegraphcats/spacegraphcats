@@ -2,6 +2,10 @@
 """
 Retrieve nodes by MinHash hashvals, using the indices created by
 spacegraphcats.cdbg.index_cdbg_by_minhash.
+Excepts as input catlas prefix, pickled hasval index, file with 
+list of hashvals, and the output. Also accepts flags -k for 
+k-mer size (default 31), --scled for scaled value for contigs
+minhash output (default 1000), and -v for verbose.
 """
 import argparse
 import csv
@@ -73,15 +77,16 @@ class QueryOutput:
         csv_writer.writerow([hashval, bp, seqs])
         csvoutfp.flush()
 
+        # TR add contigs folder
         # write out cDBG IDs
         q_name = str(hashval)
         cdbg_listname = os.path.basename(q_name) + '.cdbg_ids.txt.gz'
-        with gzip.open(os.path.join(outdir, cdbg_listname), 'wt') as fp:
+        with gzip.open(os.path.join(outdir, "contigs", cdbg_listname), 'wt') as fp:
             fp.write("\n".join([str(x) for x in sorted(self.cdbg_shadow)]))
 
         # write out contigs
         contigs_outname = os.path.basename(q_name) + '.contigs.fa.gz'
-        with gzip.open(os.path.join(outdir, contigs_outname), 'wt') as fp:
+        with gzip.open(os.path.join(outdir, "contigs", contigs_outname), 'wt') as fp:
             for name, sequence in self.contigs:
                 fp.write('>{}\n{}\n'.format(name, sequence))
 
@@ -90,7 +95,7 @@ class QueryOutput:
             ss = sourmash.SourmashSignature(self.mh,
                                       name='hashval query:{}'.format(q_name))
 
-            sigfile = os.path.join(outdir, q_name + '.contigs.sig')
+            sigfile = os.path.join(outdir, "contigs", q_name + '.contigs.sig')
             with open(sigfile, 'wt') as fp:
                 sourmash.save_signatures([ss], fp)
 
