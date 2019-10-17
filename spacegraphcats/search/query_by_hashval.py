@@ -136,10 +136,8 @@ def main(argv):
     # create output directory if it doesn't exist.
     outdir = args.output
     notify('putting output in {}', outdir)
-    try:
-        os.mkdir(outdir)
-    except OSError:
-        pass
+    os.makedirs(os.path.join(outdir, "contigs"), exist_ok = True)
+
     if not os.path.isdir(outdir):
         error("output '{}' is not a directory and cannot be made", outdir)
         sys.exit(-1)
