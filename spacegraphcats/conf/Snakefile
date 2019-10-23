@@ -314,20 +314,6 @@ rule extract_reads_single_hashval_file:
     shell:
         "{python} -m spacegraphcats.search.extract_reads {input[0]} {input[1]} {input[2]} -o {output}"
 
-# This function will not be needed if aggregate_hashval_query works         
-def make_hashval_cdbg_results(filename):
-    results_files = []
-    for hashval in open(filename, 'rt'):
-        hashval = hashval.strip()
-        cdbg_id_file = 'contigs/{}.cdbg_ids.txt.gz'.format(hashval)
-        print(os.path.join(hashval_query_dir, cdbg_id_file))
-        if os.path.exists(os.path.join(hashval_query_dir, cdbg_id_file)):
-            reads_file = 'reads/{}.cdbg_ids.reads.fa.gz'.format(hashval)
-            results_files.append(os.path.join(hashval_query_dir, reads_file))
-            
-    print(results_files)
-    return results_files
-
 # get reads for all the hashvals
 rule extract_reads_for_hashvals:
     input:
