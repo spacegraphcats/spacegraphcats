@@ -2,10 +2,10 @@
 """
 Retrieve nodes by MinHash hashvals, using the indices created by
 spacegraphcats.cdbg.index_cdbg_by_minhash.
-Excepts as input catlas prefix, pickled hasval index, file with 
+Accepts as input catlas prefix, pickled hashval index, file with 
 list of hashvals, and the output. Also accepts flags -k for 
-k-mer size (default 31), --scled for scaled value for contigs
-minhash output (default 1000), and -v for verbose.
+k-mer size (default 31), --scaled for scaled value for sourmash
+signature output (default 1000), and -v for verbose.
 """
 import argparse
 import csv
