@@ -1,10 +1,15 @@
 # spacegraphcats: installation
 
-There are several ways to install spacegraphcats. We recommend using
-conda, but include instructions for using a Python virtual environment
-or a blank Ubuntu machine as well.
+## First, install the dependencies.
 
-## Installing dependencies  using conda
+spacegraphcats relies on several dependencies - Python, a C/C++ environment,
+and bcalm 2, in particular.
+
+There are several ways to install these dependencies. We recommend
+using conda, but include instructions for using a Python virtual
+environment or a blank Ubuntu machine as well.
+
+### 1. Installing dependencies using conda
 
 If you have [conda](https://docs.conda.io/en/latest/) installed, you can
 use packages from conda-forge and [bioconda](https://docs.conda.io/en/latest/)
@@ -19,35 +24,18 @@ conda activate sgc
 conda install -c conda-forge -c bioconda ... bcalm
 ``
 
-Then, follow the instructions 
+Then, follow the instructions below for installing spacegraphcats.
 
-## Installing dependencies on a blank Ubuntu machine
+## 2. Installing dependencies in a virtual environment
 
-e.g. on AWS, ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20180126 (ami-79873901), you'll need to make sure you have Python 3, a dev environment, and other stuff:
+If you already have a functioning Python >= 3.5 along with a C/C++
+development environment, you can install the dependencies in a
+venv.
 
-```
-sudo apt-get update
-sudo apt-get -y install python3 python3-dev zlib1g-dev g++ \
-    python3-venv make cmake
-```
-
-and then create a virtualenv named catsenv and activate it; then upgrade
-and install a few things.
+Change to a working directory, and create a virtualenv:
 
 ```
-python3 -m venv catsenv
-. catsenv/bin/activate
-pip install -U setuptools pip
-pip install Cython
-```
-
-## Installing dependencies in a virtual environment
-
-Change to a working directory, and create a virtualenv; you'll need
-Python 3.5 or up.
-
-```
-python -m virtualenv -p python3.5 catsenv 
+python -m virtualenv -p python3.5 catsenv
 ```
 
 Activate the virtualenv, upgrade pip, and install Cython:
@@ -57,9 +45,42 @@ pip install -U setuptools pip
 pip install Cython
 ```
 
+**Note:** You will also need to install bcalm 2; please following
+[their install instructions](https://github.com/GATB/bcalm#installation).
+
+Now, follow the instructions below for installing spacegraphcats.
+
+## 3. Installing dependencies on a blank Ubuntu machine
+
+If you're starting e.g. on a blank AWS instance such as
+ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20180126
+(ami-79873901), you'll need to make sure you have Python 3, a dev
+environment, and other stuff:
+
+```
+sudo apt-get update
+sudo apt-get -y install python3 python3-dev zlib1g-dev g++ \
+    python3-venv make cmake
+```
+
+Now create a virtualenv named catsenv and activate it; then upgrade
+and install a few things.
+
+```
+python3 -m venv catsenv
+. catsenv/bin/activate
+pip install -U setuptools pip
+pip install Cython
+```
+
+**Note:** You will also need to install bcalm 2; please following
+[their install instructions](https://github.com/GATB/bcalm#installation).
+
+Finally, follow the instructions below for installing spacegraphcats.
+
 ## After installing dependencies, install spacegraphcats
 
-Now, clone spacegraphcats:
+Once you have the basic dependencies, go ahead and clone spacegraphcats:
 ```
 git clone https://github.com/spacegraphcats/spacegraphcats/
 ```
@@ -71,7 +92,7 @@ cd spacegraphcats
 pip install -r requirements.txt
 ```
 
-You will also need to install BCALM and put the bcalm binary in your path; [see instructions](https://github.com/GATB/bcalm#installation).
+This will take a few minutes.
 
 ## Test spacegraphcats by running a small test: dory.
 
