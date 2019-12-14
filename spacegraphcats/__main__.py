@@ -122,7 +122,7 @@ from the main spacegraphcats directory.
         return 0
 
     # run!!
-    status = snakemake.snakemake(snakefile, configfile=configfile,
+    status = snakemake.snakemake(snakefile, configfiles=[configfile],
                                  targets=args.targets, printshellcmds=True,
                                  dryrun=args.dry_run, unlock=args.unlock,
                                  delete_all_output=args.delete_all_output,
