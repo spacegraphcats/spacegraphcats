@@ -41,7 +41,7 @@ overhead = config.get('overhead', 0.0)
 
 # fix paths to searchquick, search files
 config['search'] = fix_relative_input_paths(config.get('search', []))
-config['searchquick'] = fix_relative_input_paths(config.get('search', []))
+config['searchquick'] = fix_relative_input_paths(config.get('searchqiuck', []))
 
 # paper evaluation: do not expand the cDBG nodes using the domset
 cdbg_only = ""
