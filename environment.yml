@@ -5,7 +5,7 @@ channels:
     - defaults
 dependencies:
     - bcalm=2.2.1
-    - snakemake-minimal=5.6.0
+    - snakemake-minimal=5.8.1
     - cython=0.29.14
     - screed=1.0.1
     - sourmash=2.3.0
