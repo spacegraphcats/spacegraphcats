@@ -5,13 +5,30 @@
 #
 from os.path import join
 
-## pull values in from config file:
+## pull values in from config file / command line:
+
+# set working directory
+startdir = os.getcwd()
+outdir = config.get('outdir')
+if not outdir:
+    outdir = startdir
+
+workdir: outdir
+
+def fix_relative_input_paths(filenames):
+    abs_filenames = []
+    for filename in filenames:
+        if not filename.startswith('/'):
+            print('...updating input file {} with prefix {}'.format(filename, startdir))
+            filename = os.path.join(startdir, filename)
+        abs_filenames.append(filename)
+    return abs_filenames
 
 # name of catlas
 catlas_base = config['catlas_base']
 
 # sequence files to use when building catlas
-input_sequences = config['input_sequences']
+input_sequences = fix_relative_input_paths(config['input_sequences'])
 
 # k-mer size to use for everything
 ksize = config['ksize']
@@ -21,6 +38,10 @@ radius = config['radius']
 
 # search overhead
 overhead = config.get('overhead', 0.0)
+
+# fix paths to searchquick, search files
+config['search'] = fix_relative_input_paths(config.get('search', []))
+config['searchquick'] = fix_relative_input_paths(config.get('searchqiuck', []))
 
 # paper evaluation: do not expand the cDBG nodes using the domset
 cdbg_only = ""
@@ -46,7 +67,11 @@ decompose_maxsize = config.get('decompose_maxsize', 50000)
 
 # hashval queries / query_by_hashval
 hashval_ksize = config.get('hashval_ksize', ksize)
-hashval_queries = config.get('hashval_queries', '')
+
+hashval_queries = ''
+if config.get('hashval_queries', ''):
+    filename = config.get('hashval_queries', '')
+    hashval_queries = fix_relative_input_paths([filename])[0]
 
 ### build some variables for internal use
 
@@ -61,7 +86,7 @@ onsuccess:
     import os
     print('\n-------- DONE --------\n')
     if os.path.exists(catlas_dir):
-        print('catlas output directory: {}'.format(catlas_dir))
+        print('catlas output directory: {}'.format(catlas_dir)) # @@
         if os.path.exists(search_dir):
             print('search output directory: {}'.format(search_dir))
         print('')
@@ -81,25 +106,25 @@ rule build:
 
 rule clean:
     shell:
-        "rm -fr {catlas_base} {catlas_dir} {search_dir} bcalm.{catlas_base}.k{ksize}.inputlist.txt bcalm_to_gxt.log"
+        "rm -fr {catlas_base} {catlas_dir} {search_dir}"
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
      input:
-        "bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+        "{catlas_base}/bcalm.{catlas_base}.k{ksize}.inputlist.txt"
      output:
         "{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa"
      shell:
-        "(bcalm -in bcalm.{catlas_base}.k{ksize}.inputlist.txt -out {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt && rm -f {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize}.{{h5,unitigs.fa.glue*}}) || printf '**\\n**\\n** Cannot run BCALM 2! Please install it and make sure it is on your path!\\n**\\n**\\n'"
+        "(bcalm -in {input} -out {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt && rm -f {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize}.{{h5,unitigs.fa.glue*}}) || printf '**\\n**\\n** Cannot run BCALM 2! Please install it and make sure it is on your path!\\n**\\n**\\n'"
 
 # create list of input files for bcalm
 rule bcalm_cdbg_inpfiles:
      input:
         input_sequences
      output:
-        "bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+        "{catlas_base}/bcalm.{catlas_base}.k{ksize}.inputlist.txt"
      run:
-        with open("bcalm.{catlas_base}.k{ksize}.inputlist.txt".format(catlas_base=catlas_base, ksize=ksize), 'wt') as fp:
+        with open(output[0], 'wt') as fp:
             for name in input_sequences:
                 fp.write('{}\n'.format(name))
 

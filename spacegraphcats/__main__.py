@@ -58,6 +58,7 @@ from the main spacegraphcats directory.
                         help='for paper evaluation purposes')
     parser.add_argument('--version', action='store_true',
                         help='print version and other info.')
+    parser.add_argument('--outdir', help="parent directory of outputs")
     args = parser.parse_args()
 
     if args.version:
@@ -104,6 +105,8 @@ from the main spacegraphcats directory.
         config['radius'] = args.radius
     if args.cdbg_only:
         config['cdbg_only'] = True
+    if args.outdir:
+        config['outdir'] = args.outdir
 
     print('--------', file=sys.stderr)
     print('details!', file=sys.stderr)
@@ -122,7 +125,7 @@ from the main spacegraphcats directory.
         return 0
 
     # run!!
-    status = snakemake.snakemake(snakefile, configfile=configfile,
+    status = snakemake.snakemake(snakefile, configfiles=[configfile],
                                  targets=args.targets, printshellcmds=True,
                                  dryrun=args.dry_run, unlock=args.unlock,
                                  delete_all_output=args.delete_all_output,

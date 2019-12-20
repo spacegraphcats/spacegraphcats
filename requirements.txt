@@ -4,7 +4,7 @@ screed
 pytest >= 5.1.2
 numpy
 pandas
-snakemake == 5.6.0
+snakemake == 5.8.1
 sortedcontainers
 https://github.com/dib-lab/pybbhash/archive/spacegraphcats.zip
 https://github.com/dib-lab/khmer/archive/master.zip

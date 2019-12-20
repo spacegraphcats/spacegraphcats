@@ -17,6 +17,7 @@ from spacegraphcats.utils.bgzf import bgzf
 import logging
 from typing import List, Dict, Set
 import sourmash
+import os.path
 
 
 def end_match(s, t, k, direction='sp'):
@@ -237,11 +238,12 @@ def main(argv):
     unitigs = args.bcalm_unitigs
     debug = args.debug
 
+    logfile = os.path.join(os.path.dirname(args.gxt_out), 'bcalm_to_gxt.log')
     if args.debug:
-        logging.basicConfig(filename='bcalm_to_gxt.log', filemode='w',
+        logging.basicConfig(filename=logfile, filemode='w',
                             level=logging.DEBUG)
     else:
-        logging.basicConfig(filename='bcalm_to_gxt.log', filemode='w',
+        logging.basicConfig(filename=logfile, filemode='w',
                             level=logging.WARNING)
 
     logging.debug("starting bcalm_to_gxt run.")
