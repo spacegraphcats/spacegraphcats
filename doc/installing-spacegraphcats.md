@@ -1,6 +1,6 @@
 # spacegraphcats: installation
 
-## First, install the dependencies.
+## Step I: install the dependencies.
 
 spacegraphcats relies on several dependencies - Python, a C/C++ environment,
 and bcalm 2, in particular.
@@ -15,16 +15,26 @@ If you have [conda](https://docs.conda.io/en/latest/) installed, you can
 use packages from conda-forge and [bioconda](https://docs.conda.io/en/latest/)
 to install all the dependencies for spacegraphcats.
 
-First, create a new 'sgc' environment, activate, and install the necessary
+Start by cloning the spacegraphcats repository:
+
+```
+git clone https://github.com/spacegraphcats/spacegraphcats/
+```
+
+Now, create a new 'sgc' environment with the necessary packages
 packages:
 
 ```
-conda create -n sgc python==3@@
-conda activate sgc
-conda install -c conda-forge -c bioconda ... bcalm
-``
+conda env create -f spacegraphcats/environment.yml -n sgc
+```
 
-Then, follow the instructions below for installing spacegraphcats.
+Once it's created, activate the environment you just created:
+
+```
+conda activate sgc
+```
+
+and voila, done!
 
 ## 2. Installing dependencies in a virtual environment
 
@@ -48,7 +58,19 @@ pip install Cython
 **Note:** You will also need to install bcalm 2; please following
 [their install instructions](https://github.com/GATB/bcalm#installation).
 
-Now, follow the instructions below for installing spacegraphcats.
+Once you have the basic dependencies, go ahead and clone spacegraphcats:
+```
+git clone https://github.com/spacegraphcats/spacegraphcats/
+```
+
+and install the requirements:
+
+```
+cd spacegraphcats
+pip install -r requirements.txt
+```
+
+This will take a few minutes.
 
 ## 3. Installing dependencies on a blank Ubuntu machine
 
@@ -76,10 +98,6 @@ pip install Cython
 **Note:** You will also need to install bcalm 2; please following
 [their install instructions](https://github.com/GATB/bcalm#installation).
 
-Finally, follow the instructions below for installing spacegraphcats.
-
-## After installing dependencies, install spacegraphcats
-
 Once you have the basic dependencies, go ahead and clone spacegraphcats:
 ```
 git clone https://github.com/spacegraphcats/spacegraphcats/
@@ -94,7 +112,10 @@ pip install -r requirements.txt
 
 This will take a few minutes.
 
-## Test spacegraphcats by running a small test: dory.
+## Step II: Test spacegraphcats by running a small test: dory.
+
+In the `spacegraphcats/` top level directory (containing e.g. `README.md`),
+run:
 
 ```
 python -m spacegraphcats dory-test search
@@ -131,7 +152,7 @@ You will have a bunch of new output files:
     * dory-head.fa.response.txt
     * command.txt
     
-## Run a bigger test: twofoo.
+## Step III: Run a bigger test: twofoo.
 
 Now let's check the full pipeline for a synthetic mixture of two
 genomes (Akkermansia and Shewanella baltica OS 223) from the Shakya et
