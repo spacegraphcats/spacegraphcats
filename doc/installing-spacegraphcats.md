@@ -1,8 +1,83 @@
 # spacegraphcats: installation
 
-## If starting on a blank Ubuntu machine
+## Step I: install the dependencies.
 
-e.g. on AWS, ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20180126 (ami-79873901), you'll need to make sure you have Python 3, a dev environment, and other stuff:
+spacegraphcats relies on several dependencies - Python, a C/C++ environment,
+and bcalm 2, in particular.
+
+There are several ways to install these dependencies. We recommend
+using conda, but include instructions for using a Python virtual
+environment or a blank Ubuntu machine as well.
+
+### 1. Installing dependencies using conda
+
+If you have [conda](https://docs.conda.io/en/latest/) installed, you can
+use packages from conda-forge and [bioconda](https://docs.conda.io/en/latest/)
+to install all the dependencies for spacegraphcats.
+
+Start by cloning the spacegraphcats repository:
+
+```
+git clone https://github.com/spacegraphcats/spacegraphcats/
+```
+
+Now, create a new 'sgc' environment with the necessary packages
+packages:
+
+```
+conda env create -f spacegraphcats/environment.yml -n sgc
+```
+
+Once it's created, activate the environment you just created:
+
+```
+conda activate sgc
+```
+
+and voila, done!
+
+## 2. Installing dependencies in a virtual environment
+
+If you already have a functioning Python >= 3.5 along with a C/C++
+development environment, you can install the dependencies in a
+venv.
+
+Change to a working directory, and create a virtualenv:
+
+```
+python -m virtualenv -p python3.5 catsenv
+```
+
+Activate the virtualenv, upgrade pip, and install Cython:
+```
+. catsenv/bin/activate
+pip install -U setuptools pip
+pip install Cython
+```
+
+**Note:** You will also need to install bcalm 2; please following
+[their install instructions](https://github.com/GATB/bcalm#installation).
+
+Once you have the basic dependencies, go ahead and clone spacegraphcats:
+```
+git clone https://github.com/spacegraphcats/spacegraphcats/
+```
+
+and install the requirements:
+
+```
+cd spacegraphcats
+pip install -r requirements.txt
+```
+
+This will take a few minutes.
+
+## 3. Installing dependencies on a blank Ubuntu machine
+
+If you're starting e.g. on a blank AWS instance such as
+ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20180126
+(ami-79873901), you'll need to make sure you have Python 3, a dev
+environment, and other stuff:
 
 ```
 sudo apt-get update
@@ -10,45 +85,37 @@ sudo apt-get -y install python3 python3-dev zlib1g-dev g++ \
     python3-venv make cmake
 ```
 
-and then do
+Now create a virtualenv named catsenv and activate it; then upgrade
+and install a few things.
 
 ```
 python3 -m venv catsenv
-```
-
-instead of the first command below.
-
-## First, clone repo and configure/install requirements
-
-Change to a working directory, and create a virtualenv; you'll need Python 3.5 or up.
-
-```
-python -m virtualenv -p python3.5 catsenv 
-```
-
-Activate the virtualenv:
-```
 . catsenv/bin/activate
+pip install -U setuptools pip
+pip install Cython
 ```
 
-Next, clone spacegraphcats.
+**Note:** You will also need to install bcalm 2; please following
+[their install instructions](https://github.com/GATB/bcalm#installation).
+
+Once you have the basic dependencies, go ahead and clone spacegraphcats:
 ```
 git clone https://github.com/spacegraphcats/spacegraphcats/
 ```
 
-and now install the requirements:
+and install the requirements:
 
 ```
 cd spacegraphcats
-pip install -U setuptools pip
-pip install Cython
 pip install -r requirements.txt
-pip install https://github.com/dib-lab/khmer/archive/master.zip
 ```
 
-You will also need to install BCALM and put the bcalm binary in your path; [see instructions](https://github.com/GATB/bcalm#installation).
+This will take a few minutes.
 
-### Now, run a small test: dory.
+## Step II: Test spacegraphcats by running a small test: dory.
+
+In the `spacegraphcats/` top level directory (containing e.g. `README.md`),
+run:
 
 ```
 python -m spacegraphcats dory-test search
@@ -85,7 +152,7 @@ You will have a bunch of new output files:
     * dory-head.fa.response.txt
     * command.txt
     
-## Run a bigger test: twofoo.
+## Step III: Run a bigger test: twofoo.
 
 Now let's check the full pipeline for a synthetic mixture of two
 genomes (Akkermansia and Shewanella baltica OS 223) from the Shakya et
