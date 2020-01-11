@@ -77,7 +77,7 @@ class QueryOutput:
         notify('query similarity to retrieved contigs:'
               ' {:.1f}%', self.similarity()*100)
 
-    def write(self, csv_writer, csvoutfp, outdir):
+    def write(self, csv_writer, csvoutfp, outdir, catlas_name):
         containment = self.containment()
         similarity = self.similarity()
         q_name = self.query.filename
@@ -93,7 +93,7 @@ class QueryOutput:
         csv_writer.writerow([q_name, containment, similarity, bp,
                              seqs, k, num_q_kmers,
                              best_con, cdbg_min_oh,
-                             catlas_min_oh])
+                             catlas_min_oh, catlas_name])
         csvoutfp.flush()
 
         # write out signature from retrieved contigs.
@@ -308,7 +308,7 @@ def main(argv):
     csv_writer = csv.writer(csvoutfp)
     csv_writer.writerow(['query', 'containment', 'similarity', 'bp', 'contigs',
                          'ksize', 'num_query_kmers', 'best_containment',
-                         'cdbg_min_overhead', 'catlas_min_overhead'])
+                         'cdbg_min_overhead', 'catlas_min_overhead', 'catlas_name'])
 
     # iterate over each query, do the thing.
     for query_file in args.query:
@@ -322,7 +322,7 @@ def main(argv):
         q_output.retrieve_contigs(contigs)
         notify('total time: {:.1f}s', time.time() - start_time)
 
-        q_output.write(csv_writer, csvoutfp, outdir)
+        q_output.write(csv_writer, csvoutfp, outdir, args.catlas_prefix)
     # end main loop!
 
     return 0

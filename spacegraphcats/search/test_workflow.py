@@ -97,7 +97,7 @@ def test_dory_query_workflow(location):
         assert len(lines) == 2
 
         last_line = lines[-1].strip()
-        assert last_line == 'dory-head.fa,1.0,1.0,1671,2,21,1631,1.0,0.0,0.0'
+        assert last_line == 'dory-head.fa,1.0,1.0,1671,2,21,1631,1.0,0.0,0.0,dory_k21_r1'
 
 
 @pytest_utils.in_tempdir
