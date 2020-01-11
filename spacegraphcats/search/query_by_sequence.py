@@ -171,7 +171,7 @@ class Query:
             kmer_idx.build_catlas_match_counts(self.cdbg_match_counts[cat_id],
                                                catlas)
 
-        if self.debug:
+        if self.debug and self.catlas_match_counts[cat_id]:
             # check a few things - we've propagated properly:
             assert sum(self.cdbg_match_counts[cat_id].values()) ==\
                 self.catlas_match_counts[cat_id][catlas.root]
@@ -210,16 +210,19 @@ class Query:
         for cdbg_id in set(cdbg_match_counts.keys()):
             total_kmers_in_cdbg_matches += kmer_idx.get_cdbg_size(cdbg_id)
 
-        cdbg_sim = total_match_kmers / total_kmers_in_cdbg_matches
-        notify('cdbg match node similarity: {:.1f}%', cdbg_sim * 100)
-        cdbg_min_overhead = (total_kmers_in_cdbg_matches-total_match_kmers) /\
-            total_kmers_in_cdbg_matches
-        notify('min cdbg overhead: {:.1f}%', cdbg_min_overhead * 100)
+        cdbg_sim = 0
+        cdbg_min_overhead = 0
+        if total_kmers_in_cdbg_matches:
+            cdbg_sim = total_match_kmers / total_kmers_in_cdbg_matches
+            notify('cdbg match node similarity: {:.1f}%', cdbg_sim * 100)
+            cdbg_min_overhead = (total_kmers_in_cdbg_matches-total_match_kmers) /\
+                total_kmers_in_cdbg_matches
+            notify('min cdbg overhead: {:.1f}%', cdbg_min_overhead * 100)
 
         # calculate the minimum overhead of the search, based on level 1
         # nodes.
         catlas_min_overhead = 0
-        if catlas_match_counts[root]:
+        if catlas_match_counts and catlas_match_counts[root]:
             all_query_kmers = catlas_match_counts[root]
             total_kmers_in_query_nodes = 0
             for node_id, level in catlas.levels.items():

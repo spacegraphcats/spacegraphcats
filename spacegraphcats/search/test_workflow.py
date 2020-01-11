@@ -101,6 +101,27 @@ def test_dory_query_workflow(location):
 
 
 @pytest_utils.in_tempdir
+def test_dory_search_nomatch(location):
+    # test situations where zero k-mers match - should not fail.
+    copy_dory_catlas()
+
+    # make k-mer search index
+    args = '-k 21 dory_k21_r1'.split()
+    print('** running index_contigs_by_kmer')
+    index_contigs_by_kmer.main(args)
+
+    with open('random-query.fa', 'wt') as fp:
+        fp.write('>nomatch\nATGAGGGATGGAGAGTTGAGAGACGATG\n')
+
+    # do search!!
+    args='dory_k21_r1 dory_k21_r1_search_oh0 --query random-query.fa -k 21'.split()
+    try:
+        query_by_sequence.main(args)
+    except SystemExit as e:
+        assert e.code == 0, str(e)
+
+
+@pytest_utils.in_tempdir
 def test_dory_characterize_catlas_regions(location):
     copy_dory_catlas()
     copy_dory_head()
