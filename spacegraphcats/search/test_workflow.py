@@ -105,13 +105,13 @@ def test_dory_search_nomatch(location):
     # test situations where zero k-mers match - should not fail.
     copy_dory_catlas()
 
+    testdata = relative_file('data/random-query-nomatch.fa')
+    shutil.copyfile(testdata, 'random-query.fa')
+
     # make k-mer search index
     args = '-k 21 dory_k21_r1'.split()
     print('** running index_contigs_by_kmer')
     index_contigs_by_kmer.main(args)
-
-    with open('random-query.fa', 'wt') as fp:
-        fp.write('>nomatch\nATGAGGGATGGAGAGTTGAGAGACGATG\n')
 
     # do search!!
     args='dory_k21_r1 dory_k21_r1_search_oh0 --query random-query.fa -k 21'.split()

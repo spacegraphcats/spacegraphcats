@@ -37,6 +37,10 @@ def main(argv=sys.argv[1:]):
     with gzip.open(args.node_list_file, 'rt') as fp:
         cdbg_shadow = set([ int(x.strip()) for x in fp ])
 
+    if not len(cdbg_shadow):
+        print('no contigs to extract; exiting.')
+        return 0
+
     total_bp = 0
     total_seqs = 0
 
