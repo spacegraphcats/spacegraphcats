@@ -97,7 +97,28 @@ def test_dory_query_workflow(location):
         assert len(lines) == 2
 
         last_line = lines[-1].strip()
-        assert last_line == 'dory-head.fa,1.0,1.0,1671,2,21,1631,1.0,0.0,0.0'
+        assert last_line == 'dory-head.fa,1.0,1.0,1671,2,21,1631,1.0,0.0,0.0,dory_k21_r1'
+
+
+@pytest_utils.in_tempdir
+def test_dory_search_nomatch(location):
+    # test situations where zero k-mers match - should not fail.
+    copy_dory_catlas()
+
+    testdata = relative_file('data/random-query-nomatch.fa')
+    shutil.copyfile(testdata, 'random-query.fa')
+
+    # make k-mer search index
+    args = '-k 21 dory_k21_r1'.split()
+    print('** running index_contigs_by_kmer')
+    index_contigs_by_kmer.main(args)
+
+    # do search!!
+    args='dory_k21_r1 dory_k21_r1_search_oh0 --query random-query.fa -k 21'.split()
+    try:
+        query_by_sequence.main(args)
+    except SystemExit as e:
+        assert e.code == 0, str(e)
 
 
 @pytest_utils.in_tempdir

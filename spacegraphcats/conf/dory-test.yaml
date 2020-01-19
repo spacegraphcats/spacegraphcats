@@ -6,6 +6,7 @@ ksize: 21
 radius: 1
 search:
 - data/dory-head.fa
+- data/random-query-nomatch.fa
 searchquick:
 - data/dory-head.fa
 
