@@ -1,6 +1,7 @@
 import os.path
 import shutil
 import screed
+import sourmash
 
 import pytest
 import spacegraphcats.utils.pytest_utils as pytest_utils
@@ -98,6 +99,13 @@ def test_dory_query_workflow(location):
 
         last_line = lines[-1].strip()
         assert last_line == 'dory-head.fa,1.0,1.0,1671,2,21,1631,1.0,0.0,0.0,dory_k21_r1'
+
+    sigfile = output_path + 'dory-head.fa.contigs.sig'
+    with open(sigfile, 'rt') as fp:
+        sig = sourmash.load_one_signature(fp)
+        name = sig.name()
+        assert 'from dory_k21_r1' in name
+        assert name.startswith('nbhd:TRINITY_DN290219_c0_g1_i1')
 
 
 @pytest_utils.in_tempdir
