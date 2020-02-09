@@ -213,6 +213,9 @@ class CAtlas(object):
             if benchmark_only:
                 return None
 
+        if not nodes:
+            return None
+
         # place all remaining nodes as children of the root
         proj.root.children.extend(nodes.values())
         proj.root.level = proj.level
@@ -338,10 +341,17 @@ def main(args):
     print("reading complete")
     print("building catlas")
     cat = CAtlas.build(proj)
+
+    if cat is None:
+        print("ERROR: catlas is empty!? exiting.")
+        return -1
+    
     print("catlas built")
     print("writing graph")
     with open(proj.catlasfilename, 'w') as cfile:
         cat.write(cfile)
+
+    return 0
 
 
 if __name__ == "__main__":
@@ -356,8 +366,10 @@ if __name__ == "__main__":
                         "Defaults to highest level saved when not invoked.")
     args = parser.parse_args()
 
-    main(args)
+    exit_val = main(args)
     # prof = cProfile.Profile()
     # prof.run("main(args)")
     # prof.print_stats('tottime')
     log_command(args.project, sys.argv)
+
+    sys.exit(exit_val)
