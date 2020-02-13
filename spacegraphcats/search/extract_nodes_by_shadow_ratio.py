@@ -31,7 +31,7 @@ def main(args=sys.argv[1:]):
 
     # load catlas DAG
     catlas = CAtlas(args.catlas_prefix, load_sizefile=True)
-    print('loaded {} nodes from catlas {}'.format(len(catlas), catlas_file))
+    print('loaded {} nodes from catlas {}'.format(len(catlas), catlas))
     print('loaded {} layer 1 catlas nodes'.format(len(catlas.layer1_to_cdbg)))
 
     # calculate the cDBG shadow sizes for each catlas node.
