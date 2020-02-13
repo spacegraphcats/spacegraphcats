@@ -16,6 +16,7 @@ from spacegraphcats.search import evaluate_overhead
 from spacegraphcats.search import catlas_info
 from spacegraphcats.search import extract_contigs
 from spacegraphcats.search import estimate_query_abundance
+from spacegraphcats.search import extract_nodes_by_shadow_ratio
 from spacegraphcats.utils import make_bgzf
 from spacegraphcats.cdbg import label_cdbg
 from spacegraphcats.search import extract_reads
@@ -322,3 +323,14 @@ def test_dory_query_by_hashval(location):
     args = '-k 31 dory_k21_r1 dory_k21_r1_mh.pickle dory-k31-hashval-queries.txt dory_k21_r1_hashval_k31'
     query_by_hashval.main(args.split())
     assert os.path.exists('dory_k21_r1_hashval_k31/hashval_results.csv')
+
+
+@pytest_utils.in_tempdir
+def test_dory_shadow_extract(location):
+    # run extract_nodes_by_shadow_ratio
+    copy_dory_catlas()
+
+    # make k-mer search index
+    args = 'dory_k21_r1 shadow_out'.split()
+    print('** running extract_nodes_by_shadow_ratio')
+    extract_nodes_by_shadow_ratio.main(args)
