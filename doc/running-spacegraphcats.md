@@ -71,7 +71,7 @@ Config files look like this:
 
 Here, the `catlas_base`, `ksize`, and `radius` are used to name output directories - hence `dory/` and `dory_k21_r1/`, above. `catlas_base` is arbitrary, `ksize` is the k-mer size (we suggest 21 or 31), and `radius` is the domset radius (we suggest 1).
 
-The `input_sequences` contains the set of input files (FASTA or FASTQ, potentially gzipped) to use to build the compact De Bruijn graph. Note, these should be error-trimmed, or otherwise you will have very big cDBGs...
+The `input_sequences` contains the set of input files (FASTA or FASTQ, potentially gzipped) to use to build the compact De Bruijn graph. Note, these should be k-mer-error-trimmed, or otherwise you will have very big cDBGs... see [the error trimming information from Brown et al. for an example](https://github.com/spacegraphcats/2018-paper-spacegraphcats/tree/master/pipeline-base#pipeline-to-generate-files-needed-for-figures-2-and-3). Note that the `trim-low-abund.py` command is in the khmer package, which is a requirement for spacegraphcats, so you will already have it installed.
 
 The `searchquick` and `search` specify the *query files* that you are using to search the catlas.
 
