@@ -25,7 +25,7 @@ from .catlas import CAtlas
 
 
 class QueryOutput:
-    def __init__(self, query, catlas, kmer_idx, leaves):
+    def __init__(self, query, catlas, kmer_idx, leaves, catlas_name):
         self.query = query
         self.catlas = catlas
         self.kmer_idx = kmer_idx
@@ -35,6 +35,7 @@ class QueryOutput:
         self.total_seq = 0
         self.query_sig = self.query.sig
         self.contigs_minhash = self.query.mh.copy_and_clear()
+        self.catlas_name = catlas_name
 
     def __add_sequence(self, sequence):
         self.contigs_minhash.add_sequence(str(sequence), True)
@@ -98,9 +99,11 @@ class QueryOutput:
 
         # write out signature from retrieved contigs.
         sig_filename = os.path.basename(q_name) + '.contigs.sig'
+        sig_name = 'nbhd:{} from {}'.format(self.query.name,
+                                            self.catlas_name)
         with open(os.path.join(outdir, sig_filename), 'wt') as fp:
             ss = sourmash.SourmashSignature(self.contigs_minhash,
-                                                name='nbhd:'+self.query.name,
+                                                name=sig_name,
                                                 filename=sig_filename)
             sourmash.save_signatures([ss], fp)
 
@@ -127,13 +130,14 @@ class QueryOutput:
 
 
 class Query:
-    def __init__(self, query_file, ksize, scaled, debug=True):
+    def __init__(self, query_file, ksize, scaled, catlas_name, debug=True):
         self.filename = query_file
         self.ksize = ksize
         self.kmers = set()
         self.name = None
         mh = MinHash(0, ksize, scaled=scaled)
         self.mh = mh
+        self.catlas_name = catlas_name
         self.debug = debug
         
         notify('----')
@@ -192,7 +196,7 @@ class Query:
 
         notify('done searching! {} catlas shadow nodes, {} cdbg nodes.',
                len(leaves), len(cdbg_shadow))
-        return QueryOutput(self, catlas, kmer_idx, leaves)
+        return QueryOutput(self, catlas, kmer_idx, leaves, self.catlas_name)
 
     def con_sim_upper_bounds(self, catlas, kmer_idx):
         """
@@ -281,6 +285,7 @@ def main(argv):
     catlas = CAtlas(args.catlas_prefix)
     notify('loaded {} nodes from catlas {}', len(catlas), args.catlas_prefix)
     notify('loaded {} layer 1 catlas nodes', len(catlas.layer1_to_cdbg))
+    catlas_name = os.path.basename(args.catlas_prefix.rstrip(('/')))
 
     # find the contigs filename
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
@@ -313,7 +318,7 @@ def main(argv):
     # iterate over each query, do the thing.
     for query_file in args.query:
         start_time = time.time()
-        query = Query(query_file, ksize, scaled)
+        query = Query(query_file, ksize, scaled, catlas_name)
         if not len(query.kmers):
             notify('query {} is empty; skipping.', query_file)
             continue
