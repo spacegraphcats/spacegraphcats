@@ -381,7 +381,7 @@ rule build_multifasta_hashval_index:
 
 rule build_index:
     input:
-        queries = config['multifasta_reference'],
+        queries = config.get('multifasta_reference', '** does not exist **'),
         doms = expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         catlas = expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
         mphf = expand("{catlas_dir}/contigs.fa.gz.mphf", catlas_dir=catlas_dir),
@@ -397,7 +397,7 @@ rule query_multifasta_by_signature:
     input:
         hashvals = expand("{catlas_dir}_multifasta/hashval.pickle", catlas_dir=catlas_dir),
         multi_idx = expand("{catlas_dir}_multifasta/multifasta.pickle", catlas_dir=catlas_dir),
-        query_sig = config['multifasta_query_sig']
+        query_sig = config.get('multifasta_query_sig', '** does not exist **')
     output:
         expand("{catlas_dir}_multifasta/query-results.csv", catlas_dir=catlas_dir)
     params:
