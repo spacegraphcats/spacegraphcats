@@ -92,9 +92,9 @@ def main(argv):
             shadow = catlas.shadow(dominators)
             print(f"got {len(shadow)} cdbg_nodes under {len(dominators)} dominators")
 
-            records_to_cdbg[record.name] = shadow
+            records_to_cdbg[(filename, record.name)] = shadow
             for cdbg_node in shadow:
-                cdbg_to_records[cdbg_node].add(record.name)
+                cdbg_to_records[cdbg_node].add((filename,record.name))
             
 
     with open(outfile, 'wb') as fp:

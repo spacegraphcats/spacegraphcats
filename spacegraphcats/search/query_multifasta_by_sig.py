@@ -53,23 +53,26 @@ def main(argv):
 
     found_hashvals = set()
     found_records = set()
+    found_filenames = set()
     n_rows = 0
 
     with open(args.output, 'wt') as fp:
         w = csv.writer(fp)
-        w.writerow(["hashval", "record_name"])
+        w.writerow(["hashval", "filename", "record_name"])
 
         for hashval in mh.get_mins():
             cdbg_id = hashval_to_contig_id.get(hashval)
             if cdbg_id:
                 record_names = cdbg_to_records[cdbg_id]
-                for name in record_names:
-                    w.writerow([hashval, name])
+                for (filename, name) in record_names:
+                    w.writerow([hashval, filename, name])
                     found_records.add(name)
                     found_hashvals.add(hashval)
+                    found_filenames.add(filename)
                     n_rows += 1
 
     print(f"wrote {n_rows} rows, with {len(found_records)} distinct records and {len(found_hashvals)} distinct hashvals.")
+    print(f"used records from {len(found_filenames)} files.")
 
     return 0
 
