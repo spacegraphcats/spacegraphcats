@@ -13,3 +13,6 @@ shadow_ratio_maxsize: 1000
 
 hashval_ksize: 51
 hashval_queries: data/twofoo-k51-hashval-queries.txt
+
+multifasta_reference:
+- GCF_000021665.1_ASM2166v1_cds_from_genomic.fna

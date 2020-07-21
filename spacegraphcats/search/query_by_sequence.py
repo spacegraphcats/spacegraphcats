@@ -30,6 +30,7 @@ class QueryOutput:
         self.catlas = catlas
         self.kmer_idx = kmer_idx
         self.leaves = leaves
+        # here is where we go from level 1/dominators to cdbg nodes.
         self.shadow = self.catlas.shadow(leaves)
         self.total_bp = 0
         self.total_seq = 0

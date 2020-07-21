@@ -363,3 +363,19 @@ rule extract_by_shadow_ratio_rule:
         catlas_dir + ".shadow.{shadow_ratio_maxsize}.fa"
     shell:
         "{python} -m spacegraphcats.search.extract_nodes_by_shadow_ratio --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}"
+
+### query by signature => gene
+
+rule build_index:
+    input:
+        queries = config['multifasta_reference'],
+        doms = expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
+        catlas = expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
+        mphf = expand("{catlas_dir}/contigs.fa.gz.mphf", catlas_dir=catlas_dir),
+        indices = expand("{catlas_dir}/contigs.fa.gz.indices", catlas_dir=catlas_dir)
+    output:
+        expand("{catlas_dir}_multifasta/index.pickle", catlas_dir=catlas_dir)
+    shell: """
+        {python} -m spacegraphcats.search.index_cdbg_by_multifasta \
+             {catlas_dir} {output} --query {input.queries}
+    """
