@@ -400,4 +400,12 @@ rule query_multifasta_by_signature:
         query_sig = config['multifasta_query_sig']
     output:
         expand("{catlas_dir}_multifasta/query-results.csv", catlas_dir=catlas_dir)
-    shell: """touch {output}"""
+    params:
+        ksize=ksize,
+        scaled = config.get('multifasta_scaled', 1000)
+    shell: """
+        {python} -m spacegraphcats.search.query_multifasta_by_sig \
+            --hashvals {input.hashvals} --multi-idx {input.multi_idx} \
+            --query-sig {input.query_sig} --output {output} \
+            -k {params.ksize} --scaled {params.scaled}
+    """
