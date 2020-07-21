@@ -366,6 +366,19 @@ rule extract_by_shadow_ratio_rule:
 
 ### query by signature => gene
 
+rule build_multifasta_hashval_index:
+    input:
+        expand("{catlas_dir}/contigs.fa.gz", catlas_dir=catlas_dir)
+    output:
+        expand("{catlas_dir}_multifasta/hashval.pickle", catlas_dir=catlas_dir)
+    params:
+        ksize = ksize,
+        scaled = config.get('multifasta_scaled', 1000)
+    shell: """
+        {python} -m spacegraphcats.cdbg.index_cdbg_by_minhash \
+            -k {params.ksize} --scaled {params.scaled} {input[0]} {output}
+    """
+
 rule build_index:
     input:
         queries = config['multifasta_reference'],
@@ -374,8 +387,17 @@ rule build_index:
         mphf = expand("{catlas_dir}/contigs.fa.gz.mphf", catlas_dir=catlas_dir),
         indices = expand("{catlas_dir}/contigs.fa.gz.indices", catlas_dir=catlas_dir)
     output:
-        expand("{catlas_dir}_multifasta/index.pickle", catlas_dir=catlas_dir)
+        expand("{catlas_dir}_multifasta/multifasta.pickle", catlas_dir=catlas_dir)
     shell: """
         {python} -m spacegraphcats.search.index_cdbg_by_multifasta \
              {catlas_dir} {output} --query {input.queries}
     """
+
+rule query_multifasta_by_signature:
+    input:
+        hashvals = expand("{catlas_dir}_multifasta/hashval.pickle", catlas_dir=catlas_dir),
+        multi_idx = expand("{catlas_dir}_multifasta/multifasta.pickle", catlas_dir=catlas_dir),
+        query_sig = config['multifasta_query_sig']
+    output:
+        expand("{catlas_dir}_multifasta/query-results.csv", catlas_dir=catlas_dir)
+    shell: """touch {output}"""
