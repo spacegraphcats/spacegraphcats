@@ -41,8 +41,8 @@ def main(argv):
         print(f'loaded {len(hashval_to_contig_id)} hashval to contig mappings')
 
     with open(args.multi_idx, 'rb') as fp:
-        records_to_cdbg, cdbg_to_records = pickle.load(fp)
-        print(f'loaded {len(cdbg_to_records)} cdbg to sequence record mappings')
+        catlas_base, records_to_cdbg, cdbg_to_records = pickle.load(fp)
+        print(f'loaded {len(cdbg_to_records)} cdbg to sequence record mappings for {catlas_base}')
 
     query_sig = sourmash.load_one_signature(args.query_sig,
                                             ksize=args.ksize)
@@ -58,14 +58,14 @@ def main(argv):
 
     with open(args.output, 'wt') as fp:
         w = csv.writer(fp)
-        w.writerow(["hashval", "filename", "record_name"])
+        w.writerow(["hashval", "catlas_base", "filename", "record_name"])
 
         for hashval in mh.get_mins():
             cdbg_id = hashval_to_contig_id.get(hashval)
             if cdbg_id:
                 record_names = cdbg_to_records[cdbg_id]
                 for (filename, name) in record_names:
-                    w.writerow([hashval, filename, name])
+                    w.writerow([hashval, catlas_base, filename, name])
                     found_records.add(name)
                     found_hashvals.add(hashval)
                     found_filenames.add(filename)

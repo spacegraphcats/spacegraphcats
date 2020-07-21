@@ -99,7 +99,7 @@ def main(argv):
 
     with open(outfile, 'wb') as fp:
         print(f"saving pickled index to '{outfile}'")
-        pickle.dump((records_to_cdbg, cdbg_to_records), fp)
+        pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
 
     return 0
 
