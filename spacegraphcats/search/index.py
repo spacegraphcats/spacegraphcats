@@ -44,13 +44,13 @@ class MPHF_KmerIndex(object):
 
         return node_kmer_sizes
 
-    def get_match_counts(self, query_kmers):
+    def get_match_counts(self, query_kmers, quiet=False):
         "Return a dictionary containing cdbg_id -> # of matches in query_kmers"
         match_counts = {}
         n_matched = 0
         n = 0
         for n, hashval in enumerate(query_kmers):
-            if n % 1000000 == 0:
+            if n % 1000000 == 0 and not quiet:
                 print('matching ...', n, end='\r')
 
             cdbg_id = self.get_cdbg_id(hashval)
@@ -58,7 +58,7 @@ class MPHF_KmerIndex(object):
                 match_counts[cdbg_id] = match_counts.get(cdbg_id, 0) + 1
                 n_matched += 1
 
-        if n:
+        if n and not quiet:
             print('... found {} matches to {} k-mers total.'.format(n_matched,
                                                                     n + 1))
 
