@@ -36,7 +36,7 @@ def main(argv):
 
     with open(args.output, 'wt') as fp:
         w = csv.writer(fp)
-        w.writerow(["filename", "record_name", "catlas_base", "cdbg_file"])
+        w.writerow(["filename", "record_name", "catlas_base", "cdbg_file", "prospective_reads_file"])
 
         filenum = 0
         for (filename, record_name), cdbg_ids in records_to_cdbg.items():
@@ -44,10 +44,13 @@ def main(argv):
                 continue
             cdbg_file = f'record{filenum}-nbhd.cdbg_ids.txt.gz'
             cdbg_file = os.path.join(os.path.dirname(args.output), cdbg_file)
+            
+            reads_file = f'record{filenum}-nbhd.reads.fa.gz'
+            reads_file = os.path.join(os.path.dirname(args.output), reads_file)
             with gzip.open(cdbg_file, 'wt') as outfp:
                 outfp.write("\n".join([ str(i) for i in cdbg_ids ]))
 
-            w.writerow([filename, record_name, catlas_base, cdbg_file])
+            w.writerow([filename, record_name, catlas_base, cdbg_file, reads_file])
 
             filenum += 1
 

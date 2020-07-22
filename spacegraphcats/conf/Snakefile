@@ -421,3 +421,15 @@ rule build_cdbg_list_by_record:
         {python} -m spacegraphcats.search.extract_cdbg_by_multifasta \
             --multi-idx {input} --output {output}
     """
+
+# get reads for a single multifasta record
+rule extract_reads_single_file_multifasta:
+    input:
+        expand("{catlas_base}/{catlas_base}.reads.bgz", catlas_base=catlas_base),
+        expand("{catlas_dir}/reads.bgz.labels", catlas_dir=catlas_dir),
+        expand("{catlas_dir}_multifasta/{{queryname}}.cdbg_ids.txt.gz", catlas_dir=catlas_dir),
+        expand("{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv", catlas_dir=catlas_dir)
+    output:
+        expand("{catlas_dir}_multifasta/{{queryname}}.reads.fa.gz", catlas_dir=catlas_dir)
+    shell:
+        "{python} -m spacegraphcats.search.extract_reads {input[0]} {input[1]} {input[2]} -o {output}"
