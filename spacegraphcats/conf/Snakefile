@@ -19,7 +19,7 @@ def fix_relative_input_paths(filenames):
     abs_filenames = []
     for filename in filenames:
         if not filename.startswith('/'):
-            print('...updating input file {} with prefix {}'.format(filename, startdir))
+            print('...sgc is updating input file {} with ourdir prefix {}'.format(filename, startdir))
             filename = os.path.join(startdir, filename)
         abs_filenames.append(filename)
     return abs_filenames
@@ -72,6 +72,11 @@ hashval_queries = ''
 if config.get('hashval_queries', ''):
     filename = config.get('hashval_queries', '')
     hashval_queries = fix_relative_input_paths([filename])[0]
+
+multifasta_query_seqs = config.get('multifasta_reference', ['** does not exist **'])
+multifasta_query_seqs = fix_relative_input_paths(multifasta_query_seqs)
+multifasta_query_sig = config.get('multifasta_query_sig', '** does not exist **')
+multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
 
 ### build some variables for internal use
 
@@ -366,6 +371,11 @@ rule extract_by_shadow_ratio_rule:
 
 ### query by signature => gene
 
+rule multifasta_query:
+    input:
+        expand("{catlas_dir}_multifasta/query-results.csv", catlas_dir=catlas_dir),
+        expand("{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv", catlas_dir=catlas_dir)
+
 rule build_multifasta_hashval_index:
     input:
         expand("{catlas_dir}/contigs.fa.gz", catlas_dir=catlas_dir)
@@ -379,9 +389,9 @@ rule build_multifasta_hashval_index:
             -k {params.ksize} --scaled {params.scaled} {input[0]} {output}
     """
 
-rule build_index:
+rule build_multifasta_index:
     input:
-        queries = config.get('multifasta_reference', '** does not exist **'),
+        queries = multifasta_query_seqs,
         doms = expand("{catlas_dir}/first_doms.txt", catlas_dir=catlas_dir),
         catlas = expand("{catlas_dir}/catlas.csv", catlas_dir=catlas_dir),
         mphf = expand("{catlas_dir}/contigs.fa.gz.mphf", catlas_dir=catlas_dir),
@@ -397,7 +407,7 @@ rule query_multifasta_by_signature:
     input:
         hashvals = expand("{catlas_dir}_multifasta/hashval.pickle", catlas_dir=catlas_dir),
         multi_idx = expand("{catlas_dir}_multifasta/multifasta.pickle", catlas_dir=catlas_dir),
-        query_sig = config.get('multifasta_query_sig', '** does not exist **')
+        query_sig = multifasta_query_sig
     output:
         expand("{catlas_dir}_multifasta/query-results.csv", catlas_dir=catlas_dir)
     params:
