@@ -409,3 +409,15 @@ rule query_multifasta_by_signature:
             --query-sig {input.query_sig} --output {output} \
             -k {params.ksize} --scaled {params.scaled}
     """
+
+# this rule also creates a bunch of files named record{n}-nbhd.cdbg_ids.txt.gz
+# see rule extract_reads_single_hashval_file for how to get the reads.
+rule build_cdbg_list_by_record:
+    input:
+        expand("{catlas_dir}_multifasta/multifasta.pickle", catlas_dir=catlas_dir)
+    output:
+        expand("{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv", catlas_dir=catlas_dir)
+    shell: """
+        {python} -m spacegraphcats.search.extract_cdbg_by_multifasta \
+            --multi-idx {input} --output {output}
+    """
