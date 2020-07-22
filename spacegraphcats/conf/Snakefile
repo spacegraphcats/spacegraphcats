@@ -3,6 +3,7 @@
 #
 # Quickstart: `spacegraphcats dory-test searchquick`
 #
+import sys
 from os.path import join
 
 ## pull values in from config file / command line:
@@ -19,7 +20,7 @@ def fix_relative_input_paths(filenames):
     abs_filenames = []
     for filename in filenames:
         if not filename.startswith('/'):
-            print('...sgc is updating input file {} with ourdir prefix {}'.format(filename, startdir))
+            print('...sgc is updating input file {} with outdir prefix {}'.format(filename, startdir))
             filename = os.path.join(startdir, filename)
         abs_filenames.append(filename)
     return abs_filenames
@@ -74,6 +75,10 @@ if config.get('hashval_queries', ''):
     hashval_queries = fix_relative_input_paths([filename])[0]
 
 multifasta_query_seqs = config.get('multifasta_reference', ['** does not exist **'])
+if not isinstance(multifasta_query_seqs, list):
+     print('ERROR: multifasta_reference must be a YAML list.')
+     sys.exit(-1)
+
 multifasta_query_seqs = fix_relative_input_paths(multifasta_query_seqs)
 multifasta_query_sig = config.get('multifasta_query_sig', '** does not exist **')
 multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
