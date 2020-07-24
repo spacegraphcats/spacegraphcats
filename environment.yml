@@ -4,7 +4,7 @@ channels:
     - bioconda
     - defaults
 dependencies:
-    - bcalm=2.2.1
+    - bcalm=2.2.3
     - snakemake-minimal=5.8.1
     - cython=0.29.14
     - screed=1.0.1
