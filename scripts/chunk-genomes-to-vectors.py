@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 import screed
 import argparse
-import sourmash_lib
+import sourmash
 import numpy
 from itertools import product
-from sourmash_lib._minhash import hash_murmur
+from sourmash._minhash import hash_murmur
 from pickle import dump
 import pickle
 
@@ -35,12 +35,12 @@ def main():
         genome_n += 1
         for record in screed.open(genome):
             for start in range(0, len(record.sequence), SIZE):
-                mh = sourmash_lib.MinHash(n=0, ksize=args.ksize,
+                mh = sourmash.MinHash(n=0, ksize=args.ksize,
                                           scaled=1, track_abundance=1)
                 mh.add_sequence(record.sequence[start:start+SIZE], True)
                 group_info[n] = mh
                 
-                mh = sourmash_lib.MinHash(n=0, ksize=31, scaled=1000)
+                mh = sourmash.MinHash(n=0, ksize=31, scaled=1000)
                 mh.add_sequence(record.sequence[start:start+SIZE], True)
                 group_ident[n] = mh
 

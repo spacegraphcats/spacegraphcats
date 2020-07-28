@@ -10,7 +10,7 @@ import os
 import sys
 import collections
 import math
-import sourmash_lib
+import sourmash
 import khmer
 import csv
 
@@ -141,7 +141,7 @@ def main(args=sys.argv[1:]):
     contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
 
     # track results as signature
-    contigs_mh = sourmash_lib.MinHash(n=0, ksize=args.ksize, scaled=1000)
+    contigs_mh = sourmash.MinHash(n=0, ksize=args.ksize, scaled=1000)
 
     total_bp = 0
     total_seqs = 0
@@ -174,8 +174,8 @@ def main(args=sys.argv[1:]):
 
     print('writing sig to {}'.format(args.output + '.sig'))
     with open(args.output + '.sig', 'wt') as fp:
-        ss = sourmash_lib.SourmashSignature(contigs_mh)
-        sourmash_lib.save_signatures([ss], fp)
+        ss = sourmash.SourmashSignature(contigs_mh)
+        sourmash.save_signatures([ss], fp)
 
 
 

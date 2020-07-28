@@ -8,7 +8,6 @@ import os
 import sys
 import collections
 import math
-import sourmash_lib
 import khmer
 import csv
 

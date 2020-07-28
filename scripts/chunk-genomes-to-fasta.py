@@ -1,10 +1,9 @@
 #! /usr/bin/env python
 import screed
 import argparse
-import sourmash_lib
 import numpy
 from itertools import product
-from sourmash_lib._minhash import hash_murmur
+from sourmash._minhash import hash_murmur
 from pickle import dump
 import pickle
 

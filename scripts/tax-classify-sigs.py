@@ -5,11 +5,11 @@ Calculate the "taxonomic purity" of search results from extract_by_query.
 import sys
 import screed
 import argparse
-import sourmash_lib
+import sourmash
 import numpy
 from itertools import product
-from sourmash_lib._minhash import hash_murmur
-from sourmash_lib.lca import lca_utils
+from sourmash._minhash import hash_murmur
+from sourmash.lca import lca_utils
 from pickle import dump
 import pickle
 from tax_classify_utils import summarize_taxonomic_purity
@@ -24,7 +24,7 @@ def main():
 
     minhashes = []
     for filename in args.sigs:
-        ss = sourmash_lib.load_one_signature(filename)
+        ss = sourmash.load_one_signature(filename)
         minhashes.append(ss.minhash)
 
     # load the LCA database
