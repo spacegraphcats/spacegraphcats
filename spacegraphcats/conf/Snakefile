@@ -429,12 +429,14 @@ rule query_multifasta_by_signature:
 # see rule extract_reads_single_hashval_file for how to get the reads.
 rule build_cdbg_list_by_record:
     input:
-        expand("{catlas_dir}_multifasta/multifasta.pickle", catlas_dir=catlas_dir)
+        multi_idx = expand("{catlas_dir}_multifasta/multifasta.pickle", catlas_dir=catlas_dir),
+        info_csv = join(catlas_dir, "contigs.fa.gz.info.csv")
     output:
         expand("{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv", catlas_dir=catlas_dir)
     shell: """
         {python} -m spacegraphcats.search.extract_cdbg_by_multifasta \
-            --multi-idx {input} --output {output}
+            --multi-idx {input.multi_idx} --output {output} \
+            --info-csv {input.info_csv}
     """
 
 # get reads for a single multifasta record
