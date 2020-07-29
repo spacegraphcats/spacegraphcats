@@ -54,6 +54,7 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 	python -m spacegraphcats dory-test search
 	python -m spacegraphcats dory-test extract_reads
 	python -m spacegraphcats dory-test extract_contigs
+	python -m spacegraphcats dory-test multifasta_query
 
 #twofoo/bcalm.twofoo.k31.unitigs.fa:
 #	mkdir -p twofoo
