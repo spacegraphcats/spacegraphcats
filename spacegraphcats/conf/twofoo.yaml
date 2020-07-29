@@ -15,6 +15,6 @@ hashval_ksize: 51
 hashval_queries: data/twofoo-k51-hashval-queries.txt
 
 multifasta_reference:
-- GCF_000021665.1_ASM2166v1_cds_from_genomic.fna
+- data/twofoo-genes.fa.gz
 multifasta_scaled: 1000
 multifasta_query_sig: data/63-os223.sig
