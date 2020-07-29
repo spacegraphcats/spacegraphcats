@@ -403,9 +403,11 @@ rule build_multifasta_index:
         indices = expand("{catlas_dir}/contigs.fa.gz.indices", catlas_dir=catlas_dir)
     output:
         expand("{catlas_dir}_multifasta/multifasta.pickle", catlas_dir=catlas_dir)
+    params:
+        ksize = ksize,
     shell: """
         {python} -m spacegraphcats.search.index_cdbg_by_multifasta \
-             {catlas_dir} {output} --query {input.queries}
+             {catlas_dir} {output} --query {input.queries} -k {params.ksize}
     """
 
 rule query_multifasta_by_signature:

@@ -12,3 +12,9 @@ searchquick:
 
 hashval_ksize: 31
 hashval_queries: data/dory-k31-hashval-queries.txt
+
+
+multifasta_reference:
+- data/dory-head.fa
+multifasta_scaled: 100
+multifasta_query_sig: data/dory-subset.fq.sig
