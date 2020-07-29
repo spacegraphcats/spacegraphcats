@@ -1,5 +1,5 @@
 import collections
-from sourmash_lib.lca import lca_utils
+from sourmash.lca import lca_utils
 
 taxonomy_levels = ['superkingdom', 'phylum', 'class', 'order', 'family',
                    'genus', 'species', 'strain']

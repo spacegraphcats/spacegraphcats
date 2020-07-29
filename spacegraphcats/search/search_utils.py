@@ -6,7 +6,7 @@ import sqlite3
 import numpy
 from screed.screedRecord import Record
 from screed.utils import to_str
-from sourmash_lib import MinHash
+from sourmash import MinHash
 
 import bbhash
 

@@ -22,6 +22,10 @@ from spacegraphcats.cdbg import label_cdbg
 from spacegraphcats.search import extract_reads
 from spacegraphcats.cdbg import index_cdbg_by_minhash
 from spacegraphcats.search import query_by_hashval
+from spacegraphcats.search import index_cdbg_by_multifasta
+from spacegraphcats.cdbg import index_cdbg_by_minhash
+from spacegraphcats.search import query_multifasta_by_sig
+from spacegraphcats.search import extract_cdbg_by_multifasta
 
 def copy_dory_catlas():
     testdata = pkg_file('search/test-data/catlas.dory_k21_r1')
@@ -41,6 +45,10 @@ def copy_dory_subset():
 
     testdata = relative_file('data/dory-subset.fq')
     shutil.copyfile(testdata, 'dory-subset.fq')
+
+def copy_dory_sig():
+    testdata = relative_file('data/dory-subset.fq.sig')
+    shutil.copyfile(testdata, 'dory-subset.fq.sig')
 
 ### actual tests
 
@@ -323,6 +331,34 @@ def test_dory_query_by_hashval(location):
     args = '-k 31 dory_k21_r1 dory_k21_r1_mh.pickle dory-k31-hashval-queries.txt dory_k21_r1_hashval_k31'
     query_by_hashval.main(args.split())
     assert os.path.exists('dory_k21_r1_hashval_k31/hashval_results.csv')
+
+
+@pytest_utils.in_tempdir
+def test_dory_multifasta_query(location):
+    copy_dory_head()
+    copy_dory_catlas()
+    copy_dory_sig()
+
+    # make k-mer search index - FIXTURE
+    args = '-k 21 dory_k21_r1'.split()
+    index_contigs_by_kmer.main(args)
+
+    # index by multifasta
+    os.mkdir('dory_k21_r1_multifasta')
+    args = 'dory_k21_r1 dory_k21_r1_multifasta/multifasta.pickle --query dory-head.fa -k 21'
+    index_cdbg_by_multifasta.main(args.split())
+
+    args = '-k 21 --scaled 100 dory_k21_r1/contigs.fa.gz dory_k21_r1_multifasta/hashval.pickle'
+    index_cdbg_by_minhash.main(args.split())
+
+    args = '--hashvals dory_k21_r1_multifasta/hashval.pickle --multi-idx dory_k21_r1_multifasta/multifasta.pickle  --query-sig dory-subset.fq.sig --output dory_k21_r1_multifasta/query-results.csv -k 21 --scaled 100'
+    query_multifasta_by_sig.main(args.split())
+
+    args = '--multi-idx dory_k21_r1_multifasta/multifasta.pickle --output dory_k21_r1_multifasta/multifasta.cdbg_by_record.csv --info-csv dory_k21_r1/contigs.fa.gz.info.csv'
+    extract_cdbg_by_multifasta.main(args.split())
+
+    assert os.path.exists('dory_k21_r1_multifasta/multifasta.cdbg_by_record.csv')
+    assert os.path.exists('dory_k21_r1_multifasta/query-results.csv')
 
 
 @pytest_utils.in_tempdir

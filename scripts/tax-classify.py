@@ -5,11 +5,11 @@ Calculate the "taxonomic purity" of bins built by characterize_catlas_regions.
 import sys
 import screed
 import argparse
-import sourmash_lib
+import sourmash
 import numpy
 from itertools import product
-from sourmash_lib._minhash import hash_murmur
-from sourmash_lib.lca import lca_utils
+from sourmash._minhash import hash_murmur
+from sourmash.lca import lca_utils
 from pickle import dump
 import pickle
 import collections

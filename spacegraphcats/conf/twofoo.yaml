@@ -13,3 +13,8 @@ shadow_ratio_maxsize: 1000
 
 hashval_ksize: 51
 hashval_queries: data/twofoo-k51-hashval-queries.txt
+
+multifasta_reference:
+- data/twofoo-genes.fa.gz
+multifasta_scaled: 1000
+multifasta_query_sig: data/63-os223.sig

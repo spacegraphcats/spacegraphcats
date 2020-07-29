@@ -7,7 +7,6 @@ abundances of kmers within the subtrees.
 import argparse
 import os
 import sys
-import sourmash_lib
 import gzip
 
 import screed

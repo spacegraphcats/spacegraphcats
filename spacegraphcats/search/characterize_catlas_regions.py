@@ -7,8 +7,8 @@ abundances of kmers within the subtrees.
 import argparse
 import os
 import sys
-import sourmash_lib
-from sourmash_lib._minhash import hash_murmur
+import sourmash
+from sourmash._minhash import hash_murmur
 import numpy
 import pickle
 
@@ -142,10 +142,10 @@ def main(args=sys.argv[1:]):
     group_info = {}
     group_ident = {}
     for n in nodes:
-        group_info[n] = sourmash_lib.MinHash(n=0, ksize=args.ksize,
-                                             scaled=1, track_abundance=1)
-        group_ident[n] = sourmash_lib.MinHash(n=0, ksize=31,
-                                              scaled=args.scaled)
+        group_info[n] = sourmash.MinHash(n=0, ksize=args.ksize,
+                                         scaled=1, track_abundance=1)
+        group_ident[n] = sourmash.MinHash(n=0, ksize=31,
+                                          scaled=args.scaled)
 
     # aaaaaand iterate over contigs, collecting abundances from all contigs
     # in a group.

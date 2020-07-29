@@ -54,6 +54,7 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 	python -m spacegraphcats dory-test search
 	python -m spacegraphcats dory-test extract_reads
 	python -m spacegraphcats dory-test extract_contigs
+	python -m spacegraphcats dory-test multifasta_query
 
 #twofoo/bcalm.twofoo.k31.unitigs.fa:
 #	mkdir -p twofoo
@@ -65,4 +66,7 @@ twofoo-test: twofoo.fq.gz # twofoo/bcalm.twofoo.k31.unitigs.fa
 	python -m spacegraphcats twofoo hashval_query
 	python -m spacegraphcats twofoo extract_reads_for_hashvals
 	python -m spacegraphcats.search.characterize_catlas_regions twofoo_k31_r1 twofoo_k31_r1.vec
+	python -m spacegraphcats twofoo multifasta_query
+
+
 

@@ -2,7 +2,6 @@
 import numpy
 import pickle
 import itertools
-import sourmash_lib
 import time
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
