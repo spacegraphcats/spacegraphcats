@@ -19,7 +19,7 @@ def get_package_configfile(filename):
 
 
 def run_snakemake(configfile, no_use_conda=False, verbose=False,
-                  snakefile_name='Snakefile', extra_args=[]):
+                  snakefile_name='Snakefile', outdir=None, extra_args=[]):
     # find the Snakefile relative to package path
     snakefile = get_snakefile_path(snakefile_name)
 
@@ -29,6 +29,10 @@ def run_snakemake(configfile, no_use_conda=False, verbose=False,
     # add --use-conda
     if not no_use_conda:
         cmd += ["--use-conda"]
+
+    # add --outdir
+    if outdir:
+        cmd += ["--config", f"outdir={outdir}"]
 
     # snakemake sometimes seems to want a default -j; set it to 1 for now.
     # can overridden later on command line.
@@ -65,12 +69,13 @@ def cli():
 @click.argument('configfile')
 @click.option('--no-use-conda', is_flag=True, default=False)
 @click.option('--verbose', is_flag=True)
+@click.option('--outdir', nargs=1)
 @click.argument('snakemake_args', nargs=-1)
-def run(configfile, snakemake_args, no_use_conda, verbose):
+def run(configfile, snakemake_args, no_use_conda, verbose, outdir):
     "execute spacegraphcats workflow (using snakemake underneath)"
     run_snakemake(configfile, snakefile_name='Snakefile',
                   no_use_conda=no_use_conda, verbose=verbose,
-                  extra_args=snakemake_args)
+                  extra_args=snakemake_args, outdir=outdir)
 
 # 'check' command
 @click.command()
