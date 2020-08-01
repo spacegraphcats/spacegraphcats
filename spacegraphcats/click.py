@@ -55,6 +55,8 @@ def run_snakemake(configfile, no_use_conda=False, verbose=False,
         print(f'Error in snakemake invocation: {e}', file=sys.stderr)
         return e.returncode
 
+    return 0
+
 #
 # actual command line functions
 #
