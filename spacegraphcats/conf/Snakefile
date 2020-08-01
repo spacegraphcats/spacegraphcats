@@ -104,6 +104,21 @@ onsuccess:
 
 ###############################################################################
 
+# print out the configuration
+rule showconf:
+    run:
+        import yaml
+        print('# full aggregated configuration:')
+        print(yaml.dump(config).strip())
+        print('# END')
+
+# check config files only
+rule check:
+     run:
+        pass
+
+###
+
 ### rules!
 
 # build catlas needed for search
