@@ -171,7 +171,33 @@ def init(configfile, force):
     with open(configfile, 'wt') as fp:
         fp.write(\
 f"""\
-#(config file goes here :)
+# basic configuration:
+catlas_base: twofoo
+input_sequences:
+- twofoo.fq.gz
+ksize: 31
+radius: 1
+search:
+- data/2.fa.gz
+- data/47.fa.gz
+- data/63.fa.gz
+searchquick:
+- data/2.fa.gz
+
+## advanced features
+# multifasta query
+multifasta_query_sig: data/63-os223.sig
+multifasta_reference:
+- data/twofoo-genes.fa.gz
+multifasta_scaled: 1000
+
+# hashval queries
+hashval_ksize: 51
+hashval_queries: data/twofoo-k51-hashval-queries.txt
+
+# shadow ratio foo
+shadow_ratio_maxsize: 1000
+# END
 """)
 
 cli.add_command(run)
