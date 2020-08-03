@@ -98,7 +98,7 @@ onsuccess:
     if os.path.exists(catlas_dir):
         print(f'catlas output directory: {catlas_dir}', file=sys.stderr)
         if os.path.exists(search_dir):
-            print('search output directory: {search_dir}', file=sys.stderr)
+            print(f'search output directory: {search_dir}', file=sys.stderr)
         print('')
 
 

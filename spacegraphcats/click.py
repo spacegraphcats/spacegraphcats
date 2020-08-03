@@ -98,6 +98,32 @@ def run(configfile, snakemake_args, no_use_conda, verbose, outdir):
                   no_use_conda=no_use_conda, verbose=verbose,
                   extra_args=snakemake_args, outdir=outdir)
 
+# build command -- run the snakemake target build.
+@click.command(context_settings={"ignore_unknown_options": True})
+@click.argument('configfile')
+@click.option('--no-use-conda', is_flag=True, default=False)
+@click.option('--verbose', is_flag=True)
+@click.option('--outdir', nargs=1)
+@click.argument('snakemake_args', nargs=-1)
+def build(configfile, snakemake_args, no_use_conda, verbose, outdir):
+    "build spacegraphcats indices"
+    run_snakemake(configfile, snakefile_name='Snakefile',
+                  no_use_conda=no_use_conda, verbose=verbose,
+                  extra_args=['build'] + list(snakemake_args), outdir=outdir)
+
+# search command -- run the snakemake target search.
+@click.command(context_settings={"ignore_unknown_options": True})
+@click.argument('configfile')
+@click.option('--no-use-conda', is_flag=True, default=False)
+@click.option('--verbose', is_flag=True)
+@click.option('--outdir', nargs=1)
+@click.argument('snakemake_args', nargs=-1)
+def search(configfile, snakemake_args, no_use_conda, verbose, outdir):
+    "search spacegraphcats indices with a query"
+    run_snakemake(configfile, snakefile_name='Snakefile',
+                  no_use_conda=no_use_conda, verbose=verbose,
+                  extra_args=['search'] + list(snakemake_args), outdir=outdir)
+
 # 'check' command
 @click.command()
 @click.argument('configfile')
@@ -149,6 +175,8 @@ f"""\
 """)
 
 cli.add_command(run)
+cli.add_command(build)
+cli.add_command(search)
 cli.add_command(check)
 cli.add_command(showconf)
 cli.add_command(info)
