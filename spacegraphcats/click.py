@@ -109,7 +109,7 @@ def check(configfile):
 @click.command()
 @click.argument('configfile')
 def showconf(configfile):
-    "show full configuration across default, system and project config files"
+    "show full configuration"
     run_snakemake(configfile, extra_args=['showconf'])
 
 # 'info' command

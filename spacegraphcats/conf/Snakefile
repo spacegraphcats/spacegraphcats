@@ -20,7 +20,7 @@ def fix_relative_input_paths(filenames):
     abs_filenames = []
     for filename in filenames:
         if not filename.startswith('/'):
-            print('...sgc is updating input file {} with outdir prefix {}'.format(filename, startdir))
+            print('...sgc is updating input file {} with outdir prefix {}'.format(filename, startdir), file=sys.stderr)
             filename = os.path.join(startdir, filename)
         abs_filenames.append(filename)
     return abs_filenames
@@ -94,11 +94,11 @@ python=sys.executable  # define as the version of Python running snakemake
 
 onsuccess:
     import os
-    print('\n-------- DONE --------\n')
+    print('\n-------- DONE --------\n', file=sys.stderr)
     if os.path.exists(catlas_dir):
-        print('catlas output directory: {}'.format(catlas_dir)) # @@
+        print(f'catlas output directory: {catlas_dir}', file=sys.stderr)
         if os.path.exists(search_dir):
-            print('search output directory: {}'.format(search_dir))
+            print('search output directory: {search_dir}', file=sys.stderr)
         print('')
 
 
@@ -108,7 +108,7 @@ onsuccess:
 rule showconf:
     run:
         import yaml
-        print('# full aggregated configuration:')
+        print('# full configuration:')
         print(yaml.dump(config).strip())
         print('# END')
 
