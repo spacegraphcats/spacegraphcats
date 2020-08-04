@@ -67,6 +67,3 @@ twofoo-test: twofoo.fq.gz # twofoo/bcalm.twofoo.k31.unitigs.fa
 	python -m spacegraphcats twofoo extract_reads_for_hashvals
 	python -m spacegraphcats.search.characterize_catlas_regions twofoo_k31_r1 twofoo_k31_r1.vec
 	python -m spacegraphcats twofoo multifasta_query
-
-
-
