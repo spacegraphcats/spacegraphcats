@@ -125,11 +125,16 @@ This should run in a few seconds, and you should see something like this in the 
 
 ```
 ...
-query inclusion by retrieved contigs: 100.000%
-query similarity to retrieved contigs: 100.000%
-total time: 0.0s
+=> containment: 0.0%
+[Fri Aug 14 07:53:04 2020]
 Finished job 0.
-6 of 6 steps (100%) done
+4 of 4 steps (100%) done
+Complete log: /Users/t/dev/spacegraphcats/.snakemake/log/2020-08-14T075302.093387.snakemake.log
+
+-------- DONE --------
+
+catlas output directory: dory_k21_r1
+search output directory: dory_k21_r1_search_oh0
 ```
 
 You will have a bunch of new output files:
