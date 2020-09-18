@@ -36,7 +36,7 @@ conda activate sgc
 
 and voila, done!
 
-## 2. Installing dependencies in a virtual environment
+### 2. Installing dependencies in a virtual environment
 
 If you already have a functioning Python >= 3.5 along with a C/C++
 development environment, you can install the dependencies in a
@@ -72,7 +72,7 @@ pip install -r requirements.txt
 
 This will take a few minutes.
 
-## 3. Installing dependencies on a blank Ubuntu machine
+### 3. Installing dependencies on a blank Ubuntu machine
 
 If you're starting e.g. on a blank AWS instance such as
 ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20180126
