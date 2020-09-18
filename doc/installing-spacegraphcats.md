@@ -124,6 +124,12 @@ In the `spacegraphcats/` top level directory (containing e.g. `README.md`),
 run:
 
 ```
+pip install -e .
+```
+
+This installs the spacegraphcats project in developer mode, so that the installed package points at this directory and changes in this directory are available in the virtual environment.
+
+```
 python -m spacegraphcats dory-test search
 ```
 
