@@ -12,7 +12,7 @@ environment or a blank Ubuntu machine as well.
 ### 1. Installing dependencies using conda
 
 If you have [conda](https://docs.conda.io/en/latest/) installed, you can
-use packages from conda-forge and [bioconda](https://docs.conda.io/en/latest/)
+use packages from conda-forge and [bioconda](https://bioconda.github.io/)
 to install all the dependencies for spacegraphcats.
 
 Start by cloning the spacegraphcats repository:
