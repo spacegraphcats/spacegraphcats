@@ -42,7 +42,13 @@ If you already have a functioning Python >= 3.5 along with a C/C++
 development environment, you can install the dependencies in a
 venv.
 
-Change to a working directory, and create a virtualenv:
+Install virtualenv if you have not done so:
+
+```
+pip install virtualenv
+```
+
+Change to a working directory, and create a virtualenv (replace `python3.5` with your Python version):
 
 ```
 python -m virtualenv -p python3.5 catsenv
