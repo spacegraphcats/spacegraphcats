@@ -12,7 +12,7 @@ environment or a blank Ubuntu machine as well.
 ### 1. Installing dependencies using conda
 
 If you have [conda](https://docs.conda.io/en/latest/) installed, you can
-use packages from conda-forge and [bioconda](https://docs.conda.io/en/latest/)
+use packages from conda-forge and [bioconda](https://bioconda.github.io/)
 to install all the dependencies for spacegraphcats.
 
 Start by cloning the spacegraphcats repository:
@@ -41,13 +41,19 @@ pip install -e ./spacegraphcats/
 
 and voila, done!
 
-## 2. Installing dependencies in a virtual environment
+### 2. Installing dependencies in a virtual environment
 
 If you already have a functioning Python >= 3.7 along with a C/C++
 development environment, you can install the dependencies in a
 venv.
 
-Change to a working directory, and create a virtualenv:
+Install virtualenv if you have not done so:
+
+```
+pip install virtualenv
+```
+
+Change to a working directory, and create a virtualenv (replace `python3.5` with your Python version):
 
 ```
 python -m virtualenv -p python3.7 catsenv
@@ -80,10 +86,10 @@ This will take a few minutes.
 Finally, install the git repo in developer mode:
 
 ```
-pip install -e ./spacegraphcats/
+pip install -e .
 ```
 
-## 3. Installing dependencies on a blank Ubuntu machine
+### 3. Installing dependencies on a blank Ubuntu machine
 
 If you're starting e.g. on a blank AWS instance such as
 ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20180126
@@ -134,6 +140,12 @@ pip install -e ./spacegraphcats/
 
 In the `spacegraphcats/` top level directory (containing e.g. `README.md`),
 run:
+
+```
+pip install -e .
+```
+
+This installs the spacegraphcats project in developer mode, so that the installed package points at this directory and changes in this directory are available in the virtual environment.
 
 ```
 python -m spacegraphcats run dory-test search
