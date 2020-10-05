@@ -14,7 +14,7 @@ class MPHF_KmerIndex(object):
         self.cdbg_sizes = cdbg_sizes
 
     def get_cdbg_size(self, cdbg_id):
-        return self.cdbg_sizes[cdbg_id]
+        return self.cdbg_sizes[int(cdbg_id)]
 
     def get_cdbg_id(self, kmer_hash):
         mphf_hash = self.mphf.lookup(kmer_hash)
@@ -50,7 +50,7 @@ class MPHF_KmerIndex(object):
         n_matched = 0
         n = 0
         for n, hashval in enumerate(query_kmers):
-            if n % 1000000 == 0:
+            if n and n % 1000000 == 0:
                 print('matching ...', n, end='\r')
 
             cdbg_id = self.get_cdbg_id(hashval)
