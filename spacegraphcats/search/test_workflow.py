@@ -8,7 +8,7 @@ import spacegraphcats.utils.pytest_utils as pytest_utils
 from spacegraphcats.utils.pytest_utils import (pkg_file, relative_file)
 
 from spacegraphcats.catlas import catlas
-from spacegraphcats.index import index_contigs_by_kmer
+from spacegraphcats.cdbg import index_contigs_by_kmer
 from spacegraphcats.search import query_by_sequence
 from spacegraphcats.search import characterize_catlas_regions
 from spacegraphcats.search import extract_unassembled_nodes

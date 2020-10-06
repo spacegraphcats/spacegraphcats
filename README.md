@@ -60,7 +60,7 @@ BCALM cDBGs is in function `contract_degree_two` in
 
 Part of the `indexPieces` code for indexing cDBG nodes by dominating
 nodes is
-[index/index_contigs_by_kmer.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/spacegraphcats/index/index_contigs_by_kmer.py). The
+[cdbg/index_contigs_by_kmer.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/spacegraphcats/cdbg/index_contigs_by_kmer.py). The
 remainder is implemented in `search`, below.
 
 The `search` code for extracting query neighborhoods is in
