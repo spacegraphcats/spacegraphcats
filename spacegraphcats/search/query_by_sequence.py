@@ -123,7 +123,7 @@ class QueryOutput:
         response_curve_filename = os.path.basename(q_name) + '.response.txt'
         response_curve_filename = os.path.join(outdir,
                                                response_curve_filename)
-        cdbg_match_counts = self.query.cdbg_match_counts[self.catlas.name]
+        cdbg_match_counts = self.query.cdbg_match_counts
         search_utils.output_response_curve(response_curve_filename,
                                            cdbg_match_counts,
                                            self.kmer_idx,
@@ -160,29 +160,27 @@ class Query:
 
         notify('got {} k-mers from query', len(self.kmers))
 
-        self.cdbg_match_counts = {}
-        self.catlas_match_counts = {}
+        self.cdbg_match_counts = None
+        self.catlas_match_counts = None
 
     def execute(self, catlas, kmer_idx):
-        cat_id = catlas.name
-
         # construct dict cdbg_id -> # of query k-mers
-        self.cdbg_match_counts[cat_id] = kmer_idx.get_match_counts(self.kmers)
-        for k, v in self.cdbg_match_counts[cat_id].items():
+        self.cdbg_match_counts = kmer_idx.get_match_counts(self.kmers)
+        for k, v in self.cdbg_match_counts.items():
             assert v <= kmer_idx.get_cdbg_size(k), k
 
         # calculate the cDBG matching k-mers sizes for each catlas node.
-        self.catlas_match_counts[cat_id] =\
-            kmer_idx.build_catlas_match_counts(self.cdbg_match_counts[cat_id],
+        self.catlas_match_counts =\
+            kmer_idx.build_catlas_match_counts(self.cdbg_match_counts,
                                                catlas)
 
-        if self.debug and self.catlas_match_counts[cat_id]:
+        if self.debug and self.catlas_match_counts:
             # check a few things - we've propagated properly:
-            assert sum(self.cdbg_match_counts[cat_id].values()) ==\
-                self.catlas_match_counts[cat_id][catlas.root]
+            assert sum(self.cdbg_match_counts.values()) ==\
+                self.catlas_match_counts[catlas.root]
 
             # ...and all nodes have no more matches than total k-mers.
-            for v, match_amount in self.catlas_match_counts[cat_id].items():
+            for v, match_amount in self.catlas_match_counts.items():
                 assert match_amount <= catlas.index_sizes[v], v
 
             # calculate best possible.
@@ -191,7 +189,7 @@ class Query:
         # gather domset nodes matching query k-mers
         cdbg_shadow = set()
         leaves = set()
-        for cdbg_node in self.cdbg_match_counts[cat_id]:
+        for cdbg_node in self.cdbg_match_counts:
             cdbg_shadow.add(cdbg_node)
             leaves.add(catlas.cdbg_to_layer1[cdbg_node])
 
@@ -205,8 +203,8 @@ class Query:
         output of this query."""
         root = catlas.root
 
-        cdbg_match_counts = self.cdbg_match_counts[catlas.name]
-        catlas_match_counts = self.catlas_match_counts[catlas.name]
+        cdbg_match_counts = self.cdbg_match_counts
+        catlas_match_counts = self.catlas_match_counts
         total_match_kmers = sum(cdbg_match_counts.values())
         best_containment = total_match_kmers / len(self.kmers)
         notify('=> containment: {:.1f}%', best_containment * 100)
