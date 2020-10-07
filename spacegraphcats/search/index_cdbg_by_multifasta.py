@@ -15,7 +15,7 @@ from sourmash import MinHash
 
 from ..utils.logging import notify, error, debug
 from . import search_utils
-from .index import MPHF_KmerIndex
+from . import MPHF_KmerIndex
 from .catlas import CAtlas
 
 
