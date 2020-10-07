@@ -29,7 +29,7 @@ You will have a bunch of new output files:
     * contigs.fa.gz - the unitigs from the cDBG
     * contigs.fa.gz.indices - a numpy savez file containing mapping arrays
     * contigs.fa.gz.info.csv - summary information about the cDBG unitigs
-    * contigs.fa.gz.mphf - Minimum Perfect Hash Function parameters for all of the k-mers in the cDBG
+    * contigs.fa.gz.mphf - Minimal Perfect Hash Function parameters for all of the k-mers in the cDBG
     * first_doms.txt - the dominating set information for the cDBG
     * catlas.csv - the catlas for the cDBG
     * commands.log - a partial log of all of the commands

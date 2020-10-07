@@ -7,7 +7,7 @@
     * contigs.fa.gz - a BGZF file containing the cDBG unitigs; produced by `bcalm_to_gxt.py`
     * contigs.fa.gz.info.csv - summary information about the cDBG unitigs; produced by `bcalm_to_gxt.py`
     * contigs.fa.gz.indices - a numpy savez file containing mapping arrays; produced by `index_contigs_by_kmer.py`
-    * contigs.fa.gz.mphf - Minimum Perfect Hash Function parameters for all of the k-mers in the cDBG; produced by `index_contigs_by_kmer.py`
+    * contigs.fa.gz.mphf - Minimal Perfect Hash Function parameters for all of the k-mers in the cDBG; produced by `index_contigs_by_kmer.py`
     * first_doms.txt - the dominating set information for the cDBG; produced by `spacegraphcats.catlas.catlas`
     * catlas.csv - the catlas for the cDBG; produced by `spacegraphcats.catlas.catlas`
     * commands.log - a partial log of all of the commands
