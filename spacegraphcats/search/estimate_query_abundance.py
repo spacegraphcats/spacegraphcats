@@ -11,7 +11,6 @@ import sys
 import gzip
 import khmer
 import collections
-import bbhash
 import numpy
 from collections import defaultdict
 

@@ -25,13 +25,13 @@ from .catlas import CAtlas
 
 
 class QueryOutput:
-    def __init__(self, query, catlas, kmer_idx, leaves, catlas_name):
+    def __init__(self, query, catlas, kmer_idx, doms, catlas_name):
         self.query = query
         self.catlas = catlas
         self.kmer_idx = kmer_idx
-        self.leaves = leaves
+        self.doms = doms
         # here is where we go from level 1/dominators to cdbg nodes.
-        self.shadow = self.catlas.shadow(leaves)
+        self.shadow = self.catlas.shadow(doms)
         self.total_bp = 0
         self.total_seq = 0
         self.query_sig = self.query.sig
@@ -116,7 +116,7 @@ class QueryOutput:
         # write out catlas nodes
         frontier_listname = os.path.basename(q_name) + '.frontier.txt.gz'
         with gzip.open(os.path.join(outdir, frontier_listname), 'wt') as fp:
-            for node in sorted(self.leaves):
+            for node in sorted(self.doms):
                 fp.write('{}\n'.format(node))
 
         # write response curve
@@ -169,7 +169,7 @@ class Query:
         for k, v in self.cdbg_match_counts.items():
             assert v <= kmer_idx.get_cdbg_size(k), k
 
-        # calculate the cDBG matching k-mers sizes for each catlas node.
+        # propogate the match counts to the dominators & the catlas
         self.catlas_match_counts =\
             kmer_idx.build_catlas_match_counts(self.cdbg_match_counts,
                                                catlas)
@@ -187,15 +187,17 @@ class Query:
             self.con_sim_upper_bounds(catlas, kmer_idx)
 
         # gather domset nodes matching query k-mers
-        cdbg_shadow = set()
-        leaves = set()
+        cdbg_nodes = set()
+        doms = set()
         for cdbg_node in self.cdbg_match_counts:
-            cdbg_shadow.add(cdbg_node)
-            leaves.add(catlas.cdbg_to_layer1[cdbg_node])
+            # nodes that matched in cDBG
+            cdbg_nodes.add(cdbg_node)
+            # dominator for this cDBG node
+            doms.add(catlas.cdbg_to_layer1[cdbg_node])
 
-        notify('done searching! {} catlas shadow nodes, {} cdbg nodes.',
-               len(leaves), len(cdbg_shadow))
-        return QueryOutput(self, catlas, kmer_idx, leaves, self.catlas_name)
+        notify('done searching! {} dominator nodes, {} cdbg nodes.',
+               len(doms), len(cdbg_nodes))
+        return QueryOutput(self, catlas, kmer_idx, doms, self.catlas_name)
 
     def con_sim_upper_bounds(self, catlas, kmer_idx):
         """

@@ -8,8 +8,6 @@ from screed.screedRecord import Record
 from screed.utils import to_str
 from sourmash import MinHash
 
-import bbhash
-
 from spacegraphcats.utils.bgzf.bgzf import BgzfReader
 from .index import MPHF_KmerIndex
 
