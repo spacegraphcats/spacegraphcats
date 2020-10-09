@@ -20,6 +20,19 @@ import bbhash
 import numpy
 
 
+hashing_fn = None
+hashing_ksize = None
+def hash_sequence(seq, ksize):
+    global hashing_fn, hashing_ksize
+    if hashing_fn is None:
+        kh = khmer.Nodetable(ksize, 1, 1)
+        hashing_fn = kh.get_kmer_hashes
+        hashing_ksize = ksize
+
+    assert hashing_ksize == ksize
+    return hashing_fn(seq)
+
+
 class MPHF_KmerIndex(object):
     """
     Support kmer -> cDBG node id queries.
@@ -143,7 +156,7 @@ class MPHF_KmerIndex(object):
         return cls(mphf, mphf_to_kmer, mphf_to_cdbg, cdbg_sizes)
 
 
-def build_mphf(kh, records_iter_fn):
+def build_mphf(ksize, records_iter_fn):
     # build a list of all k-mers in the cDBG
     all_kmers = list()
 
@@ -152,7 +165,7 @@ def build_mphf(kh, records_iter_fn):
         if n % 50000 == 0 and n:
             print('... contig', n, end='\r')
 
-        kmers = kh.get_kmer_hashes(record.sequence)
+        kmers = hash_sequence(record.sequence, ksize)
         all_kmers.extend(list(kmers))
 
     n_contigs = n + 1
@@ -181,7 +194,7 @@ def build_mphf(kh, records_iter_fn):
         cdbg_id = int(record.name)
 
         # get 64-bit numbers for each k-mer (doesn't really matter what hash)
-        kmers = kh.get_kmer_hashes(record.sequence)
+        kmers = hash_sequence(record.sequence, ksize)
 
         # for each k-mer, find its MPHF hashval, & link to info.
         for kmer in kmers:
@@ -204,8 +217,6 @@ def main(argv):
     p.add_argument('-k', '--ksize', default=31, type=int)
     a = p.parse_args(argv)
 
-    kh = khmer.Nodetable(a.ksize, 1, 1)
-
     contigs_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz')
     mphf_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz.mphf')
     array_filename = os.path.join(a.catlas_prefix, 'contigs.fa.gz.indices')
@@ -214,7 +225,8 @@ def main(argv):
         print('reading cDBG nodes from {}'.format(contigs_filename))
         return screed.open(contigs_filename)
 
-    x, mphf_to_kmer, mphf_to_cdbg, sizes = build_mphf(kh, create_records_iter)
+    x, mphf_to_kmer, mphf_to_cdbg, sizes = build_mphf(a.ksize,
+                                                      create_records_iter)
 
     print('done! saving to {} and {}'.format(mphf_filename, array_filename))
 

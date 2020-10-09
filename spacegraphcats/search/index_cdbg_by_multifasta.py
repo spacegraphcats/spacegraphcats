@@ -8,14 +8,13 @@ import time
 import pickle
 from collections import defaultdict
 
-import khmer
 import screed
 import sourmash
 from sourmash import MinHash
 
 from ..utils.logging import notify, error, debug
 from . import search_utils
-from . import MPHF_KmerIndex
+from . import MPHF_KmerIndex, hash_sequence
 from .catlas import CAtlas
 
 
@@ -74,11 +73,10 @@ def main(argv):
     for filename in args.query:
         print(f"Reading from '{filename}'")
         for record in screed.open(filename):
-            bf = khmer.Nodetable(ksize, 1, 1)
             if len(record.sequence) < int(ksize):
                 continue
             
-            kmers = bf.get_kmer_hashes(record.sequence)
+            kmers = hash_sequence(record.sequence, ksize)
             cdbg_match_counts = kmer_idx.get_match_counts(kmers)
 
             print(f"got {len(cdbg_match_counts)} cdbg nodes for {record.name[:15]} ({len(kmers)} kmers)")

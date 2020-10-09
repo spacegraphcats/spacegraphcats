@@ -13,14 +13,13 @@ import os
 import sys
 import time
 
-import khmer
 import screed
 import sourmash
 from sourmash import MinHash
 
 from ..utils.logging import notify, error, debug
 from . import search_utils
-from . import MPHF_KmerIndex
+from . import MPHF_KmerIndex, hash_sequence
 from .catlas import CAtlas
 
 
@@ -146,13 +145,12 @@ class Query:
 
         # build hashes for all the query k-mers & create signature
         notify('loading query kmers...', end=' ')
-        bf = khmer.Nodetable(ksize, 1, 1)
 
         for record in screed.open(self.filename):
             if self.name is None:
                 self.name = record.name
             if len(record.sequence) >= int(ksize):
-                self.kmers.update(bf.get_kmer_hashes(record.sequence))
+                self.kmers.update(hash_sequence(record.sequence, self.ksize))
             mh.add_sequence(record.sequence, True)
 
         self.sig = sourmash.SourmashSignature(mh, name=self.name,

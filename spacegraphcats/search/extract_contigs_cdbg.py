@@ -9,7 +9,6 @@ import argparse
 import os
 import sys
 import gzip
-import khmer
 import collections
 import numpy
 from collections import defaultdict
@@ -17,6 +16,7 @@ from collections import defaultdict
 import screed
 
 from spacegraphcats.utils.logging import log_command
+from spacegraphcats.cdbg import hash_sequence
 from . import search_utils
 
 
@@ -37,14 +37,13 @@ def main():
 
     # build hashes for all the query k-mers
     print('loading query kmers...')
-    bf = khmer.Nodetable(args.ksize, 1, 1)
 
     x = set()
     n = 0
 
     query_kmers = set()
     for record in screed.open(args.query):
-        query_kmers.update(bf.get_kmer_hashes(record.sequence))
+        query_kmers.update(hash_sequence(record.sequence, args.ksize))
 
     # find the list of cDBG nodes that contain at least one query k-mer
     cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
