@@ -8,10 +8,8 @@ from screed.screedRecord import Record
 from screed.utils import to_str
 from sourmash import MinHash
 
-import bbhash
-
 from spacegraphcats.utils.bgzf.bgzf import BgzfReader
-from .index import MPHF_KmerIndex
+from . import MPHF_KmerIndex
 
 
 def sqlite_get_max_offset(cursor):

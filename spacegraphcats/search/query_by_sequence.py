@@ -13,25 +13,24 @@ import os
 import sys
 import time
 
-import khmer
 import screed
 import sourmash
 from sourmash import MinHash
 
 from ..utils.logging import notify, error, debug
 from . import search_utils
-from .index import MPHF_KmerIndex
+from . import MPHF_KmerIndex, hash_sequence
 from .catlas import CAtlas
 
 
 class QueryOutput:
-    def __init__(self, query, catlas, kmer_idx, leaves, catlas_name):
+    def __init__(self, query, catlas, kmer_idx, doms, catlas_name):
         self.query = query
         self.catlas = catlas
         self.kmer_idx = kmer_idx
-        self.leaves = leaves
+        self.doms = doms
         # here is where we go from level 1/dominators to cdbg nodes.
-        self.shadow = self.catlas.shadow(leaves)
+        self.shadow = self.catlas.shadow(doms)
         self.total_bp = 0
         self.total_seq = 0
         self.query_sig = self.query.sig
@@ -116,14 +115,14 @@ class QueryOutput:
         # write out catlas nodes
         frontier_listname = os.path.basename(q_name) + '.frontier.txt.gz'
         with gzip.open(os.path.join(outdir, frontier_listname), 'wt') as fp:
-            for node in sorted(self.leaves):
+            for node in sorted(self.doms):
                 fp.write('{}\n'.format(node))
 
         # write response curve
         response_curve_filename = os.path.basename(q_name) + '.response.txt'
         response_curve_filename = os.path.join(outdir,
                                                response_curve_filename)
-        cdbg_match_counts = self.query.cdbg_match_counts[self.catlas.name]
+        cdbg_match_counts = self.query.cdbg_match_counts
         search_utils.output_response_curve(response_curve_filename,
                                            cdbg_match_counts,
                                            self.kmer_idx,
@@ -146,13 +145,12 @@ class Query:
 
         # build hashes for all the query k-mers & create signature
         notify('loading query kmers...', end=' ')
-        bf = khmer.Nodetable(ksize, 1, 1)
 
         for record in screed.open(self.filename):
             if self.name is None:
                 self.name = record.name
             if len(record.sequence) >= int(ksize):
-                self.kmers.update(bf.get_kmer_hashes(record.sequence))
+                self.kmers.update(hash_sequence(record.sequence, self.ksize))
             mh.add_sequence(record.sequence, True)
 
         self.sig = sourmash.SourmashSignature(mh, name=self.name,
@@ -160,44 +158,43 @@ class Query:
 
         notify('got {} k-mers from query', len(self.kmers))
 
-        self.cdbg_match_counts = {}
-        self.catlas_match_counts = {}
+        self.cdbg_match_counts = None
+        self.catlas_match_counts = None
 
     def execute(self, catlas, kmer_idx):
-        cat_id = catlas.name
-
         # construct dict cdbg_id -> # of query k-mers
-        self.cdbg_match_counts[cat_id] = kmer_idx.get_match_counts(self.kmers)
-        for k, v in self.cdbg_match_counts[cat_id].items():
+        self.cdbg_match_counts = kmer_idx.count_cdbg_matches(self.kmers)
+        for k, v in self.cdbg_match_counts.items():
             assert v <= kmer_idx.get_cdbg_size(k), k
 
-        # calculate the cDBG matching k-mers sizes for each catlas node.
-        self.catlas_match_counts[cat_id] =\
-            kmer_idx.build_catlas_match_counts(self.cdbg_match_counts[cat_id],
-                                               catlas)
+        # propogate the match counts to the dominators & the catlas
+        self.catlas_match_counts =\
+            kmer_idx.count_catlas_matches(self.cdbg_match_counts, catlas)
 
-        if self.debug and self.catlas_match_counts[cat_id]:
+        if self.debug and self.catlas_match_counts:
             # check a few things - we've propagated properly:
-            assert sum(self.cdbg_match_counts[cat_id].values()) ==\
-                self.catlas_match_counts[cat_id][catlas.root]
+            assert sum(self.cdbg_match_counts.values()) ==\
+                self.catlas_match_counts[catlas.root]
 
             # ...and all nodes have no more matches than total k-mers.
-            for v, match_amount in self.catlas_match_counts[cat_id].items():
+            for v, match_amount in self.catlas_match_counts.items():
                 assert match_amount <= catlas.index_sizes[v], v
 
             # calculate best possible.
             self.con_sim_upper_bounds(catlas, kmer_idx)
 
         # gather domset nodes matching query k-mers
-        cdbg_shadow = set()
-        leaves = set()
-        for cdbg_node in self.cdbg_match_counts[cat_id]:
-            cdbg_shadow.add(cdbg_node)
-            leaves.add(catlas.cdbg_to_layer1[cdbg_node])
+        cdbg_nodes = set()
+        doms = set()
+        for cdbg_node in self.cdbg_match_counts:
+            # nodes that matched in cDBG
+            cdbg_nodes.add(cdbg_node)
+            # dominator for this cDBG node
+            doms.add(catlas.cdbg_to_layer1[cdbg_node])
 
-        notify('done searching! {} catlas shadow nodes, {} cdbg nodes.',
-               len(leaves), len(cdbg_shadow))
-        return QueryOutput(self, catlas, kmer_idx, leaves, self.catlas_name)
+        notify('done searching! {} dominator nodes, {} cdbg nodes.',
+               len(doms), len(cdbg_nodes))
+        return QueryOutput(self, catlas, kmer_idx, doms, self.catlas_name)
 
     def con_sim_upper_bounds(self, catlas, kmer_idx):
         """
@@ -205,8 +202,8 @@ class Query:
         output of this query."""
         root = catlas.root
 
-        cdbg_match_counts = self.cdbg_match_counts[catlas.name]
-        catlas_match_counts = self.catlas_match_counts[catlas.name]
+        cdbg_match_counts = self.cdbg_match_counts
+        catlas_match_counts = self.catlas_match_counts
         total_match_kmers = sum(cdbg_match_counts.values())
         best_containment = total_match_kmers / len(self.kmers)
         notify('=> containment: {:.1f}%', best_containment * 100)

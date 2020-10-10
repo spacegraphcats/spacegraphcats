@@ -98,6 +98,7 @@ class CAtlas:
                 if not min_abund or mean_abund >= min_abund:
                     kmer_sizes[contig_id] = n_kmers
                     weighted_kmer_sizes[contig_id] = mean_abund*n_kmers
+
         # propagate upwards
         self.kmer_sizes = {}
         self.weighted_kmer_sizes = {}

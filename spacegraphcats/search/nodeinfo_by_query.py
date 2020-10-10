@@ -67,7 +67,7 @@ def main(args=sys.argv[1:]):
     print('got {}'.format(len(query_kmers)))
 
     # construct dict cdbg_id -> # of query k-mers
-    cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
+    cdbg_match_counts = kmer_idx.count_cdbg_matches(query_kmers)
 
     total_match_kmers = sum(cdbg_match_counts.values())
     f_found = total_match_kmers / len(query_kmers)
@@ -84,7 +84,7 @@ def main(args=sys.argv[1:]):
     print('min cdbg overhead: {}'.format(cdbg_min_overhead))
 
     # calculate the cDBG matching k-mers sizes for each catlas node.
-    catlas_match_counts = kmer_idx.build_catlas_match_counts(cdbg_match_counts, dag, dag_levels, layer1_to_cdbg)
+    catlas_match_counts = kmer_idx.count_catlas_matches(cdbg_match_counts, dag, dag_levels, layer1_to_cdbg)
 
     ### ok, the real work: look at articulation of cDBG graph.
 

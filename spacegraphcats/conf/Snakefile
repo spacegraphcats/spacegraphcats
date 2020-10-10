@@ -140,7 +140,7 @@ rule bcalm_cdbg:
      output:
         "{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa"
      shell:
-        "(bcalm >& /dev/null || (printf '**\\n**\\n** Cannot run BCALM 2! Please install it and make sure it is on your path!\\n**\\n**\\n'; exit 1)) && (bcalm >& /dev/null && bcalm -in {input} -out {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt && rm -f {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize}.{{h5,unitigs.fa.glue*}} || printf '\\n**\\n** ERROR running BCALM 2; err output in dory/bcalm.dory.k21.unitigs.fa.log.txt\\n**\\n')"
+        "(bcalm >& /dev/null || (printf '**\\n**\\n** Cannot run BCALM 2! Please install it and make sure it is on your path!\\n**\\n**\\n'; exit 1)) && (bcalm >& /dev/null && bcalm -in {input} -out {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt && rm -f {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize}.{{h5,unitigs.fa.glue*}} || printf '\\n**\\n** ERROR running BCALM 2; err output in {output}.log.txt\\n**\\n')"
 
 # create list of input files for bcalm
 rule bcalm_cdbg_inpfiles:
@@ -204,7 +204,7 @@ rule make_contigs_kmer_index:
         join(catlas_dir, "contigs.fa.gz.mphf"),
         join(catlas_dir, "contigs.fa.gz.indices"),
      shell:
-        "{python} -m spacegraphcats.index.index_contigs_by_kmer -k {ksize} {catlas_dir}"
+        "{python} -m spacegraphcats.cdbg.index_contigs_by_kmer -k {ksize} {catlas_dir}"
 
 ### Search rules.
 

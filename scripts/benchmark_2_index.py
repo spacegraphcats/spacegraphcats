@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import spacegraphcats
 from spacegraphcats.search.catlas import CAtlas
-from spacegraphcats.index.index_contigs_by_kmer import build_mphf
+from spacegraphcats.cdbg.index_contigs_by_kmer import build_mphf
 from collections import defaultdict
 import argparse
 import sys

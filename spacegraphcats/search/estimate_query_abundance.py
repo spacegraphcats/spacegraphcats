@@ -11,7 +11,6 @@ import sys
 import gzip
 import khmer
 import collections
-import bbhash
 import numpy
 from collections import defaultdict
 
@@ -52,7 +51,7 @@ def main(argv=sys.argv[1:]):
             query_kmers.update(bf.get_kmer_hashes(record.sequence))
 
         # find the list of cDBG nodes that contain at least one query k-mer
-        cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
+        cdbg_match_counts = kmer_idx.count_cdbg_matches(query_kmers)
 
         # calculate number of nodes found -
         cdbg_shadow = set(cdbg_match_counts.keys())

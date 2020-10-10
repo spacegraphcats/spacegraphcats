@@ -15,7 +15,6 @@ import sys
 import time
 import pickle
 
-import khmer
 import screed
 import sourmash
 from sourmash import MinHash
