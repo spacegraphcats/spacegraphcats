@@ -86,8 +86,8 @@ class CAtlas:
                 self.cdbg_to_layer1[cdbg_id] = equiv_cdbg_to_catlas
 
     def __load_size_info(self, sizefile, min_abund):
-        kmer_sizes = {}
-        weighted_kmer_sizes = {}
+        cdbg_sizes = defaultdict(int)
+        weighted_cdbg_sizes = defaultdict(float)
         # load size information from file
         with open(sizefile, 'rt') as fp:
             reader = csv.DictReader(fp)
@@ -96,8 +96,11 @@ class CAtlas:
                 n_kmers = int(row['n_kmers'])
                 mean_abund = float(row['mean_abund'])
                 if not min_abund or mean_abund >= min_abund:
-                    kmer_sizes[contig_id] = n_kmers
-                    weighted_kmer_sizes[contig_id] = mean_abund*n_kmers
+                    cdbg_sizes[contig_id] = n_kmers
+                    weighted_cdbg_sizes[contig_id] = mean_abund*n_kmers
+
+        self.cdbg_sizes = cdbg_sizes
+        self.weighted_cdbg_sizes = weighted_cdbg_sizes
 
         # propagate upwards
         self.kmer_sizes = {}
@@ -108,9 +111,8 @@ class CAtlas:
                 total_kmers = 0
                 total_weighted_kmers = 0
                 for cdbg_node in self.layer1_to_cdbg.get(node_id):
-                    total_kmers += kmer_sizes.get(cdbg_node, 0)
-                    total_weighted_kmers += weighted_kmer_sizes.get(cdbg_node,
-                                                                    0)
+                    total_kmers += cdbg_sizes[cdbg_node]
+                    total_weighted_kmers += weighted_cdbg_sizes[cdbg_node]
 
                 self.kmer_sizes[node_id] = total_kmers
                 self.weighted_kmer_sizes[node_id] = total_weighted_kmers
@@ -120,6 +122,7 @@ class CAtlas:
                 for child_id in self.children[node_id]:
                     sub_size += self.kmer_sizes[child_id]
                     sub_weighted_size += self.weighted_kmer_sizes[child_id]
+
                 self.kmer_sizes[node_id] = sub_size
                 self.weighted_kmer_sizes[node_id] = sub_weighted_size
 
