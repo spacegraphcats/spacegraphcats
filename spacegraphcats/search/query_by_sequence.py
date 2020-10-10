@@ -163,14 +163,13 @@ class Query:
 
     def execute(self, catlas, kmer_idx):
         # construct dict cdbg_id -> # of query k-mers
-        self.cdbg_match_counts = kmer_idx.get_match_counts(self.kmers)
+        self.cdbg_match_counts = kmer_idx.count_cdbg_matches(self.kmers)
         for k, v in self.cdbg_match_counts.items():
             assert v <= kmer_idx.get_cdbg_size(k), k
 
         # propogate the match counts to the dominators & the catlas
         self.catlas_match_counts =\
-            kmer_idx.build_catlas_match_counts(self.cdbg_match_counts,
-                                               catlas)
+            kmer_idx.count_catlas_matches(self.cdbg_match_counts, catlas)
 
         if self.debug and self.catlas_match_counts:
             # check a few things - we've propagated properly:

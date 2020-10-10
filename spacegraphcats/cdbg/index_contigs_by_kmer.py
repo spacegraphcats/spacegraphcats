@@ -82,9 +82,9 @@ class MPHF_KmerIndex(object):
 
         return node_kmer_sizes
 
-    def get_match_counts(self, query_kmers, verbose=True):
+    def count_cdbg_matches(self, query_kmers, verbose=True):
         "Return a dictionary containing cdbg_id -> # of matches in query_kmers"
-        match_counts = {}
+        cdbg_matches = {}
         n_matched = 0
         n = 0
         for n, hashval in enumerate(query_kmers):
@@ -93,18 +93,18 @@ class MPHF_KmerIndex(object):
 
             cdbg_id = self.get_cdbg_id(hashval)
             if cdbg_id is not None:
-                match_counts[cdbg_id] = match_counts.get(cdbg_id, 0) + 1
+                cdbg_matches[cdbg_id] = cdbg_matches.get(cdbg_id, 0) + 1
                 n_matched += 1
 
         if n and verbose:
             print('... found {} matches to {} k-mers total.'.format(n_matched,
                                                                     n + 1))
 
-        return match_counts
+        return cdbg_matches
 
-    def build_catlas_match_counts(self, match_counts, catlas):
+    def count_catlas_matches(self, cdbg_matches, catlas):
         """ """
-        node_match_counts = {}
+        dom_matches = {}
         total_kmers_in_query_nodes = 0.
 
         # for every node in the catlas,
@@ -119,12 +119,12 @@ class MPHF_KmerIndex(object):
 
                 # sum both matching k-mers and all k-mers in cDBG nodes
                 for cdbg_node in catlas.layer1_to_cdbg.get(node_id):
-                    query_kmers += match_counts.get(cdbg_node, 0)
+                    query_kmers += cdbg_matches.get(cdbg_node, 0)
                     all_kmers_in_node += self.get_cdbg_size(cdbg_node)
 
-                # if anything found, save -> node_match_counts
+                # if anything found, save -> dom_matches
                 if query_kmers:
-                    node_match_counts[node_id] = query_kmers
+                    dom_matches[node_id] = query_kmers
                     total_kmers_in_query_nodes += all_kmers_in_node
 
                     assert all_kmers_in_node >= query_kmers
@@ -133,12 +133,12 @@ class MPHF_KmerIndex(object):
                 # propogate up the catlas.
                 sub_size = 0
                 for child_id in catlas.children[node_id]:
-                    sub_size += node_match_counts.get(child_id, 0)
+                    sub_size += dom_matches.get(child_id, 0)
 
                 if sub_size:
-                    node_match_counts[node_id] = sub_size
+                    dom_matches[node_id] = sub_size
 
-        return node_match_counts
+        return dom_matches
 
     @classmethod
     def from_catlas_directory(cls, catlas_prefix):

@@ -65,7 +65,7 @@ remainder is implemented in `search`, below.
 
 The `search` code for extracting query neighborhoods is in
 [search/extract_nodes_by_query.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/spacegraphcats/search/extract_nodes_by_query.py);
-see especially the call to `kmer_idx.get_match_counts(...)`.
+see especially the call to `kmer_idx.count_cdbg_matches(...)`.
 
 ### Interesting library functionality
 

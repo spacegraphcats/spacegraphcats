@@ -77,7 +77,7 @@ def main(argv):
                 continue
             
             kmers = hash_sequence(record.sequence, ksize)
-            cdbg_match_counts = kmer_idx.get_match_counts(kmers)
+            cdbg_match_counts = kmer_idx.count_cdbg_matches(kmers)
 
             print(f"got {len(cdbg_match_counts)} cdbg nodes for {record.name[:15]} ({len(kmers)} kmers)")
 

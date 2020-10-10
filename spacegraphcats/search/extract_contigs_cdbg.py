@@ -46,7 +46,7 @@ def main():
         query_kmers.update(hash_sequence(record.sequence, args.ksize))
 
     # find the list of cDBG nodes that contain at least one query k-mer
-    cdbg_match_counts = kmer_idx.get_match_counts(query_kmers)
+    cdbg_match_counts = kmer_idx.count_cdbg_matches(query_kmers)
 
     # calculate number of nodes found -
     cdbg_shadow = set(cdbg_match_counts.keys())
