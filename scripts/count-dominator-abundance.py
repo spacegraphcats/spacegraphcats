@@ -77,8 +77,9 @@ def main():
         w = csv.writer(fp)
         w.writerow(['dom_id', 'abund'])
         for node_id in sorted(catlas):
-            count = dom_counts[node_id]
-            w.writerow([node_id, count])
+            if catlas.levels[node_id] == 1:
+                count = dom_counts[node_id]
+                w.writerow([node_id, count])
             
     return 0
 
