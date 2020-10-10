@@ -59,7 +59,7 @@ def main():
     notify(f'outputting dom node annots to {args.dom_output}')
     with open(args.dom_output, 'wt') as fp:
         w = csv.writer(fp)
-        w.writerow(['dom_id', 'abund'])
+        w.writerow(['dom_id', 'catlas_base', 'filename', 'record_name'])
         for node_id in sorted(catlas):
             for (filename, annot) in dom_annots.get(node_id, ()):
                 w.writerow([node_id, catlas_prefix, filename, annot])
