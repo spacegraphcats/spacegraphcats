@@ -300,7 +300,7 @@ def make_extract_reads_base(searchfiles):
     x = []
     for filename in searchfiles:
         basename = os.path.basename(filename)
-        x.append("{search_dir}/{basename}.cdbg_ids.reads.fa.gz")
+        x.append(f"{search_dir}/{basename}.cdbg_ids.reads.fa.gz")
     return x
 
 # get contigs for a single query
