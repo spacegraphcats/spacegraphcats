@@ -97,8 +97,7 @@ def main(args=sys.argv[1:]):
             break
         keep_terminal.add(v)
 
-    print('keeping last {} k-mers worth of nodes for'
-          'examination.'.format(sofar))
+    print(f'keeping last {sofar} k-mers worth of nodes for examination.')
 
     # build cDBG shadow ID list.
     cdbg_shadow = catlas.shadow(keep_terminal)
