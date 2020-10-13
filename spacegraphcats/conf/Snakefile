@@ -157,9 +157,10 @@ rule bcalm_cdbg:
             (printf "**\n** ERROR: Cannot run bcalm! Is it installed?\n**\n"; \
              false)
 
-        # ok, run bcalm for real
+        # ok, run bcalm for real; use tee to both save & output stderr,
+        # per https://stackoverflow.com/questions/692000/how-do-i-write-stderr-to-a-file-while-using-tee-with-a-pipe
         bcalm -in {input} -out {catlas_base}/bcalm.{catlas_base}.k{ksize} \
-           -kmer-size {ksize} -abundance-min 1
+           -kmer-size {ksize} -abundance-min 1 > >(tee -a {log} >& 2)
 
         # remove large temp files: .h5, unitig glue files
         rm -f {catlas_base}/bcalm.{catlas_base}.k{ksize}.{{h5,unitigs.fa.glue*}}
