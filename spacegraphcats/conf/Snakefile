@@ -201,9 +201,8 @@ rule reads_bgzf:
 # label the reads by contig
 rule label_reads:
     input:
-        reads = expand("{catlas_base}/{catlas_base}.reads.bgz",
-                       catlas_base=catlas_base),
-        contigs = expand("{catlas_dir}/contigs.fa.gz", catlas_dir=catlas_dir)
+        reads = f"{catlas_base}/{catlas_base}.reads.bgz",
+        contigs = f"{catlas_dir}/contigs.fa.gz",
     output:
         f"{catlas_dir}/reads.bgz.labels",
     shell: """
