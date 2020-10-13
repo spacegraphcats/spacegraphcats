@@ -29,7 +29,7 @@ def fix_relative_input_paths(filenames):
     abs_filenames = []
     for filename in filenames:
         if not filename.startswith('/'):
-            print('...sgc is updating input file {} with outdir prefix {}'.format(filename, startdir), file=sys.stderr)
+            print(f'...sgc is updating input file {filename} with outdir prefix {startdir}', file=sys.stderr)
             filename = os.path.join(startdir, filename)
         abs_filenames.append(filename)
     return abs_filenames
@@ -96,9 +96,9 @@ multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
 
 ### build some variables for internal use
 
-catlas_dir = '{}_k{}_r{}{}'.format(catlas_base, ksize, radius, catlas_suffix)
-search_dir = '{}_search_oh{}{}'.format(catlas_dir, int(overhead*100), search_out_suffix)
-hashval_query_dir = '{}_hashval_k{}'.format(catlas_dir, hashval_ksize)
+catlas_dir = f'{catlas_base}_k{ksize}_r{radius}{catlas_suffix}'
+search_dir = f'{catlas_dir}_search_oh{int(overhead*100)}{search_out_suffix}'
+hashval_query_dir = f'{catlas_dir}_hashval_k{hashval_ksize}'
 
 # internal definitions for convenience:
 python=sys.executable  # define as the version of Python running snakemake
@@ -162,7 +162,7 @@ rule bcalm_cdbg_inpfiles:
     run:
         with open(output[0], 'wt') as fp:
             for name in input_sequences:
-                fp.write('{}\n'.format(name))
+                fp.write(f'{name}\n')
 
 # build catlas input from bcalm output by reformatting
 rule bcalm_catlas_input:
