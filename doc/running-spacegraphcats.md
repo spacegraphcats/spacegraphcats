@@ -197,7 +197,7 @@ python -m spacegraphcats twofoo build --radius=5
 Then, extract nodes with many cDBG nodes and few k-mers (by ratio):
 
 ```
-python -m search.extract_nodes_by_shadow_ratio twofoo_k31_r5 zzz.fq
+python -m spacegraphcats.search.extract_nodes_by_shadow_ratio twofoo_k31_r5 zzz.fq
 ```
 
 Now, look at the content of the extracted nodes -- the presence of the Akkermansia genome is essentially nil,
