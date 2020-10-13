@@ -147,11 +147,23 @@ rule clean:
 # build cDBG using bcalm
 rule bcalm_cdbg:
     input:
-        "{catlas_base}/bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+        f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.inputlist.txt"
     output:
-        "{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa"
-    shell:
-        "(bcalm >& /dev/null || (printf '**\\n**\\n** Cannot run BCALM 2! Please install it and make sure it is on your path!\\n**\\n**\\n'; exit 1)) && (bcalm >& /dev/null && bcalm -in {input} -out {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize} -kmer-size {wildcards.ksize} -abundance-min 1 >& {output}.log.txt && rm -f {catlas_base}/bcalm.{catlas_base}.k{wildcards.ksize}.{{h5,unitigs.fa.glue*}} || printf '\\n**\\n** ERROR running BCALM 2; err output in {output}.log.txt\\n**\\n')"
+        f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa",
+    log: f"{catlas_base}/bcalm.{catlas_base}.log.txt",
+    shell: """
+        # can we run it?
+        bcalm >& /dev/null || \
+            (printf "**\n** ERROR: Cannot run bcalm! Is it installed?\n**\n"; \
+             false)
+
+        # ok, run bcalm for real
+        bcalm -in {input} -out {catlas_base}/bcalm.{catlas_base}.k{ksize} \
+           -kmer-size {ksize} -abundance-min 1
+
+        # remove large temp files: .h5, unitig glue files
+        rm -f {catlas_base}/bcalm.{catlas_base}.k{ksize}.{{h5,unitigs.fa.glue*}}
+    """
 
 # create list of input files for bcalm
 rule bcalm_cdbg_inpfiles:
