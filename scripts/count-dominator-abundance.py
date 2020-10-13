@@ -24,9 +24,7 @@ import screed
 def main():
     p = argparse.ArgumentParser(description=main.__doc__)
     p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('sample')
-    p.add_argument('cdbg_output')
-    p.add_argument('dom_output')
+    p.add_argument('samples', nargs='+')
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     args = p.parse_args()
@@ -44,42 +42,45 @@ def main():
     # calculate the k-mer sizes for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)
 
-    notify(f'reading sequences from {args.sample}')
-    cdbg_counts = defaultdict(int)
-    total_hashes = 0
-    for record in screed.open(args.sample):
-        hashes = hash_sequence(record.sequence, args.ksize)
-        total_hashes += len(hashes)
-        for hashval in hashes:
-            cdbg_id = kmer_idx.get_cdbg_id(hashval)
-            cdbg_counts[cdbg_id] += 1
+    for sample in args.samples:
+        notify(f'reading sequences from {sample}')
+        cdbg_counts = defaultdict(int)
+        total_hashes = 0
+        for record in screed.open(sample):
+            hashes = hash_sequence(record.sequence, args.ksize)
+            total_hashes += len(hashes)
+            for hashval in hashes:
+                cdbg_id = kmer_idx.get_cdbg_id(hashval)
+                cdbg_counts[cdbg_id] += 1
 
-    notify(f'done! read {total_hashes} total k-mers.')
+        notify(f'done! read {total_hashes} total k-mers.')
 
-    # aggregate to domset
-    dom_counts = defaultdict(int)
-    for cdbg_id, count in cdbg_counts.items():
-        if cdbg_id is None:
-            continue
-        dom_id = catlas.cdbg_to_layer1[cdbg_id]
-        dom_counts[dom_id] += count
+        # aggregate to domset
+        dom_counts = defaultdict(int)
+        for cdbg_id, count in cdbg_counts.items():
+            if cdbg_id is None:
+                continue
+            dom_id = catlas.cdbg_to_layer1[cdbg_id]
+            dom_counts[dom_id] += count
 
-    notify(f'outputting cDBG abundances to {args.cdbg_output}')
-    with open(args.cdbg_output, 'wt') as fp:
-        w = csv.writer(fp)
-        w.writerow(['cdbg_id', 'abund'])
-        for cdbg_id in sorted(catlas.cdbg_sizes):   # get all cDBG IDs
-            count = cdbg_counts[cdbg_id]
-            w.writerow([cdbg_id, count])
-            
-    notify(f'outputting dom node abundances to {args.dom_output}')
-    with open(args.dom_output, 'wt') as fp:
-        w = csv.writer(fp)
-        w.writerow(['dom_id', 'abund'])
-        for node_id in sorted(catlas):
-            if catlas.levels[node_id] == 1:
-                count = dom_counts[node_id]
-                w.writerow([node_id, count])
+        outfile = f"{sample}.cdbg_abund.csv"
+        notify(f'outputting cDBG abundances to {outfile}')
+        with open(outfile, 'wt') as fp:
+            w = csv.writer(fp)
+            w.writerow(['cdbg_id', 'abund'])
+            for cdbg_id in sorted(catlas.cdbg_sizes):   # get all cDBG IDs
+                count = cdbg_counts[cdbg_id]
+                w.writerow([cdbg_id, count])
+
+        outfile = f"{sample}.dom_abund.csv"
+        notify(f'outputting dom node abundances to {outfile}')
+        with open(outfile, 'wt') as fp:
+            w = csv.writer(fp)
+            w.writerow(['dom_id', 'abund'])
+            for node_id in sorted(catlas):
+                if catlas.levels[node_id] == 1:
+                    count = dom_counts[node_id]
+                    w.writerow([node_id, count])
             
     return 0
 
