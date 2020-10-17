@@ -6,8 +6,7 @@ Outputs a GXT file (containing an undirected graph), a BGZF file
 containing the sequences, and a .info.csv file containing
 the BGZF offset, mean abundance, and length of each contig.
 
-Also outputs sourmash k=31 scaled=1000 signatures for both input and
-output files.
+Also outputs a sourmash scaled=1000 signature for the output contigs.
 
 Takes as input the preprocessed info coming from sort_bcalm_unitigs.
 """
@@ -166,17 +165,14 @@ def contract_degree_two(non_pendants, neighbors, sequences, mean_abunds, sizes,
 
 
 class FastaWithOffsetAsDict:
-    def __init__(self, fasta_fp, hashval_to_cdbg_items):
-        offsets = {}
-
-        # convert hashval_to_cdbg_items into { id: offset }
-        n = 0
-        for hashval, (contig_id, offset) in hashval_to_cdbg_items:
-            offsets[n] = offset
-            n += 1
+    def __init__(self, fasta_fp, offsets):
+        offset_d = {}
+        # convert offsets into { id: offset }
+        for n, offset in enumerate(offsets):
+            offset_d[n] = offset
 
         self.fp = fasta_fp
-        self.offsets = offsets
+        self.offsets = offset_d
         self.override = {}
 
     def __getitem__(self, key):
@@ -225,14 +221,14 @@ def main(argv):
     info_fp = open(info_filename, 'wt')
 
     with open(args.mapping_pickle, 'rb') as fp:
-        (ksize, hashval_to_cdbg_items, neighbors, mean_abunds, sizes) = pickle.load(fp)
+        (ksize, offsets, neighbors, mean_abunds, sizes) = pickle.load(fp)
 
-    print(f'Found {len(hashval_to_cdbg_items)} input unitigs.')
+    print(f'Found {len(offsets)} input unitigs.')
 
     out_mh = sourmash.MinHash(0, ksize, scaled=1000)
 
     unitigs_fp = open(unitigs, 'rt')
-    sequences = FastaWithOffsetAsDict(unitigs_fp, hashval_to_cdbg_items)
+    sequences = FastaWithOffsetAsDict(unitigs_fp, offsets)
 
     # if we are removing pendants, we need to relabel the contigs so they are
     # consecutive integers starting from 0.  If not, we create dummy data

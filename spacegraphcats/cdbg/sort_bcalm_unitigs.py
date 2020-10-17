@@ -5,6 +5,8 @@ Sort the bcalm unitigs.fa output (a cDBG) into deterministic order.
 Outputs a mapping rather than a new file!
 
 Also saves all of the graph information for later perusal.
+
+Also outputs a sourmash scaled=1000 signature for the input unitigs.
 """
 import sys
 import argparse
@@ -134,8 +136,9 @@ def main(argv):
 
     ## save!
     print(f"saving mappings to '{args.mapping_pickle_out}'")
+    offsets = [ offset for (_, (_, offset)) in hashval_to_cdbg_items ]
     with open(args.mapping_pickle_out, 'wb') as fp:
-        pickle.dump((ksize, hashval_to_cdbg_items, neighbors, mean_abunds, sizes), fp)
+        pickle.dump((ksize, offsets, neighbors, mean_abunds, sizes), fp)
 
     # output sourmash signature for input contigs
     in_sig = sourmash.SourmashSignature(in_mh, filename=args.bcalm_unitigs)
