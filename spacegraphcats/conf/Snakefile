@@ -66,11 +66,6 @@ search_out_suffix = ''
 if experiment:
     search_out_suffix = '_' + experiment
 
-# remove pendants from bcalm graph? default YES
-remove_pendants = ""
-if config.get('keep_graph_pendants', False):
-    remove_pendants = "-P"
-
 # minsize/maxsize for decomposition
 decompose_minsize = config.get('decompose_minsize', 5000)
 decompose_maxsize = config.get('decompose_maxsize', 50000)
@@ -177,17 +172,35 @@ rule bcalm_cdbg_inpfiles:
             for name in input_sequences:
                 fp.write(f'{name}\n')
 
-# build catlas input from bcalm output by reformatting
-rule bcalm_catlas_input:
+# sort and remap bcalm output
+rule bcalm_catlas_sort:
     input:
-        f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa",
+        unitigs = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa",
     output:
-        cdbg = f"{catlas_dir}/cdbg.gxt",
+        mapping = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.pickle",
+        sig = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa.sig",
+    shell: """
+        {python} -m spacegraphcats.cdbg.sort_bcalm_unitigs \
+            -k {ksize} {input.unitigs} {output.mapping}
+     """
+
+# build catlas input from bcalm output by reformatting; optionally,
+# remove pendants
+rule bcalm_catlas_prepare_input:
+    input:
+        unitigs = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa",
+        mapping = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.pickle",
+    output:
+        gxt = f"{catlas_dir}/cdbg.gxt",
         contigs = f"{catlas_dir}/contigs.fa.gz",
         info = f"{catlas_dir}/contigs.fa.gz.info.csv",
+        sig = f"{catlas_dir}/contigs.fa.gz.sig",
+    params:
+        remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else ""
     shell: """
-        {python} -m spacegraphcats.cdbg.bcalm_to_gxt {remove_pendants} \
-            -k {ksize} {input} {output.cdbg} {output.contigs}
+        {python} -m spacegraphcats.cdbg.bcalm_to_gxt2 \
+            {params.remove_pendants} \
+            {input.unitigs} {input.mapping} {output.gxt} {output.contigs}
      """
 
 rule reads_bgzf:
