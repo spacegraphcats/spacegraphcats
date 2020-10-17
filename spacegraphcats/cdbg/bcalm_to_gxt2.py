@@ -177,12 +177,19 @@ class FastaWithOffsetAsDict:
 
         self.fp = fasta_fp
         self.offsets = offsets
+        self.override = {}
 
     def __getitem__(self, key):
+        if key in self.override:
+            return self.override[key]
+
         offset = self.offsets[key]
         self.fp.seek(offset)
         record, _ = next(my_fasta_iter(self.fp))
         return record.sequence
+
+    def __setitem__(self, key, val):
+        self.override[key] = val
 
 
 def main(argv):
@@ -214,12 +221,13 @@ def main(argv):
 
     logging.debug("starting bcalm_to_gxt2 run.")
 
-    gxtfp = open(args.gxt_out, 'wt')
     info_filename = args.contigs_out + '.info.csv'
     info_fp = open(info_filename, 'wt')
 
     with open(args.mapping_pickle, 'rb') as fp:
         (ksize, hashval_to_cdbg_items, neighbors, mean_abunds, sizes) = pickle.load(fp)
+
+    print(f'Found {len(hashval_to_cdbg_items)} input unitigs.')
 
     out_mh = sourmash.MinHash(0, ksize, scaled=1000)
 
@@ -233,14 +241,18 @@ def main(argv):
         print('removing pendants...')
         non_pendants = set(v for v, N in neighbors.items() if len(N) > 1 or
                            mean_abunds[v] > trim_cutoff)
+        before_count = len(non_pendants)
         contract_degree_two(non_pendants, neighbors, sequences, mean_abunds,
                             sizes, ksize)
+        after_count = len(non_pendants)
+        print(f'...removed {before_count - after_count} nodes.')
     else:
         non_pendants = list(neighbors.keys())
     aliases = {x: i for i, x in enumerate(sorted(non_pendants))}
     n = len(aliases)
 
     # write out sequences & compute offsets in new file
+    print(f"outputting unitigs to BGZF file '{args.contigs_out}'...")
     contigsfp = bgzf.open(args.contigs_out, 'wb')
     offsets = {}
     kv_list = sorted(aliases.items(), key=lambda x:x[1])
@@ -252,9 +264,11 @@ def main(argv):
         out_mh.add_sequence(sequence)
     contigsfp.close()
 
-    print('... done! {} unitigs'.format(n))
+    print('... done! output {} unitigs'.format(n))
 
     # start the gxt file by writing the number of nodes (unitigs))
+    print(f"Outputting graph information to '{args.gxt_out}'...")
+    gxtfp = open(args.gxt_out, 'wt')
     gxtfp.write('{}\n'.format(n))
 
     # write out all of the links, in 'from to' format.
@@ -264,7 +278,7 @@ def main(argv):
             gxtfp.write('{} {}\n'.format(aliases[v], aliases[u]))
             n_edges += 1
 
-    print('{} vertices, {} edges'.format(n, n_edges))
+    print('...done! {} vertices, {} edges'.format(n, n_edges))
 
     info_fp.write('contig_id,offset,mean_abund,n_kmers\n')
     for v, i in aliases.items():
