@@ -165,6 +165,11 @@ def contract_degree_two(non_pendants, neighbors, sequences, mean_abunds, sizes,
 
 
 class FastaWithOffsetAsDict:
+    """
+    Do direct read access into a FASTA file, mimicking a dictionary.
+
+    Supports in-memory __setitem__, too, that will override future gets.
+    """
     def __init__(self, fasta_fp, offsets):
         offset_d = {}
         # convert offsets into { id: offset }
