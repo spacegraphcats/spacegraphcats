@@ -120,7 +120,7 @@ def contract_neighbor(x, u, neighbors, sequences, mean_abunds, sizes, k):
 
 
 def contract_degree_two(non_pendants, neighbors, sequences, mean_abunds, sizes,
-                        k):
+                        k, removed_nodes):
     deg_2 = list()
     for v, N in sorted(neighbors.items()):   # do we need sorted here!?
         if v in non_pendants or len(N) == 0:
@@ -145,6 +145,8 @@ def contract_degree_two(non_pendants, neighbors, sequences, mean_abunds, sizes,
         logging.debug("analyzing {}".format(x))
         logging.debug("seq_x: {}, {}".format(seq_x[:k-1],
                       seq_x[1-k:]))
+
+        did_delete = False
         # can only delete u or v if they have low degree and their
         # neighbors have a directed path
         u_deg = len(neighbors[u])
@@ -153,12 +155,21 @@ def contract_degree_two(non_pendants, neighbors, sequences, mean_abunds, sizes,
             contract_neighbor(x, u, neighbors, sequences, mean_abunds,
                               sizes, k)
             non_pendants.remove(u)
+            removed_nodes.add(u)
+            did_delete = True
         v_deg = len(neighbors[v])
         if v_deg == 1 or (v_deg == 2 and
                           is_directed_path(v, sequences, neighbors, k)):
             contract_neighbor(x, v, neighbors, sequences, mean_abunds,
                               sizes, k)
             non_pendants.remove(v)
+            removed_nodes.add(v)
+            did_delete = True
+
+        if did_delete:
+            logging.debug("did a removal.")
+        else:
+            logging.debug("no removal.")
 
 
 class FastaWithOffsetAsDict:
@@ -234,18 +245,20 @@ def main(argv):
     # if we are removing pendants, we need to relabel the contigs so they are
     # consecutive integers starting from 0.  If not, we create dummy data
     # structures to make the interface the same elsewhere in the data
+
+    all_nodes = set(neighbors.keys())
     if trim:
         print('removing pendants...')
         non_pendants = set(v for v, N in neighbors.items() if len(N) > 1 or
                            mean_abunds[v] > trim_cutoff)
-        before_count = len(non_pendants)
+
+        removed_nodes = set()
         contract_degree_two(non_pendants, neighbors, sequences, mean_abunds,
-                            sizes, ksize)
-        after_count = len(non_pendants)
-        print(f'...removed {before_count - after_count} nodes.')
-    else:
-        non_pendants = list(neighbors.keys())
-    aliases = {x: i for i, x in enumerate(sorted(non_pendants))}
+                            sizes, ksize, removed_nodes)
+        all_nodes -= removed_nodes
+        print(f'...removed {len(removed_nodes)} nodes.')
+
+    aliases = {x: i for i, x in enumerate(sorted(all_nodes))}
     n = len(aliases)
 
     # write out sequences & compute offsets in new file
