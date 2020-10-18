@@ -10,12 +10,9 @@ Also outputs a sourmash scaled=1000 signature for the input unitigs.
 """
 import sys
 import argparse
-import os.path
-import pprint
 import pickle
 import collections
 
-import screed
 import sourmash
 from spacegraphcats.search.search_utils import my_fasta_iter
 
@@ -36,8 +33,8 @@ def main(argv):
     total_bp = 0
     hashval_to_cdbg = {}
     neighbors = collections.defaultdict(set)
-    mean_abunds = {}  # type: Dict[int, float]
-    sizes = {}  # type: Dict[int, int]
+    mean_abunds = {}
+    sizes = {}
 
     # record input k-mers in a minhash
     in_mh = sourmash.MinHash(0, ksize, scaled=1000)

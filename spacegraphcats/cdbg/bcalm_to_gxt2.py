@@ -10,14 +10,11 @@ Also outputs a sourmash scaled=1000 signature for the output contigs.
 
 Takes as input the preprocessed info coming from sort_bcalm_unitigs.
 """
-import screed
 import sys
-import collections
 import argparse
 from spacegraphcats.utils.bgzf import bgzf
 from spacegraphcats.search.search_utils import my_fasta_iter
 import logging
-from typing import List, Dict, Set
 import sourmash
 import os.path
 import pickle
@@ -210,7 +207,6 @@ def main(argv):
     trim = not args.pendants
     trim_cutoff = args.abundance
     unitigs = args.bcalm_unitigs
-    debug = args.debug
 
     logfile = os.path.join(os.path.dirname(args.gxt_out), 'bcalm_to_gxt.log')
     if args.debug:
