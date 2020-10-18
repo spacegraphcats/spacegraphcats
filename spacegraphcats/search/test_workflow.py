@@ -54,23 +54,32 @@ def copy_dory_sig():
 
 @pytest_utils.in_tempdir
 def test_dory_query_workflow(location):
-    from spacegraphcats.cdbg import bcalm_to_gxt
+    from spacegraphcats.cdbg import bcalm_to_gxt2, sort_bcalm_unitigs
     copy_dory_head()
     copy_dory_subset()
 
     # make the output directory
     try:
+        os.mkdir('dory')
         os.mkdir('dory_k21_r1')
     except FileExistsError:
         pass
 
-    # convert the bcalm file to gxt
-    args = ['-k', '21', '-P',
+    # sort the bcalm file
+    args = ['-k', '21',
             relative_file('dory/bcalm.dory.k21.unitigs.fa'),
+            'dory/bcalm.dory.k21.unitigs.pickle']
+
+    sort_bcalm_unitigs.main(args)
+
+    # convert the bcalm file to gxt
+    args = ['-P',
+            relative_file('dory/bcalm.dory.k21.unitigs.fa'),
+            'dory/bcalm.dory.k21.unitigs.pickle',
             'dory_k21_r1/cdbg.gxt',
             'dory_k21_r1/contigs.fa.gz']
 
-    bcalm_to_gxt.main(args)
+    bcalm_to_gxt2.main(args)
 
     # build catlas
     args = pytest_utils.Args()
