@@ -6,7 +6,9 @@ import os
 import csv
 
 import sourmash
+import screed
 
+from .search.catlas import CAtlas
 from .click import run_snakemake
 from .utils import pytest_utils as utils
 
@@ -82,3 +84,31 @@ def test_check_results():
     assert d['2.short.fa.gz'] == 0.0
     assert round(d['47.short.fa.gz'], 2) == 0.52, round(d['47.short.fa.gz'], 2)
     assert round(d['63.short.fa.gz'], 2) == 1.0, round(d['63.short.fa.gz'], 2)
+
+
+@pytest.mark.dependency(depends=['test_build_and_search'])
+def test_check_catlas_vs_contigs():
+    global _tempdir
+
+    catlas_prefix = os.path.join(_tempdir, 'twofoo-short_k31_r1')
+    catlas = CAtlas(catlas_prefix)
+    print('loaded {} nodes from catlas {}', len(catlas), catlas_prefix)
+    print('loaded {} layer 1 catlas nodes', len(catlas.layer1_to_cdbg))
+
+    root = catlas.root
+    root_cdbg_nodes = set(catlas.shadow([ root ]))
+    print(f'root cdbg nodes: {len(root_cdbg_nodes)}')
+
+    cdbg_id_set = set()
+    for record in screed.open(f'{catlas_prefix}/contigs.fa.gz'):
+        cdbg_id_set.add(int(record.name))
+
+    print(f'cdbg ID set: {len(cdbg_id_set)}')
+
+    print(f'root - unitigs: {len(root_cdbg_nodes - cdbg_id_set)}')
+    print(f'unitigs - root: {len(cdbg_id_set - root_cdbg_nodes)}')
+
+    # all unitigs should be in root shadow
+    assert not cdbg_id_set - root_cdbg_nodes
+    # all nodes in root shadow should be in unitigs
+    assert not root_cdbg_nodes - cdbg_id_set
