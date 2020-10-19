@@ -1,0 +1,12 @@
+catlas_base: twofoo-short
+input_sequences:
+- spacegraphcats/search/test-data/63.short.fa.gz
+- spacegraphcats/search/test-data/twofoo-short-reads.fa.gz
+ksize: 31
+radius: 1
+search:
+- spacegraphcats/search/test-data/2.short.fa.gz
+- spacegraphcats/search/test-data/47.short.fa.gz
+- spacegraphcats/search/test-data/63.short.fa.gz
+searchquick:
+- spacegraphcats/search/test-data/63.short.fa.gz
