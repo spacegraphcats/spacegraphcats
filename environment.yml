@@ -15,6 +15,7 @@ dependencies:
     - pytest=5.3.2
     - sortedcontainers=2.1.0
     - mypy=0.750
+    - click=7.1.1
     - pip
     - pip:
       - https://github.com/dib-lab/pybbhash/archive/spacegraphcats.zip
