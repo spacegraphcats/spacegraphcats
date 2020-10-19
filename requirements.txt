@@ -6,6 +6,7 @@ pytest-dependency
 numpy
 pandas
 snakemake == 5.8.1
+click == 7.1.1
 sortedcontainers
 https://github.com/dib-lab/pybbhash/archive/spacegraphcats.zip
 https://github.com/dib-lab/khmer/archive/master.zip
