@@ -203,6 +203,7 @@ rule bcalm_catlas_prepare_input:
             {input.unitigs} {input.mapping} {output.gxt} {output.contigs}
      """
 
+# combine all the reads into a single bgzf file, which permits random indexing.
 rule reads_bgzf:
     input:
         input_sequences
