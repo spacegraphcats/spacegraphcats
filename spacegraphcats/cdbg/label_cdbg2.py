@@ -67,7 +67,7 @@ def main(argv=sys.argv[1:]):
            len(kmer_idx.mphf_to_kmer), time.time() - ki_start)
 
     total_bp = 0
-    watermark_size = 1e7
+    watermark_size = 5e5
     watermark = watermark_size
 
     print('walking read file: {}'.format(args.reads))
@@ -88,7 +88,7 @@ def main(argv=sys.argv[1:]):
     for record, offset in search_utils.iterate_bgzf(reader):
         n += 1
         if total_bp >= watermark:
-            print('... {:5.2e} bp thru reads'.format(int(watermark)),
+            print(f'... {watermark:5.2e} bp thru reads', end='\r',
                   file=sys.stderr)
             watermark += watermark_size
         total_bp += len(record.sequence)
