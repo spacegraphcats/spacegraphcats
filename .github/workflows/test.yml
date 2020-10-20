@@ -26,6 +26,12 @@ jobs:
       - run: pip install -U pip setuptools
       - run: pip install -U Cython
 
+      - name: Setup conda
+        uses: s-weigand/setup-conda@v1
+        with:
+            activate-conda: false
+      - run: conda install -c conda-forge -c bioconda bcalm
+
       - name: Install Python dependencies
         run: pip install -U -r requirements.txt
 
