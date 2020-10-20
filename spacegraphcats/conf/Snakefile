@@ -217,11 +217,12 @@ rule reads_bgzf:
 rule label_reads:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        contigs = f"{catlas_dir}/contigs.fa.gz",
+        mphf = f"{catlas_dir}/contigs.fa.gz.mphf",
+        mphf_idx = f"{catlas_dir}/contigs.fa.gz.indices",
     output:
-        f"{catlas_dir}/reads.bgz.labels",
+        f"{catlas_dir}/reads.bgz.labels2",
     shell: """
-        {python} -m spacegraphcats.cdbg.label_cdbg {catlas_dir} \
+        {python} -m spacegraphcats.cdbg.label_cdbg2 {catlas_dir} \
             {input.reads} {output}
     """
 
@@ -333,7 +334,7 @@ rule extract_contigs_single_file:
 rule extract_reads_single_file:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels",
+        labels = f"{catlas_dir}/reads.bgz.labels2",
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
         f"{search_dir}/{{queryname}}.cdbg_ids.reads.fa.gz",
@@ -367,7 +368,7 @@ rule decompose_catlas:
 rule extract_reads_for_decomposition:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels",
+        labels = f"{catlas_dir}/reads.bgz.labels2",
         outdir = f"{catlas_dir}_decompose",
     shell: """
         for i in {input.outdir}/*.txt.gz; do
@@ -422,7 +423,7 @@ def aggregate_hashval_query(wildcards):
 rule extract_reads_single_hashval_file:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels",
+        labels = f"{catlas_dir}/reads.bgz.labels2",
         cdbg_ids = expand("{h}/contigs/{{hashval}}.cdbg_ids.txt.gz",
                           h=hashval_query_dir)
     output:
@@ -529,7 +530,7 @@ rule build_cdbg_list_by_record:
 rule extract_reads_single_file_multifasta:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels",
+        labels = f"{catlas_dir}/reads.bgz.labels2",
         cdbg_ids = f"{catlas_dir}_multifasta/{{queryname}}.cdbg_ids.txt.gz",
         in_csv = f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
     output:

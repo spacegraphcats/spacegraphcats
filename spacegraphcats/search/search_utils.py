@@ -23,13 +23,13 @@ def sqlite_get_offsets(cursor, cdbg_ids):
     seen_offsets = set()
     seen_labels = set()
 
-    cursor.execute('DROP TABLE IF EXISTS label_query')
-    cursor.execute('CREATE TEMPORARY TABLE label_query (label_id INTEGER PRIMARY KEY);')
+    cursor.execute('DROP TABLE IF EXISTS cdbg_query')
+    cursor.execute('CREATE TEMPORARY TABLE cdbg_query (cdbg_id INTEGER PRIMARY KEY);')
 
     for label in cdbg_ids:
-        cursor.execute('INSERT INTO label_query (label_id) VALUES (?)', (label,))
+        cursor.execute('INSERT INTO cdbg_query (cdbg_id) VALUES (?)', (label,))
 
-    cursor.execute('SELECT DISTINCT sequences.offset,sequences.label FROM sequences WHERE label in (SELECT label_id FROM label_query) ORDER BY offset')
+    cursor.execute('SELECT DISTINCT sequences.offset,sequences.cdbg_id FROM sequences WHERE cdbg_id in (SELECT cdbg_id FROM cdbg_query) ORDER BY offset')
 
     for n, (offset, label) in enumerate(cursor):
         if offset not in seen_offsets:
