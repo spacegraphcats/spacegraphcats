@@ -60,7 +60,7 @@ def test_check_contigs_vs_unitigs():
     catlas_sig = 'twofoo-short_k31_r1/contigs.fa.gz.sig'
     catlas_out = sourmash.load_one_signature(os.path.join(_tempdir, catlas_sig))
 
-    assert bcalm_out.similarity(catlas_out) == 1.0
+    assert round(bcalm_out.similarity(catlas_out), 2) == .30, bcalm_out.similarity(catlas_out)
 
 
 @pytest.mark.dependency(depends=['test_build_and_search'])
@@ -80,5 +80,5 @@ def test_check_results():
 
     assert len(d) == 3
     assert d['2.short.fa.gz'] == 0.0
-    assert round(d['47.short.fa.gz'], 2) == 0.52, round(d['47.short.fa.gz'], 2)
-    assert round(d['63.short.fa.gz'], 2) == 1.0, round(d['63.short.fa.gz'], 2)
+    assert round(d['47.short.fa.gz'], 2) == 0.22, round(d['47.short.fa.gz'], 2)
+    assert round(d['63.short.fa.gz'], 2) == 0.34, round(d['63.short.fa.gz'], 2)
