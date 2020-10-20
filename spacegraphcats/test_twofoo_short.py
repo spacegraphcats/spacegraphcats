@@ -4,6 +4,7 @@ import tempfile
 import shutil
 import os
 import csv
+import hashlib
 
 import sourmash
 import screed
@@ -84,6 +85,26 @@ def test_check_results():
     assert d['2.short.fa.gz'] == 0.0
     assert round(d['47.short.fa.gz'], 2) == 0.52, round(d['47.short.fa.gz'], 2)
     assert round(d['63.short.fa.gz'], 2) == 1.0, round(d['63.short.fa.gz'], 2)
+
+
+@pytest.mark.dependency(depends=['test_build_and_search'])
+def test_check_md5():
+    global _tempdir
+
+    gxt = os.path.join(_tempdir, 'twofoo-short_k31_r1/cdbg.gxt')
+    catlas = os.path.join(_tempdir, 'twofoo-short_k31_r1/catlas.csv')
+
+    with open(gxt, 'rb') as fp:
+        data = fp.read()
+    m = hashlib.md5()
+    m.update(data)
+    assert m.hexdigest() == '479fd4b509b1a05f429ca3ba7924192e', m.hexdigest()
+
+    with open(catlas, 'rb') as fp:
+        data = fp.read()
+    m = hashlib.md5()
+    m.update(data)
+    assert m.hexdigest() == 'e485eb1e3722493e6928904b854fef82', m.hexdigest()
 
 
 @pytest.mark.dependency(depends=['test_build_and_search'])
