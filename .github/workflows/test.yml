@@ -1,0 +1,44 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python: [3.7]
+
+    name: Python ${{ matrix.python }}
+
+    # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+
+      - run: pip install -U pip setuptools
+      - run: pip install -U Cython
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - run: pip install https://github.com/dib-lab/khmer/archive/master.zip
+
+      - run: pip install codecov pytest-cov
+
+      - name: Build
+        run: python setup.py build_ext --inplace
+
+      - run: make lint
+      - run: make twofoo-test
+      - run: pytest spacegraphcats --cov=.
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
