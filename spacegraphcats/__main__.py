@@ -5,11 +5,10 @@ import sys
 import argparse
 import os.path
 import snakemake
-import sys
 import pprint
 import yaml
 import json
-from .utils.logging import error, notify
+from .utils.logging import notify
 
 
 thisdir = os.path.abspath(os.path.dirname(__file__))

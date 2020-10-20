@@ -2,7 +2,6 @@
 import sys
 import os
 import subprocess
-import glob
 
 import click
 
@@ -170,7 +169,7 @@ def init(configfile, force):
     print(f"creating configfile '{configfile}' for project '{stubname}'")
     with open(configfile, 'wt') as fp:
         fp.write(\
-f"""\
+"""\
 # basic configuration:
 catlas_base: twofoo
 input_sequences:

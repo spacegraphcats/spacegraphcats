@@ -16,7 +16,7 @@ dependencies:
     - sortedcontainers=2.1.0
     - mypy=0.750
     - click=7.1.1
+    - pyflakes
     - pip
     - pip:
       - https://github.com/dib-lab/pybbhash/archive/spacegraphcats.zip
-      - git+https://github.com/spacegraphcats/spacegraphcats.git

@@ -11,3 +11,4 @@ sortedcontainers
 https://github.com/dib-lab/pybbhash/archive/spacegraphcats.zip
 https://github.com/dib-lab/khmer/archive/master.zip
 sourmash>3.4.1,<4
+pyflakes
