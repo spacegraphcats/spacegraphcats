@@ -35,5 +35,5 @@ class IOTest(unittest.TestCase):
         self.assertEqual(len(parsed), len(graph))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,8 +1,10 @@
 all: test
 
 flakes:
-	# TODO: remove from exceptions F841
-	flake8 spacegraphcats/ --ignore E252,E501,E226,E201,E202,266,W504,E266,E127,E302,W293,W291,F841
+	flake8 spacegraphcats/ scripts/
+
+black:
+	black .
 
 lint:
 	#mypy spacegraphcats/*.py

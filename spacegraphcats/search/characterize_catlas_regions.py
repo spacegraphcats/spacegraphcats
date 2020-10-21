@@ -17,7 +17,7 @@ from .catlas import CAtlas
 
 
 def make_all(ksize):
-    DNA = 'ACGT'
+    DNA = "ACGT"
 
     x = []
 
@@ -26,7 +26,7 @@ def make_all(ksize):
             x.append("".join(sofar))
         else:
             for ch in DNA:
-                add(sofar + ch, n-1)
+                add(sofar + ch, n - 1)
 
     add("", ksize)
     return x
@@ -36,8 +36,7 @@ def partition_catlas(catlas, max_size):
     roots = []
 
     def partition_recursive(node):
-        if catlas.shadow_sizes[node] > max_size and \
-                len(catlas.children[node]) > 0:
+        if catlas.shadow_sizes[node] > max_size and len(catlas.children[node]) > 0:
             for u in catlas.children[node]:
                 partition_recursive(u)
         else:
@@ -56,12 +55,12 @@ def compute_matrix(group_info, group_ident, ksize, output):
 
     # now, build a matrix of GROUP_N rows x 4**ksize columns, where each
     # row will be the set of k-mer abundances associated with each group.
-    print('creating', len(group_info), 4**ksize)
-    V = numpy.zeros((len(group_info), 4**ksize), dtype=numpy.uint16)
+    print("creating", len(group_info), 4 ** ksize)
+    V = numpy.zeros((len(group_info), 4 ** ksize), dtype=numpy.uint16)
     node_id_to_group_idx = {}
     for i, n in enumerate(group_info):
         if i % 1000 == 0:
-            print('...', i, len(group_info))
+            print("...", i, len(group_info))
         mh = group_info[n]
         vec = dict(mh.get_mins(with_abundance=True))
         vec = [vec.get(hashval, 0) for hashval in all_kmer_hashes]
@@ -71,58 +70,64 @@ def compute_matrix(group_info, group_ident, ksize, output):
         node_id_to_group_idx[n] = i
 
     # save!
-    print('saving matrix of size {} to {}'.format(str(V.shape), output))
-    with open(output, 'wb') as fp:
+    print("saving matrix of size {} to {}".format(str(V.shape), output))
+    with open(output, "wb") as fp:
         numpy.save(fp, V)
 
-    with open(output + '.node_ids', 'wb') as fp:
+    with open(output + ".node_ids", "wb") as fp:
         pickle.dump(node_id_to_group_idx, fp)
 
-    with open(output + '.node_mh', 'wb') as fp:
+    with open(output + ".node_mh", "wb") as fp:
         pickle.dump(group_ident, fp)
 
 
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
-    p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('output')
-    p.add_argument('--maxsize', type=float, default=20000)
-    p.add_argument('--minsize', type=float, default=5000)
-    p.add_argument('--min-abund', type=float, default=0)
-    p.add_argument('-k', '--ksize', default=5, type=int,
-                   help='k-mer size for vectors')
-    p.add_argument('--scaled', type=int, default=1000)
+    p.add_argument("catlas_prefix", help="catlas prefix")
+    p.add_argument("output")
+    p.add_argument("--maxsize", type=float, default=20000)
+    p.add_argument("--minsize", type=float, default=5000)
+    p.add_argument("--min-abund", type=float, default=0)
+    p.add_argument("-k", "--ksize", default=5, type=int, help="k-mer size for vectors")
+    p.add_argument("--scaled", type=int, default=1000)
     args = p.parse_args(args)
 
-    print('minsize: {:g}'.format(args.minsize))
-    print('maxsize: {:g}'.format(args.maxsize))
-    print('ksize: {}'.format(args.ksize))
-    print('min_abund: {}'.format(args.min_abund))
+    print("minsize: {:g}".format(args.minsize))
+    print("maxsize: {:g}".format(args.maxsize))
+    print("ksize: {}".format(args.ksize))
+    print("min_abund: {}".format(args.min_abund))
 
-    contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
+    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
-    catlas = CAtlas(args.catlas_prefix, load_sizefile=True,
-                    min_abund=args.min_abund)
+    catlas = CAtlas(args.catlas_prefix, load_sizefile=True, min_abund=args.min_abund)
     catlas.decorate_with_shadow_sizes()
 
     # everything is loaded!
 
     # find highest nodes with kmer size less than given max_size
-    print('finding terminal nodes for {}.'.format(args.maxsize))
+    print("finding terminal nodes for {}.".format(args.maxsize))
     nodes = partition_catlas(catlas, args.maxsize)
 
     nodes = {n for n in nodes if catlas.kmer_sizes[n] > args.minsize}
 
-    print('{} nodes between {} and {} in k-mer size'.format(
-          len(nodes), args.minsize, args.maxsize))
-    print('containing {} level1 nodes of {} total'.format(
-          len(catlas.shadow(nodes)),
-          sum(map(len, catlas.layer1_to_cdbg.values()))))
+    print(
+        "{} nodes between {} and {} in k-mer size".format(
+            len(nodes), args.minsize, args.maxsize
+        )
+    )
+    print(
+        "containing {} level1 nodes of {} total".format(
+            len(catlas.shadow(nodes)), sum(map(len, catlas.layer1_to_cdbg.values()))
+        )
+    )
 
     node_kmers = sum([catlas.kmer_sizes[n] for n in nodes])
     total_kmers = catlas.kmer_sizes[catlas.root]
-    print('containing {} kmers of {} total ({:.1f}%)'.format(
-          node_kmers, total_kmers, node_kmers / total_kmers * 100))
+    print(
+        "containing {} kmers of {} total ({:.1f}%)".format(
+            node_kmers, total_kmers, node_kmers / total_kmers * 100
+        )
+    )
 
     # now build cdbg -> subtree/group ID
 
@@ -142,16 +147,16 @@ def main(args=sys.argv[1:]):
     group_info = {}
     group_ident = {}
     for n in nodes:
-        group_info[n] = sourmash.MinHash(n=0, ksize=args.ksize,
-                                         scaled=1, track_abundance=1)
-        group_ident[n] = sourmash.MinHash(n=0, ksize=31,
-                                          scaled=args.scaled)
+        group_info[n] = sourmash.MinHash(
+            n=0, ksize=args.ksize, scaled=1, track_abundance=1
+        )
+        group_ident[n] = sourmash.MinHash(n=0, ksize=31, scaled=args.scaled)
 
     # aaaaaand iterate over contigs, collecting abundances from all contigs
     # in a group.
     for record_n, record in enumerate(screed.open(contigs)):
         if record_n % 10000 == 0:
-            print('...', record_n, end='\r')
+            print("...", record_n, end="\r")
         cdbg_id = int(record.name)
         group_id = cdbg_to_group.get(cdbg_id)
 
@@ -169,5 +174,5 @@ def main(args=sys.argv[1:]):
     compute_matrix(group_info, group_ident, args.ksize, args.output)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

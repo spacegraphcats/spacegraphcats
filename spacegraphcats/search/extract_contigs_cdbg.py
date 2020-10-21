@@ -18,21 +18,22 @@ from . import search_utils
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('query')
-    p.add_argument('-k', '--ksize', default=31, type=int,
-                   help='k-mer size (default: 31)')
-    p.add_argument('-o', '--output', type=argparse.FileType('wt'))
-    p.add_argument('-v', '--verbose', action='store_true')
+    p.add_argument("catlas_prefix", help="catlas prefix")
+    p.add_argument("query")
+    p.add_argument(
+        "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
+    )
+    p.add_argument("-o", "--output", type=argparse.FileType("wt"))
+    p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args()
 
-    contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
+    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
     # load k-mer MPHF index
     kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
 
     # build hashes for all the query k-mers
-    print('loading query kmers...')
+    print("loading query kmers...")
 
     x = set()
     n = 0
@@ -55,12 +56,12 @@ def main():
     # output some stats
     total_found = sum(cdbg_match_counts.values())
     f_found = total_found / len(query_kmers)
-    print('...done loading & counting query k-mers in cDBG.')
-    print('containment: {:.1f}%'.format(f_found * 100))
+    print("...done loading & counting query k-mers in cDBG.")
+    print("containment: {:.1f}%".format(f_found * 100))
 
     total_kmers_in_cdbg_nodes = sum(cdbg_node_sizes.values())
     sim = total_found / total_kmers_in_cdbg_nodes
-    print('similarity: {:.1f}%'.format(sim * 100))
+    print("similarity: {:.1f}%".format(sim * 100))
 
     if not args.output:
         sys.exit(0)
@@ -72,28 +73,29 @@ def main():
     total_bp = 0
     total_seqs = 0
 
-    print('extracting contigs to {}.'.format(outname))
+    print("extracting contigs to {}.".format(outname))
     for n, record in enumerate(screed.open(contigs)):
         if n % 10000 == 0:
             offset_f = total_seqs / len(cdbg_shadow)
-            print('...at n {} ({:.1f}% of shadow)'.format(total_seqs,
-                                                          offset_f * 100),
-                  end='\r')
+            print(
+                "...at n {} ({:.1f}% of shadow)".format(total_seqs, offset_f * 100),
+                end="\r",
+            )
 
         contig_id = int(record.name)
         if contig_id not in cdbg_shadow:
             continue
 
-        outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
+        outfp.write(">{}\n{}\n".format(record.name, record.sequence))
 
         total_bp += len(record.sequence)
         total_seqs += 1
 
-    print('')
-    print('fetched {} contigs, {} bp matching node list.'.format(total_seqs, total_bp))
+    print("")
+    print("fetched {} contigs, {} bp matching node list.".format(total_seqs, total_bp))
 
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

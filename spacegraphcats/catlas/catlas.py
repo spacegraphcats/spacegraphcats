@@ -54,8 +54,7 @@ class Project(object):
 
     def cp_name(self, level):
         """Return the name of the checkpoint file after level level."""
-        return os.path.join(self.dir,
-                            "{}_{}.checkpoint".format(self.r, level))
+        return os.path.join(self.dir, "{}_{}.checkpoint".format(self.r, level))
 
     def load_furthest_checkpoint(self):
         """Load the checkpoint that is furthest along."""
@@ -66,7 +65,7 @@ class Project(object):
             print("Loading graph from {}".format(self.graphfilename))
             # we only need to set the graph variable since index, level, and
             # previous nodes have the proper values by default
-            with open(self.graphfilename, 'r') as graph_file:
+            with open(self.graphfilename, "r") as graph_file:
                 self.graph = read_from_gxt(graph_file, self.r, False)
         else:
             self.load_checkpoint(existing[-1])
@@ -79,18 +78,19 @@ class Project(object):
         # the temp file contains catlas and graph information.  To use the
         # readers for catlas and graph, we need to temporarily split them into
         # separate files
-        tmpf = tempfile.TemporaryFile(mode='r+')
+        tmpf = tempfile.TemporaryFile(mode="r+")
 
         infile = self.cp_name(level)
-        with gzip.open(infile, 'rt') as f:
+        with gzip.open(infile, "rt") as f:
             # read until the end of the catlas
             for line in f:
                 if line == "###\n":
                     break
                 tmpf.write(line)
             # once we are at the graph section, start reading from there
-            self.graph = read_from_gxt(f, radius=UPPER_RADIUS, directed=False,
-                                       sequential=False)
+            self.graph = read_from_gxt(
+                f, radius=UPPER_RADIUS, directed=False, sequential=False
+            )
             # move back to the beginning of the temporary file and read the
             # catlas
             tmpf.seek(0)
@@ -100,7 +100,7 @@ class Project(object):
             # the checkpointed CAtlas has a dummy root.  The nodes in the
             # current level need to be removed from the root because we haven't
             # finished constructing their parents.
-            unfinished_idx = -1*len(self.graph)
+            unfinished_idx = -1 * len(self.graph)
             unfinished = root.children[unfinished_idx:]
             root.children = root.children[:unfinished_idx]
             self.level_nodes = {node.vertex: node for node in unfinished}
@@ -112,11 +112,10 @@ class Project(object):
         """Method used by the thread to write out."""
         outfile = self.cp_name(self.level - 1)
         print("Writing to file {}".format(outfile))
-        with gzip.open(outfile, 'wt') as f:
+        with gzip.open(outfile, "wt") as f:
             # make a dummy root to write the catlas using catlas.write method
             # we add all current level nodes as children of the root
-            root = CAtlas(self.idx, -1, self.level,
-                          copy.copy(self.root.children))
+            root = CAtlas(self.idx, -1, self.level, copy.copy(self.root.children))
             root.children.extend(self.level_nodes.values())
             root.write(f)
             f.write("###\n")
@@ -165,18 +164,16 @@ class CAtlas(object):
             else:
                 r = UPPER_RADIUS
             # build the current level
-            nodes, domgraph, dominated = CAtlas._build_level(proj.graph,
-                                                             r,
-                                                             proj.level,
-                                                             proj.idx,
-                                                             proj.level_nodes)
+            nodes, domgraph, dominated = CAtlas._build_level(
+                proj.graph, r, proj.level, proj.idx, proj.level_nodes
+            )
 
             print("Catlas level {} complete".format(proj.level))
 
             # at the bottom level we need to write out the domination
             # assignment
             if proj.level == 1 and not benchmark_only:
-                with open(proj.domfilename, 'w') as domfile:
+                with open(proj.domfilename, "w") as domfile:
                     for v, shadow in dominated.items():
                         domstr = str(v)
                         for u in shadow:
@@ -197,8 +194,9 @@ class CAtlas(object):
                     proj.root.children.append(nodes.pop(v))
 
             # quit if our level is sufficiently small
-            if len(domgraph) <= CAtlas.LEVEL_THRESHOLD or \
-                    len(domgraph) == len(proj.graph):
+            if len(domgraph) <= CAtlas.LEVEL_THRESHOLD or len(domgraph) == len(
+                proj.graph
+            ):
                 break
 
             # prep for the next iteration
@@ -222,8 +220,13 @@ class CAtlas(object):
         return proj.root
 
     @staticmethod
-    def _build_level(graph: Graph, radius: int, level: int, min_id: int=0,
-                     prev_nodes: List[int]=None):
+    def _build_level(
+        graph: Graph,
+        radius: int,
+        level: int,
+        min_id: int = 0,
+        prev_nodes: List[int] = None,
+    ):
         # find the domgraph of the current domgraph
         domset = rdomset(graph, radius)
         # dominated maps dominating vertices to a list of the vertices they
@@ -239,11 +242,11 @@ class CAtlas(object):
                 children = []  # type: List[int]
             else:
                 children = [prev_nodes[u] for u in dominated[v]]
-            nodes[v] = CAtlas(min_id+idx, v, level, children)
+            nodes[v] = CAtlas(min_id + idx, v, level, children)
 
         return nodes, domgraph, dominated
 
-    def leaves(self, visited: Set[object]=None) -> Set[object]:
+    def leaves(self, visited: Set[object] = None) -> Set[object]:
         """Find the descendants of this node with no children."""
         # this function is recursive so we need to keep track of nodes we
         # already visited
@@ -271,10 +274,9 @@ class CAtlas(object):
             curr = stack.pop()
             # write node information
             child_str = " ".join(str(child.idx) for child in curr.children)
-            outfile.write("{},{},{},{}\n".format(curr.idx,
-                                                 curr.vertex,
-                                                 curr.level,
-                                                 child_str))
+            outfile.write(
+                "{},{},{},{}\n".format(curr.idx, curr.vertex, curr.level, child_str)
+            )
             # all nodes already seen don't get re-added
             seen.add(curr)
             stack.extend(filter(lambda x: x not in seen, curr.children))
@@ -287,7 +289,7 @@ class CAtlas(object):
 
         # load everything from the catlas file
         for line in catlas_file:
-            catlas_node, cdbg_node, level, beneath = line.strip().split(',')
+            catlas_node, cdbg_node, level, beneath = line.strip().split(",")
 
             level = int(level)
             catlas_node = int(catlas_node)
@@ -302,7 +304,7 @@ class CAtlas(object):
             # parse out the children
             beneath = beneath.strip()
             if beneath:
-                beneath = beneath.split(' ')
+                beneath = beneath.split(" ")
                 children[catlas_node].extend(map(int, beneath))
 
             # make the new node with empty children
@@ -343,10 +345,10 @@ def main(args):
     if cat is None:
         print("ERROR: catlas is empty!? exiting.")
         return -1
-    
+
     print("catlas built")
     print("writing graph")
-    with open(proj.catlasfilename, 'w') as cfile:
+    with open(proj.catlasfilename, "w") as cfile:
         cat.write(cfile)
 
     return 0
@@ -354,14 +356,21 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("project", help="Project directory",
-                        type=str)
+    parser.add_argument("project", help="Project directory", type=str)
     parser.add_argument("radius", help="Catlas radius", type=int)
-    parser.add_argument("-n", "--no_checkpoint", action='store_true',
-                        help="Do not read or write checkpoints")
-    parser.add_argument("-l", "--level", type=int,
-                        help="Level at which to load the checkpoint."
-                        "Defaults to highest level saved when not invoked.")
+    parser.add_argument(
+        "-n",
+        "--no_checkpoint",
+        action="store_true",
+        help="Do not read or write checkpoints",
+    )
+    parser.add_argument(
+        "-l",
+        "--level",
+        type=int,
+        help="Level at which to load the checkpoint."
+        "Defaults to highest level saved when not invoked.",
+    )
     args = parser.parse_args()
 
     exit_val = main(args)
