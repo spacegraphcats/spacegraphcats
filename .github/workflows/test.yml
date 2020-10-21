@@ -41,6 +41,9 @@ jobs:
       - name: Build
         run: python setup.py build_ext --inplace
 
+      - name Install sgc
+        run: pip install -e .
+
       - run: make lint
       - run: make twofoo-test
       - run: pytest spacegraphcats --cov=.
