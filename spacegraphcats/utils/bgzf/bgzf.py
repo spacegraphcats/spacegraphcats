@@ -298,11 +298,13 @@ def make_virtual_offset(block_start_offset, within_block_offset):
 
     """
     if within_block_offset < 0 or within_block_offset >= 65536:
-        raise ValueError("Require 0 <= within_block_offset < 2**16, got %i" %
-                         within_block_offset)
+        raise ValueError(
+            "Require 0 <= within_block_offset < 2**16, got %i" % within_block_offset
+        )
     if block_start_offset < 0 or block_start_offset >= 281474976710656:
-        raise ValueError("Require 0 <= block_start_offset < 2**48, got %i" %
-                         block_start_offset)
+        raise ValueError(
+            "Require 0 <= block_start_offset < 2**48, got %i" % block_start_offset
+        )
     return (block_start_offset << 16) | within_block_offset
 
 
@@ -410,11 +412,14 @@ def _load_bgzf_block(handle, text_mode=False):
         # End of file
         raise StopIteration
     if magic != _bgzf_magic:
-        raise ValueError(r"A BGZF (e.g. a BAM file) block should start with "
-                         r"%r, not %r; handle.tell() now says %r"
-                         % (_bgzf_magic, magic, handle.tell()))
-    gzip_mod_time, gzip_extra_flags, gzip_os, extra_len = \
-        struct.unpack("<LBBH", handle.read(8))
+        raise ValueError(
+            r"A BGZF (e.g. a BAM file) block should start with "
+            r"%r, not %r; handle.tell() now says %r"
+            % (_bgzf_magic, magic, handle.tell())
+        )
+    gzip_mod_time, gzip_extra_flags, gzip_os, extra_len = struct.unpack(
+        "<LBBH", handle.read(8)
+    )
 
     block_size = None
     x_len = 0
@@ -435,16 +440,17 @@ def _load_bgzf_block(handle, text_mode=False):
     data = d.decompress(handle.read(deflate_size)) + d.flush()
     expected_crc = handle.read(4)
     expected_size = struct.unpack("<I", handle.read(4))[0]
-    assert expected_size == len(data), \
-        "Decompressed to %i, not %i" % (len(data), expected_size)
+    assert expected_size == len(data), "Decompressed to %i, not %i" % (
+        len(data),
+        expected_size,
+    )
     # Should cope with a mix of Python platforms...
     crc = zlib.crc32(data)
     if crc < 0:
         crc = struct.pack("<i", crc)
     else:
         crc = struct.pack("<I", crc)
-    assert expected_crc == crc, \
-        "CRC is %s, not %s" % (crc, expected_crc)
+    assert expected_crc == crc, "CRC is %s, not %s" % (crc, expected_crc)
     if text_mode:
         return block_size, _as_string(data)
     else:
@@ -535,7 +541,9 @@ class BgzfReader(object):
             assert "b" in handle.mode.lower()
         else:
             if "w" in mode.lower() or "a" in mode.lower():
-                raise ValueError("Must use read mode (default), not write or append mode")
+                raise ValueError(
+                    "Must use read mode (default), not write or append mode"
+                )
             handle = _open(filename, "rb")
         self._text = "b" not in mode.lower()
         if self._text:
@@ -589,8 +597,9 @@ class BgzfReader(object):
 
     def tell(self):
         """Return a 64-bit unsigned BGZF virtual offset."""
-        if 0 < self._within_block_offset and \
-                self._within_block_offset == len(self._buffer):
+        if 0 < self._within_block_offset and self._within_block_offset == len(
+            self._buffer
+        ):
             # Special case where we're right at the end of a (non empty) block.
             # For non-maximal blocks could give two possible virtual offsets,
             # but for a maximal block can't use 65536 as the within block
@@ -616,8 +625,10 @@ class BgzfReader(object):
             assert start_offset == self._block_start_offset
         if within_block > len(self._buffer):
             if not (within_block == 0 and len(self._buffer) == 0):
-                raise ValueError("Within offset %i but block size only %i"
-                                 % (within_block, len(self._buffer)))
+                raise ValueError(
+                    "Within offset %i but block size only %i"
+                    % (within_block, len(self._buffer))
+                )
         self._within_block_offset = within_block
         # assert virtual_offset == self.tell(), \
         #    "Did seek to %i (%i, %i), but tell says %i (%i, %i)" \
@@ -638,12 +649,14 @@ class BgzfReader(object):
         elif self._within_block_offset + size <= len(self._buffer):
             # This may leave us right at the end of a block
             # (lazy loading, don't load the next block unless we have too)
-            data = self._buffer[self._within_block_offset:self._within_block_offset + size]
+            data = self._buffer[
+                self._within_block_offset : self._within_block_offset + size
+            ]
             self._within_block_offset += size
             assert data  # Must be at least 1 byte
             return data
         else:
-            data = self._buffer[self._within_block_offset:]
+            data = self._buffer[self._within_block_offset :]
             size -= len(data)
             self._load_block()  # will reset offsets
             # TODO - Test with corner case of an empty block followed by
@@ -663,7 +676,7 @@ class BgzfReader(object):
         # Three cases to consider,
         if i == -1:
             # No newline, need to read in more data
-            data = self._buffer[self._within_block_offset:]
+            data = self._buffer[self._within_block_offset :]
             self._load_block()  # will reset offsets
             if not self._buffer:
                 return data  # EOF
@@ -672,14 +685,14 @@ class BgzfReader(object):
                 return data + self.readline()
         elif i + 1 == len(self._buffer):
             # Found new line, but right at end of block (SPECIAL)
-            data = self._buffer[self._within_block_offset:]
+            data = self._buffer[self._within_block_offset :]
             # Must now load the next block to ensure tell() works
             self._load_block()  # will reset offsets
             assert data
             return data
         else:
             # Found new line, not at end of block (easy case, no IO)
-            data = self._buffer[self._within_block_offset:i + 1]
+            data = self._buffer[self._within_block_offset : i + 1]
             self._within_block_offset = i + 1
             # assert data.endswith(self._newline)
             return data
@@ -692,6 +705,7 @@ class BgzfReader(object):
         return line
 
     if sys.version_info[0] < 3:
+
         def next(self):
             """Python 2 style alias for Python 3 style __next__ method."""
             return self.__next__()
@@ -751,19 +765,17 @@ class BgzfWriter(object):
     def _write_block(self, block):
         """Write provided data to file as a single BGZF compressed block (PRIVATE)."""
         # print("Saving %i bytes" % len(block))
-        start_offset = self._handle.tell()
         assert len(block) <= 65536
         # Giving a negative window bits means no gzip/zlib headers,
         # -15 used in samtools
-        c = zlib.compressobj(self.compresslevel,
-                             zlib.DEFLATED,
-                             -15,
-                             zlib.DEF_MEM_LEVEL,
-                             0)
+        c = zlib.compressobj(
+            self.compresslevel, zlib.DEFLATED, -15, zlib.DEF_MEM_LEVEL, 0
+        )
         compressed = c.compress(block) + c.flush()
         del c
-        assert len(compressed) < 65536, \
-            "TODO - Didn't compress enough, try less data in this block"
+        assert (
+            len(compressed) < 65536
+        ), "TODO - Didn't compress enough, try less data in this block"
         crc = zlib.crc32(block)
         # Should cope with a mix of Python platforms...
         if crc < 0:
@@ -771,7 +783,7 @@ class BgzfWriter(object):
         else:
             crc = struct.pack("<I", crc)
         bsize = struct.pack("<H", len(compressed) + 25)  # includes -1
-        crc = struct.pack("<I", zlib.crc32(block) & 0xffffffff)
+        crc = struct.pack("<I", zlib.crc32(block) & 0xFFFFFFFF)
         uncompressed_length = struct.pack("<I", len(block))
         # Fixed 16 bytes,
         # gzip magic bytes (4) mod time (4),

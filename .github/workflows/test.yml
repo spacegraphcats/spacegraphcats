@@ -1,0 +1,55 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python: [3.7]
+
+    name: Python ${{ matrix.python }}
+
+    # We want to run on external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+
+      - run: pip install -U pip setuptools
+      - run: pip install -U Cython
+
+      - name: Setup conda
+        uses: s-weigand/setup-conda@v1
+        with:
+            activate-conda: false
+      - run: conda install -c conda-forge -c bioconda bcalm
+
+      - name: Install Python dependencies
+        run: pip install -U -r requirements.txt
+
+      - name: Install coverage dependencies
+        run: pip install pytest-cov
+
+      - name: Build
+        run: python setup.py build_ext --inplace
+
+      - name: Install sgc
+        run: pip install -e .
+
+      - run: make black
+      - run: make flakes
+      - run: make lint
+
+      - run: make twofoo-test
+      - run: pytest spacegraphcats --cov=.
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1

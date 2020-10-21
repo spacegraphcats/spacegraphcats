@@ -1,20 +1,17 @@
-import collections
 import csv
 import os
 import sqlite3
 
-import numpy
 from screed.screedRecord import Record
 from screed.utils import to_str
-from sourmash import MinHash
 
 from spacegraphcats.utils.bgzf.bgzf import BgzfReader
 from . import MPHF_KmerIndex
 
 
 def sqlite_get_max_offset(cursor):
-    cursor.execute('SELECT max(sequences.offset) FROM sequences')
-    last_offset, = next(cursor)
+    cursor.execute("SELECT max(sequences.offset) FROM sequences")
+    (last_offset,) = next(cursor)
 
     return last_offset
 
@@ -23,13 +20,15 @@ def sqlite_get_offsets(cursor, cdbg_ids):
     seen_offsets = set()
     seen_labels = set()
 
-    cursor.execute('DROP TABLE IF EXISTS label_query')
-    cursor.execute('CREATE TEMPORARY TABLE label_query (label_id INTEGER PRIMARY KEY);')
+    cursor.execute("DROP TABLE IF EXISTS label_query")
+    cursor.execute("CREATE TEMPORARY TABLE label_query (label_id INTEGER PRIMARY KEY);")
 
     for label in cdbg_ids:
-        cursor.execute('INSERT INTO label_query (label_id) VALUES (?)', (label,))
+        cursor.execute("INSERT INTO label_query (label_id) VALUES (?)", (label,))
 
-    cursor.execute('SELECT DISTINCT sequences.offset,sequences.label FROM sequences WHERE label in (SELECT label_id FROM label_query) ORDER BY offset')
+    cursor.execute(
+        "SELECT DISTINCT sequences.offset,sequences.label FROM sequences WHERE label in (SELECT label_id FROM label_query) ORDER BY offset"
+    )
 
     for n, (offset, label) in enumerate(cursor):
         if offset not in seen_offsets:
@@ -38,21 +37,21 @@ def sqlite_get_offsets(cursor, cdbg_ids):
         seen_labels.add(label)
 
     seen_labels -= cdbg_ids
-    assert not seen_labels                # should have gotten ALL the labels
+    assert not seen_labels  # should have gotten ALL the labels
 
 
 class GrabBGZF_Random(object):
     def __init__(self, filename):
-        self.reader = BgzfReader(filename, 'rt')
+        self.reader = BgzfReader(filename, "rt")
 
         ch = self.reader.read(1)
 
-        if ch == '>':
+        if ch == ">":
             iter_fn = my_fasta_iter
-        elif ch == '@':
+        elif ch == "@":
             iter_fn = my_fastq_iter
         else:
-            raise Exception('unknown start chr {}'.format(ch))
+            raise Exception("unknown start chr {}".format(ch))
 
         self.iter_fn = iter_fn
 
@@ -65,12 +64,12 @@ class GrabBGZF_Random(object):
 def iterate_bgzf(reader):
     ch = reader.read(1)
 
-    if ch == '>':
+    if ch == ">":
         iter_fn = my_fasta_iter
-    elif ch == '@':
+    elif ch == "@":
         iter_fn = my_fastq_iter
     else:
-        raise Exception('unknown start chr {}'.format(ch))
+        raise Exception("unknown start chr {}".format(ch))
 
     reader.seek(0)
 
@@ -91,32 +90,34 @@ def my_fasta_iter(handle, parse_description=False, line=None):
         data = {}
 
         line = to_str(line.strip())
-        if not line.startswith('>'):
-            raise IOError("Bad FASTA format: no '>' at beginning of line: {}".format(line))
+        if not line.startswith(">"):
+            raise IOError(
+                "Bad FASTA format: no '>' at beginning of line: {}".format(line)
+            )
 
         if parse_description:  # Try to grab the name and optional description
             try:
-                data['name'], data['description'] = line[1:].split(' ', 1)
+                data["name"], data["description"] = line[1:].split(" ", 1)
             except ValueError:  # No optional description
-                data['name'] = line[1:]
-                data['description'] = ''
+                data["name"] = line[1:]
+                data["description"] = ""
         else:
-            data['name'] = line[1:]
-            data['description'] = ''
+            data["name"] = line[1:]
+            data["description"] = ""
 
-        data['name'] = data['name'].strip()
-        data['description'] = data['description'].strip()
+        data["name"] = data["name"].strip()
+        data["description"] = data["description"].strip()
 
         # Collect sequence lines into a list
         sequenceList = []
         pos = handle.tell()
         line = to_str(handle.readline())
-        while line and not line.startswith('>'):
+        while line and not line.startswith(">"):
             sequenceList.append(line.strip())
             pos = handle.tell()
             line = to_str(handle.readline())
 
-        data['sequence'] = ''.join(sequenceList)
+        data["sequence"] = "".join(sequenceList)
         yield Record(**data), last_start
         last_start = pos
 
@@ -134,7 +135,7 @@ def my_fastq_iter(handle, line=None, parse_description=False):
         line = handle.readline()
         if not line:
             return
-        assert line.startswith('@'), line
+        assert line.startswith("@"), line
         name = to_str(line.strip())[1:]
 
         line = handle.readline()
@@ -142,7 +143,7 @@ def my_fastq_iter(handle, line=None, parse_description=False):
 
         line = handle.readline()
         plus = to_str(line.strip())
-        assert plus == '+'
+        assert plus == "+"
 
         line = handle.readline()
         quality = to_str(line.strip())
@@ -184,25 +185,26 @@ def get_contigs_by_cdbg(contigs_filename, cdbg_ids):
     which is created by bcalm_to_gxt; and then seeking into the contigs.fa.gz
     BGZF file to extract the specific sequence.
     """
-    info_filename = contigs_filename + '.info.csv'
+    info_filename = contigs_filename + ".info.csv"
     reads_grabber = GrabBGZF_Random(contigs_filename)
 
-    with open(info_filename, 'rt') as info_fp:
+    with open(info_filename, "rt") as info_fp:
         r = csv.DictReader(info_fp)
 
         for row in r:
-            contig_id = int(row['contig_id'])
+            contig_id = int(row["contig_id"])
             if contig_id in cdbg_ids:
-                offset = int(row['offset'])
+                offset = int(row["offset"])
 
                 record, xx = reads_grabber.get_sequence_at(offset)
                 assert xx == offset
-                assert int(record.name) == contig_id, (record.name,contig_id)
+                assert int(record.name) == contig_id, (record.name, contig_id)
 
                 yield record
 
 
 ### MPHF stuff
+
 
 def load_kmer_index(catlas_prefix):
     "Load kmer index created by search.contigs_by_kmer."
@@ -210,23 +212,25 @@ def load_kmer_index(catlas_prefix):
 
 
 def load_cdbg_size_info(catlas_prefix, min_abund=0.0):
-    filename = os.path.join(catlas_prefix, 'contigs.fa.gz.info.csv')
-    with open(filename, 'rt') as fp:
+    filename = os.path.join(catlas_prefix, "contigs.fa.gz.info.csv")
+    with open(filename, "rt") as fp:
         cdbg_kmer_sizes = {}
         cdbg_weighted_kmer_sizes = {}
         r = csv.DictReader(fp)
         for row in r:
-            contig_id = int(row['contig_id'])
-            n_kmers = int(row['n_kmers'])
-            mean_abund = float(row['mean_abund'])
+            contig_id = int(row["contig_id"])
+            n_kmers = int(row["n_kmers"])
+            mean_abund = float(row["mean_abund"])
             if not min_abund or mean_abund >= min_abund:
                 cdbg_kmer_sizes[contig_id] = n_kmers
-                cdbg_weighted_kmer_sizes[contig_id] = mean_abund*n_kmers
+                cdbg_weighted_kmer_sizes[contig_id] = mean_abund * n_kmers
 
     return cdbg_kmer_sizes, cdbg_weighted_kmer_sizes
 
 
-def decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes):
+def decorate_catlas_with_kmer_sizes(
+    layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes
+):
     x = []
     for (node_id, level) in dag_levels.items():
         x.append((level, node_id))
@@ -235,7 +239,7 @@ def decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_s
     node_kmer_sizes = {}
     node_weighted_kmer_sizes = {}
     for level, node_id in x:
-        if level == 1:                    # aggregate across cDBG nodes
+        if level == 1:  # aggregate across cDBG nodes
             total_kmers = 0
             total_weighted_kmers = 0
             for cdbg_node in layer1_to_cdbg.get(node_id):
@@ -244,7 +248,7 @@ def decorate_catlas_with_kmer_sizes(layer1_to_cdbg, dag, dag_levels, cdbg_kmer_s
 
             node_kmer_sizes[node_id] = total_kmers
             node_weighted_kmer_sizes[node_id] = total_weighted_kmers
-        else:                             # aggregate across children
+        else:  # aggregate across children
             sub_size = 0
             sub_weighted_size = 0
             for child_id in dag[node_id]:
@@ -275,7 +279,7 @@ def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
         # do we keep this layer1 node, i.e. does it have positive containment?
         if n_matches:
             n_cont = n_matches
-            n_oh = (n_kmers - n_matches)
+            n_oh = n_kmers - n_matches
 
             total += n_cont
             curve.append((n_cont, n_oh, node_id))
@@ -292,8 +296,10 @@ def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
     # @CTB: switch to CSV output
     # @CTB: ask Mike what he wants here :)
 
-    with open(outname, 'wt') as fp:
-        fp.write('sum_cont relative_cont relative_overhead sum_cont2 sum_oh catlas_id\n')
+    with open(outname, "wt") as fp:
+        fp.write(
+            "sum_cont relative_cont relative_overhead sum_cont2 sum_oh catlas_id\n"
+        )
 
         # only output ~200 points
         sampling_rate = max(int(len(curve) / 200), 1)
@@ -305,5 +311,14 @@ def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
             total_cont += n_cont
 
             # output first and last points, as well as at sampling rate.
-            if pos % sampling_rate == 0 or pos == 0 or pos+1 == len(curve):
-                fp.write('{} {} {} {} {} {}\n'.format(sofar, total_cont / total, total_oh / total, n_cont, n_oh, node_id))
+            if pos % sampling_rate == 0 or pos == 0 or pos + 1 == len(curve):
+                fp.write(
+                    "{} {} {} {} {} {}\n".format(
+                        sofar,
+                        total_cont / total,
+                        total_oh / total,
+                        n_cont,
+                        n_oh,
+                        node_id,
+                    )
+                )

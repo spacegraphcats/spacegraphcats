@@ -7,7 +7,7 @@ from io import StringIO
 
 
 LOGFILE = "commands.log"
-GIT_COMMIT = ["git", "rev-parse", "--short",  "HEAD"]
+GIT_COMMIT = ["git", "rev-parse", "--short", "HEAD"]
 
 
 def log_command(project, args):
@@ -15,13 +15,15 @@ def log_command(project, args):
     path = os.path.join(project, LOGFILE)
     output = sp.run(GIT_COMMIT, stdout=sp.PIPE)
     git_hash = output.stdout.strip().decode("utf-8")
-    with open(path, 'a') as logfile:
+    with open(path, "a") as logfile:
         call = " ".join(args)
         logfile.write("{} {}\n".format(git_hash, call))
 
 
 _quiet = False
 _debug = False
+
+
 def set_quiet(val, print_debug=False):
     global _quiet, _debug
     _quiet = bool(val)
@@ -41,10 +43,9 @@ def notify(s, *args, **kwargs):
     if _quiet:
         return
 
-    print(u'\r\033[K', end=u'', file=sys.stderr)
-    print(s.format(*args, **kwargs), file=sys.stderr,
-          end=kwargs.get('end', u'\n'))
-    if kwargs.get('flush'):
+    print(u"\r\033[K", end=u"", file=sys.stderr)
+    print(s.format(*args, **kwargs), file=sys.stderr, end=kwargs.get("end", u"\n"))
+    if kwargs.get("flush"):
         sys.stderr.flush()
 
 
@@ -53,18 +54,17 @@ def debug(s, *args, **kwargs):
     if _quiet or not _debug:
         return
 
-    print(u'\r\033[K', end=u'', file=sys.stderr)
-    print(s.format(*args, **kwargs), file=sys.stderr,
-          end=kwargs.get('end', u'\n'))
-    if kwargs.get('flush'):
+    print(u"\r\033[K", end=u"", file=sys.stderr)
+    print(s.format(*args, **kwargs), file=sys.stderr, end=kwargs.get("end", u"\n"))
+    if kwargs.get("flush"):
         sys.stderr.flush()
 
 
 def error(s, *args, **kwargs):
     "A simple error logging function => stderr."
-    print(u'\r\033[K', end=u'', file=sys.stderr)
+    print(u"\r\033[K", end=u"", file=sys.stderr)
     print(s.format(*args, **kwargs), file=sys.stderr)
-    if kwargs.get('flush'):
+    if kwargs.get("flush"):
         sys.stderr.flush()
 
 
@@ -75,13 +75,13 @@ def test_notify():
     saveerr, sys.stderr = sys.stderr, StringIO()
     try:
         _quiet = False
-        notify(u'hello, world')
+        notify(u"hello, world")
     finally:
         _quiet = qsave
         saveerr, sys.stderr = sys.stderr, saveerr
 
     print(type(saveerr))
-    assert 'hello, world\n' in saveerr.getvalue()
+    assert "hello, world\n" in saveerr.getvalue()
 
 
 def test_notify_flush():
@@ -91,13 +91,13 @@ def test_notify_flush():
     saveerr, sys.stderr = sys.stderr, StringIO()
     try:
         _quiet = False
-        notify(u'hello, world', flush=True)
+        notify(u"hello, world", flush=True)
     finally:
         _quiet = qsave
         saveerr, sys.stderr = sys.stderr, saveerr
 
     print(type(saveerr))
-    assert 'hello, world' in saveerr.getvalue()
+    assert "hello, world" in saveerr.getvalue()
 
 
 def test_notify_end():
@@ -107,13 +107,13 @@ def test_notify_end():
     saveerr, sys.stderr = sys.stderr, StringIO()
     try:
         _quiet = False
-        notify(u'hello, world', end=u'FOO')
+        notify(u"hello, world", end=u"FOO")
     finally:
         _quiet = qsave
         saveerr, sys.stderr = sys.stderr, saveerr
 
     print(type(saveerr))
-    assert 'hello, worldFOO' in saveerr.getvalue()
+    assert "hello, worldFOO" in saveerr.getvalue()
 
 
 def test_notify_quiet():
@@ -123,13 +123,13 @@ def test_notify_quiet():
     saveerr, sys.stderr = sys.stderr, StringIO()
     try:
         _quiet = True
-        notify(u'hello, world')
+        notify(u"hello, world")
     finally:
         _quiet = qsave
         saveerr, sys.stderr = sys.stderr, saveerr
 
     print(type(saveerr))
-    assert 'hello, world' not in saveerr.getvalue()
+    assert "hello, world" not in saveerr.getvalue()
 
 
 def test_error():
@@ -139,13 +139,13 @@ def test_error():
     saveerr, sys.stderr = sys.stderr, StringIO()
     try:
         _quiet = False
-        error(u'hello, world')
+        error(u"hello, world")
     finally:
         _quiet = qsave
         saveerr, sys.stderr = sys.stderr, saveerr
 
     print(type(saveerr))
-    assert 'hello, world\n' in saveerr.getvalue()
+    assert "hello, world\n" in saveerr.getvalue()
 
 
 def test_error_flush():
@@ -155,13 +155,13 @@ def test_error_flush():
     saveerr, sys.stderr = sys.stderr, StringIO()
     try:
         _quiet = False
-        error(u'hello, world', flush=True)
+        error(u"hello, world", flush=True)
     finally:
         _quiet = qsave
         saveerr, sys.stderr = sys.stderr, saveerr
 
     print(type(saveerr))
-    assert 'hello, world' in saveerr.getvalue()
+    assert "hello, world" in saveerr.getvalue()
 
 
 def test_error_quiet():
@@ -172,10 +172,10 @@ def test_error_quiet():
     saveerr, sys.stderr = sys.stderr, StringIO()
     try:
         _quiet = True
-        error(u'hello, world')
+        error(u"hello, world")
     finally:
         _quiet = qsave
         saveerr, sys.stderr = sys.stderr, saveerr
 
     print(type(saveerr))
-    assert 'hello, world' in saveerr.getvalue()
+    assert "hello, world" in saveerr.getvalue()
