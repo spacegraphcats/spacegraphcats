@@ -225,8 +225,6 @@ NC_000932.1
 
 """
 
-from __future__ import print_function
-
 import sys
 import zlib
 import struct
