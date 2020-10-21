@@ -9,7 +9,6 @@ import os
 import sys
 import gzip
 
-import screed
 from .catlas import CAtlas
 
 

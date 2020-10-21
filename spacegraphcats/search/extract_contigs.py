@@ -10,9 +10,6 @@ import gzip
 
 import screed
 
-from spacegraphcats.utils.logging import log_command
-from . import search_utils
-
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()

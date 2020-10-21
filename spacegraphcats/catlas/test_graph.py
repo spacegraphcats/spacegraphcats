@@ -70,7 +70,7 @@ class GraphTest(unittest.TestCase):
                            (4, 0),
                            (5, 0)])
         self.assertEqual(set(graph.transitive_pairs(0, 4)), trans_pairs)
-        
+
 
 if __name__ == '__main__':
     unittest.main()

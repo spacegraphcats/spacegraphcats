@@ -2,8 +2,7 @@
 from collections import defaultdict
 from .graph import Graph, DictGraph
 
-from typing import List, Set, Dict, Any, Union
-import itertools
+from typing import List, Set, Dict, Union
 
 from sortedcontainers import SortedSet, SortedDict
 

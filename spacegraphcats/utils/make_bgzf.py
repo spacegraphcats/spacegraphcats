@@ -4,7 +4,6 @@ Convert an input file into a BGZF file that supports random indexing by offset.
 """
 import screed
 from .bgzf import bgzf
-import os.path
 import argparse
 import sys
 
@@ -28,8 +27,8 @@ def main(argv=sys.argv[1:]):
             offset = outfp.tell()
             if hasattr(record, 'quality'):
                 outfp.write('@{}\n{}\n+\n{}\n'.format(record.name,
-                                                     record.sequence,
-                                                     record.quality))
+                                                      record.sequence,
+                                                      record.quality))
             else:
                 outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
             if n % 100000 == 0:

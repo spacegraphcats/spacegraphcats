@@ -5,7 +5,6 @@ specified sourmash ksize & scaled.
 """
 import screed
 import sys
-import collections
 import argparse
 import sourmash
 from pickle import dump

@@ -5,11 +5,10 @@ import sys
 import argparse
 import os.path
 import snakemake
-import sys
 import pprint
 import yaml
 import json
-from .utils.logging import error, notify
+from .utils.logging import notify
 
 
 thisdir = os.path.abspath(os.path.dirname(__file__))
@@ -132,8 +131,8 @@ from the main spacegraphcats directory.
                                  lock=not args.nolock, config=config,
                                  verbose=args.verbose, debug_dag=args.debug)
 
-    if status: # translate "success" into shell exit code of 0
-       return 0
+    if status:  # translate "success" into shell exit code of 0
+        return 0
     return 1
 
 

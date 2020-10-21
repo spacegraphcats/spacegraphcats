@@ -3,7 +3,6 @@ import shutil
 import screed
 import sourmash
 
-import pytest
 import spacegraphcats.utils.pytest_utils as pytest_utils
 from spacegraphcats.utils.pytest_utils import (pkg_file, relative_file)
 
@@ -23,21 +22,24 @@ from spacegraphcats.search import extract_reads
 from spacegraphcats.cdbg import index_cdbg_by_minhash
 from spacegraphcats.search import query_by_hashval
 from spacegraphcats.search import index_cdbg_by_multifasta
-from spacegraphcats.cdbg import index_cdbg_by_minhash
 from spacegraphcats.search import query_multifasta_by_sig
 from spacegraphcats.search import extract_cdbg_by_multifasta
+
 
 def copy_dory_catlas():
     testdata = pkg_file('search/test-data/catlas.dory_k21_r1')
     shutil.copytree(testdata, './dory_k21_r1')
 
+
 def copy_dory_catlas_search():
     testdata = pkg_file('search/test-data/catlas.dory_k21_r1_search_oh0')
     shutil.copytree(testdata, './dory_k21_r1_search_oh0')
 
+
 def copy_dory_head():
     testdata = relative_file('data/dory-head.fa')
     shutil.copyfile(testdata, 'dory-head.fa')
+
 
 def copy_dory_subset():
     testdata = relative_file('data/dory-subset.fa')
@@ -45,6 +47,7 @@ def copy_dory_subset():
 
     testdata = relative_file('data/dory-subset.fq')
     shutil.copyfile(testdata, 'dory-subset.fq')
+
 
 def copy_dory_sig():
     testdata = relative_file('data/dory-subset.fq.sig')
@@ -96,7 +99,7 @@ def test_dory_query_workflow(location):
     index_contigs_by_kmer.main(args)
 
     # do search!!
-    args='dory_k21_r1 dory_k21_r1_search_oh0 --query dory-head.fa -k 21'.split()
+    args = 'dory_k21_r1 dory_k21_r1_search_oh0 --query dory-head.fa -k 21'.split()
     try:
         query_by_sequence.main(args)
     except SystemExit as e:
@@ -140,7 +143,7 @@ def test_dory_search_nomatch(location):
     index_contigs_by_kmer.main(args)
 
     # do search!!
-    args='dory_k21_r1 dory_k21_r1_search_oh0 --query random-query.fa -k 21'.split()
+    args = 'dory_k21_r1 dory_k21_r1_search_oh0 --query random-query.fa -k 21'.split()
     try:
         query_by_sequence.main(args)
     except SystemExit as e:

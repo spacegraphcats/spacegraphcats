@@ -2,8 +2,8 @@
 """
 Retrieve nodes by MinHash hashvals, using the indices created by
 spacegraphcats.cdbg.index_cdbg_by_minhash.
-Accepts as input catlas prefix, pickled hashval index, file with 
-list of hashvals, and the output. Also accepts flags -k for 
+Accepts as input catlas prefix, pickled hashval index, file with
+list of hashvals, and the output. Also accepts flags -k for
 k-mer size (default 31), --scaled for scaled value for sourmash
 signature output (default 1000), and -v for verbose.
 """
@@ -15,13 +15,12 @@ import sys
 import time
 import pickle
 
-import screed
 import sourmash
 from sourmash import MinHash
 
 from . import search_utils
 from .catlas import CAtlas
-from ..utils.logging import notify, error, debug
+from ..utils.logging import notify, error
 
 
 class QueryOutput:
@@ -66,7 +65,6 @@ class QueryOutput:
                ' ({:.1f}s)', self.total_seq, self.total_bp,
                time.time() - retrieve_start)
 
-
     def write(self, csv_writer, csvoutfp, outdir):
         hashval = self.query_hashval
         bp = self.total_bp
@@ -92,7 +90,7 @@ class QueryOutput:
         # save minhash?
         if self.mh:
             ss = sourmash.SourmashSignature(self.mh,
-                                      name='hashval query:{}'.format(q_name))
+                                            name='hashval query:{}'.format(q_name))
 
             sigfile = os.path.join(outdir, "contigs", q_name + '.contigs.sig')
             with open(sigfile, 'wt') as fp:
@@ -110,7 +108,7 @@ def execute_query(hashval, catlas, hashval_to_contig_id, mh=None):
 
     # calculate the leaves (this _should_ just be catlas_node_id for now)
     leaves = catlas.leaves([catlas_node_id])
-    assert leaves == { catlas_node_id }
+    assert leaves == {catlas_node_id}
 
     # calculate associated cDBG nodes
     cdbg_shadow = catlas.shadow(leaves)
@@ -135,7 +133,7 @@ def main(argv):
     # create output directory if it doesn't exist.
     outdir = args.output
     notify('putting output in {}', outdir)
-    os.makedirs(os.path.join(outdir, "contigs"), exist_ok = True)
+    os.makedirs(os.path.join(outdir, "contigs"), exist_ok=True)
 
     if not os.path.isdir(outdir):
         error("output '{}' is not a directory and cannot be made", outdir)

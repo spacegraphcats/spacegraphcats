@@ -8,15 +8,10 @@ The query genome should be largely or completely enclosed in the
 import argparse
 import os
 import sys
-import gzip
 import khmer
-import collections
-import numpy
-from collections import defaultdict
 
 import screed
 
-from spacegraphcats.utils.logging import log_command
 from . import search_utils
 
 
