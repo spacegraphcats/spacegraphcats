@@ -34,45 +34,43 @@ from spacegraphcats.search import search_utils
 DEFAULT_KSIZE = 31
 DEFAULT_MEMORY = 1e9
 
+
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
-    p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('reads')
-    p.add_argument('savename')
-    p.add_argument('-k', '--ksize', default=DEFAULT_KSIZE, type=int)
-    p.add_argument('-M', '--memory', default=DEFAULT_MEMORY,
-                            type=float)
+    p.add_argument("catlas_prefix", help="catlas prefix")
+    p.add_argument("reads")
+    p.add_argument("savename")
+    p.add_argument("-k", "--ksize", default=DEFAULT_KSIZE, type=int)
+    p.add_argument("-M", "--memory", default=DEFAULT_MEMORY, type=float)
     args = p.parse_args(argv)
 
     dbfilename = args.savename
     if os.path.exists(dbfilename):
-        print('removing existing db {}'.format(dbfilename))
+        print("removing existing db {}".format(dbfilename))
         os.unlink(dbfilename)
 
     db = sqlite3.connect(dbfilename)
     cursor = db.cursor()
-    cursor.execute('CREATE TABLE sequences (offset INTEGER, label INTEGER)');
+    cursor.execute("CREATE TABLE sequences (offset INTEGER, label INTEGER)")
     db.commit()
 
     # @CTB support different sizes.
     graph_tablesize = int(args.memory * 8.0 / 4.0)
     ng = khmer.Nodegraph(args.ksize, graph_tablesize, 4)
 
-    basename = os.path.basename(args.catlas_prefix)
     contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
     total_bp = 0
     watermark_size = 1e6
     watermark = watermark_size
 
-    print('walking catlas cDBG contigs: {}'.format(contigfile))
+    print("walking catlas cDBG contigs: {}".format(contigfile))
     n = 0
     tags_to_label = collections.defaultdict(int)
     for contig in screed.open(contigfile):
         n += 1
         if total_bp >= watermark:
-            print('... {:5.2e} bp thru contigs'.format(int(watermark)),
-                  file=sys.stderr)
+            print("... {:5.2e} bp thru contigs".format(int(watermark)), file=sys.stderr)
             watermark += watermark_size
         total_bp += len(contig.sequence)
 
@@ -93,16 +91,16 @@ def main(argv=sys.argv[1:]):
     watermark_size = 1e7
     watermark = watermark_size
 
-    print('walking read file: {}'.format(args.reads))
+    print("walking read file: {}".format(args.reads))
     n = 0
 
-    cursor.execute('PRAGMA cache_size=1000000')
-    cursor.execute('PRAGMA synchronous = OFF')
-    cursor.execute('PRAGMA journal_mode = MEMORY')
-    
-    # some sqlite installs start in transactions    
+    cursor.execute("PRAGMA cache_size=1000000")
+    cursor.execute("PRAGMA synchronous = OFF")
+    cursor.execute("PRAGMA journal_mode = MEMORY")
+
+    # some sqlite installs start in transactions
     try:
-        cursor.execute('BEGIN TRANSACTION')
+        cursor.execute("BEGIN TRANSACTION")
     except sqlite3.OperationalError:
         pass
 
@@ -110,8 +108,7 @@ def main(argv=sys.argv[1:]):
     for record, offset in search_utils.iterate_bgzf(reader):
         n += 1
         if total_bp >= watermark:
-            print('... {:5.2e} bp thru reads'.format(int(watermark)),
-                  file=sys.stderr)
+            print("... {:5.2e} bp thru reads".format(int(watermark)), file=sys.stderr)
             watermark += watermark_size
         total_bp += len(record.sequence)
 
@@ -119,17 +116,20 @@ def main(argv=sys.argv[1:]):
             continue
 
         tags = ng.get_tags_for_sequence(record.sequence)
-        labels = set([ tags_to_label[t] for t in tags ])
+        labels = set([tags_to_label[t] for t in tags])
 
         for lb in labels:
-            cursor.execute('INSERT INTO sequences (offset, label) VALUES (?, ?)', (offset, lb))
+            cursor.execute(
+                "INSERT INTO sequences (offset, label) VALUES (?, ?)", (offset, lb)
+            )
 
     db.commit()
 
     db.close()
-    print('done!')
+    print("done!")
 
     return 0
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     sys.exit(main())

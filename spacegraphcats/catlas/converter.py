@@ -15,7 +15,7 @@ class IdentityHash:
 
 
 def _parse_line(line):
-    return list(map(str.strip, line.split(',')))
+    return list(map(str.strip, line.split(",")))
 
 
 def parse(graph_file, add_vertex=None, add_edge=None, consecutive_ids=False):
@@ -49,8 +49,12 @@ def parse(graph_file, add_vertex=None, add_edge=None, consecutive_ids=False):
     while len(next_line) > 1:
         if add_vertex is not None:
             parsed = _parse_line(next_line)
-            add_vertex(_get_consecutive_id(int(parsed[0])), int(parsed[1]),
-                       vertex_attributes, parsed[2:])
+            add_vertex(
+                _get_consecutive_id(int(parsed[0])),
+                int(parsed[1]),
+                vertex_attributes,
+                parsed[2:],
+            )
         next_line = graph_file.readline()
 
     if add_edge is None:
@@ -63,9 +67,12 @@ def parse(graph_file, add_vertex=None, add_edge=None, consecutive_ids=False):
     next_line = graph_file.readline()
     while len(next_line) > 1:
         parsed = _parse_line(next_line)
-        add_edge(_get_consecutive_id(int(parsed[0])),
-                 _get_consecutive_id(int(parsed[1])),
-                 edge_attributes, parsed[2:])
+        add_edge(
+            _get_consecutive_id(int(parsed[0])),
+            _get_consecutive_id(int(parsed[1])),
+            edge_attributes,
+            parsed[2:],
+        )
         next_line = graph_file.readline()
 
     return id_map
@@ -87,5 +94,5 @@ def main():
     write(sys.stdout, num_vertices, edges)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

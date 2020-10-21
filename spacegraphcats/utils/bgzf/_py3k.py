@@ -187,15 +187,20 @@ if sys.platform == "win32":
     # http://bugs.python.org/issue10197
     def getoutput(cmd):
         import subprocess
-        child = subprocess.Popen(cmd,
-                                 stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT,
-                                 universal_newlines=True,
-                                 shell=False)
+
+        child = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            shell=False,
+        )
         stdout, stderr = child.communicate()
         # Remove trailing \n to match the Unix function,
         return stdout.rstrip("\n")
+
+
 elif sys.version_info[0] >= 3:
     # Use subprocess.getoutput on Python 3,
     from subprocess import getoutput
