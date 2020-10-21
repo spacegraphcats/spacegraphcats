@@ -7,7 +7,7 @@ from io import StringIO
 
 
 LOGFILE = "commands.log"
-GIT_COMMIT = ["git", "rev-parse", "--short",  "HEAD"]
+GIT_COMMIT = ["git", "rev-parse", "--short", "HEAD"]
 
 
 def log_command(project, args):
@@ -22,6 +22,7 @@ def log_command(project, args):
 
 _quiet = False
 _debug = False
+
 def set_quiet(val, print_debug=False):
     global _quiet, _debug
     _quiet = bool(val)

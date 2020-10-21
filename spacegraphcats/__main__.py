@@ -131,8 +131,8 @@ from the main spacegraphcats directory.
                                  lock=not args.nolock, config=config,
                                  verbose=args.verbose, debug_dag=args.debug)
 
-    if status: # translate "success" into shell exit code of 0
-       return 0
+    if status:  # translate "success" into shell exit code of 0
+        return 0
     return 1
 
 

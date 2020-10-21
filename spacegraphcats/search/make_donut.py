@@ -10,14 +10,15 @@ e.g.
 
 would subtract genome1.fa and genome2.fa from neighborhood.fa
 """
-import os
-from bbhash_table import BBHashTable
-import khmer
 import argparse
+import os
+import sys
+
+import khmer
 import screed
+from bbhash_table import BBHashTable
 
-
-DEFAULT_THRESHOLD=0.1
+DEFAULT_THRESHOLD = 0.1
 
 
 def main(argv=sys.argv[1:]):

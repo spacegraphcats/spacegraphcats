@@ -9,16 +9,9 @@ import argparse
 import os
 import sys
 import time
-import gc
-from collections import defaultdict
 import gzip
 
-import screed
-
 from .search_utils import get_reads_by_cdbg
-
-from spacegraphcats.utils.logging import log_command
-from . import search_utils
 
 
 def main(argv=sys.argv[1:]):
@@ -34,7 +27,6 @@ def main(argv=sys.argv[1:]):
     if not os.path.exists(dbfilename):
         print('sqlite file {} does not exist'.format(dbfilename))
         sys.exit(-1)
-
 
     if not args.output:
         outname = args.node_list_file + '.reads.fa.gz'

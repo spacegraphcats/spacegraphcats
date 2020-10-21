@@ -1,21 +1,10 @@
 #! /usr/bin/env python
 import argparse
 import csv
-import gzip
-import os
 import sys
-import time
 import pickle
-from collections import defaultdict
 
-import screed
 import sourmash
-from sourmash import MinHash
-
-from ..utils.logging import notify, error, debug
-from . import search_utils
-from . import MPHF_KmerIndex
-from .catlas import CAtlas
 
 
 def main(argv):

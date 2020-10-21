@@ -1,12 +1,9 @@
-import collections
 import csv
 import os
 import sqlite3
 
-import numpy
 from screed.screedRecord import Record
 from screed.utils import to_str
-from sourmash import MinHash
 
 from spacegraphcats.utils.bgzf.bgzf import BgzfReader
 from . import MPHF_KmerIndex
@@ -197,7 +194,7 @@ def get_contigs_by_cdbg(contigs_filename, cdbg_ids):
 
                 record, xx = reads_grabber.get_sequence_at(offset)
                 assert xx == offset
-                assert int(record.name) == contig_id, (record.name,contig_id)
+                assert int(record.name) == contig_id, (record.name, contig_id)
 
                 yield record
 

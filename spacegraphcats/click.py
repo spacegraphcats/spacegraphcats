@@ -5,6 +5,7 @@ import subprocess
 
 import click
 
+
 def get_snakefile_path(name):
     thisdir = os.path.dirname(__file__)
     snakefile = os.path.join(thisdir, 'conf', name)
@@ -79,9 +80,11 @@ def run_snakemake(configfile, no_use_conda=False, verbose=False,
 # actual command line functions
 #
 
+
 @click.group()
 def cli():
     pass
+
 
 # create a run subcommand that by default passes all of its arguments
 # on to snakemake (after setting Snakefile and config)
@@ -97,6 +100,7 @@ def run(configfile, snakemake_args, no_use_conda, verbose, outdir):
                   no_use_conda=no_use_conda, verbose=verbose,
                   extra_args=snakemake_args, outdir=outdir)
 
+
 # build command -- run the snakemake target build.
 @click.command(context_settings={"ignore_unknown_options": True})
 @click.argument('configfile')
@@ -109,6 +113,7 @@ def build(configfile, snakemake_args, no_use_conda, verbose, outdir):
     run_snakemake(configfile, snakefile_name='Snakefile',
                   no_use_conda=no_use_conda, verbose=verbose,
                   extra_args=['build'] + list(snakemake_args), outdir=outdir)
+
 
 # search command -- run the snakemake target search.
 @click.command(context_settings={"ignore_unknown_options": True})
@@ -123,6 +128,7 @@ def search(configfile, snakemake_args, no_use_conda, verbose, outdir):
                   no_use_conda=no_use_conda, verbose=verbose,
                   extra_args=['search'] + list(snakemake_args), outdir=outdir)
 
+
 # 'check' command
 @click.command()
 @click.argument('configfile')
@@ -130,12 +136,14 @@ def check(configfile):
     "check configuration"
     run_snakemake(configfile, extra_args=['check'])
 
+
 # 'showconf' command
 @click.command()
 @click.argument('configfile')
 def showconf(configfile):
     "show full configuration"
     run_snakemake(configfile, extra_args=['showconf'])
+
 
 # 'info' command
 @click.command()
@@ -148,6 +156,7 @@ This is spacegraphcats version v{version}
 Package install path: {os.path.dirname(__file__)}
 snakemake Snakefile: {get_snakefile_path('Snakefile')}
 """)
+
 
 # 'init' command
 @click.command()
@@ -168,8 +177,7 @@ def init(configfile, force):
     # @CTB
     print(f"creating configfile '{configfile}' for project '{stubname}'")
     with open(configfile, 'wt') as fp:
-        fp.write(\
-"""\
+        fp.write("""\
 # basic configuration:
 catlas_base: twofoo
 input_sequences:
@@ -199,6 +207,7 @@ shadow_ratio_maxsize: 1000
 # END
 """)
 
+
 cli.add_command(run)
 cli.add_command(build)
 cli.add_command(search)
@@ -207,8 +216,10 @@ cli.add_command(showconf)
 cli.add_command(info)
 cli.add_command(init)
 
+
 def main():
     cli()
+
 
 if __name__ == '__main__':
     main()

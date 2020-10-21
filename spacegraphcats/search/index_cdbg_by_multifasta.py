@@ -1,7 +1,5 @@
 #! /usr/bin/env python
 import argparse
-import csv
-import gzip
 import os
 import sys
 import time
@@ -9,11 +7,8 @@ import pickle
 from collections import defaultdict
 
 import screed
-import sourmash
-from sourmash import MinHash
 
-from ..utils.logging import notify, error, debug
-from . import search_utils
+from ..utils.logging import notify, error
 from . import MPHF_KmerIndex, hash_sequence
 from .catlas import CAtlas
 
@@ -92,8 +87,7 @@ def main(argv):
 
             records_to_cdbg[(filename, record.name)] = shadow
             for cdbg_node in shadow:
-                cdbg_to_records[cdbg_node].add((filename,record.name))
-            
+                cdbg_to_records[cdbg_node].add((filename, record.name))
 
     with open(outfile, 'wb') as fp:
         print(f"saving pickled index to '{outfile}'")

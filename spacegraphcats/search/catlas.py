@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 import csv
-from typing import Dict, Set, List
+from typing import Dict, Set, List, Int
 
 
 class CAtlas:
@@ -155,7 +155,7 @@ class CAtlas:
     def decorate_with_index_sizes(self, index):
         self.index_sizes = index.build_catlas_node_sizes(self)
 
-    def leaves(self, nodes: List[int]=None) -> Set[int]:
+    def leaves(self, nodes: List[int] = None) -> Set[int]:
         """
         Return leaves of this CAtlas.
         If nodes is specified, return only those leaves that are descendants of

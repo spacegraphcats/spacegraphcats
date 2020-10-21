@@ -17,7 +17,7 @@ import screed
 import sourmash
 from sourmash import MinHash
 
-from ..utils.logging import notify, error, debug
+from ..utils.logging import notify, error
 from . import search_utils
 from . import MPHF_KmerIndex, hash_sequence
 from .catlas import CAtlas
@@ -62,7 +62,7 @@ class QueryOutput:
             if n and n % 10000 == 0:
                 offset_f = self.total_seq / len(self.shadow)
                 notify('...at n {} ({:.1f}% of shadow)', self.total_seq,
-                      offset_f * 100, end='\r')
+                       offset_f * 100, end='\r')
 
             # track retrieved sequences in a minhash
             self.__add_sequence(record.sequence)
@@ -76,7 +76,7 @@ class QueryOutput:
         notify('query inclusion by retrieved contigs:'
                ' {:.1f}%', self.containment()*100)
         notify('query similarity to retrieved contigs:'
-              ' {:.1f}%', self.similarity()*100)
+               ' {:.1f}%', self.similarity()*100)
 
     def write(self, csv_writer, csvoutfp, outdir, catlas_name):
         containment = self.containment()
@@ -103,8 +103,8 @@ class QueryOutput:
                                             self.catlas_name)
         with open(os.path.join(outdir, sig_filename), 'wt') as fp:
             ss = sourmash.SourmashSignature(self.contigs_minhash,
-                                                name=sig_name,
-                                                filename=sig_filename)
+                                            name=sig_name,
+                                            filename=sig_filename)
             sourmash.save_signatures([ss], fp)
 
         # write out cDBG IDs
@@ -139,7 +139,7 @@ class Query:
         self.mh = mh
         self.catlas_name = catlas_name
         self.debug = debug
-        
+
         notify('----')
         notify('QUERY FILE: {}', self.filename)
 
