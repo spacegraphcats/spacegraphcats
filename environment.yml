@@ -15,7 +15,7 @@ dependencies:
     - pytest=5.3.2
     - sortedcontainers=2.1.0
     - mypy=0.750
-    - click=7.1.1
+    - click=7.1.2
     - pyflakes
     - pip
     - pip:
