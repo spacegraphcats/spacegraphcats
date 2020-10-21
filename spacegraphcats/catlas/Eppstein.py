@@ -7,8 +7,6 @@ http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/215912
 with significant additional changes by D. Eppstein.
 """
 
-from __future__ import generators
-
 from typing import Iterable
 
 

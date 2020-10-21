@@ -1,5 +1,4 @@
 """Various output and logging functions."""
-from __future__ import print_function
 import os
 import subprocess as sp
 import sys
