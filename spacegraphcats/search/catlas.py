@@ -11,17 +11,17 @@ class CAtlas:
         self.name = catlas_directory
 
         # catlas node ID -> parent
-        self.parent = {}  # type: Dict[Int, Int]
+        self.parent = {}  # type: Dict[int, int]
 
         # catlas node IDs -> { children node IDs }
-        self.children = defaultdict(set)  # type: Dict[Int, Set[Int]]
+        self.children = defaultdict(set)  # type: Dict[int, Set[int]]
 
         # catlas node IDs -> catlas level
-        self.levels = {}  # type: Dict[Int, Int]
+        self.levels = {}  # type: Dict[int, int]
 
         # mapping from cDBG nodes to catlas node IDs, for internal use
         # note: not all cDBG nodes are represented in catlas!
-        self._cdbg_to_catlas = {}  # type: Dict[Int, Int]
+        self._cdbg_to_catlas = {}  # type: Dict[int, int]
 
         catlas_file = os.path.join(catlas_directory, 'catlas.csv')
         self.__load_catlas(catlas_file)
@@ -68,10 +68,10 @@ class CAtlas:
         Load the mapping between first layer catlas and the original DBG nodes.
         """
         # mapping from catlas node IDs to cdbg nodes
-        self.layer1_to_cdbg = {}  # type: Dict[Int, Set[Int]]
+        self.layer1_to_cdbg = {}  # type: Dict[int, Set[int]]
 
         # mapping from cdbg nodes to catlas node IDs
-        self.cdbg_to_layer1 = {}  # type: Dict[Int, Int]
+        self.cdbg_to_layer1 = {}  # type: Dict[int, int]
 
         fp = open(domfile, 'rt')
         for line in fp:
@@ -155,7 +155,7 @@ class CAtlas:
     def decorate_with_index_sizes(self, index):
         self.index_sizes = index.build_catlas_node_sizes(self)
 
-    def leaves(self, nodes: List[int]=None) -> Set[int]:
+    def leaves(self, nodes: List[int] = None) -> Set[int]:
         """
         Return leaves of this CAtlas.
         If nodes is specified, return only those leaves that are descendants of

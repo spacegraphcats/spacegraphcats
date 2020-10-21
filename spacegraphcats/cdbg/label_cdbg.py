@@ -40,8 +40,7 @@ def main(argv=sys.argv[1:]):
     p.add_argument('reads')
     p.add_argument('savename')
     p.add_argument('-k', '--ksize', default=DEFAULT_KSIZE, type=int)
-    p.add_argument('-M', '--memory', default=DEFAULT_MEMORY,
-                            type=float)
+    p.add_argument('-M', '--memory', default=DEFAULT_MEMORY, type=float)
     args = p.parse_args(argv)
 
     dbfilename = args.savename
@@ -51,14 +50,13 @@ def main(argv=sys.argv[1:]):
 
     db = sqlite3.connect(dbfilename)
     cursor = db.cursor()
-    cursor.execute('CREATE TABLE sequences (offset INTEGER, label INTEGER)');
+    cursor.execute('CREATE TABLE sequences (offset INTEGER, label INTEGER)')
     db.commit()
 
     # @CTB support different sizes.
     graph_tablesize = int(args.memory * 8.0 / 4.0)
     ng = khmer.Nodegraph(args.ksize, graph_tablesize, 4)
 
-    basename = os.path.basename(args.catlas_prefix)
     contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
     total_bp = 0
@@ -119,7 +117,7 @@ def main(argv=sys.argv[1:]):
             continue
 
         tags = ng.get_tags_for_sequence(record.sequence)
-        labels = set([ tags_to_label[t] for t in tags ])
+        labels = set([tags_to_label[t] for t in tags])
 
         for lb in labels:
             cursor.execute('INSERT INTO sequences (offset, label) VALUES (?, ?)', (offset, lb))
@@ -130,6 +128,7 @@ def main(argv=sys.argv[1:]):
     print('done!')
 
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main())

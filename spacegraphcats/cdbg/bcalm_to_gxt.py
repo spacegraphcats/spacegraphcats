@@ -9,15 +9,18 @@ the BGZF offset, mean abundance, and length of each contig.
 Also outputs sourmash k=31 scaled=1000 signatures for both input and
 output files.
 """
-import screed
-import sys
-import collections
 import argparse
-from spacegraphcats.utils.bgzf import bgzf
+import collections
 import logging
-from typing import List, Dict, Set
-import sourmash
 import os.path
+import random
+import sys
+from typing import Dict
+
+import screed
+import sourmash
+
+from spacegraphcats.utils.bgzf import bgzf
 
 
 def end_match(s, t, k, direction='sp'):
@@ -54,8 +57,7 @@ def end_match(s, t, k, direction='sp'):
 
 
 def is_directed_path(x, sequences, neighbors, k):
-    assert len(neighbors[x]) == 2,\
-            ValueError("is_directed_path requires a degree 2 vertex")
+    assert len(neighbors[x]) == 2, ValueError("is_directed_path requires a degree 2 vertex")
     u, v = neighbors[x]
     seq_u = sequences[u]
     seq_v = sequences[v]
@@ -167,7 +169,7 @@ def read_bcalm(unitigs, debug, k):
     neighbors = collections.defaultdict(set)
     mean_abunds = {}  # type: Dict[int, float]
     sizes = {}  # type: Dict[int, int]
-    sequences = {}  # type: Dict[int, Text]
+    sequences = {}  # type: Dict[int, str]
 
     # walk the input unitigs file, tracking links between contigs.
     print('reading unitigs from {}'.format(unitigs))
@@ -335,7 +337,7 @@ def main(argv):
 
     # write out sequences & compute offsets
     offsets = {}
-    kv_list = sorted(aliases.items(), key=lambda x:x[1])
+    kv_list = sorted(aliases.items(), key=lambda x: x[1])
     for x, i in kv_list:
         offsets[x] = contigsfp.tell()
         contigsfp.write('>{}\n{}\n'.format(i, sequences[x]))
@@ -365,11 +367,11 @@ def main(argv):
     # output two sourmash signatures: one for input contigs, one for
     # output contigs.
     in_sig = sourmash.SourmashSignature(in_mh, filename=args.bcalm_unitigs)
-    sourmash.save_signatures([ in_sig ],
+    sourmash.save_signatures([in_sig],
                              open(args.bcalm_unitigs + '.sig', 'wt'))
 
     out_sig = sourmash.SourmashSignature(out_mh, filename=args.contigs_out)
-    sourmash.save_signatures([ out_sig ],
+    sourmash.save_signatures([out_sig],
                              open(args.contigs_out + '.sig', 'wt'))
 
 

@@ -1,13 +1,14 @@
 all: test
 
 flakes:
-	pyflakes search/*.py
+	# TODO: remove from exceptions F841
+	flake8 spacegraphcats/ --ignore E252,E501,E226,E201,E202,266,W504,E266,E127,E302,W293,W291,F841
 
 lint:
 	#mypy spacegraphcats/*.py
 
 test:
-	py.test spacegraphcats
+	pytest spacegraphcats
 
 #
 # akker-reads.abundtrim.gz is a collection of reads from podar data

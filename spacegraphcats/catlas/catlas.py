@@ -1,7 +1,6 @@
 """Data structure for CAtlas."""
 
 import argparse
-import cProfile
 import os
 import sys
 import tempfile
@@ -12,7 +11,6 @@ from .graph_io import read_from_gxt, write_to_gxt
 from .graph import Graph
 from spacegraphcats.utils.logging import log_command
 from io import TextIOWrapper
-from collections import defaultdict
 from typing import List, Dict, Set
 
 UPPER_RADIUS = 1

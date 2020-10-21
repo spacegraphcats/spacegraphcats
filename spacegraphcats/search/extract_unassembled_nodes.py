@@ -8,8 +8,6 @@ EXPERIMENTAL.
 import argparse
 import os
 import sys
-import collections
-import math
 import sourmash
 import khmer
 import csv
@@ -108,7 +106,7 @@ def main(args=sys.argv[1:]):
     with open(args.output + '.csv', 'wt') as fp:
         w = csv.writer(fp)
 
-        w.writerow(['node_id', 'contained', 'n_kmers', 'n_weighted_kmers', 'average_weight','shadow_size'])
+        w.writerow(['node_id', 'contained', 'n_kmers', 'n_weighted_kmers', 'average_weight', 'shadow_size'])
         for n in terminal:
             f_contained = catlas_match_counts.get(n, 0) / node_kmer_sizes[n]
             w.writerow([n,
@@ -176,7 +174,6 @@ def main(args=sys.argv[1:]):
     with open(args.output + '.sig', 'wt') as fp:
         ss = sourmash.SourmashSignature(contigs_mh)
         sourmash.save_signatures([ss], fp)
-
 
 
 if __name__ == '__main__':

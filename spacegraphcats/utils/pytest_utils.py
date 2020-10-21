@@ -1,5 +1,6 @@
 "Utilities for pytest-based tests; see test_* under spacegraphcats package."
-import shutil, os
+import shutil
+import os
 import tempfile
 
 

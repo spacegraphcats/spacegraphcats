@@ -2,7 +2,7 @@
 import itertools
 from collections import defaultdict
 
-from typing import Callable, List, Tuple, Set, Iterable, Any, Sized
+from typing import List, Set, Iterable, Any, Sized
 
 from sortedcontainers import SortedSet
 
