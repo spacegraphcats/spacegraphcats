@@ -26,13 +26,15 @@ def low_degree_orientation(graph: Graph):
     compute necessary data structures for low degree orientation
     """
     # array binning the vertices by remaining degree
-    (bins,
+    (
+        bins,
         # pointers to the first vertex with a given degree
         bin_starts,
         # remaining degree of the vertex
         degrees,
         # pointer to the location of a vertex in bins
-        location) = ldo_setup(graph)
+        location,
+    ) = ldo_setup(graph)
 
     checkpoint = 0
     # run the loop once per vertex
@@ -71,9 +73,9 @@ def low_degree_orientation(graph: Graph):
                 # decrement u's degree
                 degrees[u] = d_u - 1
         if curr == checkpoint:
-            print("removed {} of {} nodes\r".format(curr+1, n), end="")
-            checkpoint += n//100
-    print("removed {} of {} nodes".format(curr+1, n))
+            print("removed {} of {} nodes\r".format(curr + 1, n), end="")
+            checkpoint += n // 100
+    print("removed {} of {} nodes".format(curr + 1, n))
 
 
 def ldo_setup(graph: Graph):
@@ -99,12 +101,12 @@ def ldo_setup(graph: Graph):
         max_deg = max(degrees)
 
     # precompute the degrees of each vertex and make a bidirectional lookup
-    degree_counts = [0 for i in range(max_deg+1)]
+    degree_counts = [0 for i in range(max_deg + 1)]
     for v in graph:
         d = degrees[v]
         degree_counts[d] += 1
     # assign the cutoffs of bins
-    bin_starts = [sum(degree_counts[:i]) for i in range(max_deg+1)]
+    bin_starts = [sum(degree_counts[:i]) for i in range(max_deg + 1)]
     del degree_counts
     bin_ptrs = list(bin_starts)
     bins = [None for _ in graph]  # type: List[int]
@@ -117,10 +119,10 @@ def ldo_setup(graph: Graph):
         location[v] = loc
         bin_ptrs[degrees[v]] += 1
         if v == checkpoint:
-            print("bucketed {} of {} nodes\r".format(i+1, n), end="")
-            checkpoint += n//100
+            print("bucketed {} of {} nodes\r".format(i + 1, n), end="")
+            checkpoint += n // 100
     del bin_ptrs
-    print("bucketed {} of {} nodes".format(i+1, n))
+    print("bucketed {} of {} nodes".format(i + 1, n))
     return bins, bin_starts, degrees, location
 
 
@@ -152,7 +154,7 @@ def dtf_step(graph: Graph, dist):
             fratGraph.add_node(y)
             fratGraph.add_arc(x, y)
             fratGraph.add_arc(y, x)
-    print("added {} fraternal edges".format(fratGraph.num_arcs()//2))
+    print("added {} fraternal edges".format(fratGraph.num_arcs() // 2))
 
     # Orient fraternal edges and add them to the graph
     low_degree_orientation(fratGraph)
@@ -199,7 +201,7 @@ def compute_domset(graph: Graph, radius: int):
     Graph needs a distance-d dtf augmentation (see rdomset() for usage).
     """
     domset = SortedSet()
-    infinity = float('inf')
+    infinity = float("inf")
     # minimum distance to a dominating vertex, obviously infinite at start
     domdistance = defaultdict(lambda: infinity)  # type: Dict[int, float]
     # counter that keeps track of how many neighbors have made it into the
@@ -208,11 +210,10 @@ def compute_domset(graph: Graph, radius: int):
     # cutoff for how many times a vertex needs to have its neighbors added to
     # the domset before it does.  We choose radius^2 as a convenient "large"
     # number
-    c = (2*radius)**2
+    c = (2 * radius) ** 2
 
     # Sort the vertices by indegree so we take fewer vertices
-    order = sorted([v for v in graph], key=lambda x: graph.in_degree(x),
-                   reverse=True)
+    order = sorted([v for v in graph], key=lambda x: graph.in_degree(x), reverse=True)
     # vprops = [(v,graph.in_degree(v)) for v in nodes]
     # vprops.sort(key=itemgetter(1),reverse=False)
     # order = map(itemgetter(0),vprops)
@@ -221,7 +222,7 @@ def compute_domset(graph: Graph, radius: int):
         # look at the in neighbors to update the distance
         for r in range(1, radius + 1):
             for u in graph.in_neighbors(v, r):
-                domdistance[v] = min(domdistance[v], r+domdistance[u])
+                domdistance[v] = min(domdistance[v], r + domdistance[u])
 
         # if v is already dominated at radius, no need to work
         if domdistance[v] <= radius:
@@ -301,7 +302,9 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
             domgraph.add_arc(dv, du)
 
     # map of dominators to vertices they dominate
-    dominated = SortedDict({x: SortedSet() for x in domset})  # type: Dict[int, Set[int]]
+    dominated = SortedDict(
+        {x: SortedSet() for x in domset}
+    )  # type: Dict[int, Set[int]]
     for v, x in assigned_dominator.items():
         dominated[x].add(v)
 

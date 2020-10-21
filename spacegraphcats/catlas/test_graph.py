@@ -6,13 +6,11 @@ from .graph import Graph
 
 
 class GraphTest(unittest.TestCase):
-
     def test_graph(self):
         graph = Graph(num_nodes=5, radius=5)
 
         # Query in-neighbourhood by weight
-        graph.add_arc(1, 0, 1).add_arc(2, 0, 1).add_arc(3, 0, 1).add_arc(4, 0,
-                                                                         1)
+        graph.add_arc(1, 0, 1).add_arc(2, 0, 1).add_arc(3, 0, 1).add_arc(4, 0, 1)
         neighbors = set(graph.in_neighbors(0, 1))
         self.assertEqual(neighbors, set([1, 2, 3, 4]))
 
@@ -28,7 +26,7 @@ class GraphTest(unittest.TestCase):
 
     def test_frat_pairs(self):
         frat_graph = Graph(num_nodes=9, radius=5)
-        
+
         frat_graph.add_arc(1, 0, 1)
         frat_graph.add_arc(2, 0, 1)
         frat_graph.add_arc(3, 0, 1)
@@ -66,11 +64,9 @@ class GraphTest(unittest.TestCase):
         graph.add_arc(7, 3, 3)
         graph.add_arc(8, 3, 2)
 
-        trans_pairs = set([(7, 0),
-                           (4, 0),
-                           (5, 0)])
+        trans_pairs = set([(7, 0), (4, 0), (5, 0)])
         self.assertEqual(set(graph.transitive_pairs(0, 4)), trans_pairs)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -6,7 +6,6 @@ from .components import components, num_components
 
 
 class ComponentsTest(unittest.TestCase):
-
     def test_components(self):
         g = Graph(num_nodes=12)
         g.add_arc(1, 2)
@@ -26,5 +25,5 @@ class ComponentsTest(unittest.TestCase):
         self.assertEqual(len(union), len(g))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -16,32 +16,32 @@ from .search_utils import get_reads_by_cdbg
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
-    p.add_argument('readsfile')
-    p.add_argument('labeled_reads_sqlite')
-    p.add_argument('node_list_file', help='a cdbg_ids.txt.gz file')
-    p.add_argument('-o', '--output')
-    p.add_argument('-v', '--verbose', action='store_true')
+    p.add_argument("readsfile")
+    p.add_argument("labeled_reads_sqlite")
+    p.add_argument("node_list_file", help="a cdbg_ids.txt.gz file")
+    p.add_argument("-o", "--output")
+    p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args(argv)
 
     dbfilename = args.labeled_reads_sqlite
     if not os.path.exists(dbfilename):
-        print('sqlite file {} does not exist'.format(dbfilename))
+        print("sqlite file {} does not exist".format(dbfilename))
         sys.exit(-1)
 
     if not args.output:
-        outname = args.node_list_file + '.reads.fa.gz'
+        outname = args.node_list_file + ".reads.fa.gz"
     else:
         outname = args.output
 
-    if outname.endswith('.gz'):
-        outfp = gzip.open(outname, 'wt')
+    if outname.endswith(".gz"):
+        outfp = gzip.open(outname, "wt")
     else:
-        outfp = open(outname, 'wt')
+        outfp = open(outname, "wt")
 
-    with gzip.open(args.node_list_file, 'rt') as fp:
+    with gzip.open(args.node_list_file, "rt") as fp:
         cdbg_shadow = set([int(x.strip()) for x in fp])
 
-    print('extracting reads to {}.'.format(outname))
+    print("extracting reads to {}.".format(outname))
 
     start = time.time()
 
@@ -49,35 +49,37 @@ def main(argv=sys.argv[1:]):
     total_seqs = 0
     is_fastq = 0
 
-    print('loading labels and querying for matching sequences..')
+    print("loading labels and querying for matching sequences..")
     reads_iter = get_reads_by_cdbg(dbfilename, args.readsfile, cdbg_shadow)
     for n, (record, offset_f) in enumerate(reads_iter):
         if n % 10000 == 0:
-            print('...at n {} ({:.1f}% of file)'.format(n, offset_f * 100),
-                  end='\r')
+            print("...at n {} ({:.1f}% of file)".format(n, offset_f * 100), end="\r")
 
             if n == 0:
-                if hasattr(record, 'quality'):
+                if hasattr(record, "quality"):
                     is_fastq = 1
 
         # output!
         if is_fastq:
-            outfp.write('@{}\n{}\n+\n{}\n'.format(record.name,
-                                                  record.sequence,
-                                                  record.quality))
+            outfp.write(
+                "@{}\n{}\n+\n{}\n".format(record.name, record.sequence, record.quality)
+            )
         else:
-            outfp.write('>{}\n{}\n'.format(record.name, record.sequence))
+            outfp.write(">{}\n{}\n".format(record.name, record.sequence))
         total_bp += len(record.sequence)
         total_seqs += 1
 
-    print('')
-    print('fetched {} reads, {} bp matching nodes.'.format(total_seqs,
-                                                           total_bp))
+    print("")
+    print("fetched {} reads, {} bp matching nodes.".format(total_seqs, total_bp))
     end = time.time()
-    print('total read retrieval time (including database query): {:.2f}s'.format(end - start))
+    print(
+        "total read retrieval time (including database query): {:.2f}s".format(
+            end - start
+        )
+    )
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

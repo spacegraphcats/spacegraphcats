@@ -3,12 +3,15 @@
 from typing import Callable, List, Tuple, Iterable
 
 
-def _parse_line(line: str, split_on=' ') -> List[int]:
+def _parse_line(line: str, split_on=" ") -> List[int]:
     return list(map(int, map(str.strip, line.split(split_on))))
 
 
-def parse(graph_file, create_vertices: Callable[[int], None] = None,
-          add_edge: Callable[[int, int], None] = None):
+def parse(
+    graph_file,
+    create_vertices: Callable[[int], None] = None,
+    add_edge: Callable[[int, int], None] = None,
+):
     """Parse a graph and call provided methods with vertices and edges."""
     # read vertices
     num_vertices = int(graph_file.readline().strip())
@@ -35,6 +38,6 @@ def parse_minhash(minhash_file, add_minhash: Callable[[int, List[int]], None]):
 
 def write(graph_file, num_vertices: int, edges: Iterable[Tuple[int, int]]):
     """Write an edgelist into an .ext file."""
-    graph_file.write('{}\n'.format(num_vertices))
+    graph_file.write("{}\n".format(num_vertices))
     for u, v in edges:
-        graph_file.write('{} {}\n'.format(u, v))
+        graph_file.write("{} {}\n".format(u, v))
