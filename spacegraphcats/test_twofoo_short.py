@@ -22,7 +22,7 @@ from .utils import pytest_utils as utils
 
 def setup_module(m):
     global _tempdir
-    _tempdir = tempfile.mkdtemp(prefix='sgc_test')
+    _tempdir = tempfile.mkdtemp(prefix="sgc_test")
 
 
 def teardown_module(m):
@@ -37,97 +37,100 @@ def teardown_module(m):
 def test_build_and_search():
     global _tempdir
 
-    dory_conf = utils.relative_file('spacegraphcats/conf/twofoo-short.yaml')
-    target = 'search'
-    status = run_snakemake(dory_conf, verbose=True, outdir=_tempdir,
-                           extra_args=[target])
+    dory_conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
+    target = "search"
+    status = run_snakemake(
+        dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
+    )
     assert status == 0
 
-    output_files = ['twofoo-short/bcalm.twofoo-short.k31.unitigs.fa',
-                    'twofoo-short_k31_r1/catlas.csv',
-                    'twofoo-short_k31_r1/contigs.fa.gz',
-                    'twofoo-short_k31_r1_search_oh0/results.csv']
+    output_files = [
+        "twofoo-short/bcalm.twofoo-short.k31.unitigs.fa",
+        "twofoo-short_k31_r1/catlas.csv",
+        "twofoo-short_k31_r1/contigs.fa.gz",
+        "twofoo-short_k31_r1_search_oh0/results.csv",
+    ]
 
     for filename in output_files:
         fullpath = os.path.join(_tempdir, filename)
         assert os.path.exists(fullpath), fullpath
 
 
-@pytest.mark.dependency(depends=['test_build_and_search'])
+@pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_contigs_vs_unitigs():
     global _tempdir
 
-    bcalm_sig = 'twofoo-short/bcalm.twofoo-short.k31.unitigs.fa.sig'
+    bcalm_sig = "twofoo-short/bcalm.twofoo-short.k31.unitigs.fa.sig"
     bcalm_out = sourmash.load_one_signature(os.path.join(_tempdir, bcalm_sig))
 
-    catlas_sig = 'twofoo-short_k31_r1/contigs.fa.gz.sig'
+    catlas_sig = "twofoo-short_k31_r1/contigs.fa.gz.sig"
     catlas_out = sourmash.load_one_signature(os.path.join(_tempdir, catlas_sig))
 
     assert bcalm_out.similarity(catlas_out) == 1.0
 
 
-@pytest.mark.dependency(depends=['test_build_and_search'])
+@pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_results():
     global _tempdir
 
-    results_csv = os.path.join(_tempdir, 'twofoo-short_k31_r1_search_oh0/results.csv')
+    results_csv = os.path.join(_tempdir, "twofoo-short_k31_r1_search_oh0/results.csv")
 
-    with open(results_csv, 'rt') as fp:
+    with open(results_csv, "rt") as fp:
         r = csv.DictReader(fp)
 
         d = {}
         for row in r:
-            q = os.path.basename(row['query'])
-            cont = float(row['best_containment'])
+            q = os.path.basename(row["query"])
+            cont = float(row["best_containment"])
             d[q] = cont
 
     assert len(d) == 3
-    assert d['2.short.fa.gz'] == 0.0
-    assert round(d['47.short.fa.gz'], 2) == 0.52, round(d['47.short.fa.gz'], 2)
-    assert round(d['63.short.fa.gz'], 2) == 1.0, round(d['63.short.fa.gz'], 2)
+    assert d["2.short.fa.gz"] == 0.0
+    assert round(d["47.short.fa.gz"], 2) == 0.52, round(d["47.short.fa.gz"], 2)
+    assert round(d["63.short.fa.gz"], 2) == 1.0, round(d["63.short.fa.gz"], 2)
 
 
-@pytest.mark.dependency(depends=['test_build_and_search'])
+@pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_md5():
     global _tempdir
 
-    gxt = os.path.join(_tempdir, 'twofoo-short_k31_r1/cdbg.gxt')
-    catlas = os.path.join(_tempdir, 'twofoo-short_k31_r1/catlas.csv')
+    gxt = os.path.join(_tempdir, "twofoo-short_k31_r1/cdbg.gxt")
+    catlas = os.path.join(_tempdir, "twofoo-short_k31_r1/catlas.csv")
 
-    with open(gxt, 'rb') as fp:
+    with open(gxt, "rb") as fp:
         data = fp.read()
     m = hashlib.md5()
     m.update(data)
-    assert m.hexdigest() == '479fd4b509b1a05f429ca3ba7924192e', m.hexdigest()
+    assert m.hexdigest() == "479fd4b509b1a05f429ca3ba7924192e", m.hexdigest()
 
-    with open(catlas, 'rb') as fp:
+    with open(catlas, "rb") as fp:
         data = fp.read()
     m = hashlib.md5()
     m.update(data)
-    assert m.hexdigest() == 'e485eb1e3722493e6928904b854fef82', m.hexdigest()
+    assert m.hexdigest() == "e485eb1e3722493e6928904b854fef82", m.hexdigest()
 
 
-@pytest.mark.dependency(depends=['test_build_and_search'])
+@pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_catlas_vs_contigs():
     global _tempdir
 
-    catlas_prefix = os.path.join(_tempdir, 'twofoo-short_k31_r1')
+    catlas_prefix = os.path.join(_tempdir, "twofoo-short_k31_r1")
     catlas = CAtlas(catlas_prefix)
-    print('loaded {} nodes from catlas {}', len(catlas), catlas_prefix)
-    print('loaded {} layer 1 catlas nodes', len(catlas.layer1_to_cdbg))
+    print("loaded {} nodes from catlas {}", len(catlas), catlas_prefix)
+    print("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
 
     root = catlas.root
-    root_cdbg_nodes = set(catlas.shadow([ root ]))
-    print(f'root cdbg nodes: {len(root_cdbg_nodes)}')
+    root_cdbg_nodes = set(catlas.shadow([root]))
+    print(f"root cdbg nodes: {len(root_cdbg_nodes)}")
 
     cdbg_id_set = set()
-    for record in screed.open(f'{catlas_prefix}/contigs.fa.gz'):
+    for record in screed.open(f"{catlas_prefix}/contigs.fa.gz"):
         cdbg_id_set.add(int(record.name))
 
-    print(f'cdbg ID set: {len(cdbg_id_set)}')
+    print(f"cdbg ID set: {len(cdbg_id_set)}")
 
-    print(f'root - unitigs: {len(root_cdbg_nodes - cdbg_id_set)}')
-    print(f'unitigs - root: {len(cdbg_id_set - root_cdbg_nodes)}')
+    print(f"root - unitigs: {len(root_cdbg_nodes - cdbg_id_set)}")
+    print(f"unitigs - root: {len(cdbg_id_set - root_cdbg_nodes)}")
 
     # all unitigs should be in root shadow
     assert not cdbg_id_set - root_cdbg_nodes
