@@ -6,8 +6,9 @@ import tempfile
 
 class TempDirectory(object):
     "Set up a temp directory; optionally change into it. Context manager."
+
     def __init__(self, chdir=False):
-        self.tempdir = tempfile.mkdtemp(prefix='sgc_test')
+        self.tempdir = tempfile.mkdtemp(prefix="sgc_test")
         self.start_directory = None
         self.do_chdir = chdir
 
@@ -33,7 +34,7 @@ class TempDirectory(object):
 def relative_file(filename):
     "Return the filename relative to the top level directory of this repo."
     thisdir = os.path.dirname(__file__)
-    pkgdir = os.path.join(thisdir, '../..')
+    pkgdir = os.path.join(thisdir, "../..")
     newpath = os.path.join(pkgdir, filename)
     return os.path.abspath(newpath)
 
@@ -41,13 +42,14 @@ def relative_file(filename):
 def pkg_file(filename):
     "Return the filename relative to the spacegraphcats/ package."
     thisdir = os.path.dirname(__file__)
-    pkgdir = os.path.join(thisdir, '..')
+    pkgdir = os.path.join(thisdir, "..")
     newpath = os.path.join(pkgdir, filename)
     return os.path.abspath(newpath)
 
 
 def in_tempdir(fn):
     "Decorator: run this test function in tempdir, provide location."
+
     def wrapper(*args, **kwargs):
         with TempDirectory(chdir=True) as location:
             newargs = [location] + list(args)
@@ -58,6 +60,7 @@ def in_tempdir(fn):
 
 def in_thisdir(fn):
     "Decorator: run this test function in cwd, provide location of temp dir"
+
     def wrapper(*args, **kwargs):
         with TempDirectory() as location:
             newargs = [location] + list(args)

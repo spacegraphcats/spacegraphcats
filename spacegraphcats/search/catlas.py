@@ -6,8 +6,10 @@ from typing import Dict, Set, List
 
 class CAtlas:
     """CAtlas class for searching."""
-    def __init__(self, catlas_directory, load_domfile=True,
-                 load_sizefile=False, min_abund=0.0):
+
+    def __init__(
+        self, catlas_directory, load_domfile=True, load_sizefile=False, min_abund=0.0
+    ):
         self.name = catlas_directory
 
         # catlas node ID -> parent
@@ -23,26 +25,26 @@ class CAtlas:
         # note: not all cDBG nodes are represented in catlas!
         self._cdbg_to_catlas = {}  # type: Dict[int, int]
 
-        catlas_file = os.path.join(catlas_directory, 'catlas.csv')
+        catlas_file = os.path.join(catlas_directory, "catlas.csv")
         self.__load_catlas(catlas_file)
         if load_domfile:
-            domfile = os.path.join(catlas_directory, 'first_doms.txt')
+            domfile = os.path.join(catlas_directory, "first_doms.txt")
             self.__load_first_level(domfile)
         if load_sizefile is not None:
-            sizefile = os.path.join(catlas_directory, 'contigs.fa.gz.info.csv')
+            sizefile = os.path.join(catlas_directory, "contigs.fa.gz.info.csv")
             self.__load_size_info(sizefile, min_abund)
 
     def __load_catlas(self, catlas_file):
         self.max_level = -1
         self.root = -1
         # load everything from the catlas file
-        for line in open(catlas_file, 'rt'):
-            node_id, cdbg_id, level, children = line.strip().split(',')
+        for line in open(catlas_file, "rt"):
+            node_id, cdbg_id, level, children = line.strip().split(",")
             # parse out the children
             node_id = int(node_id)
             children = children.strip()
             if children:
-                children = children.split(' ')
+                children = children.split(" ")
                 children = set(map(int, children))
 
                 # save node -> children, and level
@@ -73,9 +75,9 @@ class CAtlas:
         # mapping from cdbg nodes to catlas node IDs
         self.cdbg_to_layer1 = {}  # type: Dict[int, int]
 
-        fp = open(domfile, 'rt')
+        fp = open(domfile, "rt")
         for line in fp:
-            dom_node, *beneath = line.strip().split(' ')
+            dom_node, *beneath = line.strip().split(" ")
 
             dom_node = int(dom_node)
             beneath = set(map(int, beneath))
@@ -89,32 +91,31 @@ class CAtlas:
         kmer_sizes = {}
         weighted_kmer_sizes = {}
         # load size information from file
-        with open(sizefile, 'rt') as fp:
+        with open(sizefile, "rt") as fp:
             reader = csv.DictReader(fp)
             for row in reader:
-                contig_id = int(row['contig_id'])
-                n_kmers = int(row['n_kmers'])
-                mean_abund = float(row['mean_abund'])
+                contig_id = int(row["contig_id"])
+                n_kmers = int(row["n_kmers"])
+                mean_abund = float(row["mean_abund"])
                 if not min_abund or mean_abund >= min_abund:
                     kmer_sizes[contig_id] = n_kmers
-                    weighted_kmer_sizes[contig_id] = mean_abund*n_kmers
+                    weighted_kmer_sizes[contig_id] = mean_abund * n_kmers
 
         # propagate upwards
         self.kmer_sizes = {}
         self.weighted_kmer_sizes = {}
         for node_id in self:
             level = self.levels[node_id]
-            if level == 1:                    # aggregate across cDBG nodes
+            if level == 1:  # aggregate across cDBG nodes
                 total_kmers = 0
                 total_weighted_kmers = 0
                 for cdbg_node in self.layer1_to_cdbg.get(node_id):
                     total_kmers += kmer_sizes.get(cdbg_node, 0)
-                    total_weighted_kmers += weighted_kmer_sizes.get(cdbg_node,
-                                                                    0)
+                    total_weighted_kmers += weighted_kmer_sizes.get(cdbg_node, 0)
 
                 self.kmer_sizes[node_id] = total_kmers
                 self.weighted_kmer_sizes[node_id] = total_weighted_kmers
-            else:                             # aggregate across children
+            else:  # aggregate across children
                 sub_size = 0
                 sub_weighted_size = 0
                 for child_id in self.children[node_id]:
