@@ -41,7 +41,7 @@ jobs:
       - name: Build
         run: python setup.py build_ext --inplace
 
-      - name Install sgc
+      - name: Install sgc
         run: pip install -e .
 
       - run: make lint
