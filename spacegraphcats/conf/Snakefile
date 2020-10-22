@@ -249,7 +249,7 @@ rule make_contigs_kmer_index:
         f"{catlas_dir}/contigs.fa.gz.mphf",
         f"{catlas_dir}/contigs.fa.gz.indices",
     shell: """
-        {python} -m spacegraphcats.cdbg.index_contigs_by_kmer \
+        {python} -m spacegraphcats.cdbg.index_cdbg_by_kmer \
             -k {ksize} {catlas_dir}
     """
 

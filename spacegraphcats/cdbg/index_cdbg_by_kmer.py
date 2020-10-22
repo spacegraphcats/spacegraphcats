@@ -46,6 +46,9 @@ class MPHF_KmerIndex(object):
         self.table = bbhash_table
         self.sizes = sizes
 
+    def __len__(self):
+        return len(self.table)
+
     def get_cdbg_id(self, kmer_hash):
         return self.table[kmer_hash]
 
@@ -92,7 +95,7 @@ class MPHF_KmerIndex(object):
                 n_matched += 1
 
         if n and verbose:
-            print("... found {} matches to {} k-mers total.".format(n_matched, n + 1))
+            print(f"... found {n_matched} matches to {n+1} k-mers total.")
 
         return cdbg_matches
 
@@ -161,12 +164,12 @@ def build_mphf(ksize, records_iter_fn):
         all_kmers.extend(list(kmers))
 
     n_contigs = n + 1
-    print("loaded {} contigs.\n".format(n_contigs))
+    print(f"loaded {n_contigs} contigs.\n")
 
     # build MPHF (this is the CPU intensive bit)
-    print("building MPHF for {} k-mers in {} nodes.".format(len(all_kmers), n_contigs))
+    print("building MPHF for {len(all_kmers)} k-mers in {n_contigs} nodes.")
     table = BBHashTable()
-    table.initialize(all_kmers)
+    table.initialize(all_kmers)           # @CTB check fill value
 
     # build tables linking:
     # * mphf hash to k-mer hash (for checking exactness)
@@ -183,7 +186,7 @@ def build_mphf(ksize, records_iter_fn):
         # node ID is record name, must go from 0 to total-1
         cdbg_id = int(record.name)
 
-        # get 64-bit numbers for each k-mer (doesn't really matter what hash)
+        # get 64-bit numbers for each k-mer
         kmers = hash_sequence(record.sequence, ksize)
 
         # for each k-mer, find its MPHF hashval, & link to info.
@@ -192,7 +195,7 @@ def build_mphf(ksize, records_iter_fn):
 
         sizes[cdbg_id] = len(kmers)
 
-    print("loaded {} contigs in pass2.\n".format(n_contigs))
+    print(f"loaded {n_contigs} contigs in pass2.\n")
     assert n == max(table.mphf_to_value), (n, max(table.mphf_to_value))
 
     return table, sizes
@@ -210,7 +213,7 @@ def main(argv):
     sizes_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.sizes")
 
     def create_records_iter():
-        print("reading cDBG nodes from {}".format(contigs_filename))
+        print(f"reading cDBG nodes from {contigs_filename}")
         return screed.open(contigs_filename)
 
     table, sizes = build_mphf(a.ksize, create_records_iter)
