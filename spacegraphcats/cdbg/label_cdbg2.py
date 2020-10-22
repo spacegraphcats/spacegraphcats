@@ -64,7 +64,7 @@ def main(argv=sys.argv[1:]):
     ki_start = time.time()
     kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
     notify('loaded {} k-mers in index ({:.1f}s)',
-           len(kmer_idx.table), time.time() - ki_start)
+           len(kmer_idx, time.time() - ki_start)
 
     total_bp = 0
     watermark_size = 5e5
