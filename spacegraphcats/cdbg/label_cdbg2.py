@@ -99,13 +99,15 @@ def main(argv=sys.argv[1:]):
         # identify matching cDBG IDs
         cdbg_ids = set()
         kmers = hash_sequence(record.sequence, args.ksize)
+        cdbg_ids = kmer_idx.table.get_unique_values(kmers)
 
-        for kmer in kmers:
-            cdbg_id = kmer_idx.get_cdbg_id(kmer)
-            if cdbg_id is None:
-                continue # @CTB
-            cdbg_id = int(cdbg_id)        # convert away from numpy int
-            cdbg_ids.add(cdbg_id)
+#        for kmer in kmers:
+#            cdbg_id = kmer_idx.get_cdbg_id(kmer)
+#            if cdbg_id is None:
+#                continue # @CTB
+#            cdbg_id = int(cdbg_id)        # convert away from numpy int
+#            cdbg_ids.add(cdbg_id)
+        if None in cdbg_ids: cdbg_ids.remove(None)
 
         for cdbg_id in cdbg_ids:
             cursor.execute('INSERT INTO sequences (offset, cdbg_id) VALUES (?, ?)', (offset, cdbg_id))
