@@ -17,7 +17,7 @@ from spacegraphcats.search import extract_contigs
 from spacegraphcats.search import estimate_query_abundance
 from spacegraphcats.search import extract_nodes_by_shadow_ratio
 from spacegraphcats.utils import make_bgzf
-from spacegraphcats.cdbg import label_cdbg
+from spacegraphcats.cdbg import label_cdbg2
 from spacegraphcats.search import extract_reads
 from spacegraphcats.cdbg import index_cdbg_by_minhash
 from spacegraphcats.search import query_by_hashval
@@ -233,6 +233,10 @@ def test_dory_label_cdbg(location):
     args = ["dory-subset.fa", "-o", relative_file("dory/dory.reads.bgz")]
     make_bgzf.main(args)
 
+    # make k-mer search index - FIXTURE
+    args = "-k 21 dory_k21_r1".split()
+    index_cdbg_by_kmer.main(args)
+
     # run label_cdbg
     print("** running label_cdbg")
     args = [
@@ -240,7 +244,7 @@ def test_dory_label_cdbg(location):
         relative_file("dory/dory.reads.bgz"),
         "dory_k21_r1/reads.bgz.labels2",
     ]
-    label_cdbg.main(args)
+    label_cdbg2.main(args)
 
 
 @pytest_utils.in_tempdir
@@ -261,7 +265,7 @@ def test_dory_extract_reads(location):
         relative_file("dory/dory.reads.bgz"),
         "dory_k21_r1/reads.bgz.labels2",
     ]
-    label_cdbg.main(args)
+    label_cdbg2.main(args)
 
     # run extract_reads
     print("** running extract_reads")
@@ -299,7 +303,7 @@ def test_dory_extract_reads_fq(location):
         relative_file("dory/dory.reads.bgz"),
         "dory_k21_r1/reads.bgz.labels",
     ]
-    label_cdbg.main(args)
+    label_cdbg2.main(args)
 
     # run extract_reads
     print("** running extract_reads")
