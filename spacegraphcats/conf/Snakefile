@@ -486,6 +486,7 @@ rule build_multifasta_index:
         catlas = f"{catlas_dir}/catlas.csv",
         mphf = f"{catlas_dir}/contigs.fa.gz.mphf",
         indices = f"{catlas_dir}/contigs.fa.gz.indices",
+        sizes = f"{catlas_dir}/contigs.fa.gz.sizes",
     output:
         f"{catlas_dir}_multifasta/multifasta.pickle",
     params:
