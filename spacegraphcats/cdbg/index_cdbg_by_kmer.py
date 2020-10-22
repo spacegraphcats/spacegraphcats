@@ -27,12 +27,10 @@ hashing_ksize = None
 
 def hash_sequence(seq, ksize):
     global hashing_fn, hashing_ksize
-    if hashing_fn is None:
+    if hashing_fn is None or hashing_ksize != ksize:
         kh = khmer.Nodetable(ksize, 1, 1)
-        hashing_fn = kh.get_kmer_hashes
-        hashing_ksize = ksize
+        hashing_fn, hashing_ksize = kh.get_kmer_hashes, ksize
 
-    assert hashing_ksize == ksize
     return hashing_fn(seq)
 
 
@@ -81,6 +79,8 @@ class MPHF_KmerIndex(object):
 
     def count_cdbg_matches(self, query_kmers, verbose=True):
         "Return a dictionary containing cdbg_id -> # of matches in query_kmers"
+        if not isinstance(query_kmers, list):
+            query_kmers = list(query_kmers)
         return self.table.get_unique_values(query_kmers)
 
     def count_catlas_matches(self, cdbg_matches, catlas):
@@ -151,7 +151,7 @@ def build_mphf(ksize, records_iter_fn):
     print(f"loaded {n_contigs} contigs.\n")
 
     # build MPHF (this is the CPU intensive bit)
-    print("building MPHF for {len(all_kmers)} k-mers in {n_contigs} nodes.")
+    print(f"building MPHF for {len(all_kmers)} k-mers in {n_contigs} nodes.")
     table = BBHashTable()
     table.initialize(all_kmers)
 

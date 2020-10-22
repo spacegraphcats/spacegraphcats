@@ -239,7 +239,7 @@ def test_dory_label_cdbg(location):
 
     # run label_cdbg
     print("** running label_cdbg")
-    args = [
+    args = ["-k", "21",
         "dory_k21_r1",
         relative_file("dory/dory.reads.bgz"),
         "dory_k21_r1/reads.bgz.labels2",
@@ -258,9 +258,13 @@ def test_dory_extract_reads(location):
     args = ["dory-subset.fa", "-o", relative_file("dory/dory.reads.bgz")]
     make_bgzf.main(args)
 
+    # make k-mer search index - FIXTURE
+    args = "-k 21 dory_k21_r1".split()
+    index_cdbg_by_kmer.main(args)
+
     # run label_cdbg - FIXTURE
     print("** running label_cdbg")
-    args = [
+    args = ["-k", "21",
         "dory_k21_r1",
         relative_file("dory/dory.reads.bgz"),
         "dory_k21_r1/reads.bgz.labels2",
@@ -296,9 +300,13 @@ def test_dory_extract_reads_fq(location):
     args = ["dory-subset.fq", "-o", relative_file("dory/dory.reads.bgz")]
     make_bgzf.main(args)
 
+    # make k-mer search index - FIXTURE
+    args = "-k 21 dory_k21_r1".split()
+    index_cdbg_by_kmer.main(args)
+
     # run label_cdbg - FIXTURE
     print("** running label_cdbg")
-    args = [
+    args = ["-k", "21",
         "dory_k21_r1",
         relative_file("dory/dory.reads.bgz"),
         "dory_k21_r1/reads.bgz.labels",

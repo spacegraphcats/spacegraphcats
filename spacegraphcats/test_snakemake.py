@@ -97,7 +97,7 @@ def test_dory_build_reads_index():
     global _tempdir
 
     dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
-    target = "dory_k21_r1/reads.bgz.labels"
+    target = "dory_k21_r1/reads.bgz.labels2"
     status = run_snakemake(
         dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
     )
