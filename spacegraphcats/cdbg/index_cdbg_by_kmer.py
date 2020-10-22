@@ -18,7 +18,7 @@ import screed
 import khmer
 import argparse
 import bbhash
-from bbhash_table2 import BBHashTable
+from bbhash_table import BBHashTable
 import pickle
 
 
