@@ -6,6 +6,7 @@ Input: a directory containing a contigs.fa.gz
 
 Output: contigs.fa.gz.mphf, a BBHash MPHF savefile; and contigs.fa.gz.indices,
 a numpy savez file containing mphf_to_kmer, kmer_to_cdbg, and sizes.
+XXX @CTB FIXME XXX
 
 Note: relies on the fact that for a cDBG constructed at a particular k,
 no k-mer will appear in more than one cDBG node and every k-mer will
@@ -17,7 +18,8 @@ import screed
 import khmer
 import argparse
 import bbhash
-import numpy
+from bbhash_table2 import BBHashTable
+import pickle
 
 
 hashing_fn = None
@@ -40,25 +42,15 @@ class MPHF_KmerIndex(object):
     Support kmer -> cDBG node id queries.
     """
 
-    def __init__(self, mphf, mphf_to_kmer, mphf_to_cdbg_id, cdbg_sizes):
-        self.mphf = mphf
-        self.mphf_to_kmer = mphf_to_kmer
-        self.mphf_to_cdbg_id = mphf_to_cdbg_id
-        self.cdbg_sizes = cdbg_sizes
-
-    def get_cdbg_size(self, cdbg_id):
-        "Return the size (in k-mers) of the given cDBG ID."
-        return self.cdbg_sizes[int(cdbg_id)]
+    def __init__(self, bbhash_table, sizes):
+        self.table = bbhash_table
+        self.sizes = sizes
 
     def get_cdbg_id(self, kmer_hash):
-        # do we have this kmer in the mphf?
-        mphf_hash = self.mphf.lookup(kmer_hash)
-        if mphf_hash:
-            # double check that mphf maps to correct hash
-            if self.mphf_to_kmer[mphf_hash] == kmer_hash:
-                cdbg_id = self.mphf_to_cdbg_id[mphf_hash]
-                return cdbg_id
-        return None
+        return self.table[kmer_hash]
+
+    def get_cdbg_size(self, cdbg_id):
+        return self.sizes[cdbg_id]
 
     def build_catlas_node_sizes(self, catlas):
         """Count the number of kmers in the shadow of each catlas node."""
@@ -147,15 +139,13 @@ class MPHF_KmerIndex(object):
         "Load kmer index created by search.contigs_by_kmer."
         mphf_filename = os.path.join(catlas_prefix, "contigs.fa.gz.mphf")
         array_filename = os.path.join(catlas_prefix, "contigs.fa.gz.indices")
-        if not os.path.exists(mphf_filename):
-            raise FileNotFoundError(mphf_filename)
-        mphf = bbhash.load_mphf(mphf_filename)
-        with open(array_filename, "rb") as fp:
-            np_dict = numpy.load(fp)
-            mphf_to_kmer = np_dict["mphf_to_kmer"]
-            mphf_to_cdbg = np_dict["kmer_to_cdbg"]
-            cdbg_sizes = np_dict["sizes"]
-        return cls(mphf, mphf_to_kmer, mphf_to_cdbg, cdbg_sizes)
+        sizes_filename = os.path.join(catlas_prefix, "contigs.fa.gz.sizes")
+
+        table = BBHashTable.load(mphf_filename, array_filename)
+        with open(sizes_filename, 'rb') as fp:
+            sizes = pickle.load(fp)
+
+        return cls(table, sizes)
 
 
 def build_mphf(ksize, records_iter_fn):
@@ -175,19 +165,17 @@ def build_mphf(ksize, records_iter_fn):
 
     # build MPHF (this is the CPU intensive bit)
     print("building MPHF for {} k-mers in {} nodes.".format(len(all_kmers), n_contigs))
-    x = bbhash.PyMPHF(all_kmers, len(all_kmers), 4, 1.0)
+    table = BBHashTable()
+    table.initialize(all_kmers)
 
     # build tables linking:
     # * mphf hash to k-mer hash (for checking exactness)
     # * mphf hash to cDBG ID
     # * cDBG ID to node size (in k-mers)
 
-    mphf_to_kmer = numpy.zeros(len(all_kmers), numpy.uint64)
-    mphf_to_cdbg = numpy.zeros(len(all_kmers), numpy.uint32)
-    sizes = numpy.zeros(n_contigs, numpy.uint32)
-
     print("second pass.")
     records_iter = records_iter_fn()
+    sizes = {}
     for n, record in enumerate(records_iter):
         if n % 50000 == 0 and n:
             print("... contig {} of {}".format(n, n_contigs), end="\r")
@@ -200,17 +188,14 @@ def build_mphf(ksize, records_iter_fn):
 
         # for each k-mer, find its MPHF hashval, & link to info.
         for kmer in kmers:
-            mphf = x.lookup(kmer)
-            mphf_to_kmer[mphf] = kmer
-            mphf_to_cdbg[mphf] = cdbg_id
+            table[kmer] = cdbg_id
 
-        # record each node size, while we're here.
         sizes[cdbg_id] = len(kmers)
 
     print("loaded {} contigs in pass2.\n".format(n_contigs))
-    assert n == max(mphf_to_cdbg), (n, max(mphf_to_cdbg))
+    assert n == max(table.mphf_to_value), (n, max(table.mphf_to_value))
 
-    return x, mphf_to_kmer, mphf_to_cdbg, sizes
+    return table, sizes
 
 
 def main(argv):
@@ -222,20 +207,18 @@ def main(argv):
     contigs_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz")
     mphf_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.mphf")
     array_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.indices")
+    sizes_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.sizes")
 
     def create_records_iter():
         print("reading cDBG nodes from {}".format(contigs_filename))
         return screed.open(contigs_filename)
 
-    x, mphf_to_kmer, mphf_to_cdbg, sizes = build_mphf(a.ksize, create_records_iter)
+    table, sizes = build_mphf(a.ksize, create_records_iter)
+    print(f"done! saving to {mphf_filename} and {array_filename}")
 
-    print("done! saving to {} and {}".format(mphf_filename, array_filename))
-
-    x.save(mphf_filename)
-    with open(array_filename, "wb") as fp:
-        numpy.savez_compressed(
-            fp, mphf_to_kmer=mphf_to_kmer, kmer_to_cdbg=mphf_to_cdbg, sizes=sizes
-        )
+    table.save(mphf_filename, array_filename)
+    with open(sizes_filename, 'wb') as fp:
+        pickle.dump(sizes, fp)
 
 
 if __name__ == "__main__":

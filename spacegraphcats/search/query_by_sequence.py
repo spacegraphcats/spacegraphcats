@@ -325,7 +325,7 @@ def main(argv):
     kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
     notify(
         "loaded {} k-mers in index ({:.1f}s)",
-        len(kmer_idx.mphf_to_kmer),
+        len(kmer_idx.table),
         time.time() - ki_start,
     )
 
