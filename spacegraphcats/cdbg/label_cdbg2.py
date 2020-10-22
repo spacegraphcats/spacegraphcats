@@ -13,8 +13,9 @@ label. Here, 'label' is the cDBG ID to which the sequence belongs.
 
 The script extract_reads_by_frontier_sqlite.py is a downstream script to
 extract the reads with a frontier search.
+# @CTB FIXME
 
-Specifically,
+Specifically, @CTB FIXME
 * walk through the contigs assembled from the cDBG;
 * build a DBG cover using khmer tags, such that every k-mer in the DBG
   is within distance d=40 of a tag;
@@ -49,7 +50,7 @@ def main(argv=sys.argv[1:]):
 
     dbfilename = args.savename
     if os.path.exists(dbfilename):
-        print('removing existing db {}'.format(dbfilename))
+        print(f"removing existing db '{dbfilename}'")
         os.unlink(dbfilename)
 
     db = sqlite3.connect(dbfilename)
@@ -57,10 +58,7 @@ def main(argv=sys.argv[1:]):
     cursor.execute('CREATE TABLE sequences (offset INTEGER, cdbg_id INTEGER)');
     db.commit()
 
-    # find the contigs filename
-    contigs = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
-
-    # ...and kmer index.
+    # load k-mer MPHF index: { kmers -> cDBG IDs }
     ki_start = time.time()
     kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
     notify('loaded {} k-mers in index ({:.1f}s)',
@@ -70,7 +68,7 @@ def main(argv=sys.argv[1:]):
     watermark_size = 5e5
     watermark = watermark_size
 
-    print('walking read file: {}'.format(args.reads))
+    print(f"walking read file: '{args.reads}'")
     n = 0
 
     cursor.execute('PRAGMA cache_size=1000000')
@@ -91,6 +89,7 @@ def main(argv=sys.argv[1:]):
             print(f'... {watermark:5.2e} bp thru reads', end='\r',
                   file=sys.stderr)
             watermark += watermark_size
+#            if watermark >= 5e6: break
         total_bp += len(record.sequence)
 
         if len(record.sequence) < args.ksize:
@@ -99,14 +98,10 @@ def main(argv=sys.argv[1:]):
         # identify matching cDBG IDs
         cdbg_ids = set()
         kmers = hash_sequence(record.sequence, args.ksize)
-        cdbg_ids = kmer_idx.table.get_unique_values(kmers)
 
-#        for kmer in kmers:
-#            cdbg_id = kmer_idx.get_cdbg_id(kmer)
-#            if cdbg_id is None:
-#                continue # @CTB
-#            cdbg_id = int(cdbg_id)        # convert away from numpy int
-#            cdbg_ids.add(cdbg_id)
+        cdbg_ids = kmer_idx.count_cdbg_matches(kmers)
+
+        # @CTB check for None/-1/etc. Why is this happening!? ;)
         if None in cdbg_ids: cdbg_ids.remove(None)
 
         for cdbg_id in cdbg_ids:
@@ -115,8 +110,8 @@ def main(argv=sys.argv[1:]):
         total_cdbg_ids.update(cdbg_ids)
 
     db.commit()
-    print(f'{watermark:5.2e} bp in reads', file=sys.stderr)
-    print(f'found reads for {len(total_cdbg_ids)} cDBG IDs')
+    notify(f'{total_bp:5.2e} bp in reads')
+    notify(f'found reads for {len(total_cdbg_ids)} cDBG IDs')
     assert max(total_cdbg_ids) + 1 == len(total_cdbg_ids)
 
     db.close()

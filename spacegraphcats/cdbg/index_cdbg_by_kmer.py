@@ -17,7 +17,6 @@ import os
 import screed
 import khmer
 import argparse
-import bbhash
 from bbhash_table import BBHashTable
 import pickle
 
@@ -82,22 +81,7 @@ class MPHF_KmerIndex(object):
 
     def count_cdbg_matches(self, query_kmers, verbose=True):
         "Return a dictionary containing cdbg_id -> # of matches in query_kmers"
-        cdbg_matches = {}
-        n_matched = 0
-        n = 0
-        for n, hashval in enumerate(query_kmers):
-            if n and n % 1000000 == 0 and verbose:
-                print("matching ...", n, end="\r")
-
-            cdbg_id = self.get_cdbg_id(hashval)
-            if cdbg_id is not None:
-                cdbg_matches[cdbg_id] = cdbg_matches.get(cdbg_id, 0) + 1
-                n_matched += 1
-
-        if n and verbose:
-            print(f"... found {n_matched} matches to {n+1} k-mers total.")
-
-        return cdbg_matches
+        return self.table.get_unique_values(query_kmers)
 
     def count_catlas_matches(self, cdbg_matches, catlas):
         """ """
@@ -169,7 +153,7 @@ def build_mphf(ksize, records_iter_fn):
     # build MPHF (this is the CPU intensive bit)
     print("building MPHF for {len(all_kmers)} k-mers in {n_contigs} nodes.")
     table = BBHashTable()
-    table.initialize(all_kmers)           # @CTB check fill value
+    table.initialize(all_kmers)
 
     # build tables linking:
     # * mphf hash to k-mer hash (for checking exactness)
