@@ -45,6 +45,6 @@ setup(
         "sortedcontainers",
         "sourmash",
         "khmer",
-        "bbhash >= 0.3",
+        "bbhash >= 0.5",
     ],
 )
