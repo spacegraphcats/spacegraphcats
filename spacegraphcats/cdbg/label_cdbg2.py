@@ -98,11 +98,7 @@ def main(argv=sys.argv[1:]):
         # identify matching cDBG IDs
         cdbg_ids = set()
         kmers = hash_sequence(record.sequence, args.ksize)
-
-        cdbg_ids = kmer_idx.count_cdbg_matches(kmers)
-
-        # @CTB check for None/-1/etc. Why is this happening!? ;)
-        if None in cdbg_ids: cdbg_ids.remove(None)
+        cdbg_ids = kmer_idx.count_cdbg_matches(kmers, require_exist=True)
 
         for cdbg_id in cdbg_ids:
             cursor.execute('INSERT INTO sequences (offset, cdbg_id) VALUES (?, ?)', (offset, cdbg_id))
