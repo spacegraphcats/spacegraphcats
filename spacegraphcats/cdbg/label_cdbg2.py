@@ -114,6 +114,8 @@ def main(argv=sys.argv[1:]):
     notify(f'found reads for {len(total_cdbg_ids)} cDBG IDs')
     assert max(total_cdbg_ids) + 1 == len(total_cdbg_ids)
 
+    cursor.execute('CREATE INDEX offset_idx ON sequences (offset)')
+    cursor.execute('CREATE INDEX cdbg_id_idx ON sequences (cdbg_id)')
     db.close()
     print(f'done closing {dbfilename}!')
 
