@@ -31,6 +31,7 @@ import sqlite3
 
 import screed
 from spacegraphcats.utils.logging import notify
+from spacegraphcats.utils.bgzf.bgzf import BgzfReader
 from spacegraphcats.search import search_utils
 from . import MPHF_KmerIndex, hash_sequence
 
@@ -81,7 +82,7 @@ def main(argv=sys.argv[1:]):
     except sqlite3.OperationalError:
         pass
 
-    reader = search_utils.BgzfReader(args.reads)
+    reader = BgzfReader(args.reads)
     total_cdbg_ids = set()
     for record, offset in search_utils.iterate_bgzf(reader):
         n += 1
@@ -89,16 +90,17 @@ def main(argv=sys.argv[1:]):
             print(f'... {watermark:5.2e} bp thru reads', end='\r',
                   file=sys.stderr)
             watermark += watermark_size
-#            if watermark >= 5e6: break
         total_bp += len(record.sequence)
 
         if len(record.sequence) < args.ksize:
             continue
 
         # identify matching cDBG IDs
-        cdbg_ids = set()
         kmers = hash_sequence(record.sequence, args.ksize)
-        cdbg_ids = kmer_idx.count_cdbg_matches(kmers, require_exist=True)
+
+        # CTB note: if reads have 'N' in them, they will not appear
+        # in cDBG, so do not require_exist=True here.
+        cdbg_ids = kmer_idx.count_cdbg_matches(kmers)
 
         for cdbg_id in cdbg_ids:
             cursor.execute('INSERT INTO sequences (offset, cdbg_id) VALUES (?, ?)', (offset, cdbg_id))
