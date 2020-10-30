@@ -15,7 +15,7 @@ CLASSIFIERS = [
 
 setup(
     name="spacegraphcats",
-    version="1.1",
+    version="2.0b2
     description="tools for biological assembly graph neighborhood analysis",
     url="https://github.com/spacegraphcats/spacegraphcats",
     author="C. Titus Brown, Dominik Moritz, Michael P. O'Brien, Felix Reidl, Taylor Reiter, and Blair D. Sullivan",
