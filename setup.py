@@ -10,6 +10,8 @@ CLASSIFIERS = [
     "Operating System :: MacOS :: MacOS X",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
@@ -36,11 +38,9 @@ setup(
     use_scm_version={"write_to": "spacegraphcats/version.py"},
     install_requires=[
         "Cython",
-        "mypy",
         "screed",
         "pytest",
         "numpy",
-        "pandas",
         "snakemake",
         "sortedcontainers",
         "sourmash",
