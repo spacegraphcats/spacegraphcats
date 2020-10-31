@@ -7,7 +7,7 @@ import spacegraphcats.utils.pytest_utils as pytest_utils
 from spacegraphcats.utils.pytest_utils import pkg_file, relative_file
 
 from spacegraphcats.catlas import catlas
-from spacegraphcats.cdbg import index_contigs_by_kmer
+from spacegraphcats.cdbg import index_cdbg_by_kmer
 from spacegraphcats.search import query_by_sequence
 from spacegraphcats.search import characterize_catlas_regions
 from spacegraphcats.search import extract_unassembled_nodes
@@ -17,7 +17,7 @@ from spacegraphcats.search import extract_contigs
 from spacegraphcats.search import estimate_query_abundance
 from spacegraphcats.search import extract_nodes_by_shadow_ratio
 from spacegraphcats.utils import make_bgzf
-from spacegraphcats.cdbg import label_cdbg
+from spacegraphcats.cdbg import label_cdbg2
 from spacegraphcats.search import extract_reads
 from spacegraphcats.cdbg import index_cdbg_by_minhash
 from spacegraphcats.search import query_by_hashval
@@ -103,8 +103,8 @@ def test_dory_query_workflow(location):
 
     # make k-mer search index
     args = "-k 21 dory_k21_r1".split()
-    print("** running index_contigs_by_kmer")
-    index_contigs_by_kmer.main(args)
+    print("** running index_cdbg_by_kmer")
+    index_cdbg_by_kmer.main(args)
 
     # do search!!
     args = "dory_k21_r1 dory_k21_r1_search_oh0 --query dory-head.fa -k 21".split()
@@ -149,8 +149,8 @@ def test_dory_search_nomatch(location):
 
     # make k-mer search index
     args = "-k 21 dory_k21_r1".split()
-    print("** running index_contigs_by_kmer")
-    index_contigs_by_kmer.main(args)
+    print("** running index_cdbg_by_kmer")
+    index_cdbg_by_kmer.main(args)
 
     # do search!!
     args = "dory_k21_r1 dory_k21_r1_search_oh0 --query random-query.fa -k 21".split()
@@ -178,7 +178,7 @@ def test_dory_extract_unassembled_nodes(location):
 
     # make k-mer search index - FIXTURE
     args = "-k 21 dory_k21_r1".split()
-    index_contigs_by_kmer.main(args)
+    index_cdbg_by_kmer.main(args)
 
     # run extract_unassembled_regions
     args = "dory_k21_r1 dory-head.fa dory.regions -k 21".split()
@@ -233,14 +233,18 @@ def test_dory_label_cdbg(location):
     args = ["dory-subset.fa", "-o", relative_file("dory/dory.reads.bgz")]
     make_bgzf.main(args)
 
+    # make k-mer search index - FIXTURE
+    args = "-k 21 dory_k21_r1".split()
+    index_cdbg_by_kmer.main(args)
+
     # run label_cdbg
     print("** running label_cdbg")
-    args = [
+    args = ["-k", "21",
         "dory_k21_r1",
         relative_file("dory/dory.reads.bgz"),
-        "dory_k21_r1/reads.bgz.labels",
+        "dory_k21_r1/reads.bgz.labels2",
     ]
-    label_cdbg.main(args)
+    label_cdbg2.main(args)
 
 
 @pytest_utils.in_tempdir
@@ -254,20 +258,24 @@ def test_dory_extract_reads(location):
     args = ["dory-subset.fa", "-o", relative_file("dory/dory.reads.bgz")]
     make_bgzf.main(args)
 
+    # make k-mer search index - FIXTURE
+    args = "-k 21 dory_k21_r1".split()
+    index_cdbg_by_kmer.main(args)
+
     # run label_cdbg - FIXTURE
     print("** running label_cdbg")
-    args = [
+    args = ["-k", "21",
         "dory_k21_r1",
         relative_file("dory/dory.reads.bgz"),
-        "dory_k21_r1/reads.bgz.labels",
+        "dory_k21_r1/reads.bgz.labels2",
     ]
-    label_cdbg.main(args)
+    label_cdbg2.main(args)
 
     # run extract_reads
     print("** running extract_reads")
     args = [
         relative_file("dory/dory.reads.bgz"),
-        "dory_k21_r1/reads.bgz.labels",
+        "dory_k21_r1/reads.bgz.labels2",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz",
@@ -292,14 +300,18 @@ def test_dory_extract_reads_fq(location):
     args = ["dory-subset.fq", "-o", relative_file("dory/dory.reads.bgz")]
     make_bgzf.main(args)
 
+    # make k-mer search index - FIXTURE
+    args = "-k 21 dory_k21_r1".split()
+    index_cdbg_by_kmer.main(args)
+
     # run label_cdbg - FIXTURE
     print("** running label_cdbg")
-    args = [
+    args = ["-k", "21",
         "dory_k21_r1",
         relative_file("dory/dory.reads.bgz"),
         "dory_k21_r1/reads.bgz.labels",
     ]
-    label_cdbg.main(args)
+    label_cdbg2.main(args)
 
     # run extract_reads
     print("** running extract_reads")
@@ -343,7 +355,7 @@ def test_dory_estimate_query_abundance(location):
 
     # make k-mer search index - FIXTURE
     args = "-k 21 dory_k21_r1".split()
-    index_contigs_by_kmer.main(args)
+    index_cdbg_by_kmer.main(args)
 
     # calculate query abundances
     args = "dory_k21_r1 dory-head.fa -o abundances.csv -k 21".split()
@@ -380,7 +392,7 @@ def test_dory_multifasta_query(location):
 
     # make k-mer search index - FIXTURE
     args = "-k 21 dory_k21_r1".split()
-    index_contigs_by_kmer.main(args)
+    index_cdbg_by_kmer.main(args)
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")

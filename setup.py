@@ -10,12 +10,14 @@ CLASSIFIERS = [
     "Operating System :: MacOS :: MacOS X",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
 setup(
     name="spacegraphcats",
-    version="2.0b1",
+    version="2.0b3",
     description="tools for biological assembly graph neighborhood analysis",
     url="https://github.com/spacegraphcats/spacegraphcats",
     author="C. Titus Brown, Dominik Moritz, Michael P. O'Brien, Felix Reidl, Taylor Reiter, and Blair D. Sullivan",
@@ -36,15 +38,13 @@ setup(
     use_scm_version={"write_to": "spacegraphcats/version.py"},
     install_requires=[
         "Cython",
-        "mypy",
         "screed",
         "pytest",
         "numpy",
-        "pandas",
         "snakemake",
         "sortedcontainers",
         "sourmash",
         "khmer",
-        "bbhash",
+        "bbhash >= 0.5",
     ],
 )

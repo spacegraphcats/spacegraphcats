@@ -9,10 +9,10 @@ import argparse
 import os
 import sys
 import sourmash
-import khmer
 import csv
-
 import screed
+
+from spacegraphcats.cdbg import hash_sequence
 from . import search_utils
 from .catlas import CAtlas
 
@@ -64,11 +64,9 @@ def main(args=sys.argv[1:]):
     # load k-mer index, query, etc. etc.
     kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
 
-    bf = khmer.Nodetable(args.ksize, 1, 1)
-
     query_kmers = set()
     for record in screed.open(args.query):
-        query_kmers.update(bf.get_kmer_hashes(record.sequence))
+        query_kmers.update(hash_sequence(record.sequence, args.ksize))
 
     print("got {} k-mers from {}".format(len(query_kmers), args.query))
 
