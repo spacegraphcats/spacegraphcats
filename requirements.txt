@@ -1,5 +1,3 @@
-Cython
-mypy
 screed
 pytest >= 5.1.2
 pytest-dependency

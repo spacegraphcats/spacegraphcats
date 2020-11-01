@@ -42,7 +42,6 @@ setup(
     ],
     use_scm_version={"write_to": "spacegraphcats/version.py"},
     install_requires=[
-        "Cython",
         "screed",
         "pytest",
         "numpy",
