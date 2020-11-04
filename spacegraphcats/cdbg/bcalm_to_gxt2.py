@@ -242,7 +242,6 @@ def main(argv):
     # @CTB
     trim = False
     trim_cutoff = args.abundance
-    unitigs = args.bcalm_unitigs
 
     logfile = os.path.join(os.path.dirname(args.gxt_out), "bcalm_to_gxt.log")
     if args.debug:

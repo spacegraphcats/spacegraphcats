@@ -143,9 +143,9 @@ rule clean:
 # build cDBG using bcalm
 rule bcalm_cdbg:
     input:
-        f"{cdbg_dir}/bcalm.{cdbg_dir}.inputlist.txt"
+        f"{cdbg_dir}/bcalm.inputlist.txt"
     output:
-        f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.fa",
+        f"{cdbg_dir}/bcalm.unitigs.fa",
     log: f"{catlas_dir}/bcalm.{catlas_dir}.log.txt",
     shell: """
         # can we run it?
@@ -155,11 +155,11 @@ rule bcalm_cdbg:
 
         # ok, run bcalm for real; use tee to both save & output stderr,
         # per https://stackoverflow.com/questions/692000/how-do-i-write-stderr-to-a-file-while-using-tee-with-a-pipe
-        bcalm -in {input} -out {cdbg_dir}/bcalm.{cdbg_dir} \
+        bcalm -in {input} -out {cdbg_dir}/bcalm \
            -kmer-size {ksize} -abundance-min 1 > >(tee -a {log} >& 2)
 
         # remove large temp files: .h5, unitig glue files
-        rm -f {cdbg_dir}/bcalm.{cdbg_dir}.{{h5,unitigs.fa.glue*}}
+        rm -f {cdbg_dir}/bcalm.{{h5,unitigs.fa.glue*}}
     """
 
 # create list of input files for bcalm
@@ -167,7 +167,7 @@ rule bcalm_cdbg_inpfiles:
     input:
         input_sequences
     output:
-        "{cdbg_dir}/bcalm.{cdbg_dir}.inputlist.txt"
+        "{cdbg_dir}/bcalm.inputlist.txt"
     run:
         with open(output[0], 'wt') as fp:
             for name in input_sequences:
@@ -176,11 +176,11 @@ rule bcalm_cdbg_inpfiles:
 # sort and remap bcalm output
 rule bcalm_catlas_sort:
     input:
-        unitigs = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.fa",
+        unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
     output:
-        db = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.db",
-        mapping = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.pickle",
-        sig = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.fa.sig",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
+        sig = f"{cdbg_dir}/bcalm.unitigs.fa.sig",
     shell: """
         {python} -m spacegraphcats.cdbg.sort_bcalm_unitigs \
             -k {ksize} {input.unitigs} {output.db} {output.mapping}
@@ -190,9 +190,9 @@ rule bcalm_catlas_sort:
 # remove pendants
 rule bcalm_catlas_prepare_input:
     input:
-        unitigs = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.fa",
-        db = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.db",
-        mapping = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.pickle",
+        unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
     output:
         gxt = f"{catlas_dir}/cdbg.gxt",
         contigs = f"{catlas_dir}/contigs.fa.gz",
