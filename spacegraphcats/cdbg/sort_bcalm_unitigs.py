@@ -49,8 +49,9 @@ def main(argv):
 
     unitigs_fp = open(unitigs, "rt")
     for n, (record, offset) in enumerate(my_fasta_iter(unitigs_fp)):
-        if n % 100 == 0:
+        if n % 1000 == 0:
             print(f'... {n}', end='\r')
+            sys.stdout.flush()
         total_bp += len(record.sequence)
 
         # first, get unitig ID
@@ -86,7 +87,8 @@ def main(argv):
 
     db.commit()
 
-    print(f"...read XXX unitigs, {total_bp:.2e} bp.")
+    print(f"...read {len(neighbors)} unitigs, {total_bp:.2e} bp.")
+    sys.stdout.flush()
 
     # check links -- make sure that source is always in its neighbors edges.
     # (this is a check for a recurring bcalm bug that has to do with some
@@ -99,6 +101,7 @@ def main(argv):
                 print(f"{source} -> {nbhd}, but not {nbhd} -> {source}")
                 fail = True
     print("...done!")
+    sys.stdout.flush()
 
     cursor.execute('CREATE UNIQUE INDEX sequence_min_val ON sequences (min_hashval)')
 
@@ -112,14 +115,12 @@ def main(argv):
     remapping = {}
     cursor.execute('SELECT id, offset FROM sequences ORDER BY min_hashval')
     for new_key, (old_key, offset,) in enumerate(cursor):
-        print(f'{old_key} -> {new_key} for offset {offset}')
         remapping[old_key] = new_key
 
     # remap sequence IDs
     cursor.execute('SELECT offset FROM sequences ORDER BY min_hashval')
     c2 = db.cursor()
     for new_key, (offset,) in enumerate(cursor):
-        print(f'setting id {new_key} for offset {offset}')
         c2.execute('UPDATE sequences SET id=? WHERE offset=?',
                    (new_key, offset))
         assert c2.rowcount == 1
@@ -128,8 +129,11 @@ def main(argv):
 
     db.commit()
 
+    print(f'DONE remapping {len(remapping)} contigs.')
+    sys.stdout.flush()
+
     # remap other things
-    print('XXX', len(neighbors))
+    print(f'Remapping {len(neighbors)} neighbors...')
     new_neighbors = collections.defaultdict(set)
     for old_key, vv in neighbors.items():
         new_vv = [remapping[v] for v in vv]
@@ -137,6 +141,7 @@ def main(argv):
     neighbors = new_neighbors
 
     print("...done!")
+    sys.stdout.flush()
 
     ## save!
     print(f"saving mappings to '{args.mapping_pickle_out}'")
