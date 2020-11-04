@@ -91,6 +91,7 @@ multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
 
 ### build some variables for internal use
 
+cdbg_dir = f'{catlas_base}_k{ksize}'
 catlas_dir = f'{catlas_base}_k{ksize}_r{radius}{catlas_suffix}'
 search_dir = f'{catlas_dir}_search_oh{int(overhead*100)}{search_out_suffix}'
 hashval_query_dir = f'{catlas_dir}_hashval_k{hashval_ksize}'
@@ -136,16 +137,16 @@ rule build:
 
 rule clean:
     shell: """
-        rm -fr {catlas_base} {catlas_dir} {search_dir}
+        rm -fr {cdbg_dir} {catlas_dir} {search_dir}
     """
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
     input:
-        f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+        f"{cdbg_dir}/bcalm.{cdbg_dir}.inputlist.txt"
     output:
-        f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa",
-    log: f"{catlas_base}/bcalm.{catlas_base}.log.txt",
+        f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.fa",
+    log: f"{catlas_dir}/bcalm.{catlas_dir}.log.txt",
     shell: """
         # can we run it?
         bcalm >& /dev/null || \
@@ -154,11 +155,11 @@ rule bcalm_cdbg:
 
         # ok, run bcalm for real; use tee to both save & output stderr,
         # per https://stackoverflow.com/questions/692000/how-do-i-write-stderr-to-a-file-while-using-tee-with-a-pipe
-        bcalm -in {input} -out {catlas_base}/bcalm.{catlas_base}.k{ksize} \
+        bcalm -in {input} -out {cdbg_dir}/bcalm.{cdbg_dir} \
            -kmer-size {ksize} -abundance-min 1 > >(tee -a {log} >& 2)
 
         # remove large temp files: .h5, unitig glue files
-        rm -f {catlas_base}/bcalm.{catlas_base}.k{ksize}.{{h5,unitigs.fa.glue*}}
+        rm -f {cdbg_dir}/bcalm.{cdbg_dir}.{{h5,unitigs.fa.glue*}}
     """
 
 # create list of input files for bcalm
@@ -166,7 +167,7 @@ rule bcalm_cdbg_inpfiles:
     input:
         input_sequences
     output:
-        "{catlas_base}/bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+        "{cdbg_dir}/bcalm.{cdbg_dir}.inputlist.txt"
     run:
         with open(output[0], 'wt') as fp:
             for name in input_sequences:
@@ -175,11 +176,11 @@ rule bcalm_cdbg_inpfiles:
 # sort and remap bcalm output
 rule bcalm_catlas_sort:
     input:
-        unitigs = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa",
+        unitigs = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.fa",
     output:
-        db = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.db",
-        mapping = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.pickle",
-        sig = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa.sig",
+        db = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.db",
+        mapping = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.pickle",
+        sig = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.fa.sig",
     shell: """
         {python} -m spacegraphcats.cdbg.sort_bcalm_unitigs \
             -k {ksize} {input.unitigs} {output.db} {output.mapping}
@@ -189,9 +190,9 @@ rule bcalm_catlas_sort:
 # remove pendants
 rule bcalm_catlas_prepare_input:
     input:
-        unitigs = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa",
-        db = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.db",
-        mapping = f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.pickle",
+        unitigs = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.fa",
+        db = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.db",
+        mapping = f"{cdbg_dir}/bcalm.{cdbg_dir}.unitigs.pickle",
     output:
         gxt = f"{catlas_dir}/cdbg.gxt",
         contigs = f"{catlas_dir}/contigs.fa.gz",
