@@ -36,11 +36,10 @@ def main(argv):
     cursor = db.cursor()
     cursor.execute("PRAGMA synchronous='OFF'")
     cursor.execute("PRAGMA locking_mode=EXCLUSIVE")
-    cursor.execute('CREATE TABLE sequences (id INTEGER, sequence TEXT, offset INTEGER PRIMARY KEY)')
+    cursor.execute('CREATE TABLE sequences (id INTEGER, sequence TEXT, offset INTEGER PRIMARY KEY, min_hashval TEXT)')
 
     # read & find minimum hash:
     total_bp = 0
-    hashval_to_cdbg = {}
     neighbors = collections.defaultdict(set)
     mean_abunds = {}
     sizes = {}
@@ -83,18 +82,15 @@ def main(argv):
         assert len(mh) == 1, (len(mh), record.sequence)
         min_hashval = next(iter(mh.hashes))
 
-        assert min_hashval not in hashval_to_cdbg
-        hashval_to_cdbg[min_hashval] = (contig_id, offset)
-
         # sixth, record input k-mers to a bulk signature
         in_mh.add_sequence(record.sequence)
 
         # add to database
-        cursor.execute('INSERT INTO sequences (id, sequence, offset) VALUES (?, ?, ?)', (contig_id, record.sequence, offset))
+        cursor.execute('INSERT INTO sequences (id, sequence, offset, min_hashval) VALUES (?, ?, ?, ?)', (contig_id, record.sequence, offset, str(min_hashval)))
 
     db.commit()
 
-    print(f"...read {len(hashval_to_cdbg)} unitigs, {total_bp:.2e} bp.")
+    print(f"...read XXX unitigs, {total_bp:.2e} bp.")
 
     # check links -- make sure that source is always in its neighbors edges.
     # (this is a check for a recurring bcalm bug that has to do with some
@@ -108,25 +104,29 @@ def main(argv):
                 fail = True
     print("...done!")
 
+    cursor.execute('CREATE UNIQUE INDEX sequence_min_val ON sequences (min_hashval)')
+
     if fail:
         return -1
 
     # sort contigs based on min_hashval!
     print("remapping cDBG IDs...")
-    hashval_to_cdbg_items = sorted(hashval_to_cdbg.items())
 
     # remap everything into new coordinate space
     remapping = {}
-
-    # remap sequences
-    new_key = 0
-    for hashval, (old_key, offset) in hashval_to_cdbg_items:
+    cursor.execute('SELECT id, offset FROM sequences ORDER BY min_hashval')
+    for new_key, (old_key, offset,) in enumerate(cursor):
+        print(f'{old_key} -> {new_key} for offset {offset}')
         remapping[old_key] = new_key
-        cursor.execute('UPDATE sequences SET id=? WHERE offset=?',
-                       (new_key, offset))
-        assert cursor.rowcount == 1
-        new_key += 1
-    assert len(remapping) == len(hashval_to_cdbg_items)
+
+    # remap sequence IDs
+    cursor.execute('SELECT offset FROM sequences ORDER BY min_hashval')
+    c2 = db.cursor()
+    for new_key, (offset,) in enumerate(cursor):
+        print(f'setting id {new_key} for offset {offset}')
+        c2.execute('UPDATE sequences SET id=? WHERE offset=?',
+                   (new_key, offset))
+        assert c2.rowcount == 1
 
     cursor.execute('CREATE UNIQUE INDEX sequence_idx ON sequences (id)')
 
