@@ -101,7 +101,7 @@ def test_check_md5():
         data = fp.read()
     m = hashlib.md5()
     m.update(data)
-    assert m.hexdigest() == "479fd4b509b1a05f429ca3ba7924192e", m.hexdigest()
+    assert m.hexdigest() == "b14f76a96bf4c5ad2d439009b700c399", m.hexdigest()
 
     with open(catlas, "rb") as fp:
         data = fp.read()
