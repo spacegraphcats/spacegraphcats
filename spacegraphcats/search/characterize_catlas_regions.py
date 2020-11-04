@@ -8,7 +8,7 @@ import argparse
 import os
 import sys
 import sourmash
-from sourmash._minhash import hash_murmur
+from sourmash.minhash import hash_murmur
 import numpy
 import pickle
 
