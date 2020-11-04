@@ -40,7 +40,7 @@ def main(argv):
     mh = mh.downsample(scaled=args.scaled)
 
     print(
-        f"loaded query sig '{query_sig.name()}' with {len(mh)} hashes at scaled={args.scaled}"
+        f"loaded query sig '{str(query_sig)}' with {len(mh)} hashes at scaled={args.scaled}"
     )
 
     found_hashvals = set()

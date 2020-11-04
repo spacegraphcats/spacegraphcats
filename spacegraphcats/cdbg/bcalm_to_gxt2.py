@@ -252,8 +252,6 @@ def main(argv):
     args = parser.parse_args(argv)
 
     trim = not args.pendants
-    # @CTB
-    trim = True
     trim_cutoff = args.abundance
 
     logfile = os.path.join(os.path.dirname(args.gxt_out), "bcalm_to_gxt.log")

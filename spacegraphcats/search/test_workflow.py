@@ -2,6 +2,7 @@ import os.path
 import shutil
 import screed
 import sourmash
+import glob
 
 import spacegraphcats.utils.pytest_utils as pytest_utils
 from spacegraphcats.utils.pytest_utils import pkg_file, relative_file
@@ -66,7 +67,7 @@ def test_dory_query_workflow(location):
 
     # make the output directory
     try:
-        os.mkdir("dory")
+        os.mkdir("dory_k21")
         os.mkdir("dory_k21_r1")
     except FileExistsError:
         pass
@@ -75,8 +76,9 @@ def test_dory_query_workflow(location):
     args = [
         "-k",
         "21",
-        relative_file("dory/bcalm.dory.k21.unitigs.fa"),
-        "dory/bcalm.dory.k21.unitigs.pickle",
+        relative_file("data/bcalm.dory.k21.unitigs.fa"),
+        "dory_k21/bcalm.unitigs.db",
+        "dory_k21/bcalm.unitigs.pickle",
     ]
 
     sort_bcalm_unitigs.main(args)
@@ -84,8 +86,9 @@ def test_dory_query_workflow(location):
     # convert the bcalm file to gxt
     args = [
         "-P",
-        relative_file("dory/bcalm.dory.k21.unitigs.fa"),
-        "dory/bcalm.dory.k21.unitigs.pickle",
+        relative_file("data/bcalm.dory.k21.unitigs.fa"),
+        "dory_k21/bcalm.unitigs.db",
+        "dory_k21/bcalm.unitigs.pickle",
         "dory_k21_r1/cdbg.gxt",
         "dory_k21_r1/contigs.fa.gz",
     ]
@@ -134,7 +137,7 @@ def test_dory_query_workflow(location):
     sigfile = output_path + "dory-head.fa.contigs.sig"
     with open(sigfile, "rt") as fp:
         sig = sourmash.load_one_signature(fp)
-        name = sig.name()
+        name = str(sig)
         assert "from dory_k21_r1" in name
         assert name.startswith("nbhd:TRINITY_DN290219_c0_g1_i1")
 

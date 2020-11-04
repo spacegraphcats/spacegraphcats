@@ -32,7 +32,7 @@ def test_dory_build_cdbg():
     global _tempdir
 
     dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
-    target = "dory/bcalm.dory.k21.unitigs.fa"
+    target = "dory_k21/bcalm.unitigs.fa"
     status = run_snakemake(
         dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
     )
