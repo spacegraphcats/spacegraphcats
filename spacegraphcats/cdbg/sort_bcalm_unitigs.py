@@ -85,7 +85,7 @@ def main(argv):
     # check links -- make sure that source is always in its neighbors edges.
     # (this is a check for a recurring bcalm bug that has to do with some
     # kind of threading problem)
-    print("valdating link structure...")
+    print("validating link structure...")
     fail = False
     for source in neighbors:
         for nbhd in neighbors[source]:
