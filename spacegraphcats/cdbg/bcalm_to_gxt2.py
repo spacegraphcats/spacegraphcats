@@ -18,6 +18,7 @@ import logging
 import sourmash
 import os.path
 import pickle
+import sqlite3
 
 
 def end_match(s, t, k, direction="sp"):
@@ -195,9 +196,34 @@ class FastaWithOffsetAsDict:
         self.override[key] = val
 
 
+class SqliteAsDict:
+    """
+    Do direct read access into a FASTA file, mimicking a dictionary.
+
+    Supports in-memory __setitem__, too, that will override future gets.
+    """
+
+    def __init__(self, db_filename):
+        db = sqlite3.connect(db_filename)
+        cursor = db.cursor()
+        cursor.execute("PRAGMA synchronous='OFF'")
+        cursor.execute("PRAGMA locking_mode=EXCLUSIVE")
+
+        self.db = db
+        self.c = cursor
+
+    def __getitem__(self, key):
+        self.c.execute('SELECT sequence FROM sequences WHERE id=?', (key,))
+        return self.c.fetchone()[0]
+
+#    def __setitem__(self, key, val):
+#        self.override[key] = val
+
+
 def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument("bcalm_unitigs")
+    parser.add_argument("sqlite_db")
     parser.add_argument("mapping_pickle")
     parser.add_argument("gxt_out")
     parser.add_argument("contigs_out")
@@ -213,6 +239,8 @@ def main(argv):
     args = parser.parse_args(argv)
 
     trim = not args.pendants
+    # @CTB
+    trim = False
     trim_cutoff = args.abundance
     unitigs = args.bcalm_unitigs
 
@@ -224,18 +252,14 @@ def main(argv):
 
     logging.debug("starting bcalm_to_gxt2 run.")
 
-    info_filename = args.contigs_out + ".info.csv"
-    info_fp = open(info_filename, "wt")
-
     with open(args.mapping_pickle, "rb") as fp:
-        (ksize, offsets, neighbors, mean_abunds, sizes) = pickle.load(fp)
+        (ksize, neighbors, mean_abunds, sizes) = pickle.load(fp)
 
-    print(f"Found {len(offsets)} input unitigs.")
+    print(f"Found {len(sizes)} input unitigs.")
 
     out_mh = sourmash.MinHash(0, ksize, scaled=1000)
 
-    unitigs_fp = open(unitigs, "rt")
-    sequences = FastaWithOffsetAsDict(unitigs_fp, offsets)
+    sequences = SqliteAsDict(args.sqlite_db)
 
     # if we are removing pendants, we need to relabel the contigs so they are
     # consecutive integers starting from 0.  If not, we create dummy data
@@ -288,6 +312,9 @@ def main(argv):
             n_edges += 1
 
     print("...done! {} vertices, {} edges".format(n, n_edges))
+
+    info_filename = args.contigs_out + ".info.csv"
+    info_fp = open(info_filename, "wt")
 
     info_fp.write("contig_id,offset,mean_abund,n_kmers\n")
     for v, i in aliases.items():

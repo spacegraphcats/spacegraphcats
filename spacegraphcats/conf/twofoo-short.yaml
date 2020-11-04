@@ -1,4 +1,5 @@
 catlas_base: twofoo-short
+remove_pendants: 0
 input_sequences:
 - spacegraphcats/search/test-data/63.short.fa.gz
 - spacegraphcats/search/test-data/twofoo-short-reads.fa.gz

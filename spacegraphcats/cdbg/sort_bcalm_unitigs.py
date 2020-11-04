@@ -12,6 +12,7 @@ import sys
 import argparse
 import pickle
 import collections
+import sqlite3
 
 import sourmash
 from spacegraphcats.search.search_utils import my_fasta_iter
@@ -20,6 +21,7 @@ from spacegraphcats.search.search_utils import my_fasta_iter
 def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument("bcalm_unitigs")
+    parser.add_argument("sqlite_db_out")
     parser.add_argument("mapping_pickle_out")
     parser.add_argument("-k", "--ksize", type=int, default=31)
     args = parser.parse_args(argv)
@@ -28,6 +30,13 @@ def main(argv):
     ksize = args.ksize
 
     empty_mh = sourmash.MinHash(n=1, ksize=ksize)
+
+    ###
+    db = sqlite3.connect(args.sqlite_db_out)
+    cursor = db.cursor()
+    cursor.execute("PRAGMA synchronous='OFF'")
+    cursor.execute("PRAGMA locking_mode=EXCLUSIVE")
+    cursor.execute('CREATE TABLE sequences (id INTEGER PRIMARY KEY, sequence TEXT, minval TEXT)')
 
     # read & find minimum hash:
     total_bp = 0
@@ -79,6 +88,11 @@ def main(argv):
 
         # sixth, record input k-mers to a bulk signature
         in_mh.add_sequence(record.sequence)
+
+        # add to database
+        cursor.execute('INSERT INTO sequences (id, sequence, minval) VALUES (?, ?, ?)', (contig_id, record.sequence, str(min_hashval)))
+
+    db.commit()
 
     print(f"...read {len(hashval_to_cdbg)} unitigs, {total_bp:.2e} bp.")
 
@@ -133,9 +147,8 @@ def main(argv):
 
     ## save!
     print(f"saving mappings to '{args.mapping_pickle_out}'")
-    offsets = [offset for (_, (_, offset)) in hashval_to_cdbg_items]
     with open(args.mapping_pickle_out, "wb") as fp:
-        pickle.dump((ksize, offsets, neighbors, mean_abunds, sizes), fp)
+        pickle.dump((ksize, neighbors, mean_abunds, sizes), fp)
 
     # output sourmash signature for input contigs
     in_sig = sourmash.SourmashSignature(in_mh, filename=args.bcalm_unitigs)
