@@ -36,13 +36,11 @@ def main(argv):
     cursor = db.cursor()
     cursor.execute("PRAGMA synchronous='OFF'")
     cursor.execute("PRAGMA locking_mode=EXCLUSIVE")
-    cursor.execute('CREATE TABLE sequences (id INTEGER, sequence TEXT, offset INTEGER PRIMARY KEY, min_hashval TEXT)')
+    cursor.execute('CREATE TABLE sequences (id INTEGER, sequence TEXT, offset INTEGER PRIMARY KEY, min_hashval TEXT, abund FLOAT)')
 
     # read & find minimum hash:
     total_bp = 0
     neighbors = collections.defaultdict(set)
-    mean_abunds = {}
-    sizes = {}
 
     # record input k-mers in a minhash
     in_mh = sourmash.MinHash(0, ksize, scaled=1000)
@@ -50,7 +48,9 @@ def main(argv):
     print(f"loading BCALM unitigs from {unitigs}...")
 
     unitigs_fp = open(unitigs, "rt")
-    for record, offset in my_fasta_iter(unitigs_fp):
+    for n, (record, offset) in enumerate(my_fasta_iter(unitigs_fp)):
+        if n % 100 == 0:
+            print(f'... {n}', end='\r')
         total_bp += len(record.sequence)
 
         # first, get unitig ID
@@ -72,21 +72,17 @@ def main(argv):
         assert len(abund) == 3
         abund = float(abund[2])
 
-        # fourth, record the abundance sequence and size
-        mean_abunds[contig_id] = abund
-        sizes[contig_id] = len(record.sequence) - ksize + 1
-
-        # fifth, get the min hash val for this sequence
+        # fourth, get the min hash val for this sequence
         mh = empty_mh.copy_and_clear()
         mh.add_sequence(record.sequence)
         assert len(mh) == 1, (len(mh), record.sequence)
         min_hashval = next(iter(mh.hashes))
 
-        # sixth, record input k-mers to a bulk signature
+        # fifth, record input k-mers to a bulk signature
         in_mh.add_sequence(record.sequence)
 
         # add to database
-        cursor.execute('INSERT INTO sequences (id, sequence, offset, min_hashval) VALUES (?, ?, ?, ?)', (contig_id, record.sequence, offset, str(min_hashval)))
+        cursor.execute('INSERT INTO sequences (id, sequence, offset, min_hashval, abund) VALUES (?, ?, ?, ?, ?)', (contig_id, record.sequence, offset, str(min_hashval), abund))
 
     db.commit()
 
@@ -132,31 +128,20 @@ def main(argv):
 
     db.commit()
 
-
     # remap other things
+    print('XXX', len(neighbors))
     new_neighbors = collections.defaultdict(set)
     for old_key, vv in neighbors.items():
         new_vv = [remapping[v] for v in vv]
         new_neighbors[remapping[old_key]] = set(new_vv)
-
-    new_mean_abunds = {}
-    for old_key, value in mean_abunds.items():
-        new_mean_abunds[remapping[old_key]] = value
-
-    new_sizes = {}
-    for old_key, value in sizes.items():
-        new_sizes[remapping[old_key]] = value
+    neighbors = new_neighbors
 
     print("...done!")
-
-    mean_abunds = new_mean_abunds
-    sizes = new_sizes
-    neighbors = new_neighbors
 
     ## save!
     print(f"saving mappings to '{args.mapping_pickle_out}'")
     with open(args.mapping_pickle_out, "wb") as fp:
-        pickle.dump((ksize, neighbors, mean_abunds, sizes), fp)
+        pickle.dump((ksize, neighbors), fp)
 
     # output sourmash signature for input contigs
     in_sig = sourmash.SourmashSignature(in_mh, filename=args.bcalm_unitigs)

@@ -205,8 +205,7 @@ class SqliteAsDict:
     Supports in-memory __setitem__, too, that will override future gets.
     """
 
-    def __init__(self, db_filename):
-        db = sqlite3.connect(db_filename)
+    def __init__(self, db):
         cursor = db.cursor()
         cursor.execute("PRAGMA synchronous='OFF'")
         cursor.execute("PRAGMA locking_mode=EXCLUSIVE")
@@ -263,17 +262,26 @@ def main(argv):
     logging.debug("starting bcalm_to_gxt2 run.")
 
     with open(args.mapping_pickle, "rb") as fp:
-        (ksize, neighbors, mean_abunds, sizes) = pickle.load(fp)
+        (ksize, neighbors) = pickle.load(fp)
 
-    print(f"Found {len(sizes)} input unitigs.")
+    print(f"Found {len(neighbors)} input unitigs.")
 
     out_mh = sourmash.MinHash(0, ksize, scaled=1000)
 
-    sequences = SqliteAsDict(args.sqlite_db)
+    db = sqlite3.connect(args.sqlite_db)
+    sequences = SqliteAsDict(db)
 
     # if we are removing pendants, we need to relabel the contigs so they are
     # consecutive integers starting from 0.  If not, we create dummy data
     # structures to make the interface the same elsewhere in the data
+
+    cursor = db.cursor()
+    cursor.execute('SELECT id, abund, LENGTH(sequence) FROM sequences')
+    mean_abunds = {}
+    sizes = {}
+    for idx, abund, length in cursor:
+        mean_abunds[idx] = abund
+        sizes[idx] = length - ksize + 1
 
     all_nodes = set(neighbors.keys())
     if trim:
