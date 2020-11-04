@@ -134,13 +134,15 @@ def main(argv):
 
     # remap other things
     print(f'Remapping {len(neighbors)} neighbors...')
+    total_n = 0
     new_neighbors = collections.defaultdict(set)
     for old_key, vv in neighbors.items():
         new_vv = [remapping[v] for v in vv]
         new_neighbors[remapping[old_key]] = set(new_vv)
+        total_n += len(new_vv)
     neighbors = new_neighbors
 
-    print("...done!")
+    print(f"...done! {total_n}")
     sys.stdout.flush()
 
     ## save!
