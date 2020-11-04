@@ -101,13 +101,18 @@ def test_check_md5():
         data = fp.read()
     m = hashlib.md5()
     m.update(data)
-    assert m.hexdigest() == "b14f76a96bf4c5ad2d439009b700c399", m.hexdigest()
 
     with open(catlas, "rb") as fp:
         data = fp.read()
-    m = hashlib.md5()
-    m.update(data)
-    assert m.hexdigest() == "e485eb1e3722493e6928904b854fef82", m.hexdigest()
+    m2 = hashlib.md5()
+    m2.update(data)
+
+    print(m.hexdigest())
+    print(m2.hexdigest())
+
+    assert m.hexdigest() == "b14f76a96bf4c5ad2d439009b700c399", m.hexdigest()
+
+    assert m2.hexdigest() == "26982100515262d7b1a380b7b3883ba0", m2.hexdigest()
 
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
