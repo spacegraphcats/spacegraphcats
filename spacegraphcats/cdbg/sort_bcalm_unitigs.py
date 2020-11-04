@@ -36,7 +36,7 @@ def main(argv):
     cursor = db.cursor()
     cursor.execute("PRAGMA synchronous='OFF'")
     cursor.execute("PRAGMA locking_mode=EXCLUSIVE")
-    cursor.execute('CREATE TABLE sequences (id INTEGER PRIMARY KEY, sequence TEXT, minval TEXT)')
+    cursor.execute('CREATE TABLE sequences (id INTEGER, sequence TEXT, offset INTEGER PRIMARY KEY)')
 
     # read & find minimum hash:
     total_bp = 0
@@ -90,7 +90,7 @@ def main(argv):
         in_mh.add_sequence(record.sequence)
 
         # add to database
-        cursor.execute('INSERT INTO sequences (id, sequence, minval) VALUES (?, ?, ?)', (contig_id, record.sequence, str(min_hashval)))
+        cursor.execute('INSERT INTO sequences (id, sequence, offset) VALUES (?, ?, ?)', (contig_id, record.sequence, offset))
 
     db.commit()
 
@@ -122,8 +122,16 @@ def main(argv):
     new_key = 0
     for hashval, (old_key, offset) in hashval_to_cdbg_items:
         remapping[old_key] = new_key
+        cursor.execute('UPDATE sequences SET id=? WHERE offset=?',
+                       (new_key, offset))
+        assert cursor.rowcount == 1
         new_key += 1
     assert len(remapping) == len(hashval_to_cdbg_items)
+
+    cursor.execute('CREATE UNIQUE INDEX sequence_idx ON sequences (id)')
+
+    db.commit()
+
 
     # remap other things
     new_neighbors = collections.defaultdict(set)

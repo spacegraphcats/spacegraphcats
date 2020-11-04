@@ -117,6 +117,8 @@ def contract_neighbor(x, u, neighbors, sequences, mean_abunds, sizes, k):
     neighbors[u] = set()
     logging.debug("removed {}, replacing it with {}, {}".format(u, x, y))
 
+    del sequences[u]
+
 
 def contract_degree_two(
     non_pendants, neighbors, sequences, mean_abunds, sizes, k, removed_nodes
@@ -214,10 +216,21 @@ class SqliteAsDict:
 
     def __getitem__(self, key):
         self.c.execute('SELECT sequence FROM sequences WHERE id=?', (key,))
-        return self.c.fetchone()[0]
 
-#    def __setitem__(self, key, val):
-#        self.override[key] = val
+        seq, = next(iter(self.c))
+        return seq
+
+    def __setitem__(self, key, val):
+        self.c.execute('UPDATE sequences SET sequence=? WHERE id=?',
+                       (val, key))
+        assert self.c.rowcount == 1
+
+    def __delitem__(self, key):
+        print(f'removing sequence {key}')
+        self.c.execute('DELETE FROM sequences WHERE id=?', (key,))
+
+    def close(self):
+        self.db.commit()
 
 
 def main(argv):
@@ -240,7 +253,7 @@ def main(argv):
 
     trim = not args.pendants
     # @CTB
-    trim = False
+    trim = True
     trim_cutoff = args.abundance
 
     logfile = os.path.join(os.path.dirname(args.gxt_out), "bcalm_to_gxt.log")
@@ -324,6 +337,8 @@ def main(argv):
     # output sourmash signature for output contigs
     out_sig = sourmash.SourmashSignature(out_mh, filename=args.contigs_out)
     sourmash.save_signatures([out_sig], open(args.contigs_out + ".sig", "wt"))
+
+    sequences.close()
 
 
 if __name__ == "__main__":
