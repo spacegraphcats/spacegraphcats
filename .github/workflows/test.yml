@@ -33,7 +33,7 @@ jobs:
       - run: conda install -c conda-forge -c bioconda bcalm
 
       - name: Install Python dependencies
-        run: pip install -U -r requirements.txt
+        run: pip install -e .
 
       - name: Install coverage dependencies
         run: pip install pytest-cov
