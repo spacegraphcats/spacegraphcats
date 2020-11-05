@@ -18,6 +18,7 @@ import logging
 import sourmash
 import os.path
 import pickle
+import sqlite3
 
 
 def end_match(s, t, k, direction="sp"):
@@ -116,6 +117,8 @@ def contract_neighbor(x, u, neighbors, sequences, mean_abunds, sizes, k):
     neighbors[u] = set()
     logging.debug("removed {}, replacing it with {}, {}".format(u, x, y))
 
+    #del sequences[u] # @CTB don't _need_ to remove, but maybe cleaner to do?
+
 
 def contract_degree_two(
     non_pendants, neighbors, sequences, mean_abunds, sizes, k, removed_nodes
@@ -165,39 +168,44 @@ def contract_degree_two(
             logging.debug("no removal.")
 
 
-class FastaWithOffsetAsDict:
+class SqliteAsDict:
     """
     Do direct read access into a FASTA file, mimicking a dictionary.
 
     Supports in-memory __setitem__, too, that will override future gets.
     """
 
-    def __init__(self, fasta_fp, offsets):
-        offset_d = {}
-        # convert offsets into { id: offset }
-        for n, offset in enumerate(offsets):
-            offset_d[n] = offset
+    def __init__(self, db):
+        cursor = db.cursor()
+        cursor.execute("PRAGMA synchronous='OFF'")
+        cursor.execute("PRAGMA locking_mode=EXCLUSIVE")
 
-        self.fp = fasta_fp
-        self.offsets = offset_d
-        self.override = {}
+        self.db = db
+        self.c = cursor
 
     def __getitem__(self, key):
-        if key in self.override:
-            return self.override[key]
+        self.c.execute('SELECT sequence FROM sequences WHERE id=?', (key,))
 
-        offset = self.offsets[key]
-        self.fp.seek(offset)
-        record, _ = next(my_fasta_iter(self.fp))
-        return record.sequence
+        seq, = next(iter(self.c))
+        return seq
 
     def __setitem__(self, key, val):
-        self.override[key] = val
+        self.c.execute('UPDATE sequences SET sequence=? WHERE id=?',
+                       (val, key))
+        assert self.c.rowcount == 1
+
+    def __delitem__(self, key):
+        print(f'removing sequence {key}')
+        self.c.execute('DELETE FROM sequences WHERE id=?', (key,))
+
+    def close(self):
+        self.db.commit()
 
 
 def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument("bcalm_unitigs")
+    parser.add_argument("sqlite_db")
     parser.add_argument("mapping_pickle")
     parser.add_argument("gxt_out")
     parser.add_argument("contigs_out")
@@ -214,7 +222,6 @@ def main(argv):
 
     trim = not args.pendants
     trim_cutoff = args.abundance
-    unitigs = args.bcalm_unitigs
 
     logfile = os.path.join(os.path.dirname(args.gxt_out), "bcalm_to_gxt.log")
     if args.debug:
@@ -224,18 +231,25 @@ def main(argv):
 
     logging.debug("starting bcalm_to_gxt2 run.")
 
-    info_filename = args.contigs_out + ".info.csv"
-    info_fp = open(info_filename, "wt")
-
     with open(args.mapping_pickle, "rb") as fp:
-        (ksize, offsets, neighbors, mean_abunds, sizes) = pickle.load(fp)
+        (ksize, neighbors) = pickle.load(fp)
 
-    print(f"Found {len(offsets)} input unitigs.")
+    print(f"Found {len(neighbors)} input unitigs.")
 
     out_mh = sourmash.MinHash(0, ksize, scaled=1000)
 
-    unitigs_fp = open(unitigs, "rt")
-    sequences = FastaWithOffsetAsDict(unitigs_fp, offsets)
+    db = sqlite3.connect(args.sqlite_db)
+    sequences = SqliteAsDict(db)
+
+    # build lengths & sizes dictionary
+
+    cursor = db.cursor()
+    cursor.execute('SELECT id, abund, LENGTH(sequence) FROM sequences')
+    mean_abunds = {}
+    sizes = {}
+    for idx, abund, length in cursor:
+        mean_abunds[idx] = abund
+        sizes[idx] = length - ksize + 1
 
     # if we are removing pendants, we need to relabel the contigs so they are
     # consecutive integers starting from 0.  If not, we create dummy data
@@ -289,6 +303,9 @@ def main(argv):
 
     print("...done! {} vertices, {} edges".format(n, n_edges))
 
+    info_filename = args.contigs_out + ".info.csv"
+    info_fp = open(info_filename, "wt")
+
     info_fp.write("contig_id,offset,mean_abund,n_kmers\n")
     for v, i in aliases.items():
         info_fp.write(
@@ -298,6 +315,10 @@ def main(argv):
     # output sourmash signature for output contigs
     out_sig = sourmash.SourmashSignature(out_mh, filename=args.contigs_out)
     sourmash.save_signatures([out_sig], open(args.contigs_out + ".sig", "wt"))
+
+    sequences.close()
+
+    return 0
 
 
 if __name__ == "__main__":

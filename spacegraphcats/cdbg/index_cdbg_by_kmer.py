@@ -206,6 +206,8 @@ def main(argv):
     with open(sizes_filename, 'wb') as fp:
         pickle.dump(sizes, fp)
 
+    return 0
+
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    sys.exit(main(sys.argv[1:]))

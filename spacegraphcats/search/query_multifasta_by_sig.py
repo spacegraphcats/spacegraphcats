@@ -37,10 +37,10 @@ def main(argv):
 
     query_sig = sourmash.load_one_signature(args.query_sig, ksize=args.ksize)
     mh = query_sig.minhash
-    mh = mh.downsample_scaled(args.scaled)
+    mh = mh.downsample(scaled=args.scaled)
 
     print(
-        f"loaded query sig '{query_sig.name()}' with {len(mh)} hashes at scaled={args.scaled}"
+        f"loaded query sig '{str(query_sig)}' with {len(mh)} hashes at scaled={args.scaled}"
     )
 
     found_hashvals = set()
@@ -52,7 +52,7 @@ def main(argv):
         w = csv.writer(fp)
         w.writerow(["hashval", "catlas_base", "filename", "record_name"])
 
-        for hashval in mh.get_mins():
+        for hashval in mh.hashes:
             cdbg_id = hashval_to_contig_id.get(hashval)
             if cdbg_id:
                 record_names = cdbg_to_records[cdbg_id]

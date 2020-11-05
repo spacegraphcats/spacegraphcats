@@ -45,7 +45,7 @@ def test_build_and_search():
     assert status == 0
 
     output_files = [
-        "twofoo-short/bcalm.twofoo-short.k31.unitigs.fa",
+        "twofoo-short_k31/bcalm.unitigs.fa",
         "twofoo-short_k31_r1/catlas.csv",
         "twofoo-short_k31_r1/contigs.fa.gz",
         "twofoo-short_k31_r1_search_oh0/results.csv",
@@ -60,7 +60,7 @@ def test_build_and_search():
 def test_check_contigs_vs_unitigs():
     global _tempdir
 
-    bcalm_sig = "twofoo-short/bcalm.twofoo-short.k31.unitigs.fa.sig"
+    bcalm_sig = "twofoo-short_k31/bcalm.unitigs.fa.sig"
     bcalm_out = sourmash.load_one_signature(os.path.join(_tempdir, bcalm_sig))
 
     catlas_sig = "twofoo-short_k31_r1/contigs.fa.gz.sig"
@@ -101,13 +101,18 @@ def test_check_md5():
         data = fp.read()
     m = hashlib.md5()
     m.update(data)
-    assert m.hexdigest() == "479fd4b509b1a05f429ca3ba7924192e", m.hexdigest()
 
     with open(catlas, "rb") as fp:
         data = fp.read()
-    m = hashlib.md5()
-    m.update(data)
-    assert m.hexdigest() == "e485eb1e3722493e6928904b854fef82", m.hexdigest()
+    m2 = hashlib.md5()
+    m2.update(data)
+
+    print(m.hexdigest())
+    print(m2.hexdigest())
+
+    assert m.hexdigest() == "b14f76a96bf4c5ad2d439009b700c399", m.hexdigest()
+
+    assert m2.hexdigest() == "26982100515262d7b1a380b7b3883ba0", m2.hexdigest()
 
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
