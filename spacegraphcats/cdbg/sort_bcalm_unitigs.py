@@ -127,9 +127,9 @@ def main(argv):
                 new_link_id = remapping[link_id]
                 link_ids.add(new_link_id)
 
-        if link_ids:
-            new_neighbors[new_key] = link_ids
-            total_n += len(link_ids)
+        # allow isolated nodes - link_ids can be empty.
+        new_neighbors[new_key] = link_ids
+        total_n += len(link_ids)
 
     print(f"...done! {total_n} neighbor relationships.")
     sys.stdout.flush()
