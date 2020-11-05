@@ -104,6 +104,7 @@ def main(argv):
     sys.stdout.flush()
 
     cursor.execute('CREATE UNIQUE INDEX sequence_min_val ON sequences (min_hashval)')
+    cursor.execute('CREATE UNIQUE INDEX offset_idx ON sequences (offset)')
 
     if fail:
         return -1
