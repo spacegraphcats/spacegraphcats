@@ -94,8 +94,8 @@ def main():
         cnt[lca_lin[-1].rank] += 1
 
     print('')
-    print(f'rank of dom node lca  count of dom nodes with that rank')
-    print(f'--------------------  ---------------------------------')
+    print('rank of dom node lca  count of dom nodes with that rank')
+    print('--------------------  ---------------------------------')
     for rank, count in cnt.most_common():
         print(f'{rank}                  {count}')
 
