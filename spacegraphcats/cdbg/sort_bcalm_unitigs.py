@@ -49,7 +49,7 @@ def main(argv):
 
     unitigs_fp = open(unitigs, "rt")
     for n, (record, offset) in enumerate(my_fasta_iter(unitigs_fp)):
-        if n % 1000 == 0:
+        if n % 10000 == 0:
             print(f'... {n}', end='\r')
             sys.stdout.flush()
         total_bp += len(record.sequence)
@@ -61,10 +61,7 @@ def main(argv):
 
         # second, track the various links
         links = [x for x in name_split[1:] if x.startswith("L:")]
-        link_ids = [x.split(":")[2] for x in links]
-        link_ids = [int(x) for x in link_ids if int(x) != contig_id]
-
-        neighbors[contig_id].update(link_ids)
+        neighbors[contig_id] = links
 
         # third, get mean abund
         abund = [x for x in name_split[1:] if x.startswith("km:")]
@@ -90,35 +87,19 @@ def main(argv):
     print(f"...read {len(neighbors)} unitigs, {total_bp:.2e} bp.")
     sys.stdout.flush()
 
-    # check links -- make sure that source is always in its neighbors edges.
-    # (this is a check for a recurring bcalm bug that has to do with some
-    # kind of threading problem)
-    print("validating link structure...")
-    fail = False
-    for source in neighbors:
-        for nbhd in neighbors[source]:
-            if source not in neighbors[nbhd]:
-                print(f"{source} -> {nbhd}, but not {nbhd} -> {source}")
-                fail = True
-    print("...done!")
-    sys.stdout.flush()
-
     cursor.execute('CREATE UNIQUE INDEX sequence_min_val ON sequences (min_hashval)')
     cursor.execute('CREATE UNIQUE INDEX offset_idx ON sequences (offset)')
-
-    if fail:
-        return -1
 
     # sort contigs based on min_hashval!
     print("remapping cDBG IDs...")
 
-    # remap everything into new coordinate space
+    # remap everything into new coordinate space based on min_hashval ordering
     remapping = {}
     cursor.execute('SELECT id, offset FROM sequences ORDER BY min_hashval')
     for new_key, (old_key, offset,) in enumerate(cursor):
         remapping[old_key] = new_key
 
-    # remap sequence IDs
+    # remap sequence IDs using offset as unique key
     cursor.execute('SELECT offset FROM sequences ORDER BY min_hashval')
     c2 = db.cursor()
     for new_key, (offset,) in enumerate(cursor):
@@ -133,23 +114,48 @@ def main(argv):
     print(f'DONE remapping {len(remapping)} contigs.')
     sys.stdout.flush()
 
-    # remap other things
+    # parse link structure, map to new IDs.
     print(f'Remapping {len(neighbors)} neighbors...')
+    new_neighbors = {}
     total_n = 0
-    new_neighbors = collections.defaultdict(set)
-    for old_key, vv in neighbors.items():
-        new_vv = [remapping[v] for v in vv]
-        new_neighbors[remapping[old_key]] = set(new_vv)
-        total_n += len(new_vv)
-    neighbors = new_neighbors
+    for old_key, links in neighbors.items():
+        new_key = remapping[old_key]
+        link_ids = set()
+        for x in links:
+            link_id = int(x.split(":")[2])
+            if link_id != old_key:        # neighbors != self!
+                new_link_id = remapping[link_id]
+                link_ids.add(new_link_id)
 
-    print(f"...done! {total_n}")
+        if link_ids:
+            new_neighbors[new_key] = link_ids
+            total_n += len(link_ids)
+
+    print(f"...done! {total_n} neighbor relationships.")
     sys.stdout.flush()
+
+    # check links -- make sure that source is always in its neighbors edges.
+    # (this is a check for a recurring bcalm bug that has to do with some
+    # kind of threading problem)
+
+    # @CTB add test for this; old dory one in data/ should work.
+    print("validating link structure...")
+    fail = False
+    for source in new_neighbors:
+        for nbh in new_neighbors[source]:
+            if source not in new_neighbors[nbh]:
+                print(f"{source} -> {nbh}, but not {nbh} -> {source}")
+                fail = True
+    print("...done!")
+    sys.stdout.flush()
+
+    if fail:
+        return -1
 
     ## save!
     print(f"saving mappings to '{args.mapping_pickle_out}'")
     with open(args.mapping_pickle_out, "wb") as fp:
-        pickle.dump((ksize, neighbors), fp)
+        pickle.dump((ksize, new_neighbors), fp)
 
     # output sourmash signature for input contigs
     in_sig = sourmash.SourmashSignature(in_mh, filename=args.bcalm_unitigs)
