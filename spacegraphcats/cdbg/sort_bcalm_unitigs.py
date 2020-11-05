@@ -35,7 +35,9 @@ def main(argv):
     cursor = db.cursor()
     cursor.execute("PRAGMA synchronous='OFF'")
     cursor.execute("PRAGMA locking_mode=EXCLUSIVE")
-    cursor.execute('CREATE TABLE sequences (id INTEGER, sequence TEXT, offset INTEGER PRIMARY KEY, min_hashval TEXT, abund FLOAT)')
+    cursor.execute(
+        "CREATE TABLE sequences (id INTEGER, sequence TEXT, offset INTEGER PRIMARY KEY, min_hashval TEXT, abund FLOAT)"
+    )
 
     # read & find minimum hash:
     total_bp = 0
@@ -49,7 +51,7 @@ def main(argv):
     unitigs_fp = open(unitigs, "rt")
     for n, (record, offset) in enumerate(my_fasta_iter(unitigs_fp)):
         if n % 10000 == 0:
-            print(f'... {n}', end='\r')
+            print(f"... {n}", end="\r")
             sys.stdout.flush()
         total_bp += len(record.sequence)
 
@@ -79,42 +81,44 @@ def main(argv):
         in_mh.add_sequence(record.sequence)
 
         # add to database
-        cursor.execute('INSERT INTO sequences (id, sequence, offset, min_hashval, abund) VALUES (?, ?, ?, ?, ?)', (contig_id, record.sequence, offset, str(min_hashval), abund))
+        cursor.execute(
+            "INSERT INTO sequences (id, sequence, offset, min_hashval, abund) VALUES (?, ?, ?, ?, ?)",
+            (contig_id, record.sequence, offset, str(min_hashval), abund),
+        )
 
     db.commit()
 
     print(f"...read {len(neighbors)} unitigs, {total_bp:.2e} bp.")
     sys.stdout.flush()
 
-    cursor.execute('CREATE UNIQUE INDEX sequence_min_val ON sequences (min_hashval)')
-    cursor.execute('CREATE UNIQUE INDEX offset_idx ON sequences (offset)')
+    cursor.execute("CREATE UNIQUE INDEX sequence_min_val ON sequences (min_hashval)")
+    cursor.execute("CREATE UNIQUE INDEX offset_idx ON sequences (offset)")
 
     # sort contigs based on min_hashval!
     print("remapping cDBG IDs...")
 
     # remap everything into new coordinate space based on min_hashval ordering
     remapping = {}
-    cursor.execute('SELECT id, offset FROM sequences ORDER BY min_hashval')
+    cursor.execute("SELECT id, offset FROM sequences ORDER BY min_hashval")
     for new_key, (old_key, offset,) in enumerate(cursor):
         remapping[old_key] = new_key
 
     # remap sequence IDs using offset as unique key
-    cursor.execute('SELECT offset FROM sequences ORDER BY min_hashval')
+    cursor.execute("SELECT offset FROM sequences ORDER BY min_hashval")
     c2 = db.cursor()
     for new_key, (offset,) in enumerate(cursor):
-        c2.execute('UPDATE sequences SET id=? WHERE offset=?',
-                   (new_key, offset))
+        c2.execute("UPDATE sequences SET id=? WHERE offset=?", (new_key, offset))
         assert c2.rowcount == 1
 
-    cursor.execute('CREATE UNIQUE INDEX sequence_idx ON sequences (id)')
+    cursor.execute("CREATE UNIQUE INDEX sequence_idx ON sequences (id)")
 
     db.commit()
 
-    print(f'DONE remapping {len(remapping)} contigs.')
+    print(f"DONE remapping {len(remapping)} contigs.")
     sys.stdout.flush()
 
     # parse link structure, map to new IDs.
-    print(f'Remapping {len(neighbors)} neighbors...')
+    print(f"Remapping {len(neighbors)} neighbors...")
     new_neighbors = {}
     total_n = 0
     for old_key, links in neighbors.items():
@@ -122,7 +126,7 @@ def main(argv):
         link_ids = set()
         for x in links:
             link_id = int(x.split(":")[2])
-            if link_id != old_key:        # neighbors != self!
+            if link_id != old_key:  # neighbors != self!
                 new_link_id = remapping[link_id]
                 link_ids.add(new_link_id)
 

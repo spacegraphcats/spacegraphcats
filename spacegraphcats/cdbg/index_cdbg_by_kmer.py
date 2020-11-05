@@ -78,8 +78,7 @@ class MPHF_KmerIndex(object):
 
     def count_cdbg_matches(self, query_kmers, verbose=True, require_exist=False):
         "Return a dictionary containing cdbg_id -> # of matches in query_kmers"
-        return self.table.get_unique_values(query_kmers,
-                                            require_exist=require_exist)
+        return self.table.get_unique_values(query_kmers, require_exist=require_exist)
 
     def count_catlas_matches(self, cdbg_matches, catlas):
         """ """
@@ -127,7 +126,7 @@ class MPHF_KmerIndex(object):
         sizes_filename = os.path.join(catlas_prefix, "contigs.fa.gz.sizes")
 
         table = BBHashTable.load(mphf_filename, array_filename)
-        with open(sizes_filename, 'rb') as fp:
+        with open(sizes_filename, "rb") as fp:
             sizes = pickle.load(fp)
 
         return cls(table, sizes)
@@ -202,7 +201,7 @@ def main(argv):
     print(f"done! saving to {mphf_filename} and {array_filename}")
 
     table.save(mphf_filename, array_filename)
-    with open(sizes_filename, 'wb') as fp:
+    with open(sizes_filename, "wb") as fp:
         pickle.dump(sizes, fp)
 
     return 0

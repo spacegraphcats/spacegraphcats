@@ -117,7 +117,7 @@ def contract_neighbor(x, u, neighbors, sequences, mean_abunds, sizes, k):
     neighbors[u] = set()
     logging.debug("removed {}, replacing it with {}, {}".format(u, x, y))
 
-    #del sequences[u] # CTB don't _need_ to remove, but maybe cleaner to do?
+    # del sequences[u] # CTB don't _need_ to remove, but maybe cleaner to do?
 
 
 def contract_degree_two(
@@ -184,19 +184,18 @@ class SqliteAsDict:
         self.c = cursor
 
     def __getitem__(self, key):
-        self.c.execute('SELECT sequence FROM sequences WHERE id=?', (key,))
+        self.c.execute("SELECT sequence FROM sequences WHERE id=?", (key,))
 
-        seq, = next(iter(self.c))
+        (seq,) = next(iter(self.c))
         return seq
 
     def __setitem__(self, key, val):
-        self.c.execute('UPDATE sequences SET sequence=? WHERE id=?',
-                       (val, key))
+        self.c.execute("UPDATE sequences SET sequence=? WHERE id=?", (val, key))
         assert self.c.rowcount == 1
 
     def __delitem__(self, key):
-        print(f'removing sequence {key}')
-        self.c.execute('DELETE FROM sequences WHERE id=?', (key,))
+        print(f"removing sequence {key}")
+        self.c.execute("DELETE FROM sequences WHERE id=?", (key,))
 
     def close(self):
         self.db.commit()
@@ -244,7 +243,7 @@ def main(argv):
     # build lengths & sizes dictionary
 
     cursor = db.cursor()
-    cursor.execute('SELECT id, abund, LENGTH(sequence) FROM sequences')
+    cursor.execute("SELECT id, abund, LENGTH(sequence) FROM sequences")
     mean_abunds = {}
     sizes = {}
     for idx, abund, length in cursor:
