@@ -27,7 +27,6 @@ def main(argv=sys.argv[1:]):
 
     assert args.output, "must supply -o"
 
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
     x = search_utils.load_cdbg_size_info(args.catlas_prefix)
     cdbg_kmer_sizes, cdbg_weighted_kmer_sizes = x
 

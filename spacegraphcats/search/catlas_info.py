@@ -15,7 +15,6 @@ def main(argv=sys.argv[1:]):
     assert args.catlas_prefix.split("_")[-1] == "r1"
 
     basename = os.path.basename(args.catlas_prefix)
-    contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
     gxtfile = os.path.join(args.catlas_prefix, "cdbg.gxt")
 
     catlas = CAtlas(args.catlas_prefix)
