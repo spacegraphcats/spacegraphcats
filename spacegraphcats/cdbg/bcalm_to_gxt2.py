@@ -117,7 +117,7 @@ def contract_neighbor(x, u, neighbors, sequences, mean_abunds, sizes, k):
     neighbors[u] = set()
     logging.debug("removed {}, replacing it with {}, {}".format(u, x, y))
 
-    #del sequences[u] # @CTB don't _need_ to remove, but maybe cleaner to do?
+    #del sequences[u] # CTB don't _need_ to remove, but maybe cleaner to do?
 
 
 def contract_degree_two(

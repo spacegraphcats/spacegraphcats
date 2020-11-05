@@ -52,7 +52,7 @@ def main(argv=sys.argv[1:]):
         )
     )
 
-    # @CTB: could put size distribution of those nodes here...?
+    # CTB: could put size distribution of those nodes here...?
 
     return 0
 

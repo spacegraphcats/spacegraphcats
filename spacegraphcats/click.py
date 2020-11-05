@@ -199,7 +199,7 @@ def init(configfile, force):
         print(f"** ERROR: configfile '{configfile}' already exists.")
         return -1
 
-    # @CTB
+    # @CTB fixme
     print(f"creating configfile '{configfile}' for project '{stubname}'")
     with open(configfile, "wt") as fp:
         fp.write(

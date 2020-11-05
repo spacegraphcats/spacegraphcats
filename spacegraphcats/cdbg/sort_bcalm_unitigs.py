@@ -137,7 +137,6 @@ def main(argv):
     # (this is a check for a recurring bcalm bug that has to do with some
     # kind of threading problem)
 
-    # @CTB add test for this; old dory one in data/ should work.
     print("validating link structure...")
     fail = False
     for source in new_neighbors:

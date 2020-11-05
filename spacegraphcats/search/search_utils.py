@@ -288,9 +288,9 @@ def output_response_curve(outname, match_counts, kmer_idx, layer1_to_cdbg):
     total_oh = 0
     total_cont = 0
 
-    # @CTB: remove redundant sum_cont fields
-    # @CTB: switch to CSV output
-    # @CTB: ask Mike what he wants here :)
+    # CTB: remove redundant sum_cont fields
+    # CTB: switch to CSV output
+    # CTB: ask Mike what he wants here :)
 
     with open(outname, 'wt') as fp:
         fp.write('sum_cont relative_cont relative_overhead sum_cont2 sum_oh catlas_id\n')
