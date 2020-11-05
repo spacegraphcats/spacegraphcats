@@ -164,7 +164,7 @@ def test_dory_query_workflow(location):
         sig = sourmash.load_one_signature(fp)
         name = str(sig)
         assert "from dory_k21_r1" in name
-        assert name.startswith("nbhd:TRINITY_DN290219_c0_g1_i1")
+        assert "nbhd:TRINITY_DN290219_c0_g1_i1" in name
 
 
 @pytest_utils.in_tempdir
