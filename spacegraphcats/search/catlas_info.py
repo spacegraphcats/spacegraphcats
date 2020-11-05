@@ -54,9 +54,11 @@ def main(argv=sys.argv[1:]):
 
     # @CTB: could put size distribution of those nodes here...?
 
+    return 0
+
 
 if __name__ == "__main__":
     # import cProfile
     # cProfile.run('main()', 'search_stats')
 
-    main()
+    sys.exit(main())

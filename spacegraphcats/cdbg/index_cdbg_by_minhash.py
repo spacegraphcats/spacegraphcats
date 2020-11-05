@@ -40,6 +40,8 @@ def main(argv):
     with open(args.picklefile, "wb") as dumpfp:
         dump(hashval_to_contig_id, dumpfp)
 
+    return 0
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

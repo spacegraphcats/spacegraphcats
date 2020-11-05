@@ -202,6 +202,8 @@ def main(args=sys.argv[1:]):
         ss = sourmash.SourmashSignature(contigs_mh)
         sourmash.save_signatures([ss], fp)
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

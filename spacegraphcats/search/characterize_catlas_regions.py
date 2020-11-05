@@ -173,6 +173,8 @@ def main(args=sys.argv[1:]):
     # output in numpy format.
     compute_matrix(group_info, group_ident, args.ksize, args.output)
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
