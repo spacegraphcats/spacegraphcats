@@ -49,8 +49,7 @@ setup(
         "sortedcontainers",
         "sourmash",
         "khmer",
-        "bbhash >= 0.5",
-        "flake8", "black", "pre-commit"
+        "bbhash",
     ],
    long_description=long_description,
    long_description_content_type="text/markdown",

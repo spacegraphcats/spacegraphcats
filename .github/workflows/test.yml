@@ -35,8 +35,8 @@ jobs:
       - name: Install Python dependencies
         run: pip install -e .
 
-      - name: Install coverage dependencies
-        run: pip install pytest-cov
+      - name: Install coverage and other test dependencies
+        run: pip install pytest-cov flake8 black pre-commit
 
       - name: Build
         run: python setup.py build_ext --inplace
