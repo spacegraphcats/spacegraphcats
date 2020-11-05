@@ -48,7 +48,7 @@ setup(
         "snakemake ==5.27.4",
         "sortedcontainers ",
         "sourmash >=3.5",
-        "khmer >=3.0.0a3",
+        "khmer",
         "bbhash >=0.5.4",
     ],
    long_description=long_description,
