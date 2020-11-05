@@ -168,36 +168,6 @@ def contract_degree_two(
             logging.debug("no removal.")
 
 
-class FastaWithOffsetAsDict:
-    """
-    Do direct read access into a FASTA file, mimicking a dictionary.
-
-    Supports in-memory __setitem__, too, that will override future gets.
-    """
-
-    def __init__(self, fasta_fp, offsets):
-        offset_d = {}
-        # convert offsets into { id: offset }
-        for n, offset in enumerate(offsets):
-            offset_d[n] = offset
-
-        self.fp = fasta_fp
-        self.offsets = offset_d
-        self.override = {}
-
-    def __getitem__(self, key):
-        if key in self.override:
-            return self.override[key]
-
-        offset = self.offsets[key]
-        self.fp.seek(offset)
-        record, _ = next(my_fasta_iter(self.fp))
-        return record.sequence
-
-    def __setitem__(self, key, val):
-        self.override[key] = val
-
-
 class SqliteAsDict:
     """
     Do direct read access into a FASTA file, mimicking a dictionary.
