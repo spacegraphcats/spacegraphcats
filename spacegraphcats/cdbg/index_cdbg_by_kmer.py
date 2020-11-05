@@ -4,9 +4,8 @@ table connecting k-mers in the cDBG to cDBG node IDs.
 
 Input: a directory containing a contigs.fa.gz
 
-Output: contigs.fa.gz.mphf, a BBHash MPHF savefile; and contigs.fa.gz.indices,
-a numpy savez file containing mphf_to_kmer, kmer_to_cdbg, and sizes.
-XXX @CTB FIXME XXX
+Uses the bbhash package to construct a table mapping k-mer -> contigID,
+and saves that as as well as a pickled file full of contig sizes.
 
 Note: relies on the fact that for a cDBG constructed at a particular k,
 no k-mer will appear in more than one cDBG node and every k-mer will

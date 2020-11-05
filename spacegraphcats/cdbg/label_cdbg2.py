@@ -11,16 +11,14 @@ Briefly, this script creates a sqlite database with a single table,
 can be executed to return the offset of all sequences with the given
 label. Here, 'label' is the cDBG ID to which the sequence belongs.
 
-The script extract_reads_by_frontier_sqlite.py is a downstream script to
-extract the reads with a frontier search.
-# @CTB FIXME
+The script query_by_sequence is a downstream script to extract the
+reads.
 
-Specifically, @CTB FIXME
-* walk through the contigs assembled from the cDBG;
-* build a DBG cover using khmer tags, such that every k-mer in the DBG
-  is within distance d=40 of a tag;
-* label each tag with the cDBG node ID from the contig;
-* save for later use.
+Specifically, 
+* walk through the reads and find their offsets in the BGZF file
+* use the k-mer index created by `index_cdbg_by_kmer` to assign them to
+  contig(s)
+* record offset of reads <-> cDBG ID
 """
 import sys
 import os
@@ -37,7 +35,6 @@ from . import MPHF_KmerIndex, hash_sequence
 
 # graph settings
 DEFAULT_KSIZE = 31
-DEFAULT_MEMORY = 1e9
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
@@ -45,8 +42,6 @@ def main(argv=sys.argv[1:]):
     p.add_argument('reads')
     p.add_argument('savename')
     p.add_argument('-k', '--ksize', default=DEFAULT_KSIZE, type=int)
-    p.add_argument('-M', '--memory', default=DEFAULT_MEMORY,
-                            type=float)
     args = p.parse_args(argv)
 
     dbfilename = args.savename
@@ -115,7 +110,7 @@ def main(argv=sys.argv[1:]):
     cursor.execute('CREATE INDEX offset_idx ON sequences (offset)')
     cursor.execute('CREATE INDEX cdbg_id_idx ON sequences (cdbg_id)')
     db.close()
-    print(f'done closing {dbfilename}!')
+    print(f'done; closing {dbfilename}!')
 
     return 0
 
