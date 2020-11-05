@@ -241,9 +241,7 @@ def main(argv):
     db = sqlite3.connect(args.sqlite_db)
     sequences = SqliteAsDict(db)
 
-    # if we are removing pendants, we need to relabel the contigs so they are
-    # consecutive integers starting from 0.  If not, we create dummy data
-    # structures to make the interface the same elsewhere in the data
+    # build lengths & sizes dictionary
 
     cursor = db.cursor()
     cursor.execute('SELECT id, abund, LENGTH(sequence) FROM sequences')
@@ -252,6 +250,10 @@ def main(argv):
     for idx, abund, length in cursor:
         mean_abunds[idx] = abund
         sizes[idx] = length - ksize + 1
+
+    # if we are removing pendants, we need to relabel the contigs so they are
+    # consecutive integers starting from 0.  If not, we create dummy data
+    # structures to make the interface the same elsewhere in the data
 
     all_nodes = set(neighbors.keys())
     if trim:
