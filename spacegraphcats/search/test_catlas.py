@@ -8,7 +8,8 @@ thisdir = os.path.dirname(__file__)
 
 def test_catlas_info():
     from .catlas_info import main as catlas_info_main
-    catlas_prefix = os.path.join(thisdir, 'test-data/catlas.dory_k21_r1')
+
+    catlas_prefix = os.path.join(thisdir, "test-data/catlas.dory_k21_r1")
 
     try:
         old_out, sys.stdout = sys.stdout, io.StringIO()
@@ -23,16 +24,16 @@ Sequential graph with 736 nodes
 736 nodes, 714 arcs, 1.0 average.
 """.splitlines()
 
-    actual = [ k.strip() for k in output.getvalue().splitlines() ]
+    actual = [k.strip() for k in output.getvalue().splitlines()]
     for k in expected:
         assert k in actual
 
 
 class Test_LoadCatlas(object):
     def setup(self):
-        catlas_prefix = os.path.join(thisdir, 'test-data/catlas.dory_k21_r1')
+        catlas_prefix = os.path.join(thisdir, "test-data/catlas.dory_k21_r1")
         self.catlas = CAtlas(catlas_prefix)
-        
+
     def test_root(self):
         assert self.catlas.root == 731
 

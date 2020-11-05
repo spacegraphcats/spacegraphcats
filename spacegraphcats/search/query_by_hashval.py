@@ -2,8 +2,8 @@
 """
 Retrieve nodes by MinHash hashvals, using the indices created by
 spacegraphcats.cdbg.index_cdbg_by_minhash.
-Accepts as input catlas prefix, pickled hashval index, file with 
-list of hashvals, and the output. Also accepts flags -k for 
+Accepts as input catlas prefix, pickled hashval index, file with
+list of hashvals, and the output. Also accepts flags -k for
 k-mer size (default 31), --scaled for scaled value for sourmash
 signature output (default 1000), and -v for verbose.
 """
@@ -15,13 +15,12 @@ import sys
 import time
 import pickle
 
-import screed
 import sourmash
 from sourmash import MinHash
 
 from . import search_utils
 from .catlas import CAtlas
-from ..utils.logging import notify, error, debug
+from ..utils.logging import notify, error
 
 
 class QueryOutput:
@@ -32,7 +31,7 @@ class QueryOutput:
         self.total_bp = 0
         self.total_seq = 0
         self.contigs = []
-        self.mh = mh                      # if set, track MinHash of contigs
+        self.mh = mh  # if set, track MinHash of contigs
 
     def __add_sequence(self, sequence):
         self.total_bp += len(sequence)
@@ -45,27 +44,33 @@ class QueryOutput:
         # track extracted info
         retrieve_start = time.time()
         # walk through the contigs, retrieving.
-        print('extracting contigs...')
+        print("extracting contigs...")
         for n, record in enumerate(
-                search_utils.get_contigs_by_cdbg(contigs,
-                                                 self.cdbg_shadow)):
+            search_utils.get_contigs_by_cdbg(contigs, self.cdbg_shadow)
+        ):
             self.total_seq += 1
             self.total_bp += len(record.sequence)
 
             if n and n % 10000 == 0:
                 offset_f = self.total_seq / len(self.cdbg_shadow)
-                notify('...at n {} ({:.1f}% of shadow)', self.total_seq,
-                       offset_f * 100, end='\r')
+                notify(
+                    "...at n {} ({:.1f}% of shadow)",
+                    self.total_seq,
+                    offset_f * 100,
+                    end="\r",
+                )
 
             self.contigs.append((record.name, record.sequence))
             if self.mh is not None:
                 self.mh.add_sequence(record.sequence, force=True)
 
         # done - got all contigs!
-        notify('...fetched {} contigs, {} bp matching hashval domset. '
-               ' ({:.1f}s)', self.total_seq, self.total_bp,
-               time.time() - retrieve_start)
-
+        notify(
+            "...fetched {} contigs, {} bp matching hashval domset. " " ({:.1f}s)",
+            self.total_seq,
+            self.total_bp,
+            time.time() - retrieve_start,
+        )
 
     def write(self, csv_writer, csvoutfp, outdir):
         hashval = self.query_hashval
@@ -79,23 +84,24 @@ class QueryOutput:
         # TR add contigs folder
         # write out cDBG IDs
         q_name = str(hashval)
-        cdbg_listname = os.path.basename(q_name) + '.cdbg_ids.txt.gz'
-        with gzip.open(os.path.join(outdir, "contigs", cdbg_listname), 'wt') as fp:
+        cdbg_listname = os.path.basename(q_name) + ".cdbg_ids.txt.gz"
+        with gzip.open(os.path.join(outdir, "contigs", cdbg_listname), "wt") as fp:
             fp.write("\n".join([str(x) for x in sorted(self.cdbg_shadow)]))
 
         # write out contigs
-        contigs_outname = os.path.basename(q_name) + '.contigs.fa.gz'
-        with gzip.open(os.path.join(outdir, "contigs", contigs_outname), 'wt') as fp:
+        contigs_outname = os.path.basename(q_name) + ".contigs.fa.gz"
+        with gzip.open(os.path.join(outdir, "contigs", contigs_outname), "wt") as fp:
             for name, sequence in self.contigs:
-                fp.write('>{}\n{}\n'.format(name, sequence))
+                fp.write(">{}\n{}\n".format(name, sequence))
 
         # save minhash?
         if self.mh:
-            ss = sourmash.SourmashSignature(self.mh,
-                                      name='hashval query:{}'.format(q_name))
+            ss = sourmash.SourmashSignature(
+                self.mh, name="hashval query:{}".format(q_name)
+            )
 
-            sigfile = os.path.join(outdir, "contigs", q_name + '.contigs.sig')
-            with open(sigfile, 'wt') as fp:
+            sigfile = os.path.join(outdir, "contigs", q_name + ".contigs.sig")
+            with open(sigfile, "wt") as fp:
                 sourmash.save_signatures([ss], fp)
 
 
@@ -110,7 +116,7 @@ def execute_query(hashval, catlas, hashval_to_contig_id, mh=None):
 
     # calculate the leaves (this _should_ just be catlas_node_id for now)
     leaves = catlas.leaves([catlas_node_id])
-    assert leaves == { catlas_node_id }
+    assert leaves == {catlas_node_id}
 
     # calculate associated cDBG nodes
     cdbg_shadow = catlas.shadow(leaves)
@@ -120,74 +126,81 @@ def execute_query(hashval, catlas, hashval_to_contig_id, mh=None):
 
 def main(argv):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('mh_index_picklefile', help='pickled hashval index')
-    p.add_argument('hashval_list', help='file with list of hashvals')
-    p.add_argument('output')
-    p.add_argument('-k', '--ksize', default=31, type=int,
-                   help='k-mer size (default: 31)')
-    p.add_argument('--scaled', default=1000, type=float,
-                   help="scaled value for contigs minhash output")
-    p.add_argument('-v', '--verbose', action='store_true')
+    p.add_argument("catlas_prefix", help="catlas prefix")
+    p.add_argument("mh_index_picklefile", help="pickled hashval index")
+    p.add_argument("hashval_list", help="file with list of hashvals")
+    p.add_argument("output")
+    p.add_argument(
+        "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
+    )
+    p.add_argument(
+        "--scaled",
+        default=1000,
+        type=float,
+        help="scaled value for contigs minhash output",
+    )
+    p.add_argument("-v", "--verbose", action="store_true")
 
     args = p.parse_args(argv)
 
     # create output directory if it doesn't exist.
     outdir = args.output
-    notify('putting output in {}', outdir)
-    os.makedirs(os.path.join(outdir, "contigs"), exist_ok = True)
+    notify("putting output in {}", outdir)
+    os.makedirs(os.path.join(outdir, "contigs"), exist_ok=True)
 
     if not os.path.isdir(outdir):
         error("output '{}' is not a directory and cannot be made", outdir)
         sys.exit(-1)
 
     # load picklefile
-    with open(args.mh_index_picklefile, 'rb') as fp:
+    with open(args.mh_index_picklefile, "rb") as fp:
         hashval_to_contig_id = pickle.load(fp)
-    notify('loaded {} hash value -> cdbg_id mappings from {}',
-           len(hashval_to_contig_id), args.mh_index_picklefile)
+    notify(
+        "loaded {} hash value -> cdbg_id mappings from {}",
+        len(hashval_to_contig_id),
+        args.mh_index_picklefile,
+    )
 
     # load list of desired hashvals
-    hashvals = [ int(x.strip()) for x in open(args.hashval_list, 'rt') ]
+    hashvals = [int(x.strip()) for x in open(args.hashval_list, "rt")]
     hashvals = set(hashvals)
-    notify('loaded {} search hashvalues from {}',
-           len(hashvals), args.hashval_list)
+    notify("loaded {} search hashvalues from {}", len(hashvals), args.hashval_list)
 
     if not len(hashvals):
-        print('No hash values to search!', file=sys.stderr)
+        print("No hash values to search!", file=sys.stderr)
         sys.exit(-1)
 
     # load catlas DAG
     catlas = CAtlas(args.catlas_prefix)
-    notify('loaded {} nodes from catlas {}', len(catlas), args.catlas_prefix)
-    notify('loaded {} layer 1 catlas nodes', len(catlas.layer1_to_cdbg))
+    notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
+    notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
 
     # find the contigs filename
-    contigs_file = os.path.join(args.catlas_prefix, 'contigs.fa.gz')
+    contigs_file = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
     # get a single ksize & scaled
     ksize = int(args.ksize)
     scaled = int(args.scaled)
 
     # record command line
-    with open(os.path.join(outdir, 'command.txt'), 'wt') as fp:
+    with open(os.path.join(outdir, "command.txt"), "wt") as fp:
         fp.write(str(sys.argv))
         fp.write("\n")
 
     # output results.csv in the output directory:
-    csvoutfp = open(os.path.join(outdir, 'hashval_results.csv'), 'wt')
+    csvoutfp = open(os.path.join(outdir, "hashval_results.csv"), "wt")
     csv_writer = csv.writer(csvoutfp)
-    csv_writer.writerow(['hashval', 'bp', 'contigs'])
+    csv_writer.writerow(["hashval", "bp", "contigs"])
 
     # iterate over each query, do the thing.
     n_found = 0
     for hashval in hashvals:
-        notify('----')
-        notify('QUERY HASHVAL: {}', hashval)
+        notify("----")
+        notify("QUERY HASHVAL: {}", hashval)
 
         mh = MinHash(0, ksize, scaled=scaled)
         result = execute_query(hashval, catlas, hashval_to_contig_id, mh=mh)
-        notify('done searching!')
+        notify("done searching!")
         if not result:
             notify("no result for hashval {}", hashval)
             continue
@@ -195,18 +208,23 @@ def main(argv):
         result.retrieve_contigs(contigs_file)
         result.write(csv_writer, csvoutfp, outdir)
 
-        assert hashval in mh.get_mins()
+        assert hashval in mh.hashes
 
         n_found += 1
     # end main loop!
 
-    notify('----')
-    notify("Done! Found {} hashvals of {} in {} with k={}",
-           n_found, len(hashvals), args.catlas_prefix, ksize)
+    notify("----")
+    notify(
+        "Done! Found {} hashvals of {} in {} with k={}",
+        n_found,
+        len(hashvals),
+        args.catlas_prefix,
+        ksize,
+    )
     notify("Results are in directory '{}'", outdir)
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

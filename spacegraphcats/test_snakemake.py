@@ -16,7 +16,7 @@ from .utils import pytest_utils as utils
 
 def setup_module(m):
     global _tempdir
-    _tempdir = tempfile.mkdtemp(prefix='sgc_test')
+    _tempdir = tempfile.mkdtemp(prefix="sgc_test")
 
 
 def teardown_module(m):
@@ -31,94 +31,101 @@ def teardown_module(m):
 def test_dory_build_cdbg():
     global _tempdir
 
-    dory_conf = utils.relative_file('spacegraphcats/conf/dory-test.yaml')
-    target = 'dory/bcalm.dory.k21.unitigs.fa'
-    status = run_snakemake(dory_conf, verbose=True, outdir=_tempdir,
-                           extra_args=[target])
+    dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
+    target = "dory_k21/bcalm.unitigs.fa"
+    status = run_snakemake(
+        dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
+    )
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))
 
 
-@pytest.mark.dependency(depends=['test_dory_build_cdbg'])
+@pytest.mark.dependency(depends=["test_dory_build_cdbg"])
 def test_dory_build_contigs():
     global _tempdir
 
-    dory_conf = utils.relative_file('spacegraphcats/conf/dory-test.yaml')
-    target = 'dory_k21_r1/contigs.fa.gz'
-    status = run_snakemake(dory_conf, verbose=True, outdir=_tempdir,
-                           extra_args=[target])
+    dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
+    target = "dory_k21_r1/contigs.fa.gz"
+    status = run_snakemake(
+        dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
+    )
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))
 
 
-@pytest.mark.dependency(depends=['test_dory_build_contigs'])
+@pytest.mark.dependency(depends=["test_dory_build_contigs"])
 def test_dory_build_catlas():
     global _tempdir
 
-    dory_conf = utils.relative_file('spacegraphcats/conf/dory-test.yaml')
-    target = 'dory_k21_r1/catlas.csv'
-    status = run_snakemake(dory_conf, verbose=True, outdir=_tempdir,
-                           extra_args=[target])
+    dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
+    target = "dory_k21_r1/catlas.csv"
+    status = run_snakemake(
+        dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
+    )
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))
 
 
-@pytest.mark.dependency(depends=['test_dory_build_catlas'])
+@pytest.mark.dependency(depends=["test_dory_build_catlas"])
 def test_dory_build_kmer_index():
     global _tempdir
 
-    dory_conf = utils.relative_file('spacegraphcats/conf/dory-test.yaml')
-    target = 'dory_k21_r1/contigs.fa.gz.mphf'
-    status = run_snakemake(dory_conf, verbose=True, outdir=_tempdir,
-                           extra_args=[target])
+    dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
+    target = "dory_k21_r1/contigs.fa.gz.mphf"
+    status = run_snakemake(
+        dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
+    )
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))
 
 
-@pytest.mark.dependency(depends=['test_dory_build_kmer_index'])
+@pytest.mark.dependency(depends=["test_dory_build_kmer_index"])
 def test_dory_search():
     global _tempdir
 
-    dory_conf = utils.relative_file('spacegraphcats/conf/dory-test.yaml')
-    target = 'dory_k21_r1_search_oh0/results.csv'
-    status = run_snakemake(dory_conf, verbose=True, outdir=_tempdir,
-                           extra_args=[target])
+    dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
+    target = "dory_k21_r1_search_oh0/results.csv"
+    status = run_snakemake(
+        dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
+    )
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))
 
 
-@pytest.mark.dependency(depends=['test_dory_build_kmer_index'])
+@pytest.mark.dependency(depends=["test_dory_build_kmer_index"])
 def test_dory_build_reads_index():
     global _tempdir
 
-    dory_conf = utils.relative_file('spacegraphcats/conf/dory-test.yaml')
-    target = 'dory_k21_r1/reads.bgz.labels'
-    status = run_snakemake(dory_conf, verbose=True, outdir=_tempdir,
-                           extra_args=[target])
+    dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
+    target = "dory_k21_r1/reads.bgz.labels2"
+    status = run_snakemake(
+        dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
+    )
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))
 
 
-@pytest.mark.dependency(depends=['test_dory_build_reads_index',
-                                 'test_dory_search'])
+@pytest.mark.dependency(depends=["test_dory_build_reads_index", "test_dory_search"])
 def test_dory_extract_reads():
     global _tempdir
 
-    dory_conf = utils.relative_file('spacegraphcats/conf/dory-test.yaml')
-    target = 'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz'
-    status = run_snakemake(dory_conf, verbose=True, outdir=_tempdir,
-                           extra_args=[target])
+    dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
+    target = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz"
+    status = run_snakemake(
+        dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
+    )
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))
 
 
-@pytest.mark.dependency(depends=['test_dory_search'])
+@pytest.mark.dependency(depends=["test_dory_search"])
 def test_dory_extract_contigs():
     global _tempdir
 
-    dory_conf = utils.relative_file('spacegraphcats/conf/dory-test.yaml')
-    target = 'dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz'
-    status = run_snakemake(dory_conf, verbose=True, outdir=_tempdir,
-                           extra_args=[target])
+    dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
+    target = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz"
+    status = run_snakemake(
+        dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
+    )
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))

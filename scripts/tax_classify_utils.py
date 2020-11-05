@@ -1,12 +1,21 @@
 import collections
 from sourmash.lca import lca_utils
 
-taxonomy_levels = ['superkingdom', 'phylum', 'class', 'order', 'family',
-                   'genus', 'species', 'strain']
+taxonomy_levels = [
+    "superkingdom",
+    "phylum",
+    "class",
+    "order",
+    "family",
+    "genus",
+    "species",
+    "strain",
+]
 
 
-def summarize_taxonomic_purity(minhash_collections, lca_db, verbose=False,
-                               filenames=None):
+def summarize_taxonomic_purity(
+    minhash_collections, lca_db, verbose=False, filenames=None
+):
     if filenames is None:
         filenames = list(range(len(minhash_collections)))
     total = 0
@@ -70,17 +79,19 @@ def summarize_taxonomic_purity(minhash_collections, lca_db, verbose=False,
             for m in multis:
                 x = lca_db.get_lineage_assignments(m)
                 total_hashes = total_hashes - (len(x) - 1)
-                num_matches = sum(1 for l in x if l[:index] == top_lineage)
+                num_matches = sum(1 for lin in x if lin[:index] == top_lineage)
                 if num_matches > 1:
                     top_count = top_count - (num_matches - 1)
 
             lineage_display = "; ".join(lca_utils.zip_lineage(top_lineage))
             if verbose:
-                print(rank,
-                      '{:.1f}%'.format(top_count / total_hashes * 100),
-                      lineage_display)
+                print(
+                    rank,
+                    "{:.1f}%".format(top_count / total_hashes * 100),
+                    lineage_display,
+                )
 
-            if len(level_counter) == 0:   # should never get here!
+            if len(level_counter) == 0:  # should never get here!
                 assert 0, assignments
 
             # if we have a 100% pure bin, quit now.
@@ -88,23 +99,22 @@ def summarize_taxonomic_purity(minhash_collections, lca_db, verbose=False,
                 pure_at_rank[rank] += 1
 
                 # print out the egregiously bad ones just to double check...
-                if rank in ('phylum', 'superkingdom') and verbose:
-                    print('---')
+                if rank in ("phylum", "superkingdom") and verbose:
+                    print("---")
                     for assignment in assignments:
-                        print('\t',
-                              '; '.join(lca_utils.zip_lineage(assignment)))
+                        print("\t", "; ".join(lca_utils.zip_lineage(assignment)))
                 print()
                 break
         print()
 
     print()
     # calculate summary numbers!
-    print('total bins: {}'.format(total))
-    print('unassigned bins: {}'.format(n_empty))
+    print("total bins: {}".format(total))
+    print("unassigned bins: {}".format(n_empty))
 
     sum_pure = 0
     for rank in reversed(taxonomy_levels):
-        print('pure at rank {}: {}'.format(rank, pure_at_rank[rank]))
+        print("pure at rank {}: {}".format(rank, pure_at_rank[rank]))
         sum_pure += pure_at_rank[rank]
 
-    print('not pure at any rank:', total - sum_pure - n_empty)
+    print("not pure at any rank:", total - sum_pure - n_empty)
