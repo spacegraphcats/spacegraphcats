@@ -35,8 +35,8 @@ jobs:
       - name: Install Cython for bbhash
         run: pip install Cython
 
-      - name: Install spacegraphcats
-        run: pip install -e .
+      - name: Build spacegraphcats
+        run: python setup.py build_ext -i
 
       - run: make black
       - run: make flakes
