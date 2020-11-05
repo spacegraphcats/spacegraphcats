@@ -32,6 +32,9 @@ jobs:
       - name: Install coverage and other test dependencies
         run: pip install pytest-cov flake8 black pre-commit
 
+      - name: Install Cython for bbhash
+        run: pip install Cython
+
       - name: Install spacegraphcats
         run: pip install -e .
 
