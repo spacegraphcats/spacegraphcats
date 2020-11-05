@@ -1,8 +1,7 @@
 #! /usr/bin/env python
 """
 Sort the bcalm unitigs.fa output (a cDBG) into deterministic order.
-
-Outputs a mapping rather than a new file!
+Produces output consumed by `bcalm_to_gxt2`.
 
 Also saves all of the graph information for later perusal.
 
