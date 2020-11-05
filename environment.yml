@@ -7,7 +7,6 @@ dependencies:
     - bcalm=2.2.3
     - snakemake-minimal=5.20.1
     - screed=1.0.1
-    - sourmash>=3.5,<4
     - khmer=3.0.0a3
     - numpy
     - pytest=5.3.2
@@ -15,3 +14,6 @@ dependencies:
     - click=7.1.2
     - pyflakes
     - bbhash>=0.5.4
+    - pip
+    - pip:
+      - https://github.com/dib-lab/sourmash/archive/latest.zip

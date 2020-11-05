@@ -28,9 +28,8 @@ def main(argv):
 
         this_mh = mh.copy_and_clear()
         this_mh.add_sequence(record.sequence, force=True)
-        mins = this_mh.get_mins()
 
-        for hashval in mins:
+        for hashval in this_mh.hashes:
             hashval_to_contig_id[hashval] = contig_id
 
     notify(
@@ -40,6 +39,8 @@ def main(argv):
     )
     with open(args.picklefile, "wb") as dumpfp:
         dump(hashval_to_contig_id, dumpfp)
+
+    return 0
 
 
 if __name__ == "__main__":

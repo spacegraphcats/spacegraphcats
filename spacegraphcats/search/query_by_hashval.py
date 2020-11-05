@@ -208,7 +208,7 @@ def main(argv):
         result.retrieve_contigs(contigs_file)
         result.write(csv_writer, csvoutfp, outdir)
 
-        assert hashval in mh.get_mins()
+        assert hashval in mh.hashes
 
         n_found += 1
     # end main loop!
