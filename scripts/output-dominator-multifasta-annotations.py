@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-Given a catlas and a multifasta pickle annotation of cDBG output by 
+Given a catlas and a multifasta pickle annotation of cDBG output by
 spacegraphcats.search.index_cdbg_by_multifasta, output annotations
 by dominator node.
 """
@@ -26,7 +26,7 @@ def main():
     p.add_argument('cdbg_output')
     p.add_argument('dom_output')
     args = p.parse_args()
-    
+
     # load catlas DAG
     catlas = CAtlas(args.catlas_prefix, load_sizefile=True)
     notify('loaded {} nodes from catlas {}', len(catlas), args.catlas_prefix)
@@ -55,7 +55,7 @@ def main():
         for cdbg_id in sorted(catlas.cdbg_sizes):   # get all cDBG IDs
             for (filename, annot) in cdbg_to_records.get(cdbg_id, ()):
                 w.writerow([cdbg_id, catlas_prefix, filename, annot])
-            
+
     notify(f'outputting dom node annots to {args.dom_output}')
     with open(args.dom_output, 'wt') as fp:
         w = csv.writer(fp)
@@ -63,7 +63,7 @@ def main():
         for node_id in sorted(catlas):
             for (filename, annot) in dom_annots.get(node_id, ()):
                 w.writerow([node_id, catlas_prefix, filename, annot])
-            
+
     return 0
 
 

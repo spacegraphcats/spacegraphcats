@@ -28,7 +28,7 @@ def main():
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     args = p.parse_args()
-    
+
     # load catlas DAG
     catlas = CAtlas(args.catlas_prefix, load_sizefile=True)
     notify('loaded {} nodes from catlas {}', len(catlas), args.catlas_prefix)
@@ -81,7 +81,7 @@ def main():
                 if catlas.levels[node_id] == 1:
                     count = dom_counts[node_id]
                     w.writerow([node_id, count])
-            
+
     return 0
 
 

@@ -99,7 +99,7 @@ class CAtlas:
                 mean_abund = float(row["mean_abund"])
                 if not min_abund or mean_abund >= min_abund:
                     cdbg_sizes[contig_id] = n_kmers
-                    weighted_cdbg_sizes[contig_id] = mean_abund*n_kmers
+                    weighted_cdbg_sizes[contig_id] = mean_abund * n_kmers
 
         self.cdbg_sizes = cdbg_sizes
         self.weighted_cdbg_sizes = weighted_cdbg_sizes

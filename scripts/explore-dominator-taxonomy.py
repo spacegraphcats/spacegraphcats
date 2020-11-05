@@ -29,7 +29,7 @@ def main():
     p.add_argument('mh_index_picklefile', help='pickled hashval index')
     p.add_argument('lca_db')
     args = p.parse_args()
-    
+
     # load catlas DAG
     catlas = CAtlas(args.catlas_prefix, load_sizefile=True)
     notify('loaded {} nodes from catlas {}', len(catlas), args.catlas_prefix)
@@ -98,7 +98,7 @@ def main():
     print(f'--------------------  ---------------------------------')
     for rank, count in cnt.most_common():
         print(f'{rank}                  {count}')
-            
+
     return 0
 
 
