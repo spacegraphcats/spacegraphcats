@@ -66,11 +66,6 @@ search_out_suffix = ''
 if experiment:
     search_out_suffix = '_' + experiment
 
-# remove pendants from bcalm graph? default YES
-remove_pendants = ""
-if config.get('keep_graph_pendants', False):
-    remove_pendants = "-P"
-
 # minsize/maxsize for decomposition
 decompose_minsize = config.get('decompose_minsize', 5000)
 decompose_maxsize = config.get('decompose_maxsize', 50000)
@@ -96,6 +91,7 @@ multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
 
 ### build some variables for internal use
 
+cdbg_dir = f'{catlas_base}_k{ksize}'
 catlas_dir = f'{catlas_base}_k{ksize}_r{radius}{catlas_suffix}'
 search_dir = f'{catlas_dir}_search_oh{int(overhead*100)}{search_out_suffix}'
 hashval_query_dir = f'{catlas_dir}_hashval_k{hashval_ksize}'
@@ -141,16 +137,16 @@ rule build:
 
 rule clean:
     shell: """
-        rm -fr {catlas_base} {catlas_dir} {search_dir}
+        rm -fr {cdbg_dir} {catlas_dir} {search_dir}
     """
 
 # build cDBG using bcalm
 rule bcalm_cdbg:
     input:
-        f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+        f"{cdbg_dir}/bcalm.inputlist.txt"
     output:
-        f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa",
-    log: f"{catlas_base}/bcalm.{catlas_base}.log.txt",
+        f"{cdbg_dir}/bcalm.unitigs.fa",
+    log: f"{catlas_dir}/bcalm.{catlas_dir}.log.txt",
     shell: """
         # can we run it?
         bcalm >& /dev/null || \
@@ -159,11 +155,11 @@ rule bcalm_cdbg:
 
         # ok, run bcalm for real; use tee to both save & output stderr,
         # per https://stackoverflow.com/questions/692000/how-do-i-write-stderr-to-a-file-while-using-tee-with-a-pipe
-        bcalm -in {input} -out {catlas_base}/bcalm.{catlas_base}.k{ksize} \
+        bcalm -in {input} -out {cdbg_dir}/bcalm \
            -kmer-size {ksize} -abundance-min 1 > >(tee -a {log} >& 2)
 
         # remove large temp files: .h5, unitig glue files
-        rm -f {catlas_base}/bcalm.{catlas_base}.k{ksize}.{{h5,unitigs.fa.glue*}}
+        rm -f {cdbg_dir}/bcalm.{{h5,unitigs.fa.glue*}}
     """
 
 # create list of input files for bcalm
@@ -171,25 +167,47 @@ rule bcalm_cdbg_inpfiles:
     input:
         input_sequences
     output:
-        "{catlas_base}/bcalm.{catlas_base}.k{ksize}.inputlist.txt"
+        "{cdbg_dir}/bcalm.inputlist.txt"
     run:
         with open(output[0], 'wt') as fp:
             for name in input_sequences:
                 fp.write(f'{name}\n')
 
-# build catlas input from bcalm output by reformatting
-rule bcalm_catlas_input:
+# sort and remap bcalm output
+rule bcalm_catlas_sort:
     input:
-        f"{catlas_base}/bcalm.{catlas_base}.k{ksize}.unitigs.fa",
+        unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
     output:
-        cdbg = f"{catlas_dir}/cdbg.gxt",
-        contigs = f"{catlas_dir}/contigs.fa.gz",
-        info = f"{catlas_dir}/contigs.fa.gz.info.csv",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
+        sig = f"{cdbg_dir}/bcalm.unitigs.fa.sig",
     shell: """
-        {python} -m spacegraphcats.cdbg.bcalm_to_gxt {remove_pendants} \
-            -k {ksize} {input} {output.cdbg} {output.contigs}
+        {python} -m spacegraphcats.cdbg.sort_bcalm_unitigs \
+            -k {ksize} {input.unitigs} {output.db} {output.mapping}
      """
 
+# build catlas input from bcalm output by reformatting; optionally,
+# remove pendants
+rule bcalm_catlas_prepare_input:
+    input:
+        unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
+    output:
+        gxt = f"{catlas_dir}/cdbg.gxt",
+        contigs = f"{catlas_dir}/contigs.fa.gz",
+        info = f"{catlas_dir}/contigs.fa.gz.info.csv",
+        sig = f"{catlas_dir}/contigs.fa.gz.sig",
+    params:
+        remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else ""
+    shell: """
+        {python} -m spacegraphcats.cdbg.bcalm_to_gxt2 \
+            {params.remove_pendants} \
+            {input.unitigs} {input.db} {input.mapping} \
+            {output.gxt} {output.contigs}
+     """
+
+# combine all the reads into a single bgzf file, which permits random indexing.
 rule reads_bgzf:
     input:
         input_sequences
@@ -203,11 +221,12 @@ rule reads_bgzf:
 rule label_reads:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        contigs = f"{catlas_dir}/contigs.fa.gz",
+        mphf = f"{catlas_dir}/contigs.fa.gz.mphf",
+        mphf_idx = f"{catlas_dir}/contigs.fa.gz.indices",
     output:
-        f"{catlas_dir}/reads.bgz.labels",
+        f"{catlas_dir}/reads.bgz.labels2",
     shell: """
-        {python} -m spacegraphcats.cdbg.label_cdbg {catlas_dir} \
+        {python} -m spacegraphcats.cdbg.label_cdbg2 -k {ksize} {catlas_dir} \
             {input.reads} {output}
     """
 
@@ -234,7 +253,7 @@ rule make_contigs_kmer_index:
         f"{catlas_dir}/contigs.fa.gz.mphf",
         f"{catlas_dir}/contigs.fa.gz.indices",
     shell: """
-        {python} -m spacegraphcats.cdbg.index_contigs_by_kmer \
+        {python} -m spacegraphcats.cdbg.index_cdbg_by_kmer \
             -k {ksize} {catlas_dir}
     """
 
@@ -319,7 +338,7 @@ rule extract_contigs_single_file:
 rule extract_reads_single_file:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels",
+        labels = f"{catlas_dir}/reads.bgz.labels2",
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
         f"{search_dir}/{{queryname}}.cdbg_ids.reads.fa.gz",
@@ -353,7 +372,7 @@ rule decompose_catlas:
 rule extract_reads_for_decomposition:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels",
+        labels = f"{catlas_dir}/reads.bgz.labels2",
         outdir = f"{catlas_dir}_decompose",
     shell: """
         for i in {input.outdir}/*.txt.gz; do
@@ -408,7 +427,7 @@ def aggregate_hashval_query(wildcards):
 rule extract_reads_single_hashval_file:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels",
+        labels = f"{catlas_dir}/reads.bgz.labels2",
         cdbg_ids = expand("{h}/contigs/{{hashval}}.cdbg_ids.txt.gz",
                           h=hashval_query_dir)
     output:
@@ -471,6 +490,7 @@ rule build_multifasta_index:
         catlas = f"{catlas_dir}/catlas.csv",
         mphf = f"{catlas_dir}/contigs.fa.gz.mphf",
         indices = f"{catlas_dir}/contigs.fa.gz.indices",
+        sizes = f"{catlas_dir}/contigs.fa.gz.sizes",
     output:
         f"{catlas_dir}_multifasta/multifasta.pickle",
     params:
@@ -515,7 +535,7 @@ rule build_cdbg_list_by_record:
 rule extract_reads_single_file_multifasta:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels",
+        labels = f"{catlas_dir}/reads.bgz.labels2",
         cdbg_ids = f"{catlas_dir}_multifasta/{{queryname}}.cdbg_ids.txt.gz",
         in_csv = f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
     output:

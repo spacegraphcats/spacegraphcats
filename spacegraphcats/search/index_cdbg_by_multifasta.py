@@ -52,17 +52,10 @@ def main(argv):
     notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
     notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
 
-    # find the contigs filename
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
-
     # ...and kmer index.
     ki_start = time.time()
     kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
-    notify(
-        "loaded {} k-mers in index ({:.1f}s)",
-        len(kmer_idx.mphf_to_kmer),
-        time.time() - ki_start,
-    )
+    notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
 
     # calculate the k-mer sizes for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)

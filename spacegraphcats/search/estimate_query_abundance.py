@@ -8,10 +8,10 @@ The query genome should be largely or completely enclosed in the ???
 import argparse
 import os
 import sys
-import khmer
 
 import screed
 
+from spacegraphcats.cdbg import hash_sequence
 from . import search_utils
 
 
@@ -27,7 +27,6 @@ def main(argv=sys.argv[1:]):
 
     assert args.output, "must supply -o"
 
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
     x = search_utils.load_cdbg_size_info(args.catlas_prefix)
     cdbg_kmer_sizes, cdbg_weighted_kmer_sizes = x
 
@@ -36,7 +35,6 @@ def main(argv=sys.argv[1:]):
 
     # build hashes for all the query k-mers
     print("loading query kmers...")
-    bf = khmer.Nodetable(args.ksize, 1, 1)
 
     print("queryfile,containment,mean_abundance", file=args.output)
 
@@ -44,7 +42,8 @@ def main(argv=sys.argv[1:]):
         print("loading", query)
         query_kmers = set()
         for record in screed.open(query):
-            query_kmers.update(bf.get_kmer_hashes(record.sequence))
+            hashes = hash_sequence(record.sequence, args.ksize)
+            query_kmers.update(hashes)
 
         # find the list of cDBG nodes that contain at least one query k-mer
         cdbg_match_counts = kmer_idx.count_cdbg_matches(query_kmers)

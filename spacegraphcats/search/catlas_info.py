@@ -15,7 +15,6 @@ def main(argv=sys.argv[1:]):
     assert args.catlas_prefix.split("_")[-1] == "r1"
 
     basename = os.path.basename(args.catlas_prefix)
-    contigfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
     gxtfile = os.path.join(args.catlas_prefix, "cdbg.gxt")
 
     catlas = CAtlas(args.catlas_prefix)
@@ -53,11 +52,13 @@ def main(argv=sys.argv[1:]):
         )
     )
 
-    # @CTB: could put size distribution of those nodes here...?
+    # CTB: could put size distribution of those nodes here...?
+
+    return 0
 
 
 if __name__ == "__main__":
     # import cProfile
     # cProfile.run('main()', 'search_stats')
 
-    main()
+    sys.exit(main())

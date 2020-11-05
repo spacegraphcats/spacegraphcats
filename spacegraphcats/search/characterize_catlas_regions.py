@@ -8,7 +8,7 @@ import argparse
 import os
 import sys
 import sourmash
-from sourmash._minhash import hash_murmur
+from sourmash.minhash import hash_murmur
 import numpy
 import pickle
 
@@ -62,7 +62,7 @@ def compute_matrix(group_info, group_ident, ksize, output):
         if i % 1000 == 0:
             print("...", i, len(group_info))
         mh = group_info[n]
-        vec = dict(mh.get_mins(with_abundance=True))
+        vec = mh.hashes
         vec = [vec.get(hashval, 0) for hashval in all_kmer_hashes]
         vec = numpy.array(vec)
         V[i] = vec
@@ -162,7 +162,7 @@ def main(args=sys.argv[1:]):
 
         # if this is under a node that meets minsize criteria, track:
         if group_id is not None:
-            # keep/measure abundances! @CTB are actually doing anything abund?
+            # keep/measure abundances! CTB are actually doing anything abund?
             mh = group_info[group_id]
             mh.add_sequence(record.sequence, True)
 
@@ -173,6 +173,8 @@ def main(args=sys.argv[1:]):
     # output in numpy format.
     compute_matrix(group_info, group_ident, args.ksize, args.output)
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

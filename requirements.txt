@@ -1,5 +1,3 @@
-Cython
-mypy
 screed
 pytest >= 5.1.2
 pytest-dependency
@@ -8,7 +6,7 @@ pandas
 snakemake == 5.8.1
 click == 7.1.2
 sortedcontainers
-https://github.com/dib-lab/pybbhash/archive/spacegraphcats.zip
+bbhash >= 0.5
 https://github.com/dib-lab/khmer/archive/master.zip
 sourmash>3.4.1,<4
 flake8

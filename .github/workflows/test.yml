@@ -48,8 +48,8 @@ jobs:
       - run: make flakes
       - run: make lint
 
-      - run: make twofoo-test
       - run: pytest spacegraphcats --cov=.
+      - run: make twofoo-test
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1

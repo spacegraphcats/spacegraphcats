@@ -1,5 +1,12 @@
 from setuptools import setup, find_packages
 
+# read the contents of your README file
+from os import path
+
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
+    long_description = f.read()
+
 CLASSIFIERS = [
     "Environment :: Console",
     "Environment :: MacOS X",
@@ -10,12 +17,13 @@ CLASSIFIERS = [
     "Operating System :: MacOS :: MacOS X",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
 setup(
     name="spacegraphcats",
-    version="1.3",
     description="tools for biological assembly graph neighborhood analysis",
     url="https://github.com/spacegraphcats/spacegraphcats",
     author="C. Titus Brown, Dominik Moritz, Michael P. O'Brien, Felix Reidl, Taylor Reiter, and Blair D. Sullivan",
@@ -35,16 +43,15 @@ setup(
     ],
     use_scm_version={"write_to": "spacegraphcats/version.py"},
     install_requires=[
-        "Cython",
-        "mypy",
         "screed",
         "pytest",
         "numpy",
-        "pandas",
         "snakemake",
         "sortedcontainers",
         "sourmash",
         "khmer",
-        "bbhash",
+        "bbhash >= 0.5",
     ],
+    long_description=long_description,
+    long_description_content_type="text/markdown",
 )
