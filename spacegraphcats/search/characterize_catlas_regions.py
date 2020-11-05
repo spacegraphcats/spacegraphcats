@@ -62,7 +62,7 @@ def compute_matrix(group_info, group_ident, ksize, output):
         if i % 1000 == 0:
             print("...", i, len(group_info))
         mh = group_info[n]
-        vec = dict(mh.get_mins(with_abundance=True))
+        vec = mh.hashes
         vec = [vec.get(hashval, 0) for hashval in all_kmer_hashes]
         vec = numpy.array(vec)
         V[i] = vec
