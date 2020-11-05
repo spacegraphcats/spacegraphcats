@@ -16,4 +16,4 @@ dependencies:
     - bbhash>=0.5.4
     - pip
     - pip:
-      - git+https://github.com/dib-lab/sourmash.git#egg=sourmash
+      - https://github.com/dib-lab/sourmash/archive/latest.zip

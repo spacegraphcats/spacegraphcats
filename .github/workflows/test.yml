@@ -23,27 +23,33 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - run: pip install -U pip setuptools
+      - run: pip install -U Cython
+
       - name: Setup conda
         uses: s-weigand/setup-conda@v1
         with:
             activate-conda: false
-      - run: conda env update -f environment.yml -n base
+      - run: conda install -c conda-forge -c bioconda bcalm
 
-      - name: Install coverage and other test dependencies
-        run: pip install pytest-cov flake8 black pre-commit
+      - name: Install Python dependencies
+        run: pip install -U -r requirements.txt
 
-      - name: Install Cython for bbhash
-        run: pip install Cython
+      - name: Install coverage dependencies
+        run: pip install pytest-cov
 
-      - name: Build spacegraphcats
-        run: python setup.py build_ext -i
+      - name: Build
+        run: python setup.py build_ext --inplace
+
+      - name: Install sgc
+        run: pip install -e .
 
       - run: make black
       - run: make flakes
       - run: make lint
 
-      - run: pytest spacegraphcats --cov=.
       - run: make twofoo-test
+      - run: pytest spacegraphcats --cov=.
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
