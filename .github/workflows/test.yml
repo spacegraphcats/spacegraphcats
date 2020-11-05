@@ -23,25 +23,16 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - run: pip install -U pip setuptools
-      - run: pip install -U Cython
-
       - name: Setup conda
         uses: s-weigand/setup-conda@v1
         with:
             activate-conda: false
-      - run: conda install -c conda-forge -c bioconda bcalm
-
-      - name: Install Python dependencies
-        run: pip install -e .
+      - run: conda env update -f environment.yml -n base
 
       - name: Install coverage and other test dependencies
         run: pip install pytest-cov flake8 black pre-commit
 
-      - name: Build
-        run: python setup.py build_ext --inplace
-
-      - name: Install sgc
+      - name: Install spacegraphcats
         run: pip install -e .
 
       - run: make black
