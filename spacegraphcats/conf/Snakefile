@@ -278,12 +278,14 @@ rule searchquick:
         f"{catlas_dir}/catlas.csv",
         f"{catlas_dir}/contigs.fa.gz.mphf",
         f"{catlas_dir}/contigs.fa.gz.indices",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{search_dir}/results.csv",
         make_query_base(config['searchquick']),
     shell: """
         {python} -m spacegraphcats.search.query_by_sequence {catlas_dir} \
-            {search_dir} --query {config[searchquick]} -k {ksize} {cdbg_only}
+            {search_dir} --query {config[searchquick]} -k {ksize} {cdbg_only} \
+            --contigs-db {input.db}
     """
 
 
@@ -295,13 +297,14 @@ rule search:
         f"{catlas_dir}/catlas.csv",
         f"{catlas_dir}/contigs.fa.gz.mphf",
         f"{catlas_dir}/contigs.fa.gz.indices",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{search_dir}/results.csv",
         make_query_base(config['search']),
     shell: """
         {python} -m spacegraphcats.search.query_by_sequence \
             {catlas_dir} {search_dir} --query {config[search]} -k {ksize} \
-            {cdbg_only}
+            {cdbg_only} --contigs-db {input.db}
     """
 
 ruleorder: search > searchquick

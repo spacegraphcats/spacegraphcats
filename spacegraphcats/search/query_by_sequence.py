@@ -48,7 +48,7 @@ class QueryOutput:
     def similarity(self):
         return self.query_sig.minhash.similarity(self.contigs_minhash)
 
-    def retrieve_contigs(self, contigs):
+    def retrieve_contigs(self, contigs_db):
         "extract contigs using cDBG shadow."
 
         # node list.
@@ -57,7 +57,7 @@ class QueryOutput:
         # walk through the contigs, retrieving.
         notify("extracting contigs...")
 
-        contigs_iter = search_utils.get_contigs_by_cdbg(contigs, self.shadow)
+        contigs_iter = search_utils.get_contigs_by_cdbg_sqlite(contigs_db, self.shadow)
         for n, record in enumerate(contigs_iter):
             if n and n % 10000 == 0:
                 offset_f = self.total_seq / len(self.shadow)
@@ -276,6 +276,7 @@ def main(argv):
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
+    p.add_argument("--contigs-db", required=True)
     p.add_argument(
         "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
     )
@@ -316,9 +317,6 @@ def main(argv):
     notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
     notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
     catlas_name = os.path.basename(args.catlas_prefix.rstrip(("/")))
-
-    # find the contigs filename
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
     # ...and kmer index.
     ki_start = time.time()
@@ -365,7 +363,7 @@ def main(argv):
             continue
 
         q_output = query.execute(catlas, kmer_idx)
-        q_output.retrieve_contigs(contigs)
+        q_output.retrieve_contigs(args.contigs_db)
         notify("total time: {:.1f}s", time.time() - start_time)
 
         q_output.write(csv_writer, csvoutfp, outdir, args.catlas_prefix)

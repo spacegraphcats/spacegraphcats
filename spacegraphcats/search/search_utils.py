@@ -206,6 +206,22 @@ def get_contigs_by_cdbg(contigs_filename, cdbg_ids):
                 yield record
 
 
+def get_contigs_by_cdbg_sqlite(contigs_db, cdbg_ids):
+    """
+    Given a list of cDBG IDs, retrieve the actual contig sequences
+    corresponding to them from a sqlite database created by
+    sort_bcalm_unitigs.
+    """
+    db = sqlite3.connect(contigs_db)
+    cursor = db.cursor()
+
+    for cdbg_id in cdbg_ids:
+        cdbg_id = int(cdbg_id)
+        cursor.execute('SELECT sequence FROM sequences WHERE id=?', (cdbg_id,))
+        seq = cursor.fetchone()
+        yield Record(name=str(cdbg_id), sequence=seq)
+
+
 ### MPHF stuff
 
 
