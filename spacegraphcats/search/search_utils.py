@@ -191,6 +191,7 @@ def get_contigs_by_cdbg(contigs_filename, cdbg_ids):
     info_filename = contigs_filename + ".info.csv"
     reads_grabber = GrabBGZF_Random(contigs_filename)
 
+    found = set()
     with open(info_filename, "rt") as info_fp:
         r = csv.DictReader(info_fp)
 
@@ -202,6 +203,8 @@ def get_contigs_by_cdbg(contigs_filename, cdbg_ids):
                 record, xx = reads_grabber.get_sequence_at(offset)
                 assert xx == offset
                 assert int(record.name) == contig_id, (record.name, contig_id)
+                assert int(record.name) not in found, record.name
+                found.add(int(record.name))
 
                 yield record
 
