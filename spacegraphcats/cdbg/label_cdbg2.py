@@ -79,12 +79,22 @@ def main(argv=sys.argv[1:]):
 
     reader = BgzfReader(args.reads)
     total_cdbg_ids = set()
+    last_record = None
+    last_offset = None
     for record, offset in search_utils.iterate_bgzf(reader):
         n += 1
         if total_bp >= watermark:
             print(f"... {watermark:5.2e} bp thru reads", end="\r", file=sys.stderr)
             watermark += watermark_size
         total_bp += len(record.sequence)
+
+        is_paired = False
+        if last_record and is_paired:
+            offsets = [last_offset, offset]
+            cdbg_ids = 
+        else:
+            offsets = [offset]
+            cdbg_ids = set()
 
         if len(record.sequence) < args.ksize:
             continue
@@ -94,15 +104,20 @@ def main(argv=sys.argv[1:]):
 
         # CTB note: if reads have 'N' in them, they will not appear
         # in cDBG, so do not require_exist=True here.
-        cdbg_ids = kmer_idx.count_cdbg_matches(kmers)
+        new_cdbg_ids = kmer_idx.count_cdbg_matches(kmers)
+        cdbg_ids.update(new_cdbg_ids)
 
-        for cdbg_id in cdbg_ids:
-            cursor.execute(
-                "INSERT INTO sequences (offset, cdbg_id) VALUES (?, ?)",
-                (offset, cdbg_id),
-            )
+        for insert_offset in offsets:
+            # @CTB note this will insert dups
+            for cdbg_id in cdbg_ids:
+                cursor.execute(
+                    "INSERT INTO sequences (offset, cdbg_id) VALUES (?, ?)",
+                    (insert_offset, cdbg_id),
+                )
 
         total_cdbg_ids.update(cdbg_ids)
+        last_record = record
+        last_offset = offset
 
     db.commit()
     notify(f"{total_bp:5.2e} bp in reads")
