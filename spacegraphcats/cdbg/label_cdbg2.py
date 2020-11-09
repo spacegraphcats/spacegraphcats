@@ -91,7 +91,7 @@ def main(argv=sys.argv[1:]):
         is_paired = False
         if last_record and is_paired:
             offsets = [last_offset, offset]
-            cdbg_ids = 
+            # leave cdbg_ids alone...
         else:
             offsets = [offset]
             cdbg_ids = set()
