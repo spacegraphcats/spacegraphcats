@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
 import unittest
 
-from .graph import Graph
-from .components import components, num_components
+from spacegraphcats.catlas.graph import Graph
+from spacegraphcats.catlas.components import components, num_components
 
 
 class ComponentsTest(unittest.TestCase):

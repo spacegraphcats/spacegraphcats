@@ -2,7 +2,7 @@ import unittest
 import os
 from io import StringIO
 
-from . import graph_parser as parser
+from spacegraphcats.catlas import graph_parser as parser
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -19,7 +19,7 @@ class ParserTest(unittest.TestCase):
         def collect_edge(src, dest):
             all_edges.append((src, dest))
 
-        with open(os.path.join(DIR, "parser-examples/graph.gxt")) as f:
+        with open(os.path.join(DIR, "test-data/parser-examples/graph.gxt")) as f:
             id_map = parser.parse(f, create_vertices, collect_edge)
 
         self.assertEqual(num_vertices, [3])
@@ -38,7 +38,7 @@ class ParserTest(unittest.TestCase):
         def collect_minhashes(vertex_id, hashes):
             minhashes[vertex_id] = hashes
 
-        with open(os.path.join(DIR, "parser-examples/graph.gxt.mxt")) as f:
+        with open(os.path.join(DIR, "test-data/parser-examples/graph.gxt.mxt")) as f:
             parser.parse_minhash(f, collect_minhashes)
 
         self.assertEqual(

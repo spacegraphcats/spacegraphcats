@@ -4,8 +4,8 @@ import tempfile
 import shutil
 import os
 
-from .click import run_snakemake
-from .utils import pytest_utils as utils
+from spacegraphcats.click import run_snakemake
+from . import pytest_utils as utils
 
 # NOTE re dependencies (@pytest.mark.dependency):
 # - These basically duplicate the snakemake dependencies.
