@@ -31,6 +31,9 @@ def copy_dory_catlas():
     testdata = pkg_file("tests/test-data/catlas.dory_k21_r1")
     shutil.copytree(testdata, "./dory_k21_r1")
 
+    testdata = pkg_file("tests/test-data/catlas.dory_k21")
+    shutil.copytree(testdata, "./dory_k21")
+
 
 def copy_dory_catlas_search():
     testdata = pkg_file("tests/test-data/catlas.dory_k21_r1_search_oh0")
@@ -135,7 +138,7 @@ def test_dory_query_workflow(location):
     assert index_cdbg_by_kmer.main(args) == 0
 
     # do search!!
-    args = "dory_k21_r1 dory_k21_r1_search_oh0 --query dory-head.fa -k 21".split()
+    args = "dory_k21_r1 dory_k21_r1_search_oh0 --query dory-head.fa -k 21 --contigs-db dory_k21/bcalm.unitigs.db".split()
     try:
         assert query_by_sequence.main(args) == 0
     except SystemExit as e:
@@ -181,7 +184,7 @@ def test_dory_search_nomatch(location):
     assert index_cdbg_by_kmer.main(args) == 0
 
     # do search!!
-    args = "dory_k21_r1 dory_k21_r1_search_oh0 --query random-query.fa -k 21".split()
+    args = "dory_k21_r1 dory_k21_r1_search_oh0 --query random-query.fa -k 21 --contigs-db dory_k21/bcalm.unitigs.db".split()
     try:
         assert query_by_sequence.main(args) == 0
     except SystemExit as e:
