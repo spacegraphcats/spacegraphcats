@@ -9,9 +9,9 @@ import hashlib
 import sourmash
 import screed
 
-from .search.catlas import CAtlas
-from .click import run_snakemake
-from .utils import pytest_utils as utils
+from spacegraphcats.search.catlas import CAtlas
+from spacegraphcats.click import run_snakemake
+from . import pytest_utils as utils
 
 # NOTE re dependencies (@pytest.mark.dependency):
 # - These basically duplicate the snakemake dependencies.
@@ -37,10 +37,10 @@ def teardown_module(m):
 def test_build_and_search():
     global _tempdir
 
-    dory_conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
+    conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
     target = "search"
     status = run_snakemake(
-        dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
+        conf, verbose=True, outdir=_tempdir, extra_args=[target]
     )
     assert status == 0
 

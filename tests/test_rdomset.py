@@ -2,8 +2,8 @@ import unittest
 import itertools
 import random
 
-from .graph import Graph
-from .rdomset import low_degree_orientation
+from spacegraphcats.catlas.graph import Graph
+from spacegraphcats.catlas.rdomset import low_degree_orientation
 
 
 class ParserRDomset(unittest.TestCase):

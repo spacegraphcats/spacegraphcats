@@ -1,13 +1,13 @@
 import sys
 import os
 import io
-from .catlas import CAtlas
+from spacegraphcats.search.catlas import CAtlas
 
 thisdir = os.path.dirname(__file__)
 
 
 def test_catlas_info():
-    from .catlas_info import main as catlas_info_main
+    from spacegraphcats.search.catlas_info import main as catlas_info_main
 
     catlas_prefix = os.path.join(thisdir, "test-data/catlas.dory_k21_r1")
 

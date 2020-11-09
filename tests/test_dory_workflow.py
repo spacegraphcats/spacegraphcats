@@ -4,8 +4,8 @@ import screed
 import sourmash
 import glob
 
-import spacegraphcats.utils.pytest_utils as pytest_utils
-from spacegraphcats.utils.pytest_utils import pkg_file, relative_file
+from . import pytest_utils
+from .pytest_utils import pkg_file, relative_file
 
 from spacegraphcats.catlas import catlas
 from spacegraphcats.cdbg import index_cdbg_by_kmer
@@ -28,12 +28,12 @@ from spacegraphcats.search import extract_cdbg_by_multifasta
 
 
 def copy_dory_catlas():
-    testdata = pkg_file("search/test-data/catlas.dory_k21_r1")
+    testdata = pkg_file("tests/test-data/catlas.dory_k21_r1")
     shutil.copytree(testdata, "./dory_k21_r1")
 
 
 def copy_dory_catlas_search():
-    testdata = pkg_file("search/test-data/catlas.dory_k21_r1_search_oh0")
+    testdata = pkg_file("tests/test-data/catlas.dory_k21_r1_search_oh0")
     shutil.copytree(testdata, "./dory_k21_r1_search_oh0")
 
 

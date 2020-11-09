@@ -1,7 +1,7 @@
 all: test
 
 flakes:
-	flake8 spacegraphcats/ scripts/
+	flake8 spacegraphcats/ scripts/ tests/
 
 black:
 	black .
@@ -10,7 +10,7 @@ lint:
 	#mypy spacegraphcats/*.py
 
 test:
-	pytest spacegraphcats
+	pytest tests
 
 #
 # akker-reads.abundtrim.gz is a collection of reads from podar data
