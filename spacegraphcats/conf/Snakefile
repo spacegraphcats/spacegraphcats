@@ -178,7 +178,7 @@ rule bcalm_catlas_sort:
     input:
         unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
     output:
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        db = f"{cdbg_dir}/bcalm.unitigs.predb",
         mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
         sig = f"{cdbg_dir}/bcalm.unitigs.fa.sig",
     shell: """
@@ -191,13 +191,14 @@ rule bcalm_catlas_sort:
 rule bcalm_catlas_prepare_input:
     input:
         unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        db = f"{cdbg_dir}/bcalm.unitigs.predb",
         mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
     output:
         gxt = f"{catlas_dir}/cdbg.gxt",
         contigs = f"{catlas_dir}/contigs.fa.gz",
         info = f"{catlas_dir}/contigs.fa.gz.info.csv",
         sig = f"{catlas_dir}/contigs.fa.gz.sig",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
     params:
         remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else ""
     shell: """
@@ -205,6 +206,8 @@ rule bcalm_catlas_prepare_input:
             {params.remove_pendants} \
             {input.unitigs} {input.db} {input.mapping} \
             {output.gxt} {output.contigs}
+        mv {input.db} {output.db}
+        chmod u-w {output.db}
      """
 
 # combine all the reads into a single bgzf file, which permits random indexing.
@@ -248,13 +251,13 @@ rule build_catlas:
 # index contigs, count node sizes
 rule make_contigs_kmer_index:
     input:
-        f"{catlas_dir}/contigs.fa.gz",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{catlas_dir}/contigs.fa.gz.mphf",
         f"{catlas_dir}/contigs.fa.gz.indices",
     shell: """
         {python} -m spacegraphcats.cdbg.index_cdbg_by_kmer \
-            -k {ksize} {catlas_dir}
+            -k {ksize} {catlas_dir} --contigs-db {input.db}
     """
 
 ### Search rules.

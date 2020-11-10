@@ -221,8 +221,19 @@ def get_contigs_by_cdbg_sqlite(contigs_db, cdbg_ids):
     for cdbg_id in cdbg_ids:
         cdbg_id = int(cdbg_id)
         cursor.execute('SELECT sequence FROM sequences WHERE id=?', (cdbg_id,))
-        seq, = cursor.fetchone()
-        yield Record(name=str(cdbg_id), sequence=seq)
+        seq, = cursor.fetchall()
+        yield Record(str(cdbg_id), seq)
+
+
+def contigs_iter_sqlite(contigs_db):
+    """
+    Yield all the sequences in the contigs database.
+    """
+    cursor = contigs_db.cursor()
+
+    cursor.execute('SELECT id, sequence FROM sequences')
+    for ident, sequence in cursor:
+        yield Record(str(ident), sequence)
 
 
 ### MPHF stuff

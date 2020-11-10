@@ -110,8 +110,6 @@ def main(argv):
         c2.execute("UPDATE sequences SET id=? WHERE offset=?", (new_key, offset))
         assert c2.rowcount == 1
 
-    cursor.execute("CREATE UNIQUE INDEX sequence_idx ON sequences (id)")
-
     db.commit()
 
     print(f"DONE remapping {len(remapping)} contigs.")

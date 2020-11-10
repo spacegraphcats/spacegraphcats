@@ -13,11 +13,13 @@ be in at least one cDBG node, i.e. k <-> cdbg_id is bijective.
 """
 import sys
 import os
+import argparse
+import pickle
+import sqlite3
+
 import screed
 import khmer
-import argparse
 from bbhash_table import BBHashTable
-import pickle
 
 
 hashing_fn = None
@@ -166,7 +168,6 @@ def build_mphf(ksize, records_iter_fn):
 
         # node ID is record name, must go from 0 to total-1
         cdbg_id = int(record.name)
-
         # get 64-bit numbers for each k-mer
         kmers = hash_sequence(record.sequence, ksize)
 
@@ -185,17 +186,24 @@ def build_mphf(ksize, records_iter_fn):
 def main(argv):
     p = argparse.ArgumentParser()
     p.add_argument("catlas_prefix")
+    p.add_argument("--contigs-db", required=True)
     p.add_argument("-k", "--ksize", default=31, type=int)
     a = p.parse_args(argv)
 
-    contigs_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz")
     mphf_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.mphf")
     array_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.indices")
     sizes_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.sizes")
 
-    def create_records_iter():
-        print(f"reading cDBG nodes from {contigs_filename}")
+    contigs_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz")
+    def create_records_iter_2():
         return screed.open(contigs_filename)
+
+    sqlite_db = sqlite3.connect(a.contigs_db)
+    def create_records_iter():
+        from spacegraphcats.search import search_utils
+
+        print(f"reading cDBG nodes from sqlite DB {a.contigs_db}")
+        return search_utils.contigs_iter_sqlite(sqlite_db)
 
     table, sizes = build_mphf(a.ksize, create_records_iter)
     print(f"done! saving to {mphf_filename} and {array_filename}")

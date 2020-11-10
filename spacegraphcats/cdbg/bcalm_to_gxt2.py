@@ -117,7 +117,7 @@ def contract_neighbor(x, u, neighbors, sequences, mean_abunds, sizes, k):
     neighbors[u] = set()
     logging.debug("removed {}, replacing it with {}, {}".format(u, x, y))
 
-    # del sequences[u] # CTB don't _need_ to remove, but maybe cleaner to do?
+    del sequences[u]
 
 
 def contract_degree_two(
@@ -216,7 +216,7 @@ def main(argv):
         help="don't remove low abundance pendants",
     )
     parser.add_argument("-a", "--abundance", nargs="?", type=float, default=1.1)
-    parser.add_argument("--randomize", help="randomize cDBG order")
+    parser.add_argument("--randomize", help="randomize cDBG order") # @CTB
     args = parser.parse_args(argv)
 
     trim = not args.pendants
@@ -288,6 +288,14 @@ def main(argv):
 
     print("... done! output {} unitigs".format(n))
 
+    # renumber in the sqlite database too
+    c2 = db.cursor()
+    cursor.execute('SELECT offset FROM sequences')
+    for new_key, (offset,) in enumerate(cursor):
+        c2.execute("UPDATE sequences SET id=? WHERE offset=?", (new_key, offset))
+        assert c2.rowcount == 1
+
+    db.commit()
     # start the gxt file by writing the number of nodes (unitigs))
     print(f"Outputting graph information to '{args.gxt_out}'...")
     gxtfp = open(args.gxt_out, "wt")
@@ -314,6 +322,8 @@ def main(argv):
     # output sourmash signature for output contigs
     out_sig = sourmash.SourmashSignature(out_mh, filename=args.contigs_out)
     sourmash.save_signatures([out_sig], open(args.contigs_out + ".sig", "wt"))
+
+    cursor.execute("CREATE UNIQUE INDEX sequence_idx ON sequences (id)")
 
     sequences.close()
 
