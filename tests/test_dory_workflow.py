@@ -133,7 +133,7 @@ def test_dory_query_workflow(location):
     assert catlas.main(args) == 0
 
     # make k-mer search index
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     print("** running index_cdbg_by_kmer")
     assert index_cdbg_by_kmer.main(args) == 0
 
