@@ -55,6 +55,7 @@ def main(argv):
     n_homogeneous = 0
     n_missing = 0
     bp_missing = 0
+    assert 0 # @CTB
     for n, record in enumerate(screed.open(contigs)):
         if n % 10000 == 0:
             offset_f = total_seqs / len(cdbg_nodes)

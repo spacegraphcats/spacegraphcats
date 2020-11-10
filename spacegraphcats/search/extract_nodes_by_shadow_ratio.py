@@ -116,6 +116,7 @@ def main(args=sys.argv[1:]):
     total_seqs = 0
 
     outfp = open(args.output, "wt")
+    assert 0 # @CTB
     for n, record in enumerate(screed.open(contigs)):
         if n and n % 10000 == 0:
             offset_f = total_seqs / len(cdbg_shadow)

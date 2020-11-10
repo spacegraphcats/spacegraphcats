@@ -171,6 +171,7 @@ def main(args=sys.argv[1:]):
     total_seqs = 0
 
     print("writing contigs to {}".format(args.output + ".fa"))
+    assert 0 # @CTB
     outfp = open(args.output + ".fa", "wt")
     for n, record in enumerate(screed.open(contigs)):
         if n and n % 10000 == 0:

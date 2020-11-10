@@ -206,6 +206,7 @@ def main(argv):
             continue
 
         result.retrieve_contigs(contigs_file)
+        assert 0 # @CTB
         result.write(csv_writer, csvoutfp, outdir)
 
         assert hashval in mh.hashes

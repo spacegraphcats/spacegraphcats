@@ -154,6 +154,7 @@ def main(args=sys.argv[1:]):
 
     # aaaaaand iterate over contigs, collecting abundances from all contigs
     # in a group.
+    assert 0 # @CTB
     for record_n, record in enumerate(screed.open(contigs)):
         if record_n % 10000 == 0:
             print("...", record_n, end="\r")
