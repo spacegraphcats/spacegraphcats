@@ -221,7 +221,10 @@ def get_contigs_by_cdbg_sqlite(contigs_db, cdbg_ids):
     for cdbg_id in cdbg_ids:
         cdbg_id = int(cdbg_id)
         cursor.execute('SELECT sequence FROM sequences WHERE id=?', (cdbg_id,))
-        seq, = cursor.fetchall()
+
+        results = cursor.fetchall()
+        assert len(results) == 1
+        seq, = results[0]
         yield Record(str(cdbg_id), seq)
 
 
