@@ -82,8 +82,6 @@ class MPHF_KmerIndex(object):
                            verbose=True,
                            require_exist=False):
         "Return a dictionary containing cdbg_id -> # of matches in query_kmers"
-#        for k in list(query_kmers):
-#            print('XXX', k, self.table.get_unique_values([k]))
         return self.table.get_unique_values(query_kmers,
                                             require_exist=require_exist)
 
