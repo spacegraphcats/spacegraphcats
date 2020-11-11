@@ -1,8 +1,10 @@
 import os.path
 import shutil
+import glob
+import hashlib
+
 import screed
 import sourmash
-import glob
 
 from . import pytest_utils
 from .pytest_utils import pkg_file, relative_file
@@ -122,6 +124,11 @@ def test_dory_query_workflow(location):
     ]
 
     assert bcalm_to_gxt2.main(args) == 0
+    with open("dory_k21_r1/cdbg.gxt", "rb") as fp:
+        data = fp.read()
+    m = hashlib.md5()
+    m.update(data)
+    assert m.hexdigest() == "79d74806263900d54078eced695ec193", m.hexdigest()
 
     # build catlas
     args = pytest_utils.Args()
