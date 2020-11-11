@@ -78,9 +78,14 @@ class MPHF_KmerIndex(object):
 
         return node_kmer_sizes
 
-    def count_cdbg_matches(self, query_kmers, verbose=True, require_exist=False):
+    def count_cdbg_matches(self, query_kmers,
+                           verbose=True,
+                           require_exist=False):
         "Return a dictionary containing cdbg_id -> # of matches in query_kmers"
-        return self.table.get_unique_values(query_kmers, require_exist=require_exist)
+#        for k in list(query_kmers):
+#            print('XXX', k, self.table.get_unique_values([k]))
+        return self.table.get_unique_values(query_kmers,
+                                            require_exist=require_exist)
 
     def count_catlas_matches(self, cdbg_matches, catlas):
         """ """

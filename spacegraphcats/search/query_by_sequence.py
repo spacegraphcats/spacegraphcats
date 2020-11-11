@@ -186,6 +186,7 @@ class Query:
     def execute(self, catlas, kmer_idx):
         # construct dict cdbg_id -> # of query k-mers
         self.cdbg_match_counts = kmer_idx.count_cdbg_matches(self.kmers)
+        # (confirm that fewer k-mers are returned than the node size)
         for k, v in self.cdbg_match_counts.items():
             assert v <= kmer_idx.get_cdbg_size(k), k
 
