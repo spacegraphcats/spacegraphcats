@@ -331,12 +331,13 @@ def make_extract_reads_base(searchfiles):
 # get contigs for a single query
 rule extract_contigs_single_file:
     input:
-        contigs = f"{catlas_dir}/contigs.fa.gz",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
         f"{search_dir}/{{queryname}}.cdbg_ids.contigs.fa.gz",
     shell: """
-        {python} -m spacegraphcats.search.extract_contigs {catlas_dir} \
+        {python} -m spacegraphcats.search.extract_contigs \
+            --contigs-db {input.db} \
             {input.cdbg_ids} -o {output}
     """
 

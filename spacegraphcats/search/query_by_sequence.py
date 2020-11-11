@@ -57,7 +57,8 @@ class QueryOutput:
         # walk through the contigs, retrieving.
         notify("extracting contigs...")
 
-        contigs_iter = search_utils.get_contigs_by_cdbg_sqlite(contigs_db, self.shadow)
+        contigs_iter = search_utils.get_contigs_by_cdbg_sqlite(contigs_db,
+                                                               self.shadow)
         for n, record in enumerate(contigs_iter):
             if n and n % 10000 == 0:
                 offset_f = self.total_seq / len(self.shadow)
@@ -128,7 +129,8 @@ class QueryOutput:
         # write out cDBG IDs
         cdbg_listname = os.path.basename(q_name) + ".cdbg_ids.txt.gz"
         with gzip.open(os.path.join(outdir, cdbg_listname), "wt") as fp:
-            fp.write("\n".join([str(x) for x in sorted(self.shadow)]))
+            id_list = "\n".join([str(x) for x in sorted(self.shadow)])
+            print(id_list, file=fp)
 
         # write out catlas nodes
         frontier_listname = os.path.basename(q_name) + ".frontier.txt.gz"
