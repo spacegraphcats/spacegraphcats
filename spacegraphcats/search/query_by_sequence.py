@@ -12,6 +12,7 @@ import gzip
 import os
 import sys
 import time
+import sqlite3
 
 import screed
 import sourmash
@@ -326,6 +327,9 @@ def main(argv):
     kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
     notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
 
+    # ...and contigs db
+    contigs_db = sqlite3.connect(args.contigs_db)
+
     # calculate the k-mer sizes for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)
 
@@ -366,7 +370,7 @@ def main(argv):
             continue
 
         q_output = query.execute(catlas, kmer_idx)
-        q_output.retrieve_contigs(args.contigs_db)
+        q_output.retrieve_contigs(contigs_db)
         notify("total time: {:.1f}s", time.time() - start_time)
 
         q_output.write(csv_writer, csvoutfp, outdir, args.catlas_prefix)
