@@ -290,7 +290,7 @@ def main(argv):
 
     # renumber in the sqlite database too
     c2 = db.cursor()
-    cursor.execute('SELECT offset FROM sequences')
+    cursor.execute('SELECT offset FROM sequences ORDER BY min_hashval')
     for new_key, (offset,) in enumerate(cursor):
         c2.execute("UPDATE sequences SET id=? WHERE offset=?", (new_key, offset))
         assert c2.rowcount == 1
