@@ -2,6 +2,7 @@ import os.path
 import shutil
 import glob
 import hashlib
+import gzip
 
 import screed
 import sourmash
@@ -160,7 +161,11 @@ def test_dory_query_workflow(location):
     assert os.path.exists(output_path + "dory-head.fa.contigs.sig")
     assert os.path.exists(output_path + "results.csv")
 
-    with open(output_path + "results.csv") as fp:
+    with gzip.open(output_path + "dory-head.fa.cdbg_ids.txt.gz", "rt") as fp:
+        match_ids = [ x.strip() for x in fp ]
+        assert match_ids == ['118', '187']
+
+    with open(output_path + "results.csv", "rt") as fp:
         lines = fp.readlines()
         assert len(lines) == 2
 
