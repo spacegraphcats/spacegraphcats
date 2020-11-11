@@ -3,6 +3,7 @@ import shutil
 import glob
 import hashlib
 import gzip
+import sqlite3
 
 import screed
 import sourmash
@@ -28,6 +29,7 @@ from spacegraphcats.search import query_by_hashval
 from spacegraphcats.search import index_cdbg_by_multifasta
 from spacegraphcats.search import query_multifasta_by_sig
 from spacegraphcats.search import extract_cdbg_by_multifasta
+from spacegraphcats.search import search_utils
 
 
 def copy_dory_catlas():
@@ -114,6 +116,10 @@ def test_dory_query_workflow(location):
 
     assert sort_bcalm_unitigs.main(args) == 0
 
+    db = sqlite3.connect('dory_k21/bcalm.unitigs.db')
+    all_seqs = list(search_utils.contigs_iter_sqlite(db))
+    assert len(all_seqs) == 736, len(all_seqs)
+
     # convert the bcalm file to gxt
     args = [
         "-P",
@@ -125,6 +131,11 @@ def test_dory_query_workflow(location):
     ]
 
     assert bcalm_to_gxt2.main(args) == 0
+
+    db = sqlite3.connect('dory_k21/bcalm.unitigs.db')
+    all_seqs = list(search_utils.contigs_iter_sqlite(db))
+    assert len(all_seqs) == 736, len(all_seqs)
+
     with open("dory_k21_r1/cdbg.gxt", "rb") as fp:
         data = fp.read()
     m = hashlib.md5()
@@ -145,6 +156,7 @@ def test_dory_query_workflow(location):
     print("** running index_cdbg_by_kmer")
     assert index_cdbg_by_kmer.main(args) == 0
 
+    # check that we get the kmer -> cDBG assignments we expect
     kmer_idx = MPHF_KmerIndex.from_catlas_directory("dory_k21_r1")
     assert kmer_idx.table[10218271035842461694] == 118
     assert kmer_idx.table[8436068710919520258] == 118
