@@ -209,7 +209,7 @@ def test_dory_search_nomatch(location):
     shutil.copyfile(testdata, "random-query.fa")
 
     # make k-mer search index
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     print("** running index_cdbg_by_kmer")
     assert index_cdbg_by_kmer.main(args) == 0
 
@@ -238,7 +238,7 @@ def test_dory_extract_unassembled_nodes(location):
     copy_dory_head()
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # run extract_unassembled_regions
@@ -295,7 +295,7 @@ def test_dory_label_cdbg(location):
     assert make_bgzf.main(args) == 0
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # run label_cdbg
@@ -322,7 +322,7 @@ def test_dory_extract_reads(location):
     assert make_bgzf.main(args) == 0
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # run label_cdbg - FIXTURE
@@ -366,7 +366,7 @@ def test_dory_extract_reads_fq(location):
     assert make_bgzf.main(args) == 0
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # run label_cdbg - FIXTURE
@@ -421,7 +421,7 @@ def test_dory_estimate_query_abundance(location):
     copy_dory_head()
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # calculate query abundances
@@ -458,7 +458,7 @@ def test_dory_multifasta_query(location):
     copy_dory_sig()
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # index by multifasta
