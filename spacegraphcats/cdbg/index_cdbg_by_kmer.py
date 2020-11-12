@@ -2,7 +2,7 @@
 Use Minimal Perfect Hashing (see BBHash) to construct a fast lookup
 table connecting k-mers in the cDBG to cDBG node IDs.
 
-Input: a directory containing a contigs.fa.gz
+Input: a SQLite database containing the contigs in question.
 
 Uses the bbhash package to construct a table mapping k-mer -> contigID,
 and saves that as as well as a pickled file full of contig sizes.

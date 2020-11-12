@@ -17,7 +17,6 @@ def catlas_build(conf_file):
     z.append(os.path.join(catlas_base, "bcalm.{}.k31.unitigs.fa".format(catlas_base)))
     z.append(os.path.join(dirname, "catlas.csv"))
     z.append(os.path.join(dirname, "cdbg.gxt"))
-    z.append(os.path.join(dirname, "contigs.fa.gz"))
     z.append(os.path.join(dirname, "contigs.fa.gz.indices"))
     z.append(os.path.join(dirname, "contigs.fa.gz.info.csv"))
     z.append(os.path.join(dirname, "contigs.fa.gz.mphf"))
