@@ -3,17 +3,21 @@
 Produce a pickled dictionary that contains { hashval: cDBG id }, for some
 specified sourmash ksize & scaled.
 """
-import screed
 import sys
 import argparse
-import sourmash
 from pickle import dump
-from ..utils.logging import notify
+import sqlite3
+
+import sourmash
+import screed
+
+from spacegraphcats.utils.logging import notify
+from spacegraphcats.search import search_utils
 
 
 def main(argv):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("contigs")
+    parser.add_argument("contigs_db")
     parser.add_argument("picklefile")
     parser.add_argument("-k", "--ksize", type=int, default=31)
     parser.add_argument("--scaled", type=int, default=10000)
@@ -22,8 +26,10 @@ def main(argv):
     mh = sourmash.MinHash(0, args.ksize, scaled=args.scaled)
     hashval_to_contig_id = {}
 
-    notify("reading contigs from {}", args.contigs)
-    for record in screed.open(args.contigs):
+    notify(f"reading contigs from {args.contigs_db}")
+    contigs_db = sqlite3.connect(args.contigs_db)
+
+    for record in search_utils.contigs_iter_sqlite(contigs_db):
         contig_id = int(record.name)
 
         this_mh = mh.copy_and_clear()

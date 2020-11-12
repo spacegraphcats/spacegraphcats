@@ -443,10 +443,10 @@ def test_dory_query_by_hashval(location):
     copy_dory_catlas()
 
     # index by hashval
-    args = "-k 31 dory_k21_r1/contigs.fa.gz dory_k21_r1_mh.pickle"
+    args = "-k 31 dory_k21/bcalm.unitigs.db dory_k21_r1_mh.pickle"
     assert index_cdbg_by_minhash.main(args.split()) == 0
 
-    args = "-k 31 dory_k21_r1 dory_k21_r1_mh.pickle dory-k31-hashval-queries.txt dory_k21_r1_hashval_k31"
+    args = "-k 31 dory_k21_r1 dory_k21_r1_mh.pickle dory-k31-hashval-queries.txt dory_k21_r1_hashval_k31 --contigs-db dory_k21/bcalm.unitigs.db"
     assert query_by_hashval.main(args.split()) == 0
     assert os.path.exists("dory_k21_r1_hashval_k31/hashval_results.csv")
 

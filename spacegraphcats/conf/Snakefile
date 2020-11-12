@@ -408,6 +408,7 @@ checkpoint hashval_query:
         queries = hashval_queries,
         pickle = f"{hashval_query_dir}/index.pickle",
         catlas = f"{catlas_dir}/catlas.csv",
+        contigs_db = f"{cdbg_dir}/bcalm.unitigs.db"
     output:
         csv=f"{hashval_query_dir}/hashval_results.csv",
         outdir=directory(f"{hashval_query_dir}/contigs"),
@@ -415,7 +416,8 @@ checkpoint hashval_query:
         mkdir -p {output.outdir}
         {python} -m spacegraphcats.search.query_by_hashval \
                  -k {hashval_ksize} {catlas_dir} \
-                 {input.pickle} {input.queries} {hashval_query_dir}
+                 {input.pickle} {input.queries} {hashval_query_dir} \
+                 --contigs-db {input.contigs_db}
     """
 
 # using output of hashval_query, generate names for output of extract_reads_single_hashval_file

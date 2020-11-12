@@ -14,6 +14,7 @@ import os
 import sys
 import time
 import pickle
+import sqlite3
 
 import sourmash
 from sourmash import MinHash
@@ -37,7 +38,7 @@ class QueryOutput:
         self.total_bp += len(sequence)
         self.total_seq += 1
 
-    def retrieve_contigs(self, contigs):
+    def retrieve_contigs(self, contigs_db):
         "extract contigs using cDBG shadow."
 
         # node list.
@@ -46,7 +47,7 @@ class QueryOutput:
         # walk through the contigs, retrieving.
         print("extracting contigs...")
         for n, record in enumerate(
-            search_utils.get_contigs_by_cdbg(contigs, self.cdbg_shadow)
+            search_utils.get_contigs_by_cdbg_sqlite(contigs_db, self.cdbg_shadow)
         ):
             self.total_seq += 1
             self.total_bp += len(record.sequence)
@@ -130,6 +131,7 @@ def main(argv):
     p.add_argument("mh_index_picklefile", help="pickled hashval index")
     p.add_argument("hashval_list", help="file with list of hashvals")
     p.add_argument("output")
+    p.add_argument("--contigs-db", required=True)
     p.add_argument(
         "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
     )
@@ -176,7 +178,7 @@ def main(argv):
     notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
 
     # find the contigs filename
-    contigs_file = os.path.join(args.catlas_prefix, "contigs.fa.gz")
+    contigs_db = sqlite3.connect(args.contigs_db)
 
     # get a single ksize & scaled
     ksize = int(args.ksize)
@@ -205,8 +207,7 @@ def main(argv):
             notify("no result for hashval {}", hashval)
             continue
 
-        result.retrieve_contigs(contigs_file)
-        assert 0 # @CTB
+        result.retrieve_contigs(contigs_db)
         result.write(csv_writer, csvoutfp, outdir)
 
         assert hashval in mh.hashes
