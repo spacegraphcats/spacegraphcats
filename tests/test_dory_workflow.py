@@ -410,6 +410,7 @@ def test_dory_evaluate_overhead(location):
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
         "xyz",
+        "--contigs-db", "dory_k21/bcalm.unitigs.db"
     ]
     print("** running evaluate_overhead")
     assert evaluate_overhead.main(args) == 0
