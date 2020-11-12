@@ -81,6 +81,7 @@ def main(argv=sys.argv[1:]):
     total_cdbg_ids = set()
     last_record = None
     last_offset = None
+    n_paired_reads = 0
     for record, offset in search_utils.iterate_bgzf(reader):
         n += 1
         if total_bp >= watermark:
@@ -89,9 +90,21 @@ def main(argv=sys.argv[1:]):
         total_bp += len(record.sequence)
 
         is_paired = False
-        if last_record and is_paired:
+        if last_record:
+            last_name = last_record.name
+            this_name = record.name
+
+            if last_name.endswith('/1') and this_name.endswith('/2'):
+                if last_name[:-2] == this_name[:2] and len(last_name) > 2:
+                    is_paired = True
+            elif last_name == this_name and last_name:   # SRR stuff, bleah
+                is_paired = True
+        
+        if is_paired:
             offsets = [last_offset, offset]
-            # leave cdbg_ids alone...
+            # leave cdbg_ids alone... will be cleared next.
+            #print(last_name, this_name)
+            n_paired_reads += 1
         else:
             offsets = [offset]
             cdbg_ids = set()
@@ -120,7 +133,8 @@ def main(argv=sys.argv[1:]):
         last_offset = offset
 
     db.commit()
-    notify(f"{total_bp:5.2e} bp in reads")
+    notify(f"{total_bp:5.2e} bp in {n} reads")
+    notify(f"{n_paired_reads} paired of {n} reads")
     notify(f"found reads for {len(total_cdbg_ids)} cDBG IDs")
     assert max(total_cdbg_ids) + 1 == len(total_cdbg_ids)
 
