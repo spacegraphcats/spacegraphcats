@@ -228,7 +228,7 @@ def test_dory_characterize_catlas_regions(location):
     copy_dory_subset()
 
     # run characterize_catlas_regions
-    args = "dory_k21_r1 dory_k1_r1.vec".split()
+    args = "dory_k21_r1 dory_k1_r1.vec --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert characterize_catlas_regions.main(args) == 0
 
 
