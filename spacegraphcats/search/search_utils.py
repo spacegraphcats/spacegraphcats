@@ -191,6 +191,7 @@ def get_contigs_by_cdbg(contigs_filename, cdbg_ids):
     info_filename = contigs_filename + ".info.csv"
     reads_grabber = GrabBGZF_Random(contigs_filename)
 
+    found = set()
     with open(info_filename, "rt") as info_fp:
         r = csv.DictReader(info_fp)
 
@@ -202,8 +203,39 @@ def get_contigs_by_cdbg(contigs_filename, cdbg_ids):
                 record, xx = reads_grabber.get_sequence_at(offset)
                 assert xx == offset
                 assert int(record.name) == contig_id, (record.name, contig_id)
+                assert int(record.name) not in found, record.name
+                found.add(int(record.name))
 
                 yield record
+
+
+def get_contigs_by_cdbg_sqlite(db, cdbg_ids):
+    """
+    Given a list of cDBG IDs, retrieve the actual contig sequences
+    corresponding to them from a sqlite database created by
+    sort_bcalm_unitigs.
+    """
+    cursor = db.cursor()
+
+    for cdbg_id in cdbg_ids:
+        cdbg_id = int(cdbg_id)
+        cursor.execute("SELECT sequence FROM sequences WHERE id=?", (cdbg_id,))
+
+        results = cursor.fetchall()
+        assert len(results) == 1
+        (seq,) = results[0]
+        yield Record(str(cdbg_id), seq)
+
+
+def contigs_iter_sqlite(contigs_db):
+    """
+    Yield all the sequences in the contigs database.
+    """
+    cursor = contigs_db.cursor()
+
+    cursor.execute("SELECT id, sequence FROM sequences")
+    for ident, sequence in cursor:
+        yield Record(str(ident), sequence)
 
 
 ### MPHF stuff

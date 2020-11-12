@@ -39,15 +39,13 @@ def test_build_and_search():
 
     conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
     target = "search"
-    status = run_snakemake(
-        conf, verbose=True, outdir=_tempdir, extra_args=[target]
-    )
+    status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
     assert status == 0
 
     output_files = [
         "twofoo-short_k31/bcalm.unitigs.fa",
         "twofoo-short_k31_r1/catlas.csv",
-        "twofoo-short_k31_r1/contigs.fa.gz",
+        "twofoo-short_k31_r1/contigs.fa.gz.mphf",
         "twofoo-short_k31_r1_search_oh0/results.csv",
     ]
 
@@ -118,7 +116,9 @@ def test_check_md5():
 @pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_catlas_vs_contigs():
     global _tempdir
+    import sqlite3
 
+    cdbg_prefix = os.path.join(_tempdir, "twofoo-short_k31")
     catlas_prefix = os.path.join(_tempdir, "twofoo-short_k31_r1")
     catlas = CAtlas(catlas_prefix)
     print("loaded {} nodes from catlas {}", len(catlas), catlas_prefix)
@@ -129,8 +129,11 @@ def test_check_catlas_vs_contigs():
     print(f"root cdbg nodes: {len(root_cdbg_nodes)}")
 
     cdbg_id_set = set()
-    for record in screed.open(f"{catlas_prefix}/contigs.fa.gz"):
-        cdbg_id_set.add(int(record.name))
+    db = sqlite3.connect(f"{cdbg_prefix}/bcalm.unitigs.db")
+    cursor = db.cursor()
+    cursor.execute("SELECT id FROM sequences")
+    for (record_id,) in cursor:
+        cdbg_id_set.add(record_id)
 
     print(f"cdbg ID set: {len(cdbg_id_set)}")
 

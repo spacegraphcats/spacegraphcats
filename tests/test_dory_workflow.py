@@ -1,20 +1,25 @@
 import os.path
 import shutil
+import glob
+import hashlib
+import gzip
+import sqlite3
+
 import screed
 import sourmash
-import glob
 
 from . import pytest_utils
 from .pytest_utils import pkg_file, relative_file
 
 from spacegraphcats.catlas import catlas
-from spacegraphcats.cdbg import index_cdbg_by_kmer
+from spacegraphcats.cdbg import index_cdbg_by_kmer, MPHF_KmerIndex
 from spacegraphcats.search import query_by_sequence
 from spacegraphcats.search import characterize_catlas_regions
 from spacegraphcats.search import extract_unassembled_nodes
 from spacegraphcats.search import evaluate_overhead
 from spacegraphcats.search import catlas_info
 from spacegraphcats.search import extract_contigs
+from spacegraphcats.search import extract_contigs_cdbg
 from spacegraphcats.search import estimate_query_abundance
 from spacegraphcats.search import extract_nodes_by_shadow_ratio
 from spacegraphcats.utils import make_bgzf
@@ -25,11 +30,15 @@ from spacegraphcats.search import query_by_hashval
 from spacegraphcats.search import index_cdbg_by_multifasta
 from spacegraphcats.search import query_multifasta_by_sig
 from spacegraphcats.search import extract_cdbg_by_multifasta
+from spacegraphcats.search import search_utils
 
 
 def copy_dory_catlas():
     testdata = pkg_file("tests/test-data/catlas.dory_k21_r1")
     shutil.copytree(testdata, "./dory_k21_r1")
+
+    testdata = pkg_file("tests/test-data/catlas.dory_k21")
+    shutil.copytree(testdata, "./dory_k21")
 
 
 def copy_dory_catlas_search():
@@ -108,6 +117,10 @@ def test_dory_query_workflow(location):
 
     assert sort_bcalm_unitigs.main(args) == 0
 
+    db = sqlite3.connect("dory_k21/bcalm.unitigs.db")
+    all_seqs = list(search_utils.contigs_iter_sqlite(db))
+    assert len(all_seqs) == 736, len(all_seqs)
+
     # convert the bcalm file to gxt
     args = [
         "-P",
@@ -120,6 +133,16 @@ def test_dory_query_workflow(location):
 
     assert bcalm_to_gxt2.main(args) == 0
 
+    db = sqlite3.connect("dory_k21/bcalm.unitigs.db")
+    all_seqs = list(search_utils.contigs_iter_sqlite(db))
+    assert len(all_seqs) == 736, len(all_seqs)
+
+    with open("dory_k21_r1/cdbg.gxt", "rb") as fp:
+        data = fp.read()
+    m = hashlib.md5()
+    m.update(data)
+    assert m.hexdigest() == "79d74806263900d54078eced695ec193", m.hexdigest()
+
     # build catlas
     args = pytest_utils.Args()
     args.no_checkpoint = True
@@ -130,12 +153,19 @@ def test_dory_query_workflow(location):
     assert catlas.main(args) == 0
 
     # make k-mer search index
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     print("** running index_cdbg_by_kmer")
     assert index_cdbg_by_kmer.main(args) == 0
 
+    # check that we get the kmer -> cDBG assignments we expect
+    kmer_idx = MPHF_KmerIndex.from_catlas_directory("dory_k21_r1")
+    assert kmer_idx.table[10218271035842461694] == 118
+    assert kmer_idx.table[8436068710919520258] == 118
+    assert kmer_idx.table[13994045974119358468] == 118
+    assert kmer_idx.table[11971930231572094512] == 187
+
     # do search!!
-    args = "dory_k21_r1 dory_k21_r1_search_oh0 --query dory-head.fa -k 21".split()
+    args = "dory_k21_r1 dory_k21_r1_search_oh0 --query dory-head.fa -k 21 --contigs-db dory_k21/bcalm.unitigs.db".split()
     try:
         assert query_by_sequence.main(args) == 0
     except SystemExit as e:
@@ -150,7 +180,11 @@ def test_dory_query_workflow(location):
     assert os.path.exists(output_path + "dory-head.fa.contigs.sig")
     assert os.path.exists(output_path + "results.csv")
 
-    with open(output_path + "results.csv") as fp:
+    with gzip.open(output_path + "dory-head.fa.cdbg_ids.txt.gz", "rt") as fp:
+        match_ids = [x.strip() for x in fp]
+        assert match_ids == ["118", "187"]
+
+    with open(output_path + "results.csv", "rt") as fp:
         lines = fp.readlines()
         assert len(lines) == 2
 
@@ -176,12 +210,12 @@ def test_dory_search_nomatch(location):
     shutil.copyfile(testdata, "random-query.fa")
 
     # make k-mer search index
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     print("** running index_cdbg_by_kmer")
     assert index_cdbg_by_kmer.main(args) == 0
 
     # do search!!
-    args = "dory_k21_r1 dory_k21_r1_search_oh0 --query random-query.fa -k 21".split()
+    args = "dory_k21_r1 dory_k21_r1_search_oh0 --query random-query.fa -k 21 --contigs-db dory_k21/bcalm.unitigs.db".split()
     try:
         assert query_by_sequence.main(args) == 0
     except SystemExit as e:
@@ -195,7 +229,7 @@ def test_dory_characterize_catlas_regions(location):
     copy_dory_subset()
 
     # run characterize_catlas_regions
-    args = "dory_k21_r1 dory_k1_r1.vec".split()
+    args = "dory_k21_r1 dory_k1_r1.vec --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert characterize_catlas_regions.main(args) == 0
 
 
@@ -205,11 +239,11 @@ def test_dory_extract_unassembled_nodes(location):
     copy_dory_head()
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # run extract_unassembled_regions
-    args = "dory_k21_r1 dory-head.fa dory.regions -k 21".split()
+    args = "dory_k21_r1 dory-head.fa dory.regions -k 21 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert extract_unassembled_nodes.main(args) == 0
 
 
@@ -229,9 +263,10 @@ def test_dory_extract_contigs(location):
     copy_dory_head()
 
     # run extract_contigs
-    print("running extract_info")
+    print("running extract_contigs")
     args = [
-        "dory_k21_r1",
+        "--contigs-db",
+        "dory_k21/bcalm.unitigs.db",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.contigs.fa.gz",
@@ -242,12 +277,39 @@ def test_dory_extract_contigs(location):
 
 
 @pytest_utils.in_tempdir
+def test_dory_extract_contigs_cdbg(location):
+    copy_dory_catlas()
+    copy_dory_catlas_search()
+    copy_dory_head()
+
+    # make k-mer search index - FIXTURE
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
+    assert index_cdbg_by_kmer.main(args) == 0
+
+    # run extract_contigs
+    print("running extract_contigs_cdbg")
+    args = [
+        "dory_k21_r1",
+        "dory-head.fa",
+        "--contigs-db",
+        "dory_k21/bcalm.unitigs.db",
+        "-o",
+        "dory_k21_r1_search_oh0/dory-head.fa.matches.contigs.fa.gz",
+        "-k",
+        "21",
+    ]
+    assert extract_contigs_cdbg.main(args) == 0
+
+    assert os.path.exists("dory_k21_r1_search_oh0/dory-head.fa.matches.contigs.fa.gz")
+
+
+@pytest_utils.in_tempdir
 def test_dory_make_bgzf(location):
     copy_dory_subset()
 
     # run make_bgzf
     print("** running make_bgzf")
-    args = ["dory-subset.fa", "-o", relative_file("dory/dory.reads.bgz")]
+    args = ["dory-subset.fa", "-o", "dory.reads.bgz"]
     assert make_bgzf.main(args) == 0
 
 
@@ -258,11 +320,11 @@ def test_dory_label_cdbg(location):
 
     # run make_bgzf - FIXTURE
     print("** running make_bgzf")
-    args = ["dory-subset.fa", "-o", relative_file("dory/dory.reads.bgz")]
+    args = ["dory-subset.fa", "-o", "dory.reads.bgz"]
     assert make_bgzf.main(args) == 0
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # run label_cdbg
@@ -271,7 +333,7 @@ def test_dory_label_cdbg(location):
         "-k",
         "21",
         "dory_k21_r1",
-        relative_file("dory/dory.reads.bgz"),
+        "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.labels2",
     ]
     assert label_cdbg2.main(args) == 0
@@ -285,11 +347,11 @@ def test_dory_extract_reads(location):
 
     # run make_bgzf - FIXTURE
     print("** running make_bgzf")
-    args = ["dory-subset.fa", "-o", relative_file("dory/dory.reads.bgz")]
+    args = ["dory-subset.fa", "-o", "dory.reads.bgz"]
     assert make_bgzf.main(args) == 0
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # run label_cdbg - FIXTURE
@@ -298,7 +360,7 @@ def test_dory_extract_reads(location):
         "-k",
         "21",
         "dory_k21_r1",
-        relative_file("dory/dory.reads.bgz"),
+        "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.labels2",
     ]
     assert label_cdbg2.main(args) == 0
@@ -306,7 +368,7 @@ def test_dory_extract_reads(location):
     # run extract_reads
     print("** running extract_reads")
     args = [
-        relative_file("dory/dory.reads.bgz"),
+        "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.labels2",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
@@ -329,11 +391,11 @@ def test_dory_extract_reads_fq(location):
 
     # run make_bgzf - FIXTURE
     print("** running make_bgzf")
-    args = ["dory-subset.fq", "-o", relative_file("dory/dory.reads.bgz")]
+    args = ["dory-subset.fq", "-o", "dory.reads.bgz"]
     assert make_bgzf.main(args) == 0
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # run label_cdbg - FIXTURE
@@ -342,7 +404,7 @@ def test_dory_extract_reads_fq(location):
         "-k",
         "21",
         "dory_k21_r1",
-        relative_file("dory/dory.reads.bgz"),
+        "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.labels",
     ]
     assert label_cdbg2.main(args) == 0
@@ -350,7 +412,7 @@ def test_dory_extract_reads_fq(location):
     # run extract_reads
     print("** running extract_reads")
     args = [
-        relative_file("dory/dory.reads.bgz"),
+        "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.labels",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
@@ -377,6 +439,8 @@ def test_dory_evaluate_overhead(location):
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
         "xyz",
+        "--contigs-db",
+        "dory_k21/bcalm.unitigs.db",
     ]
     print("** running evaluate_overhead")
     assert evaluate_overhead.main(args) == 0
@@ -388,7 +452,7 @@ def test_dory_estimate_query_abundance(location):
     copy_dory_head()
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # calculate query abundances
@@ -410,10 +474,10 @@ def test_dory_query_by_hashval(location):
     copy_dory_catlas()
 
     # index by hashval
-    args = "-k 31 dory_k21_r1/contigs.fa.gz dory_k21_r1_mh.pickle"
+    args = "-k 31 dory_k21/bcalm.unitigs.db dory_k21_r1_mh.pickle"
     assert index_cdbg_by_minhash.main(args.split()) == 0
 
-    args = "-k 31 dory_k21_r1 dory_k21_r1_mh.pickle dory-k31-hashval-queries.txt dory_k21_r1_hashval_k31"
+    args = "-k 31 dory_k21_r1 dory_k21_r1_mh.pickle dory-k31-hashval-queries.txt dory_k21_r1_hashval_k31 --contigs-db dory_k21/bcalm.unitigs.db"
     assert query_by_hashval.main(args.split()) == 0
     assert os.path.exists("dory_k21_r1_hashval_k31/hashval_results.csv")
 
@@ -425,7 +489,7 @@ def test_dory_multifasta_query(location):
     copy_dory_sig()
 
     # make k-mer search index - FIXTURE
-    args = "-k 21 dory_k21_r1".split()
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
     # index by multifasta
@@ -433,7 +497,7 @@ def test_dory_multifasta_query(location):
     args = "dory_k21_r1 dory_k21_r1_multifasta/multifasta.pickle --query dory-head.fa -k 21"
     assert index_cdbg_by_multifasta.main(args.split()) == 0
 
-    args = "-k 21 --scaled 100 dory_k21_r1/contigs.fa.gz dory_k21_r1_multifasta/hashval.pickle"
+    args = "-k 21 --scaled 100 dory_k21/bcalm.unitigs.db dory_k21_r1_multifasta/hashval.pickle"
     assert index_cdbg_by_minhash.main(args.split()) == 0
 
     args = "--hashvals dory_k21_r1_multifasta/hashval.pickle --multi-idx dory_k21_r1_multifasta/multifasta.pickle  --query-sig dory-subset.fq.sig --output dory_k21_r1_multifasta/query-results.csv -k 21 --scaled 100"
@@ -452,6 +516,6 @@ def test_dory_shadow_extract(location):
     copy_dory_catlas()
 
     # make k-mer search index
-    args = "dory_k21_r1 shadow_out".split()
+    args = "dory_k21_r1 shadow_out --contigs-db dory_k21/bcalm.unitigs.db".split()
     print("** running extract_nodes_by_shadow_ratio")
     assert extract_nodes_by_shadow_ratio.main(args) == 0

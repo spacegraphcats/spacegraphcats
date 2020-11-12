@@ -18,8 +18,8 @@ def test_catlas_info():
         output, sys.stdout = sys.stdout, old_out
 
     expected = """\
-top catlas node 731 has 433 children.
-571 layer 1 catlas nodes, corresponding to 736 cDBG nodes.
+top catlas node 744 has 433 children.
+580 layer 1 catlas nodes, corresponding to 736 cDBG nodes.
 Sequential graph with 736 nodes
 736 nodes, 714 arcs, 1.0 average.
 """.splitlines()
@@ -35,13 +35,13 @@ class Test_LoadCatlas(object):
         self.catlas = CAtlas(catlas_prefix)
 
     def test_root(self):
-        assert self.catlas.root == 731
+        assert self.catlas.root == 744
 
     def test_levels(self):
-        assert len(self.catlas.levels) == 732
+        assert len(self.catlas.levels) == 745
 
     def test_len(self):
-        assert len(self.catlas) == 731
+        assert len(self.catlas) == 744
 
     def test_shadow_sizes(self):
         total_shadow_size = 0
