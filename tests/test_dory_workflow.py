@@ -264,7 +264,7 @@ def test_dory_extract_contigs(location):
     # run extract_contigs
     print("running extract_info")
     args = [
-        "dory_k21_r1",
+        "--contigs-db", "dory_k21/bcalm.unitigs.db",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.contigs.fa.gz",
