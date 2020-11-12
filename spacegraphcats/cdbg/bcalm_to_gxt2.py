@@ -323,8 +323,6 @@ def main(argv):
     out_sig = sourmash.SourmashSignature(out_mh, filename=args.contigs_out)
     sourmash.save_signatures([out_sig], open(args.contigs_out + ".sig", "wt"))
 
-    cursor.execute("CREATE UNIQUE INDEX sequence_idx ON sequences (id)")
-
     sequences.close()
 
     return 0
