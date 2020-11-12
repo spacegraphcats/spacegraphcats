@@ -1,1 +1,0 @@
-['/Users/t/dev/spacegraphcats/spacegraphcats/search/query_by_sequence.py', 'dory_k21_r1', 'dory_k21_r1_search_oh0', '--query', '/Users/t/dev/spacegraphcats/data/dory-head.fa', '/Users/t/dev/spacegraphcats/data/random-query-nomatch.fa', '-k', '21', '--contigs-db', 'dory_k21/bcalm.unitigs.db']
