@@ -100,8 +100,6 @@ def main(args=sys.argv[1:]):
     print("ksize: {}".format(args.ksize))
     print("min_abund: {}".format(args.min_abund))
 
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
-
     catlas = CAtlas(args.catlas_prefix, load_sizefile=True, min_abund=args.min_abund)
     catlas.decorate_with_shadow_sizes()
 
