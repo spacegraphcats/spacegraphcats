@@ -38,3 +38,6 @@ strain_results
 .pytest_cache/*
 spacegraphcats/version.py
 .eggs
+bcalm_to_gxt.log
+commands.log
+command.txt

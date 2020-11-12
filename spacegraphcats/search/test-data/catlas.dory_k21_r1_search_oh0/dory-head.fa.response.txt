@@ -1,3 +1,0 @@
-sum_cont relative_cont relative_overhead sum_cont2 sum_oh catlas_id
-834 0.5113427345187002 0.0 834 0 150
-1631 1.0 0.0 797 0 26

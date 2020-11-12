@@ -7,19 +7,18 @@ import argparse
 import os
 import sys
 import gzip
+import sqlite3
 
-import screed
+from spacegraphcats.search import search_utils
 
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
-    p.add_argument("catlas_prefix", help="catlas prefix")
+    p.add_argument("--contigs-db", help="contigs sqlite database")
     p.add_argument("node_list_file", help="a cdbg_ids.txt.gz file")
     p.add_argument("-o", "--output")
     p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args(argv)
-
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
     if not args.output:
         outname = args.node_list_file + ".contigs.fa.gz"
@@ -32,7 +31,7 @@ def main(argv=sys.argv[1:]):
         outfp = open(outname, "wt")
 
     with gzip.open(args.node_list_file, "rt") as fp:
-        cdbg_shadow = set([int(x.strip()) for x in fp])
+        cdbg_shadow = set([int(x.strip()) for x in fp if x.strip()])
 
     if not len(cdbg_shadow):
         print("no contigs to extract; exiting.")
@@ -41,8 +40,12 @@ def main(argv=sys.argv[1:]):
     total_bp = 0
     total_seqs = 0
 
-    print("extracting contigs to {}.".format(outname))
-    for n, record in enumerate(screed.open(contigs)):
+    print(f"reading contigs from sqlite DB {args.contigs_db}")
+    print(f"extracting contigs to {outname}.")
+
+    sqlite_db = sqlite3.connect(args.contigs_db)
+
+    for n, record in enumerate(search_utils.contigs_iter_sqlite(sqlite_db)):
         if n % 10000 == 0:
             offset_f = total_seqs / len(cdbg_shadow)
             print(

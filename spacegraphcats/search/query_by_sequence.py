@@ -12,6 +12,7 @@ import gzip
 import os
 import sys
 import time
+import sqlite3
 
 import screed
 import sourmash
@@ -48,7 +49,7 @@ class QueryOutput:
     def similarity(self):
         return self.query_sig.minhash.similarity(self.contigs_minhash)
 
-    def retrieve_contigs(self, contigs):
+    def retrieve_contigs(self, contigs_db):
         "extract contigs using cDBG shadow."
 
         # node list.
@@ -57,7 +58,7 @@ class QueryOutput:
         # walk through the contigs, retrieving.
         notify("extracting contigs...")
 
-        contigs_iter = search_utils.get_contigs_by_cdbg(contigs, self.shadow)
+        contigs_iter = search_utils.get_contigs_by_cdbg_sqlite(contigs_db, self.shadow)
         for n, record in enumerate(contigs_iter):
             if n and n % 10000 == 0:
                 offset_f = self.total_seq / len(self.shadow)
@@ -128,7 +129,8 @@ class QueryOutput:
         # write out cDBG IDs
         cdbg_listname = os.path.basename(q_name) + ".cdbg_ids.txt.gz"
         with gzip.open(os.path.join(outdir, cdbg_listname), "wt") as fp:
-            fp.write("\n".join([str(x) for x in sorted(self.shadow)]))
+            id_list = "\n".join([str(x) for x in sorted(self.shadow)])
+            print(id_list, file=fp)
 
         # write out catlas nodes
         frontier_listname = os.path.basename(q_name) + ".frontier.txt.gz"
@@ -184,6 +186,7 @@ class Query:
     def execute(self, catlas, kmer_idx):
         # construct dict cdbg_id -> # of query k-mers
         self.cdbg_match_counts = kmer_idx.count_cdbg_matches(self.kmers)
+        # (confirm that fewer k-mers are returned than the node size)
         for k, v in self.cdbg_match_counts.items():
             assert v <= kmer_idx.get_cdbg_size(k), k
 
@@ -276,6 +279,7 @@ def main(argv):
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
+    p.add_argument("--contigs-db", required=True)
     p.add_argument(
         "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
     )
@@ -317,13 +321,13 @@ def main(argv):
     notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
     catlas_name = os.path.basename(args.catlas_prefix.rstrip(("/")))
 
-    # find the contigs filename
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
-
     # ...and kmer index.
     ki_start = time.time()
     kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
     notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
+
+    # ...and contigs db
+    contigs_db = sqlite3.connect(args.contigs_db)
 
     # calculate the k-mer sizes for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)
@@ -365,7 +369,7 @@ def main(argv):
             continue
 
         q_output = query.execute(catlas, kmer_idx)
-        q_output.retrieve_contigs(contigs)
+        q_output.retrieve_contigs(contigs_db)
         notify("total time: {:.1f}s", time.time() - start_time)
 
         q_output.write(csv_writer, csvoutfp, outdir, args.catlas_prefix)

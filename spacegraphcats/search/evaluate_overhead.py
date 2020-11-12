@@ -6,11 +6,14 @@ import argparse
 import os
 import sys
 import gzip
+import sqlite3
+
 import khmer
 
 import screed
 
 from .catlas import CAtlas
+from spacegraphcats.search import search_utils
 
 
 def main(argv):
@@ -18,6 +21,7 @@ def main(argv):
     p.add_argument("catlas_prefix")
     p.add_argument("query")
     p.add_argument("cdbg_nodefile")
+    p.add_argument("--contigs-db", required=True)
 
     p.add_argument("-o", "--output", type=argparse.FileType("wt"))
     p.add_argument(
@@ -26,7 +30,7 @@ def main(argv):
     p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args(argv)
 
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
+    contigs_db = sqlite3.connect(args.contigs_db)
 
     assert args.output, "must specify -o"
     outfp = args.output
@@ -55,18 +59,9 @@ def main(argv):
     n_homogeneous = 0
     n_missing = 0
     bp_missing = 0
-    for n, record in enumerate(screed.open(contigs)):
-        if n % 10000 == 0:
-            offset_f = total_seqs / len(cdbg_nodes)
-            print(
-                "...at n {} ({:.1f}% of shadow)".format(total_seqs, offset_f * 100),
-                end="\r",
-            )
-
-        contig_id = int(record.name)
-        if contig_id not in cdbg_nodes:
-            continue
-
+    for n, record in enumerate(
+        search_utils.get_contigs_by_cdbg_sqlite(contigs_db, cdbg_nodes)
+    ):
         counts = bf.get_kmer_counts(record.sequence)
         if min(counts) == max(counts):
             n_homogeneous += 1

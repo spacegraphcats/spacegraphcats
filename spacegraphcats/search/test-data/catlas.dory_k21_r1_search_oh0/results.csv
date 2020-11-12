@@ -1,2 +1,0 @@
-query,containment,similarity,bp,contigs,ksize,num_query_kmers,best_containment,cdbg_min_overhead,catlas_min_overhead
-data/dory-head.fa,1.0,1.0,1671,2,21,1631,1.0,0.0,0.0
