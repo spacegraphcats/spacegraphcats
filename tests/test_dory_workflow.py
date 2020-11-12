@@ -19,6 +19,7 @@ from spacegraphcats.search import extract_unassembled_nodes
 from spacegraphcats.search import evaluate_overhead
 from spacegraphcats.search import catlas_info
 from spacegraphcats.search import extract_contigs
+from spacegraphcats.search import extract_contigs_cdbg
 from spacegraphcats.search import estimate_query_abundance
 from spacegraphcats.search import extract_nodes_by_shadow_ratio
 from spacegraphcats.utils import make_bgzf
@@ -262,7 +263,7 @@ def test_dory_extract_contigs(location):
     copy_dory_head()
 
     # run extract_contigs
-    print("running extract_info")
+    print("running extract_contigs")
     args = [
         "--contigs-db", "dory_k21/bcalm.unitigs.db",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
@@ -272,6 +273,31 @@ def test_dory_extract_contigs(location):
     assert extract_contigs.main(args) == 0
 
     assert os.path.exists("dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.contigs.fa.gz")
+
+
+@pytest_utils.in_tempdir
+def test_dory_extract_contigs_cdbg(location):
+    copy_dory_catlas()
+    copy_dory_catlas_search()
+    copy_dory_head()
+
+    # make k-mer search index - FIXTURE
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
+    assert index_cdbg_by_kmer.main(args) == 0
+
+    # run extract_contigs
+    print("running extract_contigs_cdbg")
+    args = [
+        "dory_k21_r1",
+        "dory-head.fa",
+        "--contigs-db", "dory_k21/bcalm.unitigs.db",
+        "-o",
+        "dory_k21_r1_search_oh0/dory-head.fa.matches.contigs.fa.gz",
+        '-k', '21'
+    ]
+    assert extract_contigs_cdbg.main(args) == 0
+
+    assert os.path.exists("dory_k21_r1_search_oh0/dory-head.fa.matches.contigs.fa.gz")
 
 
 @pytest_utils.in_tempdir

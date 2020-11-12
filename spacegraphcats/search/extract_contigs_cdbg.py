@@ -8,6 +8,7 @@ unitigs that contain the query k-mers.
 import argparse
 import os
 import sys
+import sqlite3
 
 import screed
 
@@ -16,18 +17,19 @@ from spacegraphcats.cdbg import hash_sequence
 from . import search_utils
 
 
-def main():
+def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("query")
+    p.add_argument("--contigs-db", required=True)
     p.add_argument(
         "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
     )
     p.add_argument("-o", "--output", type=argparse.FileType("wt"))
     p.add_argument("-v", "--verbose", action="store_true")
-    args = p.parse_args()
+    args = p.parse_args(argv)
 
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
+    contigs_db = sqlite3.connect(args.contigs_db)
 
     # load k-mer MPHF index
     kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
@@ -42,8 +44,14 @@ def main():
     for record in screed.open(args.query):
         query_kmers.update(hash_sequence(record.sequence, args.ksize))
 
+    query_kmers = list(query_kmers)
+
     # find the list of cDBG nodes that contain at least one query k-mer
     cdbg_match_counts = kmer_idx.count_cdbg_matches(query_kmers)
+
+    if not cdbg_match_counts:
+        print("No k-mer matches!? (Check that you're using the right ksize.")
+        return -1
 
     # calculate number of nodes found -
     cdbg_shadow = set(cdbg_match_counts.keys())
@@ -74,19 +82,7 @@ def main():
     total_seqs = 0
 
     print("extracting contigs to {}.".format(outname))
-    assert 0 # @CTB
-    for n, record in enumerate(screed.open(contigs)):
-        if n % 10000 == 0:
-            offset_f = total_seqs / len(cdbg_shadow)
-            print(
-                "...at n {} ({:.1f}% of shadow)".format(total_seqs, offset_f * 100),
-                end="\r",
-            )
-
-        contig_id = int(record.name)
-        if contig_id not in cdbg_shadow:
-            continue
-
+    for n, record in enumerate(search_utils.get_contigs_by_cdbg_sqlite(contigs_db, cdbg_shadow)):
         outfp.write(">{}\n{}\n".format(record.name, record.sequence))
 
         total_bp += len(record.sequence)
@@ -95,8 +91,8 @@ def main():
     print("")
     print("fetched {} contigs, {} bp matching node list.".format(total_seqs, total_bp))
 
-    sys.exit(0)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
