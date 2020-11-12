@@ -207,7 +207,7 @@ def main(argv):
     parser.add_argument("sqlite_db")
     parser.add_argument("mapping_pickle")
     parser.add_argument("gxt_out")
-    parser.add_argument("contigs_out")
+    parser.add_argument("contigs_prefix")
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument(
         "-P",
@@ -273,29 +273,18 @@ def main(argv):
     aliases = {x: i for i, x in enumerate(sorted(all_nodes))}
     n = len(aliases)
 
-    # write out sequences & compute offsets in new file
-    print(f"outputting unitigs to BGZF file '{args.contigs_out}'...")
-    contigsfp = bgzf.open(args.contigs_out, "wb")
-    offsets = {}
-    kv_list = sorted(aliases.items(), key=lambda x: x[1])
-    for x, i in kv_list:
-        offsets[x] = contigsfp.tell()
-        contigsfp.write(">{}\n{}\n".format(i, sequences[x]))
+    # calculate sourmash sig of output & renumber in the sqlite database
+    print(f"calculating sourmash signature of output unitigs")
 
-        sequence = sequences[x]
-        out_mh.add_sequence(sequence)
-    contigsfp.close()
-
-    print("... done! output {} unitigs".format(n))
-
-    # renumber in the sqlite database too
     c2 = db.cursor()
-    cursor.execute("SELECT offset FROM sequences ORDER BY min_hashval")
-    for new_key, (offset,) in enumerate(cursor):
+    cursor.execute("SELECT sequence, offset FROM sequences ORDER BY min_hashval")
+    for new_key, (sequence, offset,) in enumerate(cursor):
         c2.execute("UPDATE sequences SET id=? WHERE offset=?", (new_key, offset))
+        out_mh.add_sequence(sequence)
         assert c2.rowcount == 1
 
     db.commit()
+
     # start the gxt file by writing the number of nodes (unitigs))
     print(f"Outputting graph information to '{args.gxt_out}'...")
     gxtfp = open(args.gxt_out, "wt")
@@ -310,18 +299,18 @@ def main(argv):
 
     print("...done! {} vertices, {} edges".format(n, n_edges))
 
-    info_filename = args.contigs_out + ".info.csv"
+    info_filename = args.contigs_prefix + ".info.csv"
     info_fp = open(info_filename, "wt")
 
     info_fp.write("contig_id,offset,mean_abund,n_kmers\n")
     for v, i in aliases.items():
         info_fp.write(
-            "{},{},{:.3f},{}\n".format(i, offsets[v], mean_abunds[v], sizes[v])
+            "{},{},{:.3f},{}\n".format(i, 0, mean_abunds[v], sizes[v])
         )
 
     # output sourmash signature for output contigs
-    out_sig = sourmash.SourmashSignature(out_mh, filename=args.contigs_out)
-    sourmash.save_signatures([out_sig], open(args.contigs_out + ".sig", "wt"))
+    out_sig = sourmash.SourmashSignature(out_mh, filename=args.contigs_prefix)
+    sourmash.save_signatures([out_sig], open(args.contigs_prefix + ".sig", "wt"))
 
     sequences.close()
 

@@ -194,11 +194,6 @@ def main(argv):
     array_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.indices")
     sizes_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.sizes")
 
-    contigs_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz")
-
-    def create_records_iter_2():
-        return screed.open(contigs_filename)
-
     sqlite_db = sqlite3.connect(a.contigs_db)
 
     def create_records_iter():
