@@ -485,6 +485,6 @@ def test_dory_shadow_extract(location):
     copy_dory_catlas()
 
     # make k-mer search index
-    args = "dory_k21_r1 shadow_out".split()
+    args = "dory_k21_r1 shadow_out --contigs-db dory_k21/bcalm.unitigs.db".split()
     print("** running extract_nodes_by_shadow_ratio")
     assert extract_nodes_by_shadow_ratio.main(args) == 0

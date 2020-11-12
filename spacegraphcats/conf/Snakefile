@@ -463,13 +463,16 @@ rule shadow_ratio:
 
 rule extract_by_shadow_ratio_rule:
     input:
-        f"{catlas_dir}/first_doms.txt",
-        f"{catlas_dir}/catlas.csv",
+        doms = f"{catlas_dir}/first_doms.txt",
+        catlas = f"{catlas_dir}/catlas.csv",
+        contigs_db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         catlas_dir + ".shadow.{shadow_ratio_maxsize}.fa"
     shell: """
         {python} -m spacegraphcats.search.extract_nodes_by_shadow_ratio \
-            --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}
+            --contigs-db {input.contigs_db} \
+            --maxsize={wildcards.shadow_ratio_maxsize} \
+            {catlas_dir} {output}
     """
 
 ### query by signature => gene
