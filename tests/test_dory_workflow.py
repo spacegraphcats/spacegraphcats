@@ -467,7 +467,7 @@ def test_dory_multifasta_query(location):
     args = "dory_k21_r1 dory_k21_r1_multifasta/multifasta.pickle --query dory-head.fa -k 21"
     assert index_cdbg_by_multifasta.main(args.split()) == 0
 
-    args = "-k 21 --scaled 100 dory_k21_r1/contigs.fa.gz dory_k21_r1_multifasta/hashval.pickle"
+    args = "-k 21 --scaled 100 dory_k21/bcalm.unitigs.db dory_k21_r1_multifasta/hashval.pickle"
     assert index_cdbg_by_minhash.main(args.split()) == 0
 
     args = "--hashvals dory_k21_r1_multifasta/hashval.pickle --multi-idx dory_k21_r1_multifasta/multifasta.pickle  --query-sig dory-subset.fq.sig --output dory_k21_r1_multifasta/query-results.csv -k 21 --scaled 100"
