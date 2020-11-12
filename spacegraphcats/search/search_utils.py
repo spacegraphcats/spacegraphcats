@@ -219,11 +219,11 @@ def get_contigs_by_cdbg_sqlite(db, cdbg_ids):
 
     for cdbg_id in cdbg_ids:
         cdbg_id = int(cdbg_id)
-        cursor.execute('SELECT sequence FROM sequences WHERE id=?', (cdbg_id,))
+        cursor.execute("SELECT sequence FROM sequences WHERE id=?", (cdbg_id,))
 
         results = cursor.fetchall()
         assert len(results) == 1
-        seq, = results[0]
+        (seq,) = results[0]
         yield Record(str(cdbg_id), seq)
 
 
@@ -233,7 +233,7 @@ def contigs_iter_sqlite(contigs_db):
     """
     cursor = contigs_db.cursor()
 
-    cursor.execute('SELECT id, sequence FROM sequences')
+    cursor.execute("SELECT id, sequence FROM sequences")
     for ident, sequence in cursor:
         yield Record(str(ident), sequence)
 

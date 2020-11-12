@@ -58,8 +58,7 @@ class QueryOutput:
         # walk through the contigs, retrieving.
         notify("extracting contigs...")
 
-        contigs_iter = search_utils.get_contigs_by_cdbg_sqlite(contigs_db,
-                                                               self.shadow)
+        contigs_iter = search_utils.get_contigs_by_cdbg_sqlite(contigs_db, self.shadow)
         for n, record in enumerate(contigs_iter):
             if n and n % 10000 == 0:
                 offset_f = self.total_seq / len(self.shadow)

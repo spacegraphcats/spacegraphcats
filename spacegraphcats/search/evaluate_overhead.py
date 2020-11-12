@@ -59,7 +59,9 @@ def main(argv):
     n_homogeneous = 0
     n_missing = 0
     bp_missing = 0
-    for n, record in enumerate(search_utils.get_contigs_by_cdbg_sqlite(contigs_db, cdbg_nodes)):
+    for n, record in enumerate(
+        search_utils.get_contigs_by_cdbg_sqlite(contigs_db, cdbg_nodes)
+    ):
         counts = bf.get_kmer_counts(record.sequence)
         if min(counts) == max(counts):
             n_homogeneous += 1

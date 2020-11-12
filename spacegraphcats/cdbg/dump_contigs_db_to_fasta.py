@@ -15,7 +15,7 @@ def main(argv):
 
     db = sqlite3.connect(args.sqlite_db)
     for record in search_utils.contigs_iter_sqlite(db):
-        print(f'>{record.name}\n{record.sequence}')
+        print(f">{record.name}\n{record.sequence}")
 
     return 0
 

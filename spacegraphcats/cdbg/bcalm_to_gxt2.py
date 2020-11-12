@@ -216,7 +216,7 @@ def main(argv):
         help="don't remove low abundance pendants",
     )
     parser.add_argument("-a", "--abundance", nargs="?", type=float, default=1.1)
-    parser.add_argument("--randomize", help="randomize cDBG order") # @CTB
+    parser.add_argument("--randomize", help="randomize cDBG order")  # @CTB
     args = parser.parse_args(argv)
 
     trim = not args.pendants
@@ -290,7 +290,7 @@ def main(argv):
 
     # renumber in the sqlite database too
     c2 = db.cursor()
-    cursor.execute('SELECT offset FROM sequences ORDER BY min_hashval')
+    cursor.execute("SELECT offset FROM sequences ORDER BY min_hashval")
     for new_key, (offset,) in enumerate(cursor):
         c2.execute("UPDATE sequences SET id=? WHERE offset=?", (new_key, offset))
         assert c2.rowcount == 1

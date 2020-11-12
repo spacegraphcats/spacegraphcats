@@ -117,7 +117,7 @@ def test_dory_query_workflow(location):
 
     assert sort_bcalm_unitigs.main(args) == 0
 
-    db = sqlite3.connect('dory_k21/bcalm.unitigs.db')
+    db = sqlite3.connect("dory_k21/bcalm.unitigs.db")
     all_seqs = list(search_utils.contigs_iter_sqlite(db))
     assert len(all_seqs) == 736, len(all_seqs)
 
@@ -133,7 +133,7 @@ def test_dory_query_workflow(location):
 
     assert bcalm_to_gxt2.main(args) == 0
 
-    db = sqlite3.connect('dory_k21/bcalm.unitigs.db')
+    db = sqlite3.connect("dory_k21/bcalm.unitigs.db")
     all_seqs = list(search_utils.contigs_iter_sqlite(db))
     assert len(all_seqs) == 736, len(all_seqs)
 
@@ -181,8 +181,8 @@ def test_dory_query_workflow(location):
     assert os.path.exists(output_path + "results.csv")
 
     with gzip.open(output_path + "dory-head.fa.cdbg_ids.txt.gz", "rt") as fp:
-        match_ids = [ x.strip() for x in fp ]
-        assert match_ids == ['118', '187']
+        match_ids = [x.strip() for x in fp]
+        assert match_ids == ["118", "187"]
 
     with open(output_path + "results.csv", "rt") as fp:
         lines = fp.readlines()
@@ -265,7 +265,8 @@ def test_dory_extract_contigs(location):
     # run extract_contigs
     print("running extract_contigs")
     args = [
-        "--contigs-db", "dory_k21/bcalm.unitigs.db",
+        "--contigs-db",
+        "dory_k21/bcalm.unitigs.db",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.contigs.fa.gz",
@@ -290,10 +291,12 @@ def test_dory_extract_contigs_cdbg(location):
     args = [
         "dory_k21_r1",
         "dory-head.fa",
-        "--contigs-db", "dory_k21/bcalm.unitigs.db",
+        "--contigs-db",
+        "dory_k21/bcalm.unitigs.db",
         "-o",
         "dory_k21_r1_search_oh0/dory-head.fa.matches.contigs.fa.gz",
-        '-k', '21'
+        "-k",
+        "21",
     ]
     assert extract_contigs_cdbg.main(args) == 0
 
@@ -436,7 +439,8 @@ def test_dory_evaluate_overhead(location):
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
         "xyz",
-        "--contigs-db", "dory_k21/bcalm.unitigs.db"
+        "--contigs-db",
+        "dory_k21/bcalm.unitigs.db",
     ]
     print("** running evaluate_overhead")
     assert evaluate_overhead.main(args) == 0

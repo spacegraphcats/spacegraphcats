@@ -78,12 +78,9 @@ class MPHF_KmerIndex(object):
 
         return node_kmer_sizes
 
-    def count_cdbg_matches(self, query_kmers,
-                           verbose=True,
-                           require_exist=False):
+    def count_cdbg_matches(self, query_kmers, verbose=True, require_exist=False):
         "Return a dictionary containing cdbg_id -> # of matches in query_kmers"
-        return self.table.get_unique_values(query_kmers,
-                                            require_exist=require_exist)
+        return self.table.get_unique_values(query_kmers, require_exist=require_exist)
 
     def count_catlas_matches(self, cdbg_matches, catlas):
         """ """
@@ -198,10 +195,12 @@ def main(argv):
     sizes_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.sizes")
 
     contigs_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz")
+
     def create_records_iter_2():
         return screed.open(contigs_filename)
 
     sqlite_db = sqlite3.connect(a.contigs_db)
+
     def create_records_iter():
         from spacegraphcats.search import search_utils
 

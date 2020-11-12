@@ -39,9 +39,7 @@ def test_build_and_search():
 
     conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
     target = "search"
-    status = run_snakemake(
-        conf, verbose=True, outdir=_tempdir, extra_args=[target]
-    )
+    status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
     assert status == 0
 
     output_files = [

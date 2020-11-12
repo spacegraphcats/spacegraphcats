@@ -97,7 +97,7 @@ if __name__ == "__main__":
     outfp = open(outname, "wt")
 
     print("reading contig sizes")
-    assert 0 # @CTB
+    assert 0  # @CTB
     contigsfile = os.path.join(args.catlas_prefix, "contigs.fa.gz")
     node_sizes = {}
     for n, record in enumerate(screed.open(contigsfile)):

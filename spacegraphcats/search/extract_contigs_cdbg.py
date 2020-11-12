@@ -82,7 +82,9 @@ def main(argv=sys.argv[1:]):
     total_seqs = 0
 
     print("extracting contigs to {}.".format(outname))
-    for n, record in enumerate(search_utils.get_contigs_by_cdbg_sqlite(contigs_db, cdbg_shadow)):
+    for n, record in enumerate(
+        search_utils.get_contigs_by_cdbg_sqlite(contigs_db, cdbg_shadow)
+    ):
         outfp.write(">{}\n{}\n".format(record.name, record.sequence))
 
         total_bp += len(record.sequence)
