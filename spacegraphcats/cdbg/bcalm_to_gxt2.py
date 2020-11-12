@@ -274,7 +274,7 @@ def main(argv):
     n = len(aliases)
 
     # calculate sourmash sig of output & renumber in the sqlite database
-    print(f"calculating sourmash signature of output unitigs")
+    print("calculating sourmash signature of output unitigs")
 
     c2 = db.cursor()
     cursor.execute("SELECT sequence, offset FROM sequences ORDER BY min_hashval")
@@ -304,9 +304,7 @@ def main(argv):
 
     info_fp.write("contig_id,offset,mean_abund,n_kmers\n")
     for v, i in aliases.items():
-        info_fp.write(
-            "{},{},{:.3f},{}\n".format(i, 0, mean_abunds[v], sizes[v])
-        )
+        info_fp.write("{},{},{:.3f},{}\n".format(i, 0, mean_abunds[v], sizes[v]))
 
     # output sourmash signature for output contigs
     out_sig = sourmash.SourmashSignature(out_mh, filename=args.contigs_prefix)

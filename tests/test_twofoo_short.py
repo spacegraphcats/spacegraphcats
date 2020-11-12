@@ -132,7 +132,7 @@ def test_check_catlas_vs_contigs():
     db = sqlite3.connect(f"{cdbg_prefix}/bcalm.unitigs.db")
     cursor = db.cursor()
     cursor.execute("SELECT id FROM sequences")
-    for record_id, in cursor:
+    for (record_id,) in cursor:
         cdbg_id_set.add(record_id)
 
     print(f"cdbg ID set: {len(cdbg_id_set)}")
