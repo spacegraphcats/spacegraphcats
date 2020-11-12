@@ -39,7 +39,7 @@ def main(argv=sys.argv[1:]):
         outfp = open(outname, "wt")
 
     with gzip.open(args.node_list_file, "rt") as fp:
-        cdbg_shadow = set([int(x.strip()) for x in fp])
+        cdbg_shadow = set([int(x.strip()) for x in fp if x.strip()])
 
     print("extracting reads to {}.".format(outname))
 

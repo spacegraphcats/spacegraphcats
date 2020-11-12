@@ -123,9 +123,9 @@ class MPHF_KmerIndex(object):
     @classmethod
     def from_catlas_directory(cls, catlas_prefix):
         "Load kmer index created by search.contigs_by_kmer."
-        mphf_filename = os.path.join(catlas_prefix, "contigs.fa.gz.mphf")
-        array_filename = os.path.join(catlas_prefix, "contigs.fa.gz.indices")
-        sizes_filename = os.path.join(catlas_prefix, "contigs.fa.gz.sizes")
+        mphf_filename = os.path.join(catlas_prefix, "contigs.mphf")
+        array_filename = os.path.join(catlas_prefix, "contigs.indices")
+        sizes_filename = os.path.join(catlas_prefix, "contigs.sizes")
 
         table = BBHashTable.load(mphf_filename, array_filename)
         with open(sizes_filename, "rb") as fp:
@@ -190,9 +190,9 @@ def main(argv):
     p.add_argument("-k", "--ksize", default=31, type=int)
     a = p.parse_args(argv)
 
-    mphf_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.mphf")
-    array_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.indices")
-    sizes_filename = os.path.join(a.catlas_prefix, "contigs.fa.gz.sizes")
+    mphf_filename = os.path.join(a.catlas_prefix, "contigs.mphf")
+    array_filename = os.path.join(a.catlas_prefix, "contigs.indices")
+    sizes_filename = os.path.join(a.catlas_prefix, "contigs.sizes")
 
     sqlite_db = sqlite3.connect(a.contigs_db)
 

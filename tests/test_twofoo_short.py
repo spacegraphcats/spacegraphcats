@@ -45,7 +45,7 @@ def test_build_and_search():
     output_files = [
         "twofoo-short_k31/bcalm.unitigs.fa",
         "twofoo-short_k31_r1/catlas.csv",
-        "twofoo-short_k31_r1/contigs.fa.gz.mphf",
+        "twofoo-short_k31_r1/contigs.mphf",
         "twofoo-short_k31_r1_search_oh0/results.csv",
     ]
 
@@ -61,7 +61,7 @@ def test_check_contigs_vs_unitigs():
     bcalm_sig = "twofoo-short_k31/bcalm.unitigs.fa.sig"
     bcalm_out = sourmash.load_one_signature(os.path.join(_tempdir, bcalm_sig))
 
-    catlas_sig = "twofoo-short_k31_r1/contigs.fa.gz.sig"
+    catlas_sig = "twofoo-short_k31_r1/contigs.sig"
     catlas_out = sourmash.load_one_signature(os.path.join(_tempdir, catlas_sig))
 
     assert bcalm_out.similarity(catlas_out) == 1.0

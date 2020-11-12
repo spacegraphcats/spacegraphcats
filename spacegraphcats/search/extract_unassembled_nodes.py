@@ -167,7 +167,6 @@ def main(args=sys.argv[1:]):
 
     #### extract contigs
     print("extracting contigs & building a sourmash signature")
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
     # track results as signature
     contigs_mh = sourmash.MinHash(n=0, ksize=args.ksize, scaled=1000)
