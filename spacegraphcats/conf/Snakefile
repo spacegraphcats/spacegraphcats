@@ -238,7 +238,6 @@ rule label_reads:
 rule build_catlas:
     input:
         f"{catlas_dir}/cdbg.gxt",
-        f"{catlas_dir}/contigs.fa.gz",
     output:
         f"{catlas_dir}/first_doms.txt",
         f"{catlas_dir}/catlas.csv",
@@ -394,7 +393,7 @@ rule extract_reads_for_decomposition:
 # build hashval query index
 rule build_hashval_query_index:
     input:
-        f"{catlas_dir}/contigs.fa.gz",
+        f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{hashval_query_dir}/index.pickle",
     shell: """
@@ -484,7 +483,7 @@ rule multifasta_query:
 
 rule build_multifasta_hashval_index:
     input:
-        f"{catlas_dir}/contigs.fa.gz",
+        f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{catlas_dir}_multifasta/hashval.pickle",
     params:
