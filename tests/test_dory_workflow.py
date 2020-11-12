@@ -242,7 +242,7 @@ def test_dory_extract_unassembled_nodes(location):
     assert index_cdbg_by_kmer.main(args) == 0
 
     # run extract_unassembled_regions
-    args = "dory_k21_r1 dory-head.fa dory.regions -k 21".split()
+    args = "dory_k21_r1 dory-head.fa dory.regions -k 21 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert extract_unassembled_nodes.main(args) == 0
 
 

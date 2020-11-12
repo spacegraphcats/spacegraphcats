@@ -8,8 +8,10 @@ EXPERIMENTAL.
 import argparse
 import os
 import sys
-import sourmash
 import csv
+import sqlite3
+
+import sourmash
 import screed
 
 from spacegraphcats.cdbg import hash_sequence
@@ -22,6 +24,7 @@ def main(args=sys.argv[1:]):
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("query")
     p.add_argument("output")
+    p.add_argument("--contigs-db", required=True)
     p.add_argument("--threshold", default=0.0, type=float)
     p.add_argument("--minsize", default=0, type=int)
     p.add_argument(
@@ -30,6 +33,8 @@ def main(args=sys.argv[1:]):
     args = p.parse_args(args)
 
     print("threshold: {:.3f}".format(args.threshold))
+
+    contigs_db = sqlite3.connect(args.contigs_db)
 
     basename = os.path.basename(args.catlas_prefix)
     catlas = CAtlas(args.catlas_prefix)
@@ -171,9 +176,8 @@ def main(args=sys.argv[1:]):
     total_seqs = 0
 
     print("writing contigs to {}".format(args.output + ".fa"))
-    assert 0 # @CTB
     outfp = open(args.output + ".fa", "wt")
-    for n, record in enumerate(screed.open(contigs)):
+    for n, record in enumerate(search_utils.contigs_iter_sqlite(contigs_db)):
         if n and n % 10000 == 0:
             offset_f = total_seqs / len(cdbg_id_to_node)
             print(
