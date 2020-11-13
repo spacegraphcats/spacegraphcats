@@ -229,7 +229,7 @@ rule label_reads:
     output:
         f"{catlas_dir}/reads.bgz.labels2",
     shell: """
-        {python} -m spacegraphcats.cdbg.label_cdbg2 -k {ksize} {catlas_dir} \
+        {python} -m spacegraphcats.cdbg.index_reads -k {ksize} {catlas_dir} \
             {input.reads} {output}
     """
 

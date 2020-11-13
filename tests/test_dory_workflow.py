@@ -23,7 +23,7 @@ from spacegraphcats.search import extract_contigs_cdbg
 from spacegraphcats.search import estimate_query_abundance
 from spacegraphcats.search import extract_nodes_by_shadow_ratio
 from spacegraphcats.utils import make_bgzf
-from spacegraphcats.cdbg import label_cdbg2
+from spacegraphcats.cdbg import index_reads 
 from spacegraphcats.search import extract_reads
 from spacegraphcats.cdbg import index_cdbg_by_minhash
 from spacegraphcats.search import query_by_hashval
@@ -314,7 +314,7 @@ def test_dory_make_bgzf(location):
 
 
 @pytest_utils.in_tempdir
-def test_dory_label_cdbg(location):
+def test_dory_index_reads(location):
     copy_dory_catlas()
     copy_dory_subset()
 
@@ -327,8 +327,8 @@ def test_dory_label_cdbg(location):
     args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
-    # run label_cdbg
-    print("** running label_cdbg")
+    # run index_reads
+    print("** running index_reads")
     args = [
         "-k",
         "21",
@@ -336,7 +336,7 @@ def test_dory_label_cdbg(location):
         "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.labels2",
     ]
-    assert label_cdbg2.main(args) == 0
+    assert index_reads.main(args) == 0
 
 
 @pytest_utils.in_tempdir
@@ -363,7 +363,7 @@ def test_dory_extract_reads(location):
         "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.labels2",
     ]
-    assert label_cdbg2.main(args) == 0
+    assert index_reads.main(args) == 0
 
     # run extract_reads
     print("** running extract_reads")
@@ -398,7 +398,7 @@ def test_dory_extract_reads_fq(location):
     args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
-    # run label_cdbg - FIXTURE
+    # run index_reads - FIXTURE
     print("** running label_cdbg")
     args = [
         "-k",
@@ -407,7 +407,7 @@ def test_dory_extract_reads_fq(location):
         "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.labels",
     ]
-    assert label_cdbg2.main(args) == 0
+    assert index_reads.main(args) == 0
 
     # run extract_reads
     print("** running extract_reads")
