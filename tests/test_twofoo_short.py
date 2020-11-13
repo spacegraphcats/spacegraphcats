@@ -5,7 +5,6 @@ import shutil
 import os
 import csv
 import hashlib
-import collections
 
 import sourmash
 import screed
@@ -80,16 +79,30 @@ def test_extract_reads_paired():
     reads_file = os.path.join(_tempdir, "twofoo-short_k31_r1_search_oh0/63.short.fa.gz.cdbg_ids.reads.fa.gz")
     read_names = [ r.name for r in screed.open(reads_file) ]
 
-    c = collections.Counter(read_names)
-    num_paired = len([ x for x in c.most_common() if x[1] == 2 ])
-    num_single = len([ x for x in c.most_common() if x[1] == 1 ])
+    num_paired = 0
+    num_single = 0
+
+    last_name = None
+    for name in read_names:
+        is_paired = False
+        if last_name:
+            if last_name == name:
+                is_paired = True
+            elif last_name.endswith('/1') and name.endswith('/2') and \
+              last_name[:-2] == name[:-2]:
+                is_paired = True
+
+        if is_paired: num_paired += 1
+        else: num_single += 1
+
+        last_name = name
 
     print(f"reads: {len(read_names)}; singletons: {num_single}; paired: {num_paired}")
-    assert len(read_names) == 984
-    assert num_single == 242
-    assert num_paired == 371
+    assert len(read_names) == 989
+    assert num_single == 617              # this is singletons + first reads
+    assert num_paired == 372
 
-    assert 2*num_paired + num_single == len(read_names)
+    assert num_single + num_paired == len(read_names)
 
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
