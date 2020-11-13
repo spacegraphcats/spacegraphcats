@@ -2,6 +2,7 @@ catlas_base: dory
 input_sequences:
 - data/dory-subset.fq
 keep_graph_pendants: true
+paired_reads: false
 ksize: 21
 radius: 1
 search:

@@ -228,9 +228,11 @@ rule label_reads:
         mphf_idx = f"{catlas_dir}/contigs.indices",
     output:
         f"{catlas_dir}/reads.bgz.labels2",
+    params:
+        paired_reads = "-P" if config.get('paired_reads', 0) else "",
     shell: """
         {python} -m spacegraphcats.cdbg.index_reads -k {ksize} {catlas_dir} \
-            {input.reads} {output}
+            {input.reads} {output} {params.paired_reads}
     """
 
 

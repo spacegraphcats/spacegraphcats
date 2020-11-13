@@ -51,6 +51,16 @@ def main(argv=sys.argv[1:]):
         print(f"cannot set both -P/--expect-paired and -N/--ignore-paired")
         return -1
 
+    if args.expect_paired:
+        print("We will REQUIRE that some of the reads are in pairs (-P/--expect-paired)")
+    else:
+        print("We will NOT require that some of theads be in pairs (default).")
+
+    if args.ignore_paired:
+        print("Ignoring paired reads (-N/--ignore-paired)")
+    else:
+        print("Paired reads will be indexed together (default).")
+
     dbfilename = args.savename
     if os.path.exists(dbfilename):
         print(f"removing existing db '{dbfilename}'")
