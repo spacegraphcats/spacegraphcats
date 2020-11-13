@@ -5,6 +5,7 @@ import shutil
 import os
 import csv
 import hashlib
+import sqlite3
 
 import sourmash
 import screed
@@ -33,6 +34,7 @@ def teardown_module(m):
         pass
 
 
+@pytest.mark.pairing
 @pytest.mark.dependency()
 def test_build_and_search():
     global _tempdir
@@ -54,6 +56,7 @@ def test_build_and_search():
         assert os.path.exists(fullpath), fullpath
 
 
+@pytest.mark.pairing
 @pytest.mark.dependency(depends=["test_build_and_search"])
 def test_label_reads():
     global _tempdir
@@ -66,8 +69,10 @@ def test_label_reads():
     assert os.path.exists(f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz")
 
 
+@pytest.mark.pairing
 @pytest.mark.dependency(depends=["test_label_reads"])
 def test_index_reads_paired():
+    # dig into some of the read pairing stuff in detail
     global _tempdir
     from spacegraphcats.cdbg import index_reads
 
@@ -77,10 +82,73 @@ def test_index_reads_paired():
     retval = index_reads.main([f"{_tempdir}/twofoo-short_k31_r1",
                               test_reads,
                               output_index,
-                              "-k", "31"])
+                              "-k", "31", "--expect-paired"])
 
     assert retval == 0
     assert os.path.exists(output_index)
+
+    def get_ids_at_offset(offset):
+        import sqlite3
+        db = sqlite3.connect(output_index)
+        c = db.cursor()
+
+        c.execute('SELECT DISTINCT cdbg_id FROM sequences WHERE offset=?', (offset,))
+        id_list = [ offset for (offset,) in c ]
+        return id_list
+
+    # output from scripts/print_offsets_names.py
+    #SRR606249.7757341 5707860790
+    #SRR606249.7757341 5707860911
+    assert get_ids_at_offset(5707860790) == get_ids_at_offset(5707860911)
+    #SRR606249.7759257 5707861032 - not paired
+    #SRR606249.7757341/1 5707861153
+    #SRR606249.7757341/2 5707861276
+    assert get_ids_at_offset(5707861153) == get_ids_at_offset(5707861276)
+    #SRR606249.985492/1 5707861399 - not paired
+    #SRR606249.989382/2 5707861521 - not paired
+    assert get_ids_at_offset(5707861399) != get_ids_at_offset(5707861521)
+    #SRR606249.1044514 5707861643 - not paired
+
+
+@pytest.mark.pairing
+@pytest.mark.dependency(depends=["test_label_reads"])
+def test_index_reads_nopairing():
+    # dig into some of the read pairing stuff in detail; here, turn off pairs
+    global _tempdir
+    from spacegraphcats.cdbg import index_reads
+
+    test_reads = f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz"
+    output_index = os.path.join(_tempdir, "xxx.reads.index")
+
+    retval = index_reads.main([f"{_tempdir}/twofoo-short_k31_r1",
+                              test_reads,
+                              output_index,
+                              "-k", "31", "--ignore-paired"])
+
+    assert retval == 0
+    assert os.path.exists(output_index)
+
+    def get_ids_at_offset(offset):
+        import sqlite3
+        db = sqlite3.connect(output_index)
+        c = db.cursor()
+
+        c.execute('SELECT DISTINCT cdbg_id FROM sequences WHERE offset=?', (offset,))
+        id_list = [ offset for (offset,) in c ]
+        return id_list
+
+    # output from scripts/print_offsets_names.py
+    #SRR606249.7757341 5707860790
+    #SRR606249.7757341 5707860911
+    assert get_ids_at_offset(5707860790) == get_ids_at_offset(5707860911)
+    #SRR606249.7759257 5707861032 - not paired
+    #SRR606249.7757341/1 5707861153
+    #SRR606249.7757341/2 5707861276
+    assert get_ids_at_offset(5707861153) != get_ids_at_offset(5707861276)
+    #SRR606249.985492/1 5707861399 - belong to different unitigs
+    #SRR606249.989382/2 5707861521 - belong to different unitigs!
+    assert get_ids_at_offset(5707861399) != get_ids_at_offset(5707861521)
+    #SRR606249.1044514 5707861643 - not paired
 
 
 @pytest.mark.dependency(depends=["test_build_and_search"])

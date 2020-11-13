@@ -111,13 +111,13 @@ def main(argv=sys.argv[1:]):
 
         total_bp += len(record.sequence)
 
+        this_name = record.name
         is_paired = False
         if last_record:
             last_name = last_record.name
-            this_name = record.name
 
             if last_name.endswith('/1') and this_name.endswith('/2'):
-                if last_name[:-2] == this_name[:2] and len(last_name) > 2:
+                if last_name[:-2] == this_name[:-2] and len(last_name) > 2:
                     is_paired = True
             elif last_name == this_name and last_name:   # SRR stuff, bleah
                 is_paired = True
@@ -125,7 +125,6 @@ def main(argv=sys.argv[1:]):
         if is_paired:
             offsets = [last_offset, offset]
             # leave cdbg_ids alone... will be cleared next.
-            #print(last_name, this_name)
             n_paired_reads += 1
         else:
             offsets = [offset]
