@@ -142,7 +142,8 @@ def main(argv=sys.argv[1:]):
         cdbg_ids.update(new_cdbg_ids)
 
         for insert_offset in offsets:
-            # @CTB note this will insert dups
+            # CTB: note this may insert duplicates into the table,
+            # which are resolved in the extraction by SELECT DISTINCT.
             for cdbg_id in cdbg_ids:
                 cursor.execute(
                     "INSERT INTO sequences (offset, cdbg_id) VALUES (?, ?)",
