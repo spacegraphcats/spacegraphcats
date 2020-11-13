@@ -340,6 +340,48 @@ def test_dory_index_reads(location):
 
 
 @pytest_utils.in_tempdir
+def test_dory_index_reads_require_paired_fail(location):
+    copy_dory_catlas()
+    copy_dory_subset()
+
+    # run make_bgzf - FIXTURE
+    print("** running make_bgzf")
+    args = ["dory-subset.fa", "-o", "dory.reads.bgz"]
+    assert make_bgzf.main(args) == 0
+
+    # make k-mer search index - FIXTURE
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
+    assert index_cdbg_by_kmer.main(args) == 0
+
+    # run index_reads
+    print("** running index_reads")
+    args = [
+        "-k",
+        "21",
+        "dory_k21_r1",
+        "dory.reads.bgz",
+        "dory_k21_r1/reads.bgz.labels2",
+        "-P"
+    ]
+    assert index_reads.main(args) != 0
+
+
+@pytest_utils.in_tempdir
+def test_dory_index_reads_check_args_fail(location):
+    # run index_reads
+    print("** running index_reads")
+    args = [
+        "-k",
+        "21",
+        "dory_k21_r1",
+        "dory.reads.bgz",
+        "dory_k21_r1/reads.bgz.labels2",
+        "-P", "-N"
+    ]
+    assert index_reads.main(args) != 0
+
+
+@pytest_utils.in_tempdir
 def test_dory_extract_reads(location):
     copy_dory_catlas()
     copy_dory_catlas_search()

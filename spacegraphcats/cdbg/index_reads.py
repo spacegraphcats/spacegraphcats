@@ -43,7 +43,13 @@ def main(argv=sys.argv[1:]):
     p.add_argument("reads")
     p.add_argument("savename")
     p.add_argument("-k", "--ksize", default=DEFAULT_KSIZE, type=int)
+    p.add_argument("-P", "--expect-paired", action='store_true')
+    p.add_argument("-N", "--ignore-paired", action='store_true')
     args = p.parse_args(argv)
+
+    if args.expect_paired and args.ignore_paired:
+        print(f"cannot set both -P/--expect-paired and -N/--ignore-paired")
+        return -1
 
     dbfilename = args.savename
     if os.path.exists(dbfilename):
@@ -87,6 +93,12 @@ def main(argv=sys.argv[1:]):
         if total_bp >= watermark:
             print(f"... {watermark:5.2e} bp thru reads", end="\r", file=sys.stderr)
             watermark += watermark_size
+
+            if args.expect_paired:
+                if not n_paired_reads:
+                    print(f"ERROR: no paired reads!? but -P/--expect-paired set. Quitting.")
+                    return -1
+
         total_bp += len(record.sequence)
 
         is_paired = False
@@ -99,7 +111,7 @@ def main(argv=sys.argv[1:]):
                     is_paired = True
             elif last_name == this_name and last_name:   # SRR stuff, bleah
                 is_paired = True
-        
+
         if is_paired:
             offsets = [last_offset, offset]
             # leave cdbg_ids alone... will be cleared next.
@@ -129,8 +141,10 @@ def main(argv=sys.argv[1:]):
                 )
 
         total_cdbg_ids.update(cdbg_ids)
-        last_record = record
-        last_offset = offset
+
+        if not args.ignore_paired:
+            last_record = record
+            last_offset = offset
 
     db.commit()
     notify(f"{total_bp:5.2e} bp in {n} reads")
@@ -142,6 +156,11 @@ def main(argv=sys.argv[1:]):
     cursor.execute("CREATE INDEX cdbg_id_idx ON sequences (cdbg_id)")
     db.close()
     print(f"done; closing {dbfilename}!")
+
+    if args.expect_paired:
+        if not n_paired_reads:
+            print(f"ERROR: no paired reads!? but -P/--expect-paired set. Failing.")
+            return -1
 
     return 0
 
