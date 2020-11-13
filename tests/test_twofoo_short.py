@@ -5,6 +5,7 @@ import shutil
 import os
 import csv
 import hashlib
+import collections
 
 import sourmash
 import screed
@@ -65,6 +66,30 @@ def test_check_contigs_vs_unitigs():
     catlas_out = sourmash.load_one_signature(os.path.join(_tempdir, catlas_sig))
 
     assert bcalm_out.similarity(catlas_out) == 1.0
+
+
+@pytest.mark.dependency(depends=["test_build_and_search"])
+def test_extract_reads_paired():
+    global _tempdir
+
+    conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
+    target = "extract_reads"
+    status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
+    assert status == 0
+
+    reads_file = os.path.join(_tempdir, "twofoo-short_k31_r1_search_oh0/63.short.fa.gz.cdbg_ids.reads.fa.gz")
+    read_names = [ r.name for r in screed.open(reads_file) ]
+
+    c = collections.Counter(read_names)
+    num_paired = len([ x for x in c.most_common() if x[1] == 2 ])
+    num_single = len([ x for x in c.most_common() if x[1] == 1 ])
+
+    print(f"reads: {len(read_names)}; singletons: {num_single}; paired: {num_paired}")
+    assert len(read_names) == 984
+    assert num_single == 242
+    assert num_paired == 371
+
+    assert 2*num_paired + num_single == len(read_names)
 
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
