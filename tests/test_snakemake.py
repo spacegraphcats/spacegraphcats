@@ -110,7 +110,7 @@ def test_dory_extract_reads():
     global _tempdir
 
     dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
-    target = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz"
+    target = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz"
     status = run_snakemake(
         dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
     )
@@ -123,7 +123,7 @@ def test_dory_extract_contigs():
     global _tempdir
 
     dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
-    target = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz"
+    target = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz"
     status = run_snakemake(
         dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
     )

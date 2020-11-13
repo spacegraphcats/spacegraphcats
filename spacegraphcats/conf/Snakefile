@@ -326,7 +326,7 @@ def make_extract_reads_base(searchfiles):
     x = []
     for filename in searchfiles:
         basename = os.path.basename(filename)
-        x.append(f"{search_dir}/{basename}.cdbg_ids.reads.fa.gz")
+        x.append(f"{search_dir}/{basename}.cdbg_ids.reads.gz")
     return x
 
 # get contigs for a single query
@@ -349,7 +349,7 @@ rule extract_reads_single_file:
         labels = f"{catlas_dir}/reads.bgz.index",
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
-        f"{search_dir}/{{queryname}}.cdbg_ids.reads.fa.gz",
+        f"{search_dir}/{{queryname}}.cdbg_ids.reads.gz",
     shell: """
         {python} -m spacegraphcats.search.extract_reads {input.reads} \
             {input.labels} {input.cdbg_ids} -o {output}
@@ -428,7 +428,7 @@ def aggregate_hashval_query(wildcards):
     output_pattern = os.path.join(checkpoint_output, "{hashval}.contigs.fa.gz")
     hashvals = glob_wildcards(output_pattern).hashval
 
-    pattern = f"{hashval_query_dir}/reads/{{hashval}}.cdbg_ids.reads.fa.gz"
+    pattern = f"{hashval_query_dir}/reads/{{hashval}}.cdbg_ids.reads.gz"
     hashval_names = expand(pattern, hashval = hashvals)
 
     return hashval_names
@@ -441,7 +441,7 @@ rule extract_reads_single_hashval_file:
         cdbg_ids = expand("{h}/contigs/{{hashval}}.cdbg_ids.txt.gz",
                           h=hashval_query_dir)
     output:
-        expand("{h}/reads/{{hashval}}.cdbg_ids.reads.fa.gz",
+        expand("{h}/reads/{{hashval}}.cdbg_ids.reads.gz",
                h=hashval_query_dir)
     shell: """
         {python} -m spacegraphcats.search.extract_reads {input.reads} \
@@ -552,7 +552,7 @@ rule extract_reads_single_file_multifasta:
         cdbg_ids = f"{catlas_dir}_multifasta/{{queryname}}.cdbg_ids.txt.gz",
         in_csv = f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
     output:
-        f"{catlas_dir}_multifasta/{{queryname}}.reads.fa.gz",
+        f"{catlas_dir}_multifasta/{{queryname}}.reads.gz",
     shell: """
         {python} -m spacegraphcats.search.extract_reads {input.reads} \
             {input.labels} {input.cdbg_ids} -o {output}

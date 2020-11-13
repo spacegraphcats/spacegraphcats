@@ -29,7 +29,7 @@ def main(argv=sys.argv[1:]):
         sys.exit(-1)
 
     if not args.output:
-        outname = args.node_list_file + ".reads.fa.gz"
+        outname = args.node_list_file + ".reads.gz"
     else:
         outname = args.output
 

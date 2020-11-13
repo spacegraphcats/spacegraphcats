@@ -173,7 +173,7 @@ def test_extract_reads_paired():
     status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
     assert status == 0
 
-    reads_file = os.path.join(_tempdir, "twofoo-short_k31_r1_search_oh0/63.short.fa.gz.cdbg_ids.reads.fa.gz")
+    reads_file = os.path.join(_tempdir, "twofoo-short_k31_r1_search_oh0/63.short.fa.gz.cdbg_ids.reads.gz")
     read_names = [ r.name for r in screed.open(reads_file) ]
 
     num_paired = 0
@@ -195,8 +195,8 @@ def test_extract_reads_paired():
         last_name = name
 
     print(f"reads: {len(read_names)}; singletons: {num_single}; paired: {num_paired}")
-    assert len(read_names) == 989
-    assert num_single == 617              # this is singletons + first reads
+    assert len(read_names) == 988
+    assert num_single == 616              # this is singletons + first reads
     assert num_paired == 372
 
     assert num_single + num_paired == len(read_names)
@@ -243,9 +243,9 @@ def test_check_md5():
     print(m.hexdigest())
     print(m2.hexdigest())
 
-    assert m.hexdigest() == "b14f76a96bf4c5ad2d439009b700c399", m.hexdigest()
+    assert m.hexdigest() == "fc9ee74aa29e5d72d2a08c40eee5a0f4", m.hexdigest()
 
-    assert m2.hexdigest() == "26982100515262d7b1a380b7b3883ba0", m2.hexdigest()
+    assert m2.hexdigest() == "92ca814ba49a72022be556aacda59782", m2.hexdigest()
 
 
 @pytest.mark.dependency(depends=["test_build_and_search"])

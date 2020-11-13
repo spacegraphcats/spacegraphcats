@@ -414,11 +414,11 @@ def test_dory_extract_reads(location):
         "dory_k21_r1/reads.bgz.index",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
-        "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz",
+        "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz",
     ]
     assert extract_reads.main(args) == 0
 
-    reads_filename = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz"
+    reads_filename = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz"
     reads = [record for record in screed.open(reads_filename)]
     assert len(reads) == 2
 
@@ -458,11 +458,11 @@ def test_dory_extract_reads_fq(location):
         "dory_k21_r1/reads.bgz.labels",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
-        "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz",
+        "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz",
     ]
     assert extract_reads.main(args) == 0
 
-    reads_filename = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz"
+    reads_filename = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz"
     reads = [record for record in screed.open(reads_filename)]
     assert len(reads) == 2
     assert len(reads[0].quality)  # FASTQ preserved!
