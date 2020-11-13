@@ -55,6 +55,35 @@ def test_build_and_search():
 
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
+def test_label_reads():
+    global _tempdir
+
+    conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
+    target = "index_reads"
+    status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
+    assert status == 0
+
+    assert os.path.exists(f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz")
+
+
+@pytest.mark.dependency(depends=["test_label_reads"])
+def test_index_reads_paired():
+    global _tempdir
+    from spacegraphcats.cdbg import index_reads
+
+    test_reads = f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz"
+    output_index = os.path.join(_tempdir, "xxx.reads.index")
+
+    retval = index_reads.main([f"{_tempdir}/twofoo-short_k31_r1",
+                              test_reads,
+                              output_index,
+                              "-k", "31"])
+
+    assert retval == 0
+    assert os.path.exists(output_index)
+
+
+@pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_contigs_vs_unitigs():
     global _tempdir
 

@@ -221,7 +221,7 @@ rule reads_bgzf:
      """
 
 # label the reads by contig
-rule label_reads:
+rule index_reads:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
         mphf = f"{catlas_dir}/contigs.mphf",
