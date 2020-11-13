@@ -7,13 +7,15 @@ abundances of kmers within the subtrees.
 import argparse
 import os
 import sys
-import sourmash
-from sourmash.minhash import hash_murmur
 import numpy
 import pickle
+import sqlite3
 
-import screed
+import sourmash
+from sourmash.minhash import hash_murmur
+
 from .catlas import CAtlas
+from . import search_utils
 
 
 def make_all(ksize):
@@ -85,6 +87,7 @@ def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
+    p.add_argument("--contigs-db", required=True)
     p.add_argument("--maxsize", type=float, default=20000)
     p.add_argument("--minsize", type=float, default=5000)
     p.add_argument("--min-abund", type=float, default=0)
@@ -96,8 +99,6 @@ def main(args=sys.argv[1:]):
     print("maxsize: {:g}".format(args.maxsize))
     print("ksize: {}".format(args.ksize))
     print("min_abund: {}".format(args.min_abund))
-
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
 
     catlas = CAtlas(args.catlas_prefix, load_sizefile=True, min_abund=args.min_abund)
     catlas.decorate_with_shadow_sizes()
@@ -154,7 +155,8 @@ def main(args=sys.argv[1:]):
 
     # aaaaaand iterate over contigs, collecting abundances from all contigs
     # in a group.
-    for record_n, record in enumerate(screed.open(contigs)):
+    contigs_db = sqlite3.connect(args.contigs_db)
+    for record_n, record in enumerate(search_utils.contigs_iter_sqlite(contigs_db)):
         if record_n % 10000 == 0:
             print("...", record_n, end="\r")
         cdbg_id = int(record.name)

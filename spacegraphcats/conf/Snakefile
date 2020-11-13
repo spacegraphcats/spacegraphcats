@@ -131,9 +131,9 @@ rule check:
 rule build:
     input:
         f"{catlas_dir}/catlas.csv",
-        f"{catlas_dir}/contigs.fa.gz.mphf",
-        f"{catlas_dir}/contigs.fa.gz.indices",
-        f"{catlas_dir}/contigs.fa.gz.info.csv",
+        f"{catlas_dir}/contigs.mphf",
+        f"{catlas_dir}/contigs.indices",
+        f"{catlas_dir}/contigs.info.csv",
 
 rule clean:
     shell: """
@@ -178,7 +178,7 @@ rule bcalm_catlas_sort:
     input:
         unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
     output:
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        db = f"{cdbg_dir}/bcalm.unitigs.predb",
         mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
         sig = f"{cdbg_dir}/bcalm.unitigs.fa.sig",
     shell: """
@@ -191,20 +191,23 @@ rule bcalm_catlas_sort:
 rule bcalm_catlas_prepare_input:
     input:
         unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        db = f"{cdbg_dir}/bcalm.unitigs.predb",
         mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
     output:
         gxt = f"{catlas_dir}/cdbg.gxt",
-        contigs = f"{catlas_dir}/contigs.fa.gz",
-        info = f"{catlas_dir}/contigs.fa.gz.info.csv",
-        sig = f"{catlas_dir}/contigs.fa.gz.sig",
+        info = f"{catlas_dir}/contigs.info.csv",
+        sig = f"{catlas_dir}/contigs.sig",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
     params:
-        remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else ""
+        remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else "",
+        contigs_prefix = f"{catlas_dir}/contigs"
     shell: """
         {python} -m spacegraphcats.cdbg.bcalm_to_gxt2 \
             {params.remove_pendants} \
             {input.unitigs} {input.db} {input.mapping} \
-            {output.gxt} {output.contigs}
+            {output.gxt} {params.contigs_prefix}
+        mv {input.db} {output.db}
+        chmod u-w {output.db}
      """
 
 # combine all the reads into a single bgzf file, which permits random indexing.
@@ -218,16 +221,18 @@ rule reads_bgzf:
      """
 
 # label the reads by contig
-rule label_reads:
+rule index_reads:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        mphf = f"{catlas_dir}/contigs.fa.gz.mphf",
-        mphf_idx = f"{catlas_dir}/contigs.fa.gz.indices",
+        mphf = f"{catlas_dir}/contigs.mphf",
+        mphf_idx = f"{catlas_dir}/contigs.indices",
     output:
-        f"{catlas_dir}/reads.bgz.labels2",
+        f"{catlas_dir}/reads.bgz.index",
+    params:
+        paired_reads = "-P" if config.get('paired_reads', 0) else "",
     shell: """
-        {python} -m spacegraphcats.cdbg.label_cdbg2 -k {ksize} {catlas_dir} \
-            {input.reads} {output}
+        {python} -m spacegraphcats.cdbg.index_reads -k {ksize} {catlas_dir} \
+            {input.reads} {output} {params.paired_reads}
     """
 
 
@@ -235,7 +240,6 @@ rule label_reads:
 rule build_catlas:
     input:
         f"{catlas_dir}/cdbg.gxt",
-        f"{catlas_dir}/contigs.fa.gz",
     output:
         f"{catlas_dir}/first_doms.txt",
         f"{catlas_dir}/catlas.csv",
@@ -248,13 +252,13 @@ rule build_catlas:
 # index contigs, count node sizes
 rule make_contigs_kmer_index:
     input:
-        f"{catlas_dir}/contigs.fa.gz",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
-        f"{catlas_dir}/contigs.fa.gz.mphf",
-        f"{catlas_dir}/contigs.fa.gz.indices",
+        f"{catlas_dir}/contigs.mphf",
+        f"{catlas_dir}/contigs.indices",
     shell: """
         {python} -m spacegraphcats.cdbg.index_cdbg_by_kmer \
-            -k {ksize} {catlas_dir}
+            -k {ksize} {catlas_dir} --contigs-db {input.db}
     """
 
 ### Search rules.
@@ -276,14 +280,16 @@ rule searchquick:
         config['searchquick'],
         f"{catlas_dir}/first_doms.txt",
         f"{catlas_dir}/catlas.csv",
-        f"{catlas_dir}/contigs.fa.gz.mphf",
-        f"{catlas_dir}/contigs.fa.gz.indices",
+        f"{catlas_dir}/contigs.mphf",
+        f"{catlas_dir}/contigs.indices",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{search_dir}/results.csv",
         make_query_base(config['searchquick']),
     shell: """
         {python} -m spacegraphcats.search.query_by_sequence {catlas_dir} \
-            {search_dir} --query {config[searchquick]} -k {ksize} {cdbg_only}
+            {search_dir} --query {config[searchquick]} -k {ksize} {cdbg_only} \
+            --contigs-db {input.db}
     """
 
 
@@ -293,15 +299,16 @@ rule search:
         config['search'],
         f"{catlas_dir}/first_doms.txt",
         f"{catlas_dir}/catlas.csv",
-        f"{catlas_dir}/contigs.fa.gz.mphf",
-        f"{catlas_dir}/contigs.fa.gz.indices",
+        f"{catlas_dir}/contigs.mphf",
+        f"{catlas_dir}/contigs.indices",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{search_dir}/results.csv",
         make_query_base(config['search']),
     shell: """
         {python} -m spacegraphcats.search.query_by_sequence \
             {catlas_dir} {search_dir} --query {config[search]} -k {ksize} \
-            {cdbg_only}
+            {cdbg_only} --contigs-db {input.db}
     """
 
 ruleorder: search > searchquick
@@ -319,18 +326,19 @@ def make_extract_reads_base(searchfiles):
     x = []
     for filename in searchfiles:
         basename = os.path.basename(filename)
-        x.append(f"{search_dir}/{basename}.cdbg_ids.reads.fa.gz")
+        x.append(f"{search_dir}/{basename}.cdbg_ids.reads.gz")
     return x
 
 # get contigs for a single query
 rule extract_contigs_single_file:
     input:
-        contigs = f"{catlas_dir}/contigs.fa.gz",
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
         f"{search_dir}/{{queryname}}.cdbg_ids.contigs.fa.gz",
     shell: """
-        {python} -m spacegraphcats.search.extract_contigs {catlas_dir} \
+        {python} -m spacegraphcats.search.extract_contigs \
+            --contigs-db {input.db} \
             {input.cdbg_ids} -o {output}
     """
 
@@ -338,10 +346,10 @@ rule extract_contigs_single_file:
 rule extract_reads_single_file:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels2",
+        labels = f"{catlas_dir}/reads.bgz.index",
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
-        f"{search_dir}/{{queryname}}.cdbg_ids.reads.fa.gz",
+        f"{search_dir}/{{queryname}}.cdbg_ids.reads.gz",
     shell: """
         {python} -m spacegraphcats.search.extract_reads {input.reads} \
             {input.labels} {input.cdbg_ids} -o {output}
@@ -372,7 +380,7 @@ rule decompose_catlas:
 rule extract_reads_for_decomposition:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels2",
+        labels = f"{catlas_dir}/reads.bgz.index",
         outdir = f"{catlas_dir}_decompose",
     shell: """
         for i in {input.outdir}/*.txt.gz; do
@@ -387,7 +395,7 @@ rule extract_reads_for_decomposition:
 # build hashval query index
 rule build_hashval_query_index:
     input:
-        f"{catlas_dir}/contigs.fa.gz",
+        f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{hashval_query_dir}/index.pickle",
     shell: """
@@ -401,6 +409,7 @@ checkpoint hashval_query:
         queries = hashval_queries,
         pickle = f"{hashval_query_dir}/index.pickle",
         catlas = f"{catlas_dir}/catlas.csv",
+        contigs_db = f"{cdbg_dir}/bcalm.unitigs.db"
     output:
         csv=f"{hashval_query_dir}/hashval_results.csv",
         outdir=directory(f"{hashval_query_dir}/contigs"),
@@ -408,7 +417,8 @@ checkpoint hashval_query:
         mkdir -p {output.outdir}
         {python} -m spacegraphcats.search.query_by_hashval \
                  -k {hashval_ksize} {catlas_dir} \
-                 {input.pickle} {input.queries} {hashval_query_dir}
+                 {input.pickle} {input.queries} {hashval_query_dir} \
+                 --contigs-db {input.contigs_db}
     """
 
 # using output of hashval_query, generate names for output of extract_reads_single_hashval_file
@@ -418,7 +428,7 @@ def aggregate_hashval_query(wildcards):
     output_pattern = os.path.join(checkpoint_output, "{hashval}.contigs.fa.gz")
     hashvals = glob_wildcards(output_pattern).hashval
 
-    pattern = f"{hashval_query_dir}/reads/{{hashval}}.cdbg_ids.reads.fa.gz"
+    pattern = f"{hashval_query_dir}/reads/{{hashval}}.cdbg_ids.reads.gz"
     hashval_names = expand(pattern, hashval = hashvals)
 
     return hashval_names
@@ -427,11 +437,11 @@ def aggregate_hashval_query(wildcards):
 rule extract_reads_single_hashval_file:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels2",
+        labels = f"{catlas_dir}/reads.bgz.index",
         cdbg_ids = expand("{h}/contigs/{{hashval}}.cdbg_ids.txt.gz",
                           h=hashval_query_dir)
     output:
-        expand("{h}/reads/{{hashval}}.cdbg_ids.reads.fa.gz",
+        expand("{h}/reads/{{hashval}}.cdbg_ids.reads.gz",
                h=hashval_query_dir)
     shell: """
         {python} -m spacegraphcats.search.extract_reads {input.reads} \
@@ -454,13 +464,16 @@ rule shadow_ratio:
 
 rule extract_by_shadow_ratio_rule:
     input:
-        f"{catlas_dir}/first_doms.txt",
-        f"{catlas_dir}/catlas.csv",
+        doms = f"{catlas_dir}/first_doms.txt",
+        catlas = f"{catlas_dir}/catlas.csv",
+        contigs_db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         catlas_dir + ".shadow.{shadow_ratio_maxsize}.fa"
     shell: """
         {python} -m spacegraphcats.search.extract_nodes_by_shadow_ratio \
-            --maxsize={wildcards.shadow_ratio_maxsize} {catlas_dir} {output}
+            --contigs-db {input.contigs_db} \
+            --maxsize={wildcards.shadow_ratio_maxsize} \
+            {catlas_dir} {output}
     """
 
 ### query by signature => gene
@@ -472,7 +485,7 @@ rule multifasta_query:
 
 rule build_multifasta_hashval_index:
     input:
-        f"{catlas_dir}/contigs.fa.gz",
+        f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{catlas_dir}_multifasta/hashval.pickle",
     params:
@@ -488,9 +501,9 @@ rule build_multifasta_index:
         queries = multifasta_query_seqs,
         doms = f"{catlas_dir}/first_doms.txt",
         catlas = f"{catlas_dir}/catlas.csv",
-        mphf = f"{catlas_dir}/contigs.fa.gz.mphf",
-        indices = f"{catlas_dir}/contigs.fa.gz.indices",
-        sizes = f"{catlas_dir}/contigs.fa.gz.sizes",
+        mphf = f"{catlas_dir}/contigs.mphf",
+        indices = f"{catlas_dir}/contigs.indices",
+        sizes = f"{catlas_dir}/contigs.sizes",
     output:
         f"{catlas_dir}_multifasta/multifasta.pickle",
     params:
@@ -522,7 +535,7 @@ rule query_multifasta_by_signature:
 rule build_cdbg_list_by_record:
     input:
         multi_idx = f"{catlas_dir}_multifasta/multifasta.pickle",
-        info_csv = f"{catlas_dir}/contigs.fa.gz.info.csv",
+        info_csv = f"{catlas_dir}/contigs.info.csv",
     output:
         f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
     shell: """
@@ -535,11 +548,11 @@ rule build_cdbg_list_by_record:
 rule extract_reads_single_file_multifasta:
     input:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.labels2",
+        labels = f"{catlas_dir}/reads.bgz.index",
         cdbg_ids = f"{catlas_dir}_multifasta/{{queryname}}.cdbg_ids.txt.gz",
         in_csv = f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
     output:
-        f"{catlas_dir}_multifasta/{{queryname}}.reads.fa.gz",
+        f"{catlas_dir}_multifasta/{{queryname}}.reads.gz",
     shell: """
         {python} -m spacegraphcats.search.extract_reads {input.reads} \
             {input.labels} {input.cdbg_ids} -o {output}

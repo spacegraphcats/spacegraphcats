@@ -1,7 +1,7 @@
 all: test
 
 flakes:
-	flake8 spacegraphcats/ scripts/
+	flake8 spacegraphcats/ scripts/ tests/
 
 black:
 	black .
@@ -10,7 +10,7 @@ lint:
 	#mypy spacegraphcats/*.py
 
 test:
-	pytest spacegraphcats
+	pytest tests
 
 #
 # akker-reads.abundtrim.gz is a collection of reads from podar data
@@ -68,7 +68,7 @@ twofoo-test: twofoo.fq.gz # twofoo/bcalm.twofoo.k31.unitigs.fa
 	python -m spacegraphcats twofoo search
 	python -m spacegraphcats twofoo hashval_query
 	python -m spacegraphcats twofoo extract_reads_for_hashvals
-	python -m spacegraphcats.search.characterize_catlas_regions twofoo_k31_r1 twofoo_k31_r1.vec
+	python -m spacegraphcats.search.characterize_catlas_regions twofoo_k31_r1 twofoo_k31_r1.vec --contigs-db twofoo_k31/bcalm.unitigs.db
 	python -m spacegraphcats twofoo multifasta_query
 
 twofoo-clean:

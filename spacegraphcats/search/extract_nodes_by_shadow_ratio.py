@@ -9,16 +9,20 @@ import argparse
 import os
 import sys
 import math
+import sqlite3
+
 import sourmash
 
 import screed
 from .catlas import CAtlas
+from spacegraphcats.search import search_utils
 
 
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
+    p.add_argument("--contigs-db", required=True)
     p.add_argument("--minsize", type=float, default=100)
     p.add_argument("--maxsize", type=float, default=10000)
     p.add_argument("--keep-fraction", type=float, default=0.1)
@@ -29,6 +33,8 @@ def main(args=sys.argv[1:]):
 
     print("minsize: {:g}".format(args.minsize))
     print("maxsize: {:g}".format(args.maxsize))
+
+    contigs_db = sqlite3.connect(args.contigs_db)
 
     # load catlas DAG
     catlas = CAtlas(args.catlas_prefix, load_sizefile=True)
@@ -105,10 +111,6 @@ def main(args=sys.argv[1:]):
     # build cDBG shadow ID list.
     cdbg_shadow = catlas.shadow(keep_terminal)
 
-    # extract contigs
-    print("extracting contigs & building a sourmash signature")
-    contigs = os.path.join(args.catlas_prefix, "contigs.fa.gz")
-
     # track results as signature
     contigs_mh = sourmash.MinHash(n=0, ksize=args.ksize, scaled=1000)
 
@@ -116,19 +118,7 @@ def main(args=sys.argv[1:]):
     total_seqs = 0
 
     outfp = open(args.output, "wt")
-    for n, record in enumerate(screed.open(contigs)):
-        if n and n % 10000 == 0:
-            offset_f = total_seqs / len(cdbg_shadow)
-            print(
-                "...at n {} ({:.1f}% of shadow)".format(total_seqs, offset_f * 100),
-                end="\r",
-            )
-
-        # contig names == cDBG IDs
-        contig_id = int(record.name)
-        if contig_id not in cdbg_shadow:
-            continue
-
+    for record in search_utils.get_contigs_by_cdbg_sqlite(contigs_db, cdbg_shadow):
         outfp.write(">{}\n{}\n".format(record.name, record.sequence))
         contigs_mh.add_sequence(record.sequence)
 

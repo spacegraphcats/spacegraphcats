@@ -31,7 +31,7 @@ class CAtlas:
             domfile = os.path.join(catlas_directory, "first_doms.txt")
             self.__load_first_level(domfile)
         if load_sizefile is not None:
-            sizefile = os.path.join(catlas_directory, "contigs.fa.gz.info.csv")
+            sizefile = os.path.join(catlas_directory, "contigs.info.csv")
             self.__load_size_info(sizefile, min_abund)
 
     def __load_catlas(self, catlas_file):

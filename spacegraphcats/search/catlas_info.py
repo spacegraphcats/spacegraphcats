@@ -22,7 +22,7 @@ def main(argv=sys.argv[1:]):
 
     print(
         "loaded {} nodes and {} layers from catlas {}".format(
-            len(dag), dag_levels[top_node_id], catlas
+            len(dag), dag_levels[top_node_id], args.catlas_prefix
         )
     )
 

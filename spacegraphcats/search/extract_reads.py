@@ -29,7 +29,7 @@ def main(argv=sys.argv[1:]):
         sys.exit(-1)
 
     if not args.output:
-        outname = args.node_list_file + ".reads.fa.gz"
+        outname = args.node_list_file + ".reads.gz"
     else:
         outname = args.output
 
@@ -39,7 +39,7 @@ def main(argv=sys.argv[1:]):
         outfp = open(outname, "wt")
 
     with gzip.open(args.node_list_file, "rt") as fp:
-        cdbg_shadow = set([int(x.strip()) for x in fp])
+        cdbg_shadow = set([int(x.strip()) for x in fp if x.strip()])
 
     print("extracting reads to {}.".format(outname))
 
