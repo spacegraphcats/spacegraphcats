@@ -334,7 +334,7 @@ def test_dory_index_reads(location):
         "21",
         "dory_k21_r1",
         "dory.reads.bgz",
-        "dory_k21_r1/reads.bgz.labels2",
+        "dory_k21_r1/reads.bgz.index",
     ]
     assert index_reads.main(args) == 0
 
@@ -360,7 +360,7 @@ def test_dory_index_reads_require_paired_fail(location):
         "21",
         "dory_k21_r1",
         "dory.reads.bgz",
-        "dory_k21_r1/reads.bgz.labels2",
+        "dory_k21_r1/reads.bgz.index",
         "-P"
     ]
     assert index_reads.main(args) != 0
@@ -375,7 +375,7 @@ def test_dory_index_reads_check_args_fail(location):
         "21",
         "dory_k21_r1",
         "dory.reads.bgz",
-        "dory_k21_r1/reads.bgz.labels2",
+        "dory_k21_r1/reads.bgz.index",
         "-P", "-N"
     ]
     assert index_reads.main(args) != 0
@@ -403,7 +403,7 @@ def test_dory_extract_reads(location):
         "21",
         "dory_k21_r1",
         "dory.reads.bgz",
-        "dory_k21_r1/reads.bgz.labels2",
+        "dory_k21_r1/reads.bgz.index",
     ]
     assert index_reads.main(args) == 0
 
@@ -411,7 +411,7 @@ def test_dory_extract_reads(location):
     print("** running extract_reads")
     args = [
         "dory.reads.bgz",
-        "dory_k21_r1/reads.bgz.labels2",
+        "dory_k21_r1/reads.bgz.index",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz",
