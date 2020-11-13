@@ -43,7 +43,25 @@ def main(argv=sys.argv[1:]):
     p.add_argument("reads")
     p.add_argument("savename")
     p.add_argument("-k", "--ksize", default=DEFAULT_KSIZE, type=int)
+    p.add_argument("-P", "--expect-paired", action="store_true")
+    p.add_argument("-N", "--ignore-paired", action="store_true")
     args = p.parse_args(argv)
+
+    if args.expect_paired and args.ignore_paired:
+        print("cannot set both -P/--expect-paired and -N/--ignore-paired")
+        return -1
+
+    if args.expect_paired:
+        print(
+            "We will REQUIRE that some of the reads are in pairs (-P/--expect-paired)"
+        )
+    else:
+        print("We will NOT require that some of theads be in pairs (default).")
+
+    if args.ignore_paired:
+        print("Ignoring paired reads (-N/--ignore-paired)")
+    else:
+        print("Paired reads will be indexed together (default).")
 
     dbfilename = args.savename
     if os.path.exists(dbfilename):
@@ -79,12 +97,42 @@ def main(argv=sys.argv[1:]):
 
     reader = BgzfReader(args.reads)
     total_cdbg_ids = set()
+    last_record = None
+    last_offset = None
+    n_paired_reads = 0
     for record, offset in search_utils.iterate_bgzf(reader):
         n += 1
         if total_bp >= watermark:
             print(f"... {watermark:5.2e} bp thru reads", end="\r", file=sys.stderr)
             watermark += watermark_size
+
+            if args.expect_paired:
+                if not n_paired_reads:
+                    print(
+                        "ERROR: no paired reads!? but -P/--expect-paired set. Quitting."
+                    )
+                    return -1
+
         total_bp += len(record.sequence)
+
+        this_name = record.name
+        is_paired = False
+        if last_record:
+            last_name = last_record.name
+
+            if last_name.endswith("/1") and this_name.endswith("/2"):
+                if last_name[:-2] == this_name[:-2] and len(last_name) > 2:
+                    is_paired = True
+            elif last_name == this_name and last_name:  # SRR stuff, bleah
+                is_paired = True
+
+        if is_paired:
+            offsets = [last_offset, offset]
+            # leave cdbg_ids alone... will be cleared next.
+            n_paired_reads += 1
+        else:
+            offsets = [offset]
+            cdbg_ids = set()
 
         if len(record.sequence) < args.ksize:
             continue
@@ -94,18 +142,27 @@ def main(argv=sys.argv[1:]):
 
         # CTB note: if reads have 'N' in them, they will not appear
         # in cDBG, so do not require_exist=True here.
-        cdbg_ids = kmer_idx.count_cdbg_matches(kmers)
+        new_cdbg_ids = kmer_idx.count_cdbg_matches(kmers)
+        cdbg_ids.update(new_cdbg_ids)
 
-        for cdbg_id in cdbg_ids:
-            cursor.execute(
-                "INSERT INTO sequences (offset, cdbg_id) VALUES (?, ?)",
-                (offset, cdbg_id),
-            )
+        for insert_offset in offsets:
+            # CTB: note this may insert duplicates into the table,
+            # which are resolved in the extraction by SELECT DISTINCT.
+            for cdbg_id in cdbg_ids:
+                cursor.execute(
+                    "INSERT INTO sequences (offset, cdbg_id) VALUES (?, ?)",
+                    (insert_offset, cdbg_id),
+                )
 
         total_cdbg_ids.update(cdbg_ids)
 
+        if not args.ignore_paired:
+            last_record = record
+            last_offset = offset
+
     db.commit()
-    notify(f"{total_bp:5.2e} bp in reads")
+    notify(f"{total_bp:5.2e} bp in {n} reads")
+    notify(f"{n_paired_reads} paired of {n} reads")
     notify(f"found reads for {len(total_cdbg_ids)} cDBG IDs")
     assert max(total_cdbg_ids) + 1 == len(total_cdbg_ids)
 
@@ -113,6 +170,11 @@ def main(argv=sys.argv[1:]):
     cursor.execute("CREATE INDEX cdbg_id_idx ON sequences (cdbg_id)")
     db.close()
     print(f"done; closing {dbfilename}!")
+
+    if args.expect_paired:
+        if not n_paired_reads:
+            print("ERROR: no paired reads!? but -P/--expect-paired set. Failing.")
+            return -1
 
     return 0
 

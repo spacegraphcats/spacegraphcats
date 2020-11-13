@@ -74,7 +74,7 @@ def catlas_extract(conf_file, cdbg_only=False, suffix=""):
     z = []
     for x in filenames:
         x = os.path.basename(x)
-        z.append(os.path.join(dirname, "{}.cdbg_ids.reads.fa.gz".format(x)))
+        z.append(os.path.join(dirname, "{}.cdbg_ids.reads.gz".format(x)))
         z.append(os.path.join(dirname, "{}.cdbg_ids.contigs.fa.gz".format(x)))
 
     return z

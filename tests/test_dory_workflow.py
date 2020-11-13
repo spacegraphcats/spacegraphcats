@@ -23,7 +23,7 @@ from spacegraphcats.search import extract_contigs_cdbg
 from spacegraphcats.search import estimate_query_abundance
 from spacegraphcats.search import extract_nodes_by_shadow_ratio
 from spacegraphcats.utils import make_bgzf
-from spacegraphcats.cdbg import label_cdbg2
+from spacegraphcats.cdbg import index_reads
 from spacegraphcats.search import extract_reads
 from spacegraphcats.cdbg import index_cdbg_by_minhash
 from spacegraphcats.search import query_by_hashval
@@ -314,7 +314,7 @@ def test_dory_make_bgzf(location):
 
 
 @pytest_utils.in_tempdir
-def test_dory_label_cdbg(location):
+def test_dory_index_reads(location):
     copy_dory_catlas()
     copy_dory_subset()
 
@@ -327,16 +327,59 @@ def test_dory_label_cdbg(location):
     args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
-    # run label_cdbg
-    print("** running label_cdbg")
+    # run index_reads
+    print("** running index_reads")
     args = [
         "-k",
         "21",
         "dory_k21_r1",
         "dory.reads.bgz",
-        "dory_k21_r1/reads.bgz.labels2",
+        "dory_k21_r1/reads.bgz.index",
     ]
-    assert label_cdbg2.main(args) == 0
+    assert index_reads.main(args) == 0
+
+
+@pytest_utils.in_tempdir
+def test_dory_index_reads_require_paired_fail(location):
+    copy_dory_catlas()
+    copy_dory_subset()
+
+    # run make_bgzf - FIXTURE
+    print("** running make_bgzf")
+    args = ["dory-subset.fa", "-o", "dory.reads.bgz"]
+    assert make_bgzf.main(args) == 0
+
+    # make k-mer search index - FIXTURE
+    args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
+    assert index_cdbg_by_kmer.main(args) == 0
+
+    # run index_reads
+    print("** running index_reads")
+    args = [
+        "-k",
+        "21",
+        "dory_k21_r1",
+        "dory.reads.bgz",
+        "dory_k21_r1/reads.bgz.index",
+        "-P",
+    ]
+    assert index_reads.main(args) != 0
+
+
+@pytest_utils.in_tempdir
+def test_dory_index_reads_check_args_fail(location):
+    # run index_reads
+    print("** running index_reads")
+    args = [
+        "-k",
+        "21",
+        "dory_k21_r1",
+        "dory.reads.bgz",
+        "dory_k21_r1/reads.bgz.index",
+        "-P",
+        "-N",
+    ]
+    assert index_reads.main(args) != 0
 
 
 @pytest_utils.in_tempdir
@@ -361,22 +404,22 @@ def test_dory_extract_reads(location):
         "21",
         "dory_k21_r1",
         "dory.reads.bgz",
-        "dory_k21_r1/reads.bgz.labels2",
+        "dory_k21_r1/reads.bgz.index",
     ]
-    assert label_cdbg2.main(args) == 0
+    assert index_reads.main(args) == 0
 
     # run extract_reads
     print("** running extract_reads")
     args = [
         "dory.reads.bgz",
-        "dory_k21_r1/reads.bgz.labels2",
+        "dory_k21_r1/reads.bgz.index",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
-        "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz",
+        "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz",
     ]
     assert extract_reads.main(args) == 0
 
-    reads_filename = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz"
+    reads_filename = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz"
     reads = [record for record in screed.open(reads_filename)]
     assert len(reads) == 2
 
@@ -398,7 +441,7 @@ def test_dory_extract_reads_fq(location):
     args = "-k 21 dory_k21_r1 --contigs-db dory_k21/bcalm.unitigs.db".split()
     assert index_cdbg_by_kmer.main(args) == 0
 
-    # run label_cdbg - FIXTURE
+    # run index_reads - FIXTURE
     print("** running label_cdbg")
     args = [
         "-k",
@@ -407,7 +450,7 @@ def test_dory_extract_reads_fq(location):
         "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.labels",
     ]
-    assert label_cdbg2.main(args) == 0
+    assert index_reads.main(args) == 0
 
     # run extract_reads
     print("** running extract_reads")
@@ -416,11 +459,11 @@ def test_dory_extract_reads_fq(location):
         "dory_k21_r1/reads.bgz.labels",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
-        "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz",
+        "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz",
     ]
     assert extract_reads.main(args) == 0
 
-    reads_filename = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.fa.gz"
+    reads_filename = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz"
     reads = [record for record in screed.open(reads_filename)]
     assert len(reads) == 2
     assert len(reads[0].quality)  # FASTQ preserved!

@@ -2,6 +2,8 @@ catlas_base: twofoo-short
 input_sequences:
 - tests/test-data/63.short.fa.gz
 - tests/test-data/twofoo-short-reads.fa.gz
+- tests/test-data/twofoo-short-paired-test.fa.gz
+paired_reads: true
 ksize: 31
 radius: 1
 search:
