@@ -79,35 +79,40 @@ def test_index_reads_paired():
     test_reads = f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz"
     output_index = os.path.join(_tempdir, "xxx.reads.index")
 
-    retval = index_reads.main([f"{_tempdir}/twofoo-short_k31_r1",
-                              test_reads,
-                              output_index,
-                              "-k", "31", "--expect-paired"])
+    retval = index_reads.main(
+        [
+            f"{_tempdir}/twofoo-short_k31_r1",
+            test_reads,
+            output_index,
+            "-k",
+            "31",
+            "--expect-paired",
+        ]
+    )
 
     assert retval == 0
     assert os.path.exists(output_index)
 
     def get_ids_at_offset(offset):
-        import sqlite3
         db = sqlite3.connect(output_index)
         c = db.cursor()
 
-        c.execute('SELECT DISTINCT cdbg_id FROM sequences WHERE offset=?', (offset,))
-        id_list = [ offset for (offset,) in c ]
+        c.execute("SELECT DISTINCT cdbg_id FROM sequences WHERE offset=?", (offset,))
+        id_list = [offset for (offset,) in c]
         return id_list
 
     # output from scripts/print_offsets_names.py
-    #SRR606249.7757341 5707860790
-    #SRR606249.7757341 5707860911
+    # SRR606249.7757341 5707860790
+    # SRR606249.7757341 5707860911
     assert get_ids_at_offset(5707860790) == get_ids_at_offset(5707860911)
-    #SRR606249.7759257 5707861032 - not paired
-    #SRR606249.7757341/1 5707861153
-    #SRR606249.7757341/2 5707861276
+    # SRR606249.7759257 5707861032 - not paired
+    # SRR606249.7757341/1 5707861153
+    # SRR606249.7757341/2 5707861276
     assert get_ids_at_offset(5707861153) == get_ids_at_offset(5707861276)
-    #SRR606249.985492/1 5707861399 - not paired
-    #SRR606249.989382/2 5707861521 - not paired
+    # SRR606249.985492/1 5707861399 - not paired
+    # SRR606249.989382/2 5707861521 - not paired
     assert get_ids_at_offset(5707861399) != get_ids_at_offset(5707861521)
-    #SRR606249.1044514 5707861643 - not paired
+    # SRR606249.1044514 5707861643 - not paired
 
 
 @pytest.mark.pairing
@@ -120,35 +125,40 @@ def test_index_reads_nopairing():
     test_reads = f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz"
     output_index = os.path.join(_tempdir, "xxx.reads.index")
 
-    retval = index_reads.main([f"{_tempdir}/twofoo-short_k31_r1",
-                              test_reads,
-                              output_index,
-                              "-k", "31", "--ignore-paired"])
+    retval = index_reads.main(
+        [
+            f"{_tempdir}/twofoo-short_k31_r1",
+            test_reads,
+            output_index,
+            "-k",
+            "31",
+            "--ignore-paired",
+        ]
+    )
 
     assert retval == 0
     assert os.path.exists(output_index)
 
     def get_ids_at_offset(offset):
-        import sqlite3
         db = sqlite3.connect(output_index)
         c = db.cursor()
 
-        c.execute('SELECT DISTINCT cdbg_id FROM sequences WHERE offset=?', (offset,))
-        id_list = [ offset for (offset,) in c ]
+        c.execute("SELECT DISTINCT cdbg_id FROM sequences WHERE offset=?", (offset,))
+        id_list = [offset for (offset,) in c]
         return id_list
 
     # output from scripts/print_offsets_names.py
-    #SRR606249.7757341 5707860790
-    #SRR606249.7757341 5707860911
+    # SRR606249.7757341 5707860790
+    # SRR606249.7757341 5707860911
     assert get_ids_at_offset(5707860790) == get_ids_at_offset(5707860911)
-    #SRR606249.7759257 5707861032 - not paired
-    #SRR606249.7757341/1 5707861153
-    #SRR606249.7757341/2 5707861276
+    # SRR606249.7759257 5707861032 - not paired
+    # SRR606249.7757341/1 5707861153
+    # SRR606249.7757341/2 5707861276
     assert get_ids_at_offset(5707861153) != get_ids_at_offset(5707861276)
-    #SRR606249.985492/1 5707861399 - belong to different unitigs
-    #SRR606249.989382/2 5707861521 - belong to different unitigs!
+    # SRR606249.985492/1 5707861399 - belong to different unitigs
+    # SRR606249.989382/2 5707861521 - belong to different unitigs!
     assert get_ids_at_offset(5707861399) != get_ids_at_offset(5707861521)
-    #SRR606249.1044514 5707861643 - not paired
+    # SRR606249.1044514 5707861643 - not paired
 
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
@@ -173,8 +183,10 @@ def test_extract_reads_paired():
     status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
     assert status == 0
 
-    reads_file = os.path.join(_tempdir, "twofoo-short_k31_r1_search_oh0/63.short.fa.gz.cdbg_ids.reads.gz")
-    read_names = [ r.name for r in screed.open(reads_file) ]
+    reads_file = os.path.join(
+        _tempdir, "twofoo-short_k31_r1_search_oh0/63.short.fa.gz.cdbg_ids.reads.gz"
+    )
+    read_names = [r.name for r in screed.open(reads_file)]
 
     num_paired = 0
     num_single = 0
@@ -185,18 +197,23 @@ def test_extract_reads_paired():
         if last_name:
             if last_name == name:
                 is_paired = True
-            elif last_name.endswith('/1') and name.endswith('/2') and \
-              last_name[:-2] == name[:-2]:
+            elif (
+                last_name.endswith("/1")
+                and name.endswith("/2")
+                and last_name[:-2] == name[:-2]
+            ):
                 is_paired = True
 
-        if is_paired: num_paired += 1
-        else: num_single += 1
+        if is_paired:
+            num_paired += 1
+        else:
+            num_single += 1
 
         last_name = name
 
     print(f"reads: {len(read_names)}; singletons: {num_single}; paired: {num_paired}")
     assert len(read_names) == 988
-    assert num_single == 616              # this is singletons + first reads
+    assert num_single == 616  # this is singletons + first reads
     assert num_paired == 372
 
     assert num_single + num_paired == len(read_names)
@@ -251,7 +268,6 @@ def test_check_md5():
 @pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_catlas_vs_contigs():
     global _tempdir
-    import sqlite3
 
     cdbg_prefix = os.path.join(_tempdir, "twofoo-short_k31")
     catlas_prefix = os.path.join(_tempdir, "twofoo-short_k31_r1")

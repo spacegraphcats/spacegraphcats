@@ -43,16 +43,18 @@ def main(argv=sys.argv[1:]):
     p.add_argument("reads")
     p.add_argument("savename")
     p.add_argument("-k", "--ksize", default=DEFAULT_KSIZE, type=int)
-    p.add_argument("-P", "--expect-paired", action='store_true')
-    p.add_argument("-N", "--ignore-paired", action='store_true')
+    p.add_argument("-P", "--expect-paired", action="store_true")
+    p.add_argument("-N", "--ignore-paired", action="store_true")
     args = p.parse_args(argv)
 
     if args.expect_paired and args.ignore_paired:
-        print(f"cannot set both -P/--expect-paired and -N/--ignore-paired")
+        print("cannot set both -P/--expect-paired and -N/--ignore-paired")
         return -1
 
     if args.expect_paired:
-        print("We will REQUIRE that some of the reads are in pairs (-P/--expect-paired)")
+        print(
+            "We will REQUIRE that some of the reads are in pairs (-P/--expect-paired)"
+        )
     else:
         print("We will NOT require that some of theads be in pairs (default).")
 
@@ -106,7 +108,9 @@ def main(argv=sys.argv[1:]):
 
             if args.expect_paired:
                 if not n_paired_reads:
-                    print(f"ERROR: no paired reads!? but -P/--expect-paired set. Quitting.")
+                    print(
+                        "ERROR: no paired reads!? but -P/--expect-paired set. Quitting."
+                    )
                     return -1
 
         total_bp += len(record.sequence)
@@ -116,10 +120,10 @@ def main(argv=sys.argv[1:]):
         if last_record:
             last_name = last_record.name
 
-            if last_name.endswith('/1') and this_name.endswith('/2'):
+            if last_name.endswith("/1") and this_name.endswith("/2"):
                 if last_name[:-2] == this_name[:-2] and len(last_name) > 2:
                     is_paired = True
-            elif last_name == this_name and last_name:   # SRR stuff, bleah
+            elif last_name == this_name and last_name:  # SRR stuff, bleah
                 is_paired = True
 
         if is_paired:
@@ -169,7 +173,7 @@ def main(argv=sys.argv[1:]):
 
     if args.expect_paired:
         if not n_paired_reads:
-            print(f"ERROR: no paired reads!? but -P/--expect-paired set. Failing.")
+            print("ERROR: no paired reads!? but -P/--expect-paired set. Failing.")
             return -1
 
     return 0

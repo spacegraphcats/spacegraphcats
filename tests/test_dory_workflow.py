@@ -23,7 +23,7 @@ from spacegraphcats.search import extract_contigs_cdbg
 from spacegraphcats.search import estimate_query_abundance
 from spacegraphcats.search import extract_nodes_by_shadow_ratio
 from spacegraphcats.utils import make_bgzf
-from spacegraphcats.cdbg import index_reads 
+from spacegraphcats.cdbg import index_reads
 from spacegraphcats.search import extract_reads
 from spacegraphcats.cdbg import index_cdbg_by_minhash
 from spacegraphcats.search import query_by_hashval
@@ -361,7 +361,7 @@ def test_dory_index_reads_require_paired_fail(location):
         "dory_k21_r1",
         "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.index",
-        "-P"
+        "-P",
     ]
     assert index_reads.main(args) != 0
 
@@ -376,7 +376,8 @@ def test_dory_index_reads_check_args_fail(location):
         "dory_k21_r1",
         "dory.reads.bgz",
         "dory_k21_r1/reads.bgz.index",
-        "-P", "-N"
+        "-P",
+        "-N",
     ]
     assert index_reads.main(args) != 0
 
