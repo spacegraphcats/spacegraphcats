@@ -209,6 +209,17 @@ rule bcalm_catlas_prepare_input:
         chmod u-w {output.db}
      """
 
+# output contigs file
+rule dump_contigs:
+    input:
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
+    output:
+        f"{cdbg_dir}/contigs.fa.gz"
+    shell: """
+        python -m spacegraphcats.cdbg.dump_contigs_db_to_fasta \
+            {input.db} | gzip > {output}
+    """
+
 # combine all the reads into a single bgzf file, which permits random indexing.
 rule reads_bgzf:
     input:
