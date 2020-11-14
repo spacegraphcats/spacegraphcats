@@ -70,7 +70,6 @@ decompose_minsize = config.get('decompose_minsize', 5000)
 decompose_maxsize = config.get('decompose_maxsize', 50000)
 
 # hashval queries / query_by_hashval
-hashval_ksize = config.get('hashval_ksize', ksize)
 
 hashval_queries = ''
 if config.get('hashval_queries', ''):
@@ -93,6 +92,8 @@ multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
 cdbg_dir = f'{catlas_base}_k{ksize}'
 catlas_dir = f'{catlas_base}_k{ksize}_r{radius}{catlas_suffix}'
 search_dir = f'{catlas_dir}_search_oh{int(overhead*100)}{search_out_suffix}'
+
+hashval_ksize = config.get('hashval_ksize', ksize)
 hashval_query_dir = f'{catlas_dir}_hashval_k{hashval_ksize}'
 
 onsuccess:
@@ -177,9 +178,11 @@ rule bcalm_catlas_sort:
         db = f"{cdbg_dir}/bcalm.unitigs.predb",
         mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
         sig = f"{cdbg_dir}/bcalm.unitigs.fa.sig",
+    params:
+        ksize = ksize,
     shell: """
         python -m spacegraphcats.cdbg.sort_bcalm_unitigs \
-            -k {ksize} {input.unitigs} {output.db} {output.mapping}
+            -k {params.ksize} {input.unitigs} {output.db} {output.mapping}
      """
 
 # build catlas input from bcalm output by reformatting; optionally,
@@ -226,9 +229,10 @@ rule index_reads:
         f"{catlas_dir}/reads.bgz.index",
     params:
         paired_reads = "-P" if config.get('paired_reads', 0) else "",
+        ksize = ksize,
     shell: """
-        python -m spacegraphcats.cdbg.index_reads -k {ksize} {catlas_dir} \
-            {input.reads} {output} {params.paired_reads}
+        python -m spacegraphcats.cdbg.index_reads {catlas_dir} \
+            {input.reads} {output} {params.paired_reads} -k {params.ksize}
     """
 
 
@@ -252,9 +256,11 @@ rule make_contigs_kmer_index:
     output:
         f"{catlas_dir}/contigs.mphf",
         f"{catlas_dir}/contigs.indices",
+    params:
+        ksize = ksize,
     shell: """
         python -m spacegraphcats.cdbg.index_cdbg_by_kmer \
-            -k {ksize} {catlas_dir} --contigs-db {input.db}
+            -k {params.ksize} {catlas_dir} --contigs-db {input.db}
     """
 
 ### Search rules.
@@ -282,10 +288,13 @@ rule search:
     output:
         f"{search_dir}/results.csv",
         make_query_base(config['search']),
+    params:
+        ksize = ksize,
+        cdbg_only = cdbg_only,
     shell: """
         python -m spacegraphcats.search.query_by_sequence \
-            {catlas_dir} {search_dir} --query {config[search]} -k {ksize} \
-            {cdbg_only} --contigs-db {input.db}
+            {catlas_dir} {search_dir} --query {config[search]} \
+            -k {params.ksize} {params.cdbg_only} --contigs-db {input.db}
     """
 
 ### Extract contigs and reads.
@@ -373,9 +382,11 @@ rule build_hashval_query_index:
         f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{hashval_query_dir}/index.pickle",
+    params:
+        hashval_ksize = hashval_ksize,
     shell: """
         python -m spacegraphcats.cdbg.index_cdbg_by_minhash \
-            -k {hashval_ksize} {input} {output}
+            -k {params.hashval_ksize} {input} {output}
     """
 
 # do a full search!
@@ -388,10 +399,12 @@ checkpoint hashval_query:
     output:
         csv=f"{hashval_query_dir}/hashval_results.csv",
         outdir=directory(f"{hashval_query_dir}/contigs"),
+    params:
+        hashval_ksize = hashval_ksize,
     shell: """
         mkdir -p {output.outdir}
         python -m spacegraphcats.search.query_by_hashval \
-                 -k {hashval_ksize} {catlas_dir} \
+                 -k {params.hashval_ksize} {catlas_dir} \
                  {input.pickle} {input.queries} {hashval_query_dir} \
                  --contigs-db {input.contigs_db}
     """
