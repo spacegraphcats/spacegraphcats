@@ -54,10 +54,10 @@ twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
 #
 
 dory-test: data/dory-subset.fa data/dory-head.fa
-	python -m spacegraphcats dory-test search
-	python -m spacegraphcats dory-test extract_reads
-	python -m spacegraphcats dory-test extract_contigs
-	python -m spacegraphcats dory-test multifasta_query
+	python -m spacegraphcats run dory-test search
+	python -m spacegraphcats run dory-test extract_reads
+	python -m spacegraphcats run dory-test extract_contigs
+	python -m spacegraphcats run dory-test multifasta_query
 
 #twofoo/bcalm.twofoo.k31.unitigs.fa:
 #	mkdir -p twofoo
@@ -65,11 +65,11 @@ dory-test: data/dory-subset.fa data/dory-head.fa
 #	gunzip twofoo/bcalm.twofoo.k31.unitigs.fa.gz
 
 twofoo-test: twofoo.fq.gz # twofoo/bcalm.twofoo.k31.unitigs.fa
-	python -m spacegraphcats twofoo search
-	python -m spacegraphcats twofoo hashval_query
-	python -m spacegraphcats twofoo extract_reads_for_hashvals
+	python -m spacegraphcats run twofoo search
+	python -m spacegraphcats run twofoo hashval_query
+	python -m spacegraphcats run twofoo extract_reads_for_hashvals
 	python -m spacegraphcats.search.characterize_catlas_regions twofoo_k31_r1 twofoo_k31_r1.vec --contigs-db twofoo_k31/bcalm.unitigs.db
-	python -m spacegraphcats twofoo multifasta_query
+	python -m spacegraphcats run twofoo multifasta_query
 
 twofoo-clean:
 	rm -fr twofoo twofoo_k31_r1 twofoo_k31_r1_hashval_k51/ \

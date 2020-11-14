@@ -4,7 +4,7 @@ import tempfile
 import shutil
 import os
 
-from spacegraphcats.click import run_snakemake
+from spacegraphcats.__main__ import run_snakemake
 from . import pytest_utils as utils
 
 # NOTE re dependencies (@pytest.mark.dependency):

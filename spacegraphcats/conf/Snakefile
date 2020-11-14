@@ -1,7 +1,7 @@
 #
 # Snakemake configuration file for running spacegraphcats pipelines.
 #
-# Quickstart: `spacegraphcats dory-test searchquick`
+# Quickstart: `spacegraphcats run dory-test searchquick`
 #
 import sys
 import os
