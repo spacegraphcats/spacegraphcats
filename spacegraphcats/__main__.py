@@ -186,8 +186,10 @@ snakemake Snakefile: {get_snakefile_path('Snakefile')}
 # 'init' command
 @click.command()
 @click.argument("configfile")
+@click.argument("reads", nargs=1)
+@click.argument("--queries", nargs=-1)
 @click.option("-f", "--force", is_flag=True)
-def init(configfile, force):
+def init(configfile, force, reads, __queries):
     "create a new, empty config file."
     stubname = os.path.basename(configfile)
     if configfile.endswith(".conf"):
@@ -199,36 +201,23 @@ def init(configfile, force):
         print(f"** ERROR: configfile '{configfile}' already exists.")
         return -1
 
+    if __queries:
+        query_str = "- " + "\n- ".join(__queries)
+    else:
+        query_str = "- # <-- put query genome list HERE"
+
     print(f"creating configfile '{configfile}' for project '{stubname}'")
     with open(configfile, "wt") as fp:
         fp.write(
-            """\
+            f"""\
 # basic configuration:
-catlas_base: twofoo
+catlas_base: {stubname}
 input_sequences:
-- twofoo.fq.gz
+- {reads}
 ksize: 31
 radius: 1
 search:
-- data/2.fa.gz
-- data/47.fa.gz
-- data/63.fa.gz
-searchquick:
-- data/2.fa.gz
-
-## advanced features
-# multifasta query
-multifasta_query_sig: data/63-os223.sig
-multifasta_reference:
-- data/twofoo-genes.fa.gz
-multifasta_scaled: 1000
-
-# hashval queries
-hashval_ksize: 51
-hashval_queries: data/twofoo-k51-hashval-queries.txt
-
-# shadow ratio foo
-shadow_ratio_maxsize: 1000
+{query_str}
 # END
 """
         )
