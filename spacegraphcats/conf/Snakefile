@@ -1,7 +1,7 @@
 #
 # Snakemake configuration file for running spacegraphcats pipelines.
 #
-# Quickstart: `spacegraphcats run dory-test searchquick`
+# Quickstart: `spacegraphcats run dory-test search`
 #
 import sys
 import os
@@ -49,9 +49,8 @@ radius = config['radius']
 # search overhead
 overhead = config.get('overhead', 0.0)
 
-# fix paths to searchquick, search files
+# fix paths to search files
 config['search'] = fix_relative_input_paths(config.get('search', []))
-config['searchquick'] = fix_relative_input_paths(config.get('searchqiuck', []))
 
 # paper evaluation: do not expand the cDBG nodes using the domset
 cdbg_only = ""
@@ -274,25 +273,6 @@ def make_query_base(searchfiles):
         x.append(f"{search_dir}/{basename}.frontier.txt.gz")
     return x
 
-# do a quick search!
-rule searchquick:
-    input:
-        config['searchquick'],
-        f"{catlas_dir}/first_doms.txt",
-        f"{catlas_dir}/catlas.csv",
-        f"{catlas_dir}/contigs.mphf",
-        f"{catlas_dir}/contigs.indices",
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
-    output:
-        f"{search_dir}/results.csv",
-        make_query_base(config['searchquick']),
-    shell: """
-        {python} -m spacegraphcats.search.query_by_sequence {catlas_dir} \
-            {search_dir} --query {config[searchquick]} -k {ksize} {cdbg_only} \
-            --contigs-db {input.db}
-    """
-
-
 # do a full search!
 rule search:
     input:
@@ -310,8 +290,6 @@ rule search:
             {catlas_dir} {search_dir} --query {config[search]} -k {ksize} \
             {cdbg_only} --contigs-db {input.db}
     """
-
-ruleorder: search > searchquick
 
 ### Extract contigs and reads.
 

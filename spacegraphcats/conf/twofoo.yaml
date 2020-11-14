@@ -7,8 +7,6 @@ search:
 - data/2.fa.gz
 - data/47.fa.gz
 - data/63.fa.gz
-searchquick:
-- data/63.fa.gz
 shadow_ratio_maxsize: 1000
 
 hashval_ksize: 51
