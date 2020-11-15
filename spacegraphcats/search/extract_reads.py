@@ -38,10 +38,12 @@ def main(argv=sys.argv[1:]):
     else:
         outfp = open(outname, "wt")
 
+    print(f"reading cDBG nodes from {args.node_list_file}")
     with gzip.open(args.node_list_file, "rt") as fp:
         cdbg_shadow = set([int(x.strip()) for x in fp if x.strip()])
+    print(f"...read {len(cdbg_shadow)} nodes total.")
 
-    print("extracting reads to {}.".format(outname))
+    print(f"extracting reads to {outname}.")
 
     start = time.time()
 
@@ -77,6 +79,7 @@ def main(argv=sys.argv[1:]):
             end - start
         )
     )
+    print(f"DONE extracting reads for {args.node_list_file}")
 
     return 0
 

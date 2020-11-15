@@ -105,7 +105,11 @@ def main(argv=sys.argv[1:]):
     for record, offset in search_utils.iterate_bgzf(reader):
         n += 1
         if total_bp >= watermark:
-            print(f"... {watermark:5.2e} bp thru reads - {time.time() - idx_start:.1f}s", end="\r", file=sys.stderr)
+            print(
+                f"... {watermark:5.2e} bp thru reads - {time.time() - idx_start:.1f}s",
+                end="\r",
+                file=sys.stderr,
+            )
             watermark += watermark_size
 
             if args.expect_paired:
