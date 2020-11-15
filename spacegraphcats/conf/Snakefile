@@ -239,7 +239,7 @@ rule index_reads:
     output:
         f"{catlas_dir}/reads.bgz.index",
     params:
-        paired_reads = "-P" if config.get('paired_reads', 0) else "",
+        paired_reads = "-P" if config.get('paired_reads', 1) else "",
         ksize = ksize,
     shell: """
         python -m spacegraphcats.cdbg.index_reads {catlas_dir} \

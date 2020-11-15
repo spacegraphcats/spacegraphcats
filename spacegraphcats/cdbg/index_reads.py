@@ -56,7 +56,7 @@ def main(argv=sys.argv[1:]):
             "We will REQUIRE that some of the reads are in pairs (-P/--expect-paired)"
         )
     else:
-        print("We will NOT require that some of theads be in pairs (default).")
+        print("We will NOT require that some of the reads be in pairs (default).")
 
     if args.ignore_paired:
         print("Ignoring paired reads (-N/--ignore-paired)")
