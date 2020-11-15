@@ -202,6 +202,57 @@ def test_dory_query_workflow(location):
 
 
 @pytest_utils.in_tempdir
+def test_dory_query_workflow_remove_pendants(location):
+    from spacegraphcats.cdbg import bcalm_to_gxt2, sort_bcalm_unitigs
+
+    copy_dory_head()
+    copy_dory_subset()
+
+    # make the output directory
+    try:
+        os.mkdir("dory_k21")
+        os.mkdir("dory_k21_r1")
+    except FileExistsError:
+        pass
+
+    # sort the bcalm file
+    args = [
+        "-k",
+        "21",
+        relative_file("data/bcalm.dory.k21.unitigs.fa"),
+        "dory_k21/bcalm.unitigs.db",
+        "dory_k21/bcalm.unitigs.pickle",
+    ]
+
+    assert sort_bcalm_unitigs.main(args) == 0
+
+    db = sqlite3.connect("dory_k21/bcalm.unitigs.db")
+    all_seqs = list(search_utils.contigs_iter_sqlite(db))
+    assert len(all_seqs) == 736, len(all_seqs)
+
+    # convert the bcalm file to gxt
+    args = [
+        relative_file("data/bcalm.dory.k21.unitigs.fa"),
+        "dory_k21/bcalm.unitigs.db",
+        "dory_k21/bcalm.unitigs.pickle",
+        "dory_k21_r1/cdbg.gxt",
+        "dory_k21_r1/contigs",
+    ]
+
+    assert bcalm_to_gxt2.main(args) == 0
+
+    db = sqlite3.connect("dory_k21/bcalm.unitigs.db")
+    all_seqs = list(search_utils.contigs_iter_sqlite(db))
+    assert len(all_seqs) == 736, len(all_seqs)
+
+    with open("dory_k21_r1/cdbg.gxt", "rb") as fp:
+        data = fp.read()
+    m = hashlib.md5()
+    m.update(data)
+    assert m.hexdigest() == "7e4d9acc9e968f7425c94f6ec78ecdd5", m.hexdigest()
+
+
+@pytest_utils.in_tempdir
 def test_dory_search_nomatch(location):
     # test situations where zero k-mers match - should not fail.
     copy_dory_catlas()
