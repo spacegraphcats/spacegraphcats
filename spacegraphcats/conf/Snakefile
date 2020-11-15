@@ -6,6 +6,9 @@
 import sys
 import os
 
+from spacegraphcats import version
+print(f"\nThis is spacegraphcats {version.version}.\n")
+
 ##
 ## pull values in from config file / command line:
 ##
@@ -29,7 +32,7 @@ def fix_relative_input_paths(filenames):
     abs_filenames = []
     for filename in filenames:
         if not filename.startswith('/'):
-            print(f'...sgc is updating input file {filename} with outdir prefix {startdir}', file=sys.stderr)
+            #print(f'...sgc is updating input file {filename} with outdir prefix {startdir}', file=sys.stderr)
             filename = os.path.join(startdir, filename)
         abs_filenames.append(filename)
     return abs_filenames
