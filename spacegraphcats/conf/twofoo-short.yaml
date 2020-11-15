@@ -10,5 +10,3 @@ search:
 - tests/test-data/2.short.fa.gz
 - tests/test-data/47.short.fa.gz
 - tests/test-data/63.short.fa.gz
-searchquick:
-- tests/test-data/63.short.fa.gz

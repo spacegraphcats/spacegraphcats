@@ -11,7 +11,7 @@ import sourmash
 import screed
 
 from spacegraphcats.search.catlas import CAtlas
-from spacegraphcats.click import run_snakemake
+from spacegraphcats.__main__ import run_snakemake
 from . import pytest_utils as utils
 
 # NOTE re dependencies (@pytest.mark.dependency):
@@ -54,6 +54,18 @@ def test_build_and_search():
     for filename in output_files:
         fullpath = os.path.join(_tempdir, filename)
         assert os.path.exists(fullpath), fullpath
+
+
+@pytest.mark.dependency(depends=["test_build_and_search"])
+def test_dump_contigs():
+    global _tempdir
+
+    conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
+    target = "dump_contigs"
+    status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
+    assert status == 0
+
+    assert os.path.exists(f"{_tempdir}/twofoo-short_k31/contigs.fa.gz")
 
 
 @pytest.mark.pairing
