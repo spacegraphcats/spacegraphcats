@@ -198,7 +198,7 @@ rule bcalm_catlas_prepare_input:
         sig = f"{catlas_dir}/contigs.sig",
         db = f"{cdbg_dir}/bcalm.unitigs.db",
     params:
-        remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else "",
+        remove_pendants = "-P" if config.get('keep_graph_pendants', 1) else "",
         contigs_prefix = f"{catlas_dir}/contigs"
     shell: """
         python -m spacegraphcats.cdbg.bcalm_to_gxt2 \
