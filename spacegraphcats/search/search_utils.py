@@ -33,9 +33,7 @@ def sqlite_get_offsets(cursor, cdbg_ids):
         "SELECT DISTINCT sequences.offset,sequences.cdbg_id FROM sequences WHERE cdbg_id in (SELECT cdbg_id FROM cdbg_query) ORDER BY offset"
     )
 
-    results = cursor.fetchall()
-
-    for n, (offset, label) in enumerate(results):
+    for n, (offset, label) in enumerate(cursor):
         if offset not in seen_offsets:
             yield offset
         seen_offsets.add(offset)
@@ -164,8 +162,6 @@ def get_reads_by_cdbg(sqlite_filename, reads_filename, cdbg_ids):
     # connect to sqlite db
     db = sqlite3.connect(sqlite_filename)
     cursor = db.cursor()
-
-    cursor.execute('PRAGMA temp_store=MEMORY')
 
     # open readsfile for random access
     reads_grabber = GrabBGZF_Random(reads_filename)
