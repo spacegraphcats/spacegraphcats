@@ -3,31 +3,33 @@ import yaml
 
 
 def catlas_build(conf_file):
-    "Produce the list of files output by 'spacegraphcats <config> build"
+    "Produce the list of files output by 'spacegraphcats build <config>"
     with open(conf_file, "rt") as fp:
-        jj = yaml.load(fp)
+        jj = yaml.safe_load(fp)
 
     catlas_base = jj["catlas_base"]
     ksize = jj["ksize"]
     radius = jj["radius"]
 
-    dirname = "{}_k{}_r{}".format(catlas_base, ksize, radius)
+    cdbg_dir = f"{catlas_base}_k{ksize}"
+    catlas_dir = f"{catlas_base}_k{ksize}_r{radius}"
 
     z = []
-    z.append(os.path.join(catlas_base, "bcalm.{}.k31.unitigs.fa".format(catlas_base)))
-    z.append(os.path.join(dirname, "catlas.csv"))
-    z.append(os.path.join(dirname, "cdbg.gxt"))
-    z.append(os.path.join(dirname, "contigs.fa.gz.indices"))
-    z.append(os.path.join(dirname, "contigs.fa.gz.info.csv"))
-    z.append(os.path.join(dirname, "contigs.fa.gz.mphf"))
-    z.append(os.path.join(dirname, "first_doms.txt"))
+    z.append(os.path.join(cdbg_dir, "bcalm.unitigs.fa"))
+    z.append(os.path.join(cdbg_dir, "bcalm.unitigs.db"))
+    z.append(os.path.join(catlas_dir, "catlas.csv"))
+    z.append(os.path.join(catlas_dir, "cdbg.gxt"))
+    z.append(os.path.join(catlas_dir, "contigs.indices"))
+    z.append(os.path.join(catlas_dir, "contigs.info.csv"))
+    z.append(os.path.join(catlas_dir, "contigs.mphf"))
+    z.append(os.path.join(catlas_dir, "first_doms.txt"))
     return z
 
 
 def catlas_search(conf_file, cdbg_only=False, suffix=""):
     "Produce the list of files output by 'spacegraphcats <config> search"
     with open(conf_file, "rt") as fp:
-        jj = yaml.load(fp)
+        jj = yaml.safe_load(fp)
 
     catlas_base = jj["catlas_base"]
     ksize = jj["ksize"]
@@ -36,9 +38,7 @@ def catlas_search(conf_file, cdbg_only=False, suffix=""):
     cdbg_str = ""
     if cdbg_only:
         cdbg_str = "_cdbg"
-    dirname = "{}_k{}_r{}{}_search_oh0{}".format(
-        catlas_base, ksize, radius, cdbg_str, suffix
-    )
+    dirname = f"{catlas_base}_k{ksize}_r{radius}{cdbg_str}_search_oh0{suffix}"
 
     filenames = jj["search"]
     z = []
@@ -57,7 +57,7 @@ def catlas_search(conf_file, cdbg_only=False, suffix=""):
 def catlas_extract(conf_file, cdbg_only=False, suffix=""):
     "Produce the list of files output by 'spacegraphcats <config> extract_contigs extract_reads"
     with open(conf_file, "rt") as fp:
-        jj = yaml.load(fp)
+        jj = yaml.safe_load(fp)
 
     catlas_base = jj["catlas_base"]
     ksize = jj["ksize"]
@@ -74,8 +74,8 @@ def catlas_extract(conf_file, cdbg_only=False, suffix=""):
     z = []
     for x in filenames:
         x = os.path.basename(x)
-        z.append(os.path.join(dirname, "{}.cdbg_ids.reads.gz".format(x)))
-        z.append(os.path.join(dirname, "{}.cdbg_ids.contigs.fa.gz".format(x)))
+        z.append(os.path.join(dirname, f"{x}.cdbg_ids.reads.gz"))
+        z.append(os.path.join(dirname, f"{x}.cdbg_ids.contigs.fa.gz"))
 
     return z
 
@@ -83,7 +83,7 @@ def catlas_extract(conf_file, cdbg_only=False, suffix=""):
 def catlas_search_input(conf_file):
     "Produce the list of files output by 'spacegraphcats <config> search"
     with open(conf_file, "rt") as fp:
-        jj = yaml.load(fp)
+        jj = yaml.safe_load(fp)
 
     filenames = jj["search"]
     return filenames
