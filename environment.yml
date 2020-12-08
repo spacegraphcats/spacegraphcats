@@ -16,4 +16,4 @@ dependencies:
     - bbhash>=0.5.4
     - pip
     - pip:
-      - https://github.com/dib-lab/sourmash/archive/latest.zip
+      - sourmash==4.0.0a3
