@@ -147,6 +147,7 @@ rule bcalm_cdbg:
     output:
         f"{cdbg_dir}/bcalm.unitigs.fa",
     log: f"{catlas_dir}/bcalm.{catlas_dir}.log.txt",
+    shadow: "shallow"
     shell: """
         # can we run it?
         bcalm >& /dev/null || \
@@ -181,6 +182,7 @@ rule bcalm_catlas_sort:
         db = f"{cdbg_dir}/bcalm.unitigs.predb",
         mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
         sig = f"{cdbg_dir}/bcalm.unitigs.fa.sig",
+    shadow: "shallow"
     params:
         ksize = ksize,
     shell: """
@@ -200,6 +202,7 @@ rule bcalm_catlas_prepare_input:
         info = f"{catlas_dir}/contigs.info.csv",
         sig = f"{catlas_dir}/contigs.sig",
         db = f"{cdbg_dir}/bcalm.unitigs.db",
+    shadow: "shallow"
     params:
         remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else "",
         contigs_prefix = f"{catlas_dir}/contigs"
@@ -239,6 +242,7 @@ rule index_reads:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
         mphf = f"{catlas_dir}/contigs.mphf",
         mphf_idx = f"{catlas_dir}/contigs.indices",
+    shadow: "shallow"
     output:
         f"{catlas_dir}/reads.bgz.index",
     params:
@@ -270,6 +274,7 @@ rule make_contigs_kmer_index:
     output:
         f"{catlas_dir}/contigs.mphf",
         f"{catlas_dir}/contigs.indices",
+    shadow: "shallow"
     params:
         ksize = ksize,
     shell: """
@@ -302,6 +307,7 @@ rule search:
     output:
         f"{search_dir}/results.csv",
         make_query_base(config['search']),
+    shadow: "shallow"
     params:
         ksize = ksize,
         cdbg_only = cdbg_only,
@@ -348,6 +354,7 @@ rule extract_reads_single_file:
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
         f"{search_dir}/{{queryname}}.cdbg_ids.reads.gz",
+    shadow: "shallow"
     shell: """
         python -m spacegraphcats.search.extract_reads {input.reads} \
             {input.labels} {input.cdbg_ids} -o {output}
