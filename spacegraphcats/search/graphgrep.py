@@ -37,6 +37,8 @@ def main(argv):
     )
     p.add_argument('-R', '--output-reads', action='store_true',
                    help="Output raw reads instead of cDBG unitigs")
+    p.add_argument('-r', '--radius', type=int, default=0,
+                   help="expand found nodes by this radius")
     p.add_argument("-v", "--verbose", action="store_true")
 
     args = p.parse_args(argv)
@@ -92,6 +94,32 @@ def main(argv):
             cdbg_nodes.update(cdbg_match_counts)
 
     notify(f"Found {len(cdbg_nodes)} matching cDBG nodes total for all query sequences.")
+
+    if args.radius:
+        notify(f"inflating by radius {args.radius}...")
+
+        gxtfile = os.path.join(args.catlas_prefix, "cdbg.gxt")
+        graph_neighbors = defaultdict(set)
+        with open(gxtfile, 'rt') as fp:
+            fp.readline()                 # discard first
+            for edgeline in fp:
+                a, b = edgeline.strip().split()
+                a = int(a)
+                b = int(b)
+
+                graph_neighbors[a].add(b)
+                graph_neighbors[b].add(a)
+
+        orig_cdbg_nodes = cdbg_nodes
+
+        for i in range(args.radius):
+            notify(f"round {i+1} inflation...")
+            new_nodes = set(cdbg_nodes)
+            for node in cdbg_nodes:
+                new_nodes.update(graph_neighbors[node])
+
+            notify(f"...inflated from {len(cdbg_nodes)} to {len(new_nodes)} nodes.")
+            cdbg_nodes = new_nodes
 
     if retrieve_contigs:
         notify("Retrieving contigs...")
