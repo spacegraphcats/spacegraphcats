@@ -155,7 +155,7 @@ def build_mphf(ksize, records_iter_fn):
 
     if len(all_kmers) != sum_kmers:
         print('WARNING: likely hash collisions (or duplicate k-mers?) in input cDBG')
-        print('WARNING: we hashed {sum_kmers}, but only {len(all_kmers)} distinct hashes.')
+        print(f'WARNING: we hashed {sum_kmers}, but only {len(all_kmers)} distinct hashes.')
         print('WARNING: the impact of this on spacegraphcats is unclear, but, at least for now, there\'s nothing you can do about it. Apologies.')
 
     # build MPHF (this is the CPU intensive bit)
