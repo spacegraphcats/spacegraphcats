@@ -139,6 +139,7 @@ class MPHF_KmerIndex(object):
 def build_mphf(ksize, records_iter_fn):
     # build a list of all k-mers in the cDBG
     all_kmers = set()
+    sum_kmers = 0
 
     records_iter = records_iter_fn()
     for n, record in enumerate(records_iter):
@@ -146,10 +147,16 @@ def build_mphf(ksize, records_iter_fn):
             print("... contig", n, end="\r")
 
         kmers = hash_sequence(record.sequence, ksize)
+        sum_kmers += len(kmers)
         all_kmers.update(kmers)
 
     n_contigs = n + 1
     print(f"loaded {n_contigs} contigs.\n")
+
+    if len(all_kmers) != sum_kmers:
+        print('WARNING: likely hash collisions (or duplicate k-mers?) in input cDBG')
+        print('WARNING: we hashed {sum_kmers}, but only {len(all_kmers)} distinct hashes.')
+        print('WARNING: the impact of this on spacegraphcats is unclear, but, at least for now, there\'s nothing you can do about it. Apologies.')
 
     # build MPHF (this is the CPU intensive bit)
     print(f"building MPHF for {len(all_kmers)} k-mers in {n_contigs} nodes.")
