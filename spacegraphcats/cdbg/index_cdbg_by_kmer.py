@@ -21,6 +21,8 @@ import screed
 import khmer
 from bbhash_table import BBHashTable
 
+UNSET_VALUE=2**32-1             # BBHashTable "unset" value
+
 
 hashing_fn = None
 hashing_ksize = None
@@ -136,7 +138,7 @@ class MPHF_KmerIndex(object):
 
 def build_mphf(ksize, records_iter_fn):
     # build a list of all k-mers in the cDBG
-    all_kmers = list()
+    all_kmers = set()
 
     records_iter = records_iter_fn()
     for n, record in enumerate(records_iter):
@@ -144,7 +146,7 @@ def build_mphf(ksize, records_iter_fn):
             print("... contig", n, end="\r")
 
         kmers = hash_sequence(record.sequence, ksize)
-        all_kmers.extend(list(kmers))
+        all_kmers.update(kmers)
 
     n_contigs = n + 1
     print(f"loaded {n_contigs} contigs.\n")
@@ -152,7 +154,9 @@ def build_mphf(ksize, records_iter_fn):
     # build MPHF (this is the CPU intensive bit)
     print(f"building MPHF for {len(all_kmers)} k-mers in {n_contigs} nodes.")
     table = BBHashTable()
-    table.initialize(all_kmers)
+    table.initialize(list(all_kmers))
+
+    del all_kmers
 
     # build tables linking:
     # * mphf hash to k-mer hash (for checking exactness)
@@ -162,12 +166,14 @@ def build_mphf(ksize, records_iter_fn):
     print("second pass.")
     records_iter = records_iter_fn()
     sizes = {}
+    max_cdbg_id = 0
     for n, record in enumerate(records_iter):
         if n % 50000 == 0 and n:
             print("... contig {} of {}".format(n, n_contigs), end="\r")
 
         # node ID is record name, must go from 0 to total-1
         cdbg_id = int(record.name)
+
         # get 64-bit numbers for each k-mer
         kmers = hash_sequence(record.sequence, ksize)
 
@@ -177,8 +183,27 @@ def build_mphf(ksize, records_iter_fn):
 
         sizes[cdbg_id] = len(kmers)
 
+        # update max cdbg_id:
+        if cdbg_id > max_cdbg_id:
+            max_cdbg_id = cdbg_id
+
     print(f"loaded {n_contigs} contigs in pass2.\n")
-    assert n == max(table.mphf_to_value), (n, max(table.mphf_to_value))
+
+    # a few asserts - these are a bit redundant with each other, but
+    # are here to aid in debugging.
+
+    # number of contigs should not be super large.
+    assert n <= UNSET_VALUE
+
+    # no values in the bbhash table should be unset.
+    max_table_value = max(table.mphf_to_value)
+    assert max_table_value != UNSET_VALUE
+
+    # cdbg_id should go from 0 to n_contigs - 1.
+    assert n == max_cdbg_id
+
+    # and max value in the bbhash table should be the max cdbg_id
+    assert n == max_table_value, (n, max_table_value)
 
     return table, sizes
 
