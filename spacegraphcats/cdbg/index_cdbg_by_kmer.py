@@ -155,7 +155,6 @@ def build_mphf(ksize, records_iter_fn):
         seen_before = all_kmers.intersection(these_kmers)
         if seen_before:
             multicounts.update(seen_before)
-            these_kmers -= seen_before
 
         all_kmers.update(these_kmers)
 
@@ -166,6 +165,8 @@ def build_mphf(ksize, records_iter_fn):
         print('NOTE: likely hash collisions (or duplicate k-mers?) in input cDBG')
         print(f'NOTE: {len(multicounts)} k-mer hash values are present more than once.')
         print('NOTE: these k-mers are being removed from consideration.')
+
+        all_kmers -= multicounts
     else:
         print('NOTE: no multicount hashvals detected.')
 
