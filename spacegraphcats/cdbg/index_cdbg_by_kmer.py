@@ -16,12 +16,13 @@ import os
 import argparse
 import pickle
 import sqlite3
+import collections
 
 import screed
 import khmer
 from bbhash_table import BBHashTable
 
-UNSET_VALUE=2**32-1             # BBHashTable "unset" value
+UNSET_VALUE = 2**32 - 1             # BBHashTable "unset" value
 
 
 hashing_fn = None
@@ -138,7 +139,7 @@ class MPHF_KmerIndex(object):
 
 def build_mphf(ksize, records_iter_fn):
     # build a list of all k-mers in the cDBG
-    all_kmers = set()
+    all_kmers = collections.Counter()
     sum_kmers = 0
 
     records_iter = records_iter_fn()
@@ -153,15 +154,26 @@ def build_mphf(ksize, records_iter_fn):
     n_contigs = n + 1
     print(f"loaded {n_contigs} contigs.\n")
 
-    if len(all_kmers) != sum_kmers:
-        print('WARNING: likely hash collisions (or duplicate k-mers?) in input cDBG')
-        print(f'WARNING: we hashed {sum_kmers}, but only {len(all_kmers)} distinct hashes.')
-        print('WARNING: the impact of this on spacegraphcats is unclear, but, at least for now, there\'s nothing you can do about it. Apologies.')
+    multicounts = set()
+    for (hashval, count) in all_kmers.most_common():
+        if count == 1:
+            break
+        multicounts.add(hashval)
+
+    if multicounts:
+        print('NOTE: likely hash collisions (or duplicate k-mers?) in input cDBG')
+        print(f'NOTE: {len(multicounts)} k-mer hash values are present more than once.')
+        print('NOTE: these k-mers are being removed from consideration.')
+
+        for hashval in multicounts:
+            del all_kmers[hashval]
+    else:
+        print('NOTE: no multicount hashvals detected.')
 
     # build MPHF (this is the CPU intensive bit)
     print(f"building MPHF for {len(all_kmers)} k-mers in {n_contigs} nodes.")
     table = BBHashTable()
-    table.initialize(list(all_kmers))
+    table.initialize(list(all_kmers.keys()))
 
     del all_kmers
 
@@ -186,7 +198,8 @@ def build_mphf(ksize, records_iter_fn):
 
         # for each k-mer, find its MPHF hashval, & link to info.
         for kmer in kmers:
-            table[kmer] = cdbg_id
+            if kmer not in multicounts:
+                table[kmer] = cdbg_id
 
         sizes[cdbg_id] = len(kmers)
 
