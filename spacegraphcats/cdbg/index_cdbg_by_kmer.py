@@ -21,6 +21,8 @@ import screed
 import khmer
 from bbhash_table import BBHashTable
 
+UNSET_VALUE = 2**32 - 1             # BBHashTable "unset" value
+
 
 hashing_fn = None
 hashing_ksize = None
@@ -136,7 +138,9 @@ class MPHF_KmerIndex(object):
 
 def build_mphf(ksize, records_iter_fn):
     # build a list of all k-mers in the cDBG
-    all_kmers = list()
+    all_kmers = set()
+    sum_kmers = 0
+    multicounts = set()
 
     records_iter = records_iter_fn()
     for n, record in enumerate(records_iter):
@@ -144,15 +148,34 @@ def build_mphf(ksize, records_iter_fn):
             print("... contig", n, end="\r")
 
         kmers = hash_sequence(record.sequence, ksize)
-        all_kmers.extend(list(kmers))
+        sum_kmers += len(kmers)
+        these_kmers = set(kmers)
+
+        # have we seen any of these kmers before? if so, remove.
+        seen_before = all_kmers.intersection(these_kmers)
+        if seen_before:
+            multicounts.update(seen_before)
+
+        all_kmers.update(these_kmers)
 
     n_contigs = n + 1
     print(f"loaded {n_contigs} contigs.\n")
 
+    if multicounts:
+        print('NOTE: likely hash collisions (or duplicate k-mers?) in input cDBG')
+        print(f'NOTE: {len(multicounts)} k-mer hash values are present more than once.')
+        print('NOTE: these k-mers are being removed from consideration.')
+
+        all_kmers -= multicounts
+    else:
+        print('NOTE: no multicount hashvals detected.')
+
     # build MPHF (this is the CPU intensive bit)
     print(f"building MPHF for {len(all_kmers)} k-mers in {n_contigs} nodes.")
     table = BBHashTable()
-    table.initialize(all_kmers)
+    table.initialize(list(all_kmers))
+
+    del all_kmers
 
     # build tables linking:
     # * mphf hash to k-mer hash (for checking exactness)
@@ -162,23 +185,44 @@ def build_mphf(ksize, records_iter_fn):
     print("second pass.")
     records_iter = records_iter_fn()
     sizes = {}
+    max_cdbg_id = 0
     for n, record in enumerate(records_iter):
         if n % 50000 == 0 and n:
             print("... contig {} of {}".format(n, n_contigs), end="\r")
 
         # node ID is record name, must go from 0 to total-1
         cdbg_id = int(record.name)
+
         # get 64-bit numbers for each k-mer
         kmers = hash_sequence(record.sequence, ksize)
 
         # for each k-mer, find its MPHF hashval, & link to info.
-        for kmer in kmers:
+        for kmer in set(kmers) - multicounts:
             table[kmer] = cdbg_id
 
         sizes[cdbg_id] = len(kmers)
 
+        # update max cdbg_id:
+        if cdbg_id > max_cdbg_id:
+            max_cdbg_id = cdbg_id
+
     print(f"loaded {n_contigs} contigs in pass2.\n")
-    assert n == max(table.mphf_to_value), (n, max(table.mphf_to_value))
+
+    # a few asserts - these are a bit redundant with each other, but
+    # are here to aid in debugging.
+
+    # number of contigs should not be super large.
+    assert n <= UNSET_VALUE
+
+    # no values in the bbhash table should be unset.
+    max_table_value = max(table.mphf_to_value)
+    assert max_table_value != UNSET_VALUE
+
+    # cdbg_id should go from 0 to n_contigs - 1.
+    assert n == max_cdbg_id
+
+    # and max value in the bbhash table should be the max cdbg_id
+    assert n == max_table_value, (n, max_table_value)
 
     return table, sizes
 
