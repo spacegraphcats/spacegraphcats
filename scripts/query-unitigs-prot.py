@@ -82,10 +82,11 @@ def main():
     dna_ksize = args.ksize * 3
 
     dna_mh = sourmash.MinHash(n=0, scaled=1000, ksize=dna_ksize)
-    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize,
+    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=dna_ksize,
                                is_protein=True)
 
-    ## query:
+    ## query: for all of the query sequences (which are protein),
+    ## translate them into k-mers at protein ksize.
     query_kmers = set()
     for n, record in enumerate(screed.open(args.query)):
         if n and n % 1000 == 0:
@@ -95,34 +96,45 @@ def main():
 
     print(f'loaded {n} query sequences {len(query_kmers)} prot kmers (query)', file=sys.stderr)
 
-    ## now unitigs...
+    ## now unitigs... for all of the unitigs (which are DNA),
+    ## first: translate the unitig into protein (up to six sequences),
+    ## second: decompose into k-mers, save k-mers
+    ## third: look for overlaps with query_kmers
 
     matching_cdbg = set()
     cdbg_kmers = 0
 
     db = sqlite3.connect(args.unitigs_db)
     for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
-        record_kmers = set()
         if n and n % 1000 == 0:
             print(f'... {n} {len(matching_cdbg)} (unitigs)', end='\r', file=sys.stderr)
 
+        # translate into protein sequences
         seq = record.sequence
         seqlen = len(seq)
         if seqlen < dna_ksize:
             continue
         elif seqlen == dna_ksize:
             prots = list(translate(seq, 1))
+            assert len(prots) == 2
         elif seqlen == dna_ksize + 1:
             prots = list(translate(seq, 2))
+            assert len(prots) == 4
         else:
             prots = list(translate(seq, 3))
+            assert len(prots) == 6
 
+        # convert into k-mers
+        record_kmers = set()
         for prot in prots:
             these_kmers = set(kmers(prot, prot_ksize))
             record_kmers.update(these_kmers)
 
         cdbg_kmers += len(record_kmers)
+
+        # do we have an overlap with query??
         if record_kmers & query_kmers:
+            # if so, save etc.
             matching_cdbg.add(record.name)
             dna_mh.add_sequence(record.sequence)
             for prot in prots:
