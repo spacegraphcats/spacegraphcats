@@ -5,6 +5,7 @@ import sys
 import argparse
 import os
 import sqlite3
+import gzip
 
 import screed
 import sourmash
@@ -149,6 +150,13 @@ def main():
     outsig = out_prefix + '.sig'
     with open(outsig, 'wt') as fp:
         sourmash.save_signatures([dna_sig, prot_sig], fp)
+    print(f"saved prot & dna signatures to '{outsig}'")
+
+    outnodes = out_prefix + '.nodes.gz'
+    with gzip.open(outnodes, "wt") as fp:
+        id_list = "\n".join([str(x) for x in sorted(matching_cdbg)])
+        print(id_list, file=fp)
+    print(f"saved {len(matching_cdbg)} matching nodes to '{outnodes}'")
 
     return 0
 
