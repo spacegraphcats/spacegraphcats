@@ -3,7 +3,9 @@
 Query the cdbg with a sequence (read, contig, or genome), and retrieve
 contigs and/or reads for the matching unitigs in the graph.
 
-Need to have run `index_cdbg` and maybe `index_reads` rules.
+'graphgrep_iter' does not need the k-mer index, unlike 'graphgrep'.
+
+In order to retrieve reads, `index_reads` needs to have been run.
 """
 import argparse
 import os
@@ -61,15 +63,10 @@ def main(argv):
         reads_bgz_file = os.path.join(args.base_prefix, f'{args.base_prefix}.reads.bgz')
         assert os.path.exists(reads_bgz_file), f'{reads_bgz_file} must exist'
 
-    # ...and kmer index.
-    ki_start = time.time()
-    kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
-    notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
-
     # get ksize
     ksize = int(args.ksize)
 
-    matching_cdbg = set()
+    query_kmers = set()
     for filename in args.query:
         notify(f"Reading from query '{filename}'")
         for record in screed.open(filename):
@@ -77,15 +74,30 @@ def main(argv):
                 continue
 
             kmers = hash_sequence(record.sequence, ksize)
-            cdbg_match_counts = kmer_idx.count_cdbg_matches(kmers)
 
             notify(
-                f"got {len(cdbg_match_counts)} matching cdbg nodes for '{record.name[:15]}...' ({len(kmers)} kmers)"
+                f"got {len(kmers)} kmers for '{record.name[:15]}...'"
             )
+            query_kmers.update(kmers)
 
-            matching_cdbg.update(cdbg_match_counts)
+    notify(f"Loaded {len(query_kmers)} query kmers total.")
 
-    notify(f"Found {len(matching_cdbg)} matching cDBG nodes total for all query sequences.")
+    # now do search to find primary nodes -
+
+    matching_cdbg = set()
+
+    unitigs_db = os.path.join(args.cdbg_prefix, 'bcalm.unitigs.db')
+    db = sqlite3.connect(unitigs_db)
+    for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
+        if n and n % 1000 == 0:
+            print(f'... {n} {len(matching_cdbg)} (unitigs)', end='\r', file=sys.stderr)
+
+        record_kmers = set(hash_sequence(record.sequence, ksize))
+        if record_kmers & query_kmers:
+            matching_cdbg.add(record.name)
+
+    print(f'loaded {n} query sequences (unitigs)', file=sys.stderr)
+    print(f'total matches: {len(matching_cdbg)}', file=sys.stderr)
 
     if args.radius:
         notify(f"inflating by radius {args.radius}...")
