@@ -45,7 +45,7 @@ spacegraphcats also uses functionality from
 
 ## Citation information
 
-See the biorxiv preprint [Exploring neighborhoods in large metagenome assembly graphs reveals hidden sequence diversity](https://biorxiv.org/content/early/2018/11/05/462788), Brown et al., 2018, doi: https://doi.org/10.1101/462788.
+See the Genome Biology publication [Exploring neighborhoods in large metagenome assembly graphs using spacegraphcats reveals hidden sequence diversity](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02066-4), Brown et al., 2020, doi: https://doi.org/10.1186/s13059-020-02066-4.
 
 ## Pointers to interesting code
 
