@@ -108,7 +108,7 @@ def main():
     db = sqlite3.connect(args.unitigs_db)
     for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
         if n and n % 1000 == 0:
-            print(f'... {n} {len(matching_cdbg)} (unitigs)', end='\r', file=sys.stderr)
+            print(f'... searched {n} unitigs, found {len(matching_cdbg)} matching so far', end='\r', file=sys.stderr)
 
         # translate into protein sequences
         seq = record.sequence
