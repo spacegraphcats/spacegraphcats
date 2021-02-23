@@ -88,6 +88,8 @@ def main(argv):
 
     db.commit()
 
+    unitigs_fp.close()
+
     print(f"...read {len(neighbors)} unitigs, {total_bp:.2e} bp.")
     sys.stdout.flush()
 
@@ -161,7 +163,8 @@ def main(argv):
 
     # output sourmash signature for input contigs
     in_sig = sourmash.SourmashSignature(in_mh, filename=args.bcalm_unitigs)
-    sourmash.save_signatures([in_sig], open(args.bcalm_unitigs + ".sig", "wt"))
+    with open(args.bcalm_unitigs + ".sig", "wt") as fp:
+        sourmash.save_signatures([in_sig], fp)
 
     return 0
 
