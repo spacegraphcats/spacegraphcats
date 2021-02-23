@@ -164,7 +164,7 @@ def main(argv):
     # output sourmash signature for input contigs
     in_sig = sourmash.SourmashSignature(in_mh, filename=args.bcalm_unitigs)
     with open(args.bcalm_unitigs + ".sig", "wt") as fp:
-        sourmash.save_signatures([in_sig], )
+        sourmash.save_signatures([in_sig], fp)
 
     return 0
 
