@@ -34,6 +34,11 @@ Once it's created, activate the environment you just created:
 conda activate sgc
 ```
 
+and install spacegraphcats from the development directory:
+```
+pip install -e ./spacegraphcats/
+```
+
 and voila, done!
 
 ## 2. Installing dependencies in a virtual environment
@@ -71,6 +76,12 @@ pip install -r requirements.txt
 ```
 
 This will take a few minutes.
+
+Finally, install the git repo in developer mode:
+
+```
+pip install -e ./spacegraphcats/
+```
 
 ## 3. Installing dependencies on a blank Ubuntu machine
 
@@ -111,6 +122,13 @@ pip install -r requirements.txt
 ```
 
 This will take a few minutes.
+
+
+Finally, install the git repo in developer mode:
+
+```
+pip install -e ./spacegraphcats/
+```
 
 ## Step II: Test spacegraphcats by running a small test: dory.
 
