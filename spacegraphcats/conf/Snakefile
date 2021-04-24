@@ -62,6 +62,9 @@ if config.get('cdbg_only', False):
     cdbg_only = "--cdbg-only"
     catlas_suffix = "_cdbg"
 
+# debugging/evaluation only: shuffle cDBG nodes?
+cdbg_shuffle_seed = config.get('cdbg_shuffle_seed')
+
 # suffix to add to search output
 experiment = config.get('experiment', '')
 search_out_suffix = ''
@@ -185,9 +188,11 @@ rule bcalm_catlas_sort:
     shadow: "shallow"
     params:
         ksize = ksize,
+        seed = cdbg_shuffle_seed if cdbg_shuffle_seed else 42
     shell: """
         python -Werror -m spacegraphcats.cdbg.sort_bcalm_unitigs \
-            -k {params.ksize} {input.unitigs} {output.db} {output.mapping}
+            -k {params.ksize} {input.unitigs} {output.db} {output.mapping} \
+            --seed {params.seed}
      """
 
 # build catlas input from bcalm output by reformatting; optionally,
