@@ -188,7 +188,7 @@ rule bcalm_catlas_sort:
     shadow: "shallow"
     params:
         ksize = ksize,
-        seed = cdbg_shuffle_seed if cdbg_shuffle_seed else 42
+        seed = cdbg_shuffle_seed if cdbg_shuffle_seed is not None else 42
     shell: """
         python -Werror -m spacegraphcats.cdbg.sort_bcalm_unitigs \
             -k {params.ksize} {input.unitigs} {output.db} {output.mapping} \
