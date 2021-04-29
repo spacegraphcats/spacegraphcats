@@ -98,33 +98,37 @@ On either side of the gene sequence itself, different genome sequences branch of
 
 ![](https://oup.silverchair-cdn.com/oup/backfile/Content_public/Journal/bioinformatics/34/3/10.1093_bioinformatics_btx681/3/m_btx681f4.png?Expires=1622658116&Signature=1oKGKpWncO8Mz4poy5kkiX-yRfbv-rJ7MuMcfcreRO0c1idQRb24zdvgq5wCwkLkPWoEho11rXUuL2UnHnHDG1Ma5Z2KXKAreaXrdO~nVD~Yq0450RyAliyUSqB09Vu2p86fxFL7HgMU50tAWp722AjgOv2cqNe8sAaog7JasnWBibAj6wL2IrvvCFfucZZkrih8NItDqCrNMlgoCsi24cxH3qXVe1Ds9tD~qX3MUjyRXV0weJ2gtN9NN8TOSuxQR2fCWGbMs0o8oyOEGNTA8r8V-gVvOld34QmSYuOtaw~jdYOvol~uy4fEBNY6dcdm82X8Q~LlysqauQGVxNRmdg__&Key-Pair-Id=APKAIE5G5CRDK6RD3PGA) *A portion of an assembly graph depicting antibiotic resistance gene cfxA3. The gene is surrounded by multiple species, indicating that this gene likely occurred in each of these genomes. Source [Olekhnovih et al. 2018](https://academic.oup.com/bioinformatics/article/34/3/434/4575138)*
 
-
-## Scaling it up
+## Approaches for analyzing assembly graphs
 
 As outlined above, many reads do not match known references, don't assemble, and/or don't bin. 
-What if this occurs in a region that you particularly care about?
-How can we use the fact that all k-mers in a metagenome are contained within a cDBG to get more information about our region of interest?
+Because these sequences are in the assembly graph, they can still be accessed and analyzed.
+Below we discuss three approaches for analyzing sequences in assembly graphs.
 
-This approach is great, but incredibly time consuming and difficult to automate. 
-What's more, this approach does not scale. 
-Given the complexity of cDBGs, each "query" (e.g. look up within the graph) takes a lot of computational resources.
-As such, although this approach is tractable for a few genes (and shows really cool results at that scale!), it wouldn't work for every gene that is assembled in a metagenome. 
-But imagine if it could!
-Using *de novo* approaches, most bins are not 100% complete. 
-What if we could use a whole bin as a query, and pull out its context within a cDBG?
-We could "complete" a bin by pulling all the things that didn't assemble or bin, but that through close location in the cDBG, we know belongs with the bin.
+### Building an assembly graph and BLASTing against it to identify regions of interest
 
-Enter spacegraphcats. 
+Many tools can be used to build an assembly graph (e.g. BCALM, metaspades). 
+Then, the assembly graph can be visualized with the tool Bandage. 
+Bandage allows users to BLAST the assembly graph, revealing the context of sequences within the graph.
+See [Barnum et al. 2018](https://doi.org/10.1038/s41396-018-0081-5) for an example of this workflow.
+This approach is great, but time consuming and difficult to automate. 
+
+### Identifying antimicrobial resistance genes and their assembly graph context with MetaCherchant
+
+Metacherchant automates the identification of antimicrobial resistance genes and their context in metagenomes. 
+See [Olekhnovich et al. 2018](https://doi.org/10.1093/bioinformatics/btx681) for a description of this tool.
+
+### Querying an assembly graph with spacegraphcats 
+
 Spacegraphcats uses a novel data structure to represent the cDBG with less complexity while maintaining biological relationships between the sequences. 
 It then uses novel algorithms that exploit properties of the cDBG to quickly query into the data structure.
 
-To visualize this, let's look at a cDBG of an *Escherichia coli* genome + errors 
-(this is an isolate, so we're using the errors to simulate strain variation in a real metagenome community. 
+To visualize this, look the figure below depicting a cDBG of an *Escherichia coli* genome + errors 
+(this is an isolate, so the errors simulate strain variation in a real metagenome community. 
 It's a rough approximation that works well for visualizing what spacegraphcats does under the hood). 
 On the left is the cDBG, and on the right is the simplified structure produced by spacegraphcats.
-The structure on the right is much easier to query into.
+The structure on the right is simplified so its faster to query into.
 
-![](_static/ecoli_cdbg_sgc.png)
+![](https://dib-lab.github.io/dib_rotation/_static/ecoli_cdbg_sgc.png) *Escherichia coli compact de Bruign graph and spacegraphcats catlas.*
 
 Spacegraphcats queries work by decomposing the query into k-mers, finding the node in which a query k-mer is contained within the spacegraphcats graph, and returning all of the k-mers in that node. 
 This process is efficient enough to work on the whole metagenome for every k-mer in the query.
