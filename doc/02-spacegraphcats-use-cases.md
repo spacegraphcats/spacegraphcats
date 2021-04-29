@@ -2,7 +2,7 @@
 
 ## Installing the spacegraphcats software and its dependencies
 
-Please see [Installing spacegraphcats](installing-spacegraphcats.md).
+Please see [Installing spacegraphcats](00-installing-spacegraphcats.md).
 
 ## Spacegraphcats use cases
 
