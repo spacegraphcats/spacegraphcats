@@ -8,6 +8,8 @@ Please see [Installing spacegraphcats](00-installing-spacegraphcats.md).
 
 ### Metagenome bin completion
 
+### Neighborhood of e.g. horizontally transferred genes
+
 ### Query by hashval
 
 ### Query by gene
