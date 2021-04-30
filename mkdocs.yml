@@ -1,0 +1,39 @@
+site_name: spacegraphcats documentation
+site_url: http://spacegraphcats.github.io/
+repo_name: spacegraphcats
+repo_url: https://github.com/spacegraphcats/spacegraphcats
+edit_uri: ""
+
+copyright: 'Copyright &copy; 2021 <a href="http://ivory.idyll.org/lab/">Lab for Data Intensive Biology</a> at UC Davis and <a href="https://www.cs.utah.edu/~sullivan/#!/">Theory in Practice Lab at University of Utah'
+
+# change directory names here
+docs_dir: doc
+site_dir: site
+
+theme:
+  name: material
+
+  # pretty colors! see https://squidfunk.github.io/mkdocs-material/getting-started/#primary-colors
+  palette:
+    primary: 'blue_grey'
+    accent: 'black'
+  
+  # fun logos! see https://material.io/icons/
+  icon:
+    logo: material/group_work
+
+  font:
+    text: 'Roboto'
+    code: 'Roboto Mono'
+  
+# optionally give a title for each page or section
+nav:
+  - 'Home': '00_getting_started.md'
+  - "Primer on metagenomics and assembly graphs": "0a-primer.md"
+  - "Using spacegraphcats":
+    - "Installing spacegraphcats": "00-installing-spacegraphcats.md"
+    - "Running spacegraphcats": "01-running-spacegraphcats.md"
+    - "Spacegraphcats use cases": "02-spacegraphcats-use-cases.md"
+    - "Visualizing spacegraphcats outputs": "03-visualizing-spacegraphcats.md"
+    - "Calculating taxonomic purity of spacegraphcats outputs": "calculating-taxonomic-purity.md"
+  - "Developer's guide": "developing-spacegraphcats.md"
