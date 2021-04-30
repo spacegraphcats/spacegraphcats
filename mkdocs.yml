@@ -20,7 +20,7 @@ theme:
   
   # fun logos! see https://material.io/icons/
   icon:
-    logo: material/group_work
+    logo: material/school
 
   font:
     text: 'Roboto'
@@ -28,7 +28,6 @@ theme:
   
 # optionally give a title for each page or section
 nav:
-  - 'Home': '../README.md'
   - "Primer on metagenomics and assembly graphs": "0a-primer.md"
   - "Using spacegraphcats":
     - "Installing spacegraphcats": "00-installing-spacegraphcats.md"
