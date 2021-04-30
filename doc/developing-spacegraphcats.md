@@ -21,3 +21,7 @@
     * dory-head.fa.frontier.txt.gz - catlas node IDs matching query
     * dory-head.fa.response.txt - response curve showing how much overhead is gained for each node
     * command.txt - a partial log of the commands run
+
+## Spacegraphcats internal commands
+
+For a brief look at some internal commands, see [this slideshow](https://hackmd.io/@ctb/BkDE7msPv).
