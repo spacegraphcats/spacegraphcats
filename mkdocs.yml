@@ -28,7 +28,7 @@ theme:
   
 # optionally give a title for each page or section
 nav:
-  - 'Home': '00_getting_started.md'
+  - 'Home': '../README.md'
   - "Primer on metagenomics and assembly graphs": "0a-primer.md"
   - "Using spacegraphcats":
     - "Installing spacegraphcats": "00-installing-spacegraphcats.md"

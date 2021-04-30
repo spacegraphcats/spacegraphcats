@@ -201,5 +201,5 @@ It should take about 5 minutes on a relatively recent laptop, and will require ~
 If this succeeds, your install is all good - give yourself a high five!
 you've made it!
 
-See [running spacegraphcats](running-spacegraphcats.md) for next steps and
+See [running spacegraphcats](01-running-spacegraphcats.md) for next steps and
 more information on config files.
