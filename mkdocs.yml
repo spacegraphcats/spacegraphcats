@@ -1,5 +1,5 @@
 site_name: spacegraphcats documentation
-site_url: http://spacegraphcats.github.io/
+site_url: http://spacegraphcats.github.io/spacegraphcats
 repo_name: spacegraphcats
 repo_url: https://github.com/spacegraphcats/spacegraphcats
 edit_uri: ""
@@ -20,7 +20,7 @@ theme:
   
   # fun logos! see https://material.io/icons/
   icon:
-    logo: material/school
+    logo: material/share
 
   font:
     text: 'Roboto'
