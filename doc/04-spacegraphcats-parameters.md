@@ -61,9 +61,48 @@ Anecdotally:
 2. Using the same query neighborhoods described above, running singleM demonstrated that some query neighborhoods contained reads from marker genes consistent with different taxonomic ranks. 
 Singlem searches reads for 14 marker genes, and assigns taxonomy to a sample based on those marker genes. 
 Given that there is more likely to be shared k-mers in conserved single copy marker genes, it is possible that spacegraphcats pulls in some reads from these conserved regions.
+3. Using a gene of interest as a query, query neighborhoods often contain variation for that gene, as well sequences for upstream genes that are typcially co-located in a genome (e.g. querying with *gyrA* leads to the paritial recover of *gyrB*. 
 
-### complete MAG example
+### Querying a metagenome with a "complete" metagenome assembled genome
 
+Metagenome assembled genomes are composite genomes comprising fragmented genome sequences from closely related genomes in a community.
+Generally, these genomes are highly fragmented due to assembly errors that arise from, among other things, strain variation and shallow sequencing coverage.
+"Complete" metagenome assembled genomes (CMAGs) are circularized metagenome assembled genomes with no gaps (see [Chen et al. 2020](https://genome.cshlp.org/content/30/3/315.full)).
+In multi-species communities, there are likely specific ecoevolutionary conditions that lead to sequencing data that allow the potential recovery of a CMAGs.
+For this to be possible, a genome likely needs to have very little strain variation, high abundance/coverage, and not be closely related to other genomes in the population.     
+
+Given these conditions, we were curious whether 
+1. CMAGs contain additional variation not captured by curation techniques, and 
+2. Using spacegraphcats to query a metagenome with a CMAG it preciptated leads tothe recovery of "off target" sequences. 
+
+A snakefile is available for this analysis [here](https://github.com/taylorreiter/2019-pere/blob/master/Snakefile).
+
+After k-mer trimming the metagenome, we used a CMAG to query into the assembly graph. 
+We retrieved the reads for the query neighborhood and mapped these back CMAG assembly, and then retrieved unmapped reads.  
+99.82% of reads in the query neighborhood mapped back to the query, indicating there was little strain variation in the reads not accounted for in the assembly.
+Using megahit, the unmapped reads assembled into 5 contigs ranging in size from 179-208bp. 
+When BLASTed (`blastn`, `blastx`) against the NCBI nr database, four of the five contigs matched 16S or 23S ribosomal RNA. 
+This likely indicates that sequences that are highly conserved between distantly related species may be included in spacegraphcats query neighborhoods; users should keep this in mind when asking biological questions about highly conserved sequences (e.g. ribosomal RNA). 
+The fifth sequence had no nucleotide matches, but matched a hypothetical protein
+Candidatus Uhrbacteria bacterium RIFOXYA2_FULL_40_9.
+This may indicate strain variation in these hypothetical protein sequence not captured in the CMAG.
+
+```
+ hypothetical protein A2239_02390 [Candidatus Uhrbacteria bacterium RIFOXYA2_FULL_40_9]
+Sequence ID: OGL93914.1
+Length: 354
+Number of Matches: 1
+
+Identical Proteins-Identical proteins to OGL93914.1
+Range 1: 314 to 354
+Alignment statistics for match #1 Score	Expect	Method	Identities	Positives	Gaps	Frame
+85.1 bits(209) 	2e-17 	Compositional matrix adjust. 	41/41(100%) 	41/41(100%) 	0/41(0%) 	-1
+
+Query  201  SEEEQEAHWKLYEDSLAYLVAHPDEYRALNAVGLLEEFDWE  79
+            SEEEQEAHWKLYEDSLAYLVAHPDEYRALNAVGLLEEFDWE
+Sbjct  314  SEEEQEAHWKLYEDSLAYLVAHPDEYRALNAVGLLEEFDWE  354
+``` 
+ 
 ### Exploring taxonomy of cDBG nodes within dominators using a simple metagenome
 
 Below we explore the taxonomy of spacegraphcats results using the experimental synthetic metagenome.
