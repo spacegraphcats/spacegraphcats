@@ -34,5 +34,6 @@ nav:
     - "Running spacegraphcats": "01-running-spacegraphcats.md"
     - "Spacegraphcats use cases": "02-spacegraphcats-use-cases.md"
     - "Visualizing spacegraphcats outputs": "03-visualizing-spacegraphcats.md"
+    - "Tuning parameters in spacegraphcats": "04-spacegraphcats-parameters.md"
     - "Calculating taxonomic purity of spacegraphcats outputs": "calculating-taxonomic-purity.md"
   - "Developer's guide": "developing-spacegraphcats.md"
