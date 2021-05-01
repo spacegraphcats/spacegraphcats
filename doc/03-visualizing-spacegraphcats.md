@@ -2,6 +2,8 @@
 
 ### Producing a graph of the catlas
 
+![](https://dib-lab.github.io/dib_rotation/_static/ecoli_cdbg_sgc.png)
+
 ### Using bandage to view assembly graphs of spacegraphcats neighborhoods
 
 [Bandage](https://rrwick.github.io/Bandage/) is a useful tool for visualizing de bruijn graphs. 
