@@ -88,27 +88,58 @@ Publications using this approach are listed below:
 
 ### Neighborhood of e.g. horizontally transferred genes
 
-### Query by hashval
+Spacegraphcats queries don't need to be an entire genome, but can be any size (greater than *k*). 
+For example, one can query with a gene of interest. 
+In the example below, we identify antibiotic resistance genes in time series human stool metagenomes using [GROOT](https://github.com/will-rowe/groot), and then use the identified genes as spacegraphcats queries.
+Using this method, we can see how the context of antibiotic resistance genes change over time.  
+ 
+ 
+### Querying by sourmash minhash hash values
 
-### Query by gene
+[Sourmash](https://sourmash.readthedocs.io/en/latest/) enables [rapid comparisons across large sequencing datasets](https://f1000research.com/articles/8-1006) using scaled minhashing. 
+Essentially, sourmash takes a sequence, decomposes it into k-mers, transforms those k-mers into a number via a hash function, and subsamples the numbers. 
+This generates a minhash signatures, or a compressed representation, of the original sequencing data, thereby allowing for rapid comparisons even against millions of genomes.
+We enabled querying by hash value to allow integration of sourmash and spacegraphcats workflows. 
+
+```
+spacegraphcats <conf> hashval_query
+```
+
+```
+spacegraphcats <conf> extract_reads_for_hashvals
+```
+
+The `hashval_ksize` parameter can be different from the k-mer size used to build the cDBG.
+However, for now you can only specify one in a config file; make duplicate config files with different `hashval_ksize` values to do queries on multiple ksizes.
 
 ### Multifasta
 
 ## Working with spacegraphcats results
 
-spacegraphcats is a powerful framework to organize and access unassembled reads in metagenomes, but the output is admittedly unsatisfying. While spacegraphcats will give you the reads or k-mers associated with your query, often times the reads you're most interested in are the ones that are the most difficult to work with -- the ones that:
-1) do not assemble
-2) do not match any sequences in databases
+spacegraphcats is a powerful framework to organize and access unassembled reads in metagenomes, but the output is admittedly unsatisfying. 
+While spacegraphcats will give you the reads or k-mers in the neighborhood of your query, often times the reads you're most interested in are the ones that are the most difficult to work with -- the ones that:
+
+1. do not assemble
+2. do not match any sequences in databases
 
 We have some experiences with working with these kinds of reads and outline some approaches we have taken to working with them in the past. 
 This is still an active area of research that can benefit from the creativity of the spacegraphcats community!
 
 ### Try an amino acid assembler
 
-PLASS produces an embarrassment of riches that can be difficult to wade through.
+Sometimes reads do not assemble due to excessive strain variation.
+Amino acid assemblers reduce strain variation by translating reads into amino acid sequences prior to assembly.
+In particular, this reduces strain variation due to third base pair wobble, where in the third nucleotide in a codon can vary without changing the amino acid which it encodes.
+
+In the past, we have used the [PLASS](https://github.com/soedinglab/plass) amino acid assembler somewhat successfully on spacegraphcats query neighborhoods.
+However, PLASS seems to produce many potential amino acid sequences at least in part influenced by combinatorial overlaps in potential protein sequences.
+This output can be difficult to wade through.
+
+Amino acid assemblers only produce amino acid sequences. 
+To map sequencing reads back to the assembly to estimate coverage depth or number of reads assembled, we have used [paladin](https://github.com/ToniWestbrook/paladin) to map nucleotide reads to the amino acid assembly.
 
 ### Use read-level analysis tools
 
-While something did not assemble in your sample, if a similar environment has been sequenced in the past, there's a chance that that thing may have assembled before.
-
+Tools like [mifaser](https://bromberglab.org/project/mifaser/) and [GROOT](https://github.com/will-rowe/groot) perform annotation on reads instead of on assemblies. 
+These tools may provide insight into the content of a spacegraphcats query neighborhood.
 
