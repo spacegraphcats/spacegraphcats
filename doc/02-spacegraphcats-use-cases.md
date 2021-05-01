@@ -54,7 +54,8 @@ Download the query genome (this is a metagenome bin produced from SRR1976948):
 wget ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/001/508/995/GCA_001508995.1_ASM150899v1/GCA_001508995.1_ASM150899v1_genomic.fna.gz
 ```
 
-Configuration file:
+Configuration file, saved as `conf1.yml`.
+Note that configuration files may contain multiple input sequences from which to build the cDBG and catlas, or multiple search fasta files. 
 
 ```
 catlas_base: 'SRR1976948'
@@ -74,12 +75,14 @@ python -m spacegraphcats run conf1.yml extract_contigs extract_reads --nolock
 ```
 
 compare the output sequences:
+
 ```
 sourmash compute -k 21,31,51 --scaled 2000 -o GCA_001508995.1_ASM150899v1_genomic.sig GCA_001508995.1_ASM150899v1_genomic.fna.gz
 sourmash compare -k 31 --csv comp.csv *sig SRR1976948_k31_r1_search_oh0/*sig
 ```
 
 Publications using this approach are listed below:
+
 1. Brown, C.T., Moritz, D., O’Brien, M.P. et al. Exploring neighborhoods in large metagenome assembly graphs using spacegraphcats reveals hidden sequence diversity. Genome Biol 21, 164 (2020). https://doi.org/10.1186/s13059-020-02066-4
 2. Lumian, J.E., Jungblut, A.D., Dillion, M.L. et al. Metabolic Capacity of the Antarctic Cyanobacterium Phormidium pseudopriestleyi That Sustains Oxygenic Photosynthesis in the Presence of Hydrogen Sulfide. Genes 12, 426 (2021). https://doi.org/10.3390/genes12030426 
 

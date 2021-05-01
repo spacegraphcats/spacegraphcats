@@ -57,6 +57,7 @@ Panel B shows that an approximately 1 Mbp overlap between two genomes is suffici
 Generally speaking, we have not found that spacegraphcats genome queries on real metagenomes on catlases built with a k-size of 31 and a radius of 1 accidentally scoop in extra k-mers from the wrong taxonomy, but we have not tested this systematically. 
  
 Anecdotally:
+
 1. When we queried into ~600 human stool metagenomes using a genome sequence from *Rumminococcus gnavus* and with parameters *k* = 31 and *r* = 1, running strainphlan on the resulting query neighborhoods indicated that only *R. gnavus* was present.
 2. Using the same query neighborhoods described above, running singleM demonstrated that some query neighborhoods contained reads from marker genes consistent with different taxonomic ranks. 
 Singlem searches reads for 14 marker genes, and assigns taxonomy to a sample based on those marker genes. 
