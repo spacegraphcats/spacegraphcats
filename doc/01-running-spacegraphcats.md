@@ -25,19 +25,22 @@ You will have a bunch of new output files:
 
 * the `dory/` directory contains the BCALM assembly of the input files into a compact De Bruijn graph; the key file here is `dory/bcalm.dory.k21.unitigs.fa`. There is also an output log file, `bcalm.dory.k21.unitigs.fa.log.txt`, that contains the console output of BCALM's run.
 * the `dory_k21_r1/` directory contains the various files of the catlas constructed by spacegraphcats:
-    * cdbg.gxt - the cDBG connection graph, in a custom format
-    * contigs.fa.gz - the unitigs from the cDBG
-    * contigs.fa.gz.indices - a numpy savez file containing mapping arrays
-    * contigs.fa.gz.info.csv - summary information about the cDBG unitigs
-    * contigs.fa.gz.mphf - Minimal Perfect Hash Function parameters for all of the k-mers in the cDBG
-    * first_doms.txt - the dominating set information for the cDBG
-    * catlas.csv - the catlas for the cDBG
+    * cdbg.gxt - the cDBG connection graph, in a custom format; produced by `bcalm_to_gxt.py`
+    * reads.bgz.index - a BGZF file containing the cDBG unitigs; produced by `bcalm_to_gxt.py`
+    * contigs.info.csv - summary information about the cDBG unitigs; produced by `bcalm_to_gxt.py`
+    * contigs.indices - a numpy savez file containing mapping arrays; produced by `index_contigs_by_kmer.py`
+    * contigs.mphf - Minimal Perfect Hash Function parameters for all of the k-mers in the cDBG; produced by `index_contigs_by_kmer.py`
+    * contigs.sig - sourmash signature for cDBG nodes. Defaults to scaled = 1000.
+    * contigs.sizes - sizes of all cDBG nodes in pickle format; produced by `index_cdbg_by_kmer.py`
+    * first_doms.txt - the dominating set information for the cDBG; produced by `spacegraphcats.catlas.catlas`
+    * catlas.csv - the catlas for the cDBG; produced by `spacegraphcats.catlas.catlas`
     * commands.log - a partial log of all of the commands
 * the `dory_k21_r1_search_oh0/` directory contains the output of a search:
     * results.csv - summary results for the queries (containment, similarity, etc.)
-    * dory-head.fa.cdbg_ids.txt.gz - for the `dory-head.fa` query, the cDBG node IDs that were retrieved
+    * dory-head.fa.cdbg_ids.txt.gz - cDBG node IDs (unitig IDs) matching query
+    * dory-head.fa.cdbg_ids.reads.gz - if `extract_reads` is used, reads from the original sequencing file that contain k-mers in the query neighborhood contigs
     * dory-head.fa.contigs.sig - the sourmash signature of the entire match in the cDBG
-    * dory-head.fa.frontier.txt.gz - (undefined for the moment)
+    * dory-head.fa.frontier.txt.gz - catlas node IDs matching query
     * dory-head.fa.response.txt - response curve showing how much overhead is gained for each node
     * command.txt - a partial log of the commands run
 
@@ -160,9 +163,9 @@ twofoo_k31_r1_search_oh0/2.fa.gz.cdbg_ids.contigs.fa.gz
 twofoo_k31_r1_search_oh0/47.fa.gz.cdbg_ids.contigs.fa.gz
 twofoo_k31_r1_search_oh0/63.fa.gz.cdbg_ids.contigs.fa.gz
 
-twofoo_k31_r1_search_oh0/2.fa.gz.cdbg_ids.reads.fa.gz
-twofoo_k31_r1_search_oh0/47.fa.gz.cdbg_ids.reads.fa.gz
-twofoo_k31_r1_search_oh0/63.fa.gz.cdbg_ids.reads.fa.gz
+twofoo_k31_r1_search_oh0/2.fa.gz.cdbg_ids.reads.gz
+twofoo_k31_r1_search_oh0/47.fa.gz.cdbg_ids.reads.gz
+twofoo_k31_r1_search_oh0/63.fa.gz.cdbg_ids.reads.gz
 ```
 which are (respectively) the contigs for the neighborhoods around each
 query, and the reads for the neighborhoods around each query.
