@@ -23,12 +23,16 @@ def main(argv):
     parser.add_argument("sqlite_db_out")
     parser.add_argument("mapping_pickle_out")
     parser.add_argument("-k", "--ksize", type=int, default=31)
+    parser.add_argument("--seed", type=int, default=42,
+                        help="minimizer seed for sorting contigs")
     args = parser.parse_args(argv)
 
     unitigs = args.bcalm_unitigs
     ksize = args.ksize
 
-    empty_mh = sourmash.MinHash(n=1, ksize=ksize)
+    # this MinHash is used to find a minimizer for each contig, so that
+    # can sort them deterministically.
+    empty_mh = sourmash.MinHash(n=1, ksize=ksize, seed=args.seed)
 
     ###
     db = sqlite3.connect(args.sqlite_db_out)

@@ -93,6 +93,32 @@ def test_dory_break_bad_bcalm(location):
 
 
 @pytest_utils.in_tempdir
+def test_dory_sort_bcalm_diff_seed(location):
+    from spacegraphcats.cdbg import sort_bcalm_unitigs
+
+    copy_dory_head()
+    copy_dory_subset()
+
+    # make the output directory
+    try:
+        os.mkdir("dory_k21_seedtest")
+    except FileExistsError:
+        pass
+
+    # sort the bcalm file
+    args = [
+        "-k",
+        "21",
+        relative_file("data/bcalm-BROKEN.dory.k21.unitigs.fa"),
+        "dory_k21_seedtest/bcalm.unitigs.db",
+        "dory_k21_seedtest/bcalm.unitigs.pickle",
+        "--seed", "43",
+    ]
+
+    assert sort_bcalm_unitigs.main(args) != 0
+
+
+@pytest_utils.in_tempdir
 def test_dory_query_workflow(location):
     from spacegraphcats.cdbg import bcalm_to_gxt2, sort_bcalm_unitigs
 
