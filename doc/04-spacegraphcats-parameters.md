@@ -136,7 +136,7 @@ strain                  35
 species                  2
 ```
 
-What we see is that the graphs for the two different species are completely non-overlapping (at least at the resolution of sourmash k=31 scaled=1000) while the grphs for the genomes from the same strain are overlapping.
+What we see is that the graphs for the two different species are completely non-overlapping (at least at the resolution of sourmash k=31 scaled=1000) while the graphs for the genomes from the same strain are overlapping.
 
 More specifically, 35 of the dom nodes have cDBG nodes with two or more hashvals under them that belong to the same strain, while only two of the dom nodes contain cDBGs with hashvals from the two different strains. 
 At the resolution we're using here, the vast majority of cDBG nodes and dom nodes have no associated hashvals, which maybe says we should be using higher resolution sourmash or larger r!
@@ -160,4 +160,3 @@ species                  10
 
 The higher radius 'annotates' more dom nodes with taxonomy.
 In this example, there is still no increase in taxonomic confusion above the species level, which is good and expected for synthetic data.
-
