@@ -123,7 +123,7 @@ While spacegraphcats will give you the reads or k-mers in the neighborhood of yo
 2. do not match any sequences in databases
 
 We have some experiences with working with these kinds of reads and outline some approaches we have taken to working with them in the past. 
-This is still an active area of research that can benefit from the creativity of the spacegraphcats community!
+This is still an active area of research that can benefit from the creativity of the metagenomics community!
 
 ### Try an amino acid assembler
 
@@ -142,4 +142,3 @@ To map sequencing reads back to the assembly to estimate coverage depth or numbe
 
 Tools like [mifaser](https://bromberglab.org/project/mifaser/) and [GROOT](https://github.com/will-rowe/groot) perform annotation on reads instead of on assemblies. 
 These tools may provide insight into the content of a spacegraphcats query neighborhood.
-
