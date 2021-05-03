@@ -32,7 +32,7 @@ You will have a bunch of new output files:
     * contigs.mphf - Minimal Perfect Hash Function parameters for all of the k-mers in the cDBG; produced by `index_contigs_by_kmer.py`
     * contigs.sig - sourmash signature for cDBG nodes. Defaults to scaled = 1000.
     * contigs.sizes - sizes of all cDBG nodes in pickle format; produced by `index_cdbg_by_kmer.py`
-    * first_doms.txt - the dominating set information for the cDBG; produced by `spacegraphcats.catlas.catlas`
+    * first_doms.txt - the dominating set information for the cDBG; produced by `spacegraphcats/catlas/catlas`
     * catlas.csv - the catlas for the cDBG; produced by `spacegraphcats.catlas.catlas`
     * commands.log - a partial log of all of the commands
 * the `dory_k21_r1_search_oh0/` directory contains the output of a search:
