@@ -264,6 +264,7 @@ python ./convertToGFA.py outputs/bcalm/HSM67VFJ_r1/cfxA4_AY769933.fna.cdbg_ids.r
 Use the bandage command line cli to plot the results with the antibiotic resistance gene highlighted.
 
 ```
+mkdir -p outputs/bandage
 Bandage image outputs/bcalm/HSM67VFJ_r1/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.gfa \
      outputs/bandage/HSM67VFJ_r1/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.png \
      --query outputs/arg90_matches/cfxA4_AY769933.fna
@@ -271,6 +272,7 @@ Bandage image outputs/bcalm/HSM67VFJ_r1/cfxA4_AY769933.fna.cdbg_ids.reads.gz.uni
 
 A snakemake pipeline encoding this workflow is available [here](https://github.com/taylorreiter/2021-sgc-arg).
 Running this workflow on all samples in the times series, we see that the context of the antibiotic resistance gene *cfxA4* changes over time.
+Additionallly, using different radius sizes, we can see that the amount of sequencing context we get back increases with increasing radius size.
 
 ![](https://i.imgur.com/jM3Lets.png) *Sequence context of antibiotic resistance gene cfxA4 over time and at different radiuses.*
 
