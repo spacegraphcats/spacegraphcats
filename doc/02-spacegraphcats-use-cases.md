@@ -86,14 +86,104 @@ Publications using this approach are listed below:
 1. Brown, C.T., Moritz, D., O’Brien, M.P. et al. Exploring neighborhoods in large metagenome assembly graphs using spacegraphcats reveals hidden sequence diversity. Genome Biol 21, 164 (2020). https://doi.org/10.1186/s13059-020-02066-4
 2. Lumian, J.E., Jungblut, A.D., Dillion, M.L. et al. Metabolic Capacity of the Antarctic Cyanobacterium Phormidium pseudopriestleyi That Sustains Oxygenic Photosynthesis in the Presence of Hydrogen Sulfide. Genes 12, 426 (2021). https://doi.org/10.3390/genes12030426 
 
-### Neighborhood of e.g. horizontally transferred genes
+### Identifying the context of e.g. horizontally transferred genes
 
 Spacegraphcats queries don't need to be an entire genome, but can be any size (greater than *k*). 
 For example, one can query with a gene of interest. 
 In the example below, we identify antibiotic resistance genes in time series human stool metagenomes using [GROOT](https://github.com/will-rowe/groot), and then use the identified genes as spacegraphcats queries.
-Using this method, we can see how the context of antibiotic resistance genes change over time.  
- 
- 
+Using this method, we can see how the context of antibiotic resistance genes changes over time.
+
+The dataset used below if a time series from a single individual with Crohn's disease, sequenced by the [Integrative Human Microbiome Project (iHMP)](https://ibdmdb.org/).
+The stool microbiome from this individual was sequenced at 12 different timepoints over 37 weeks, and the individual was on antibiotics at various times during the that timeframe.
+
+![](https://i.imgur.com/H7JiYvr.png) *Times of sequencing and antibiotic exposure for individual H4017 from the Integrative Human Microbiome Project.*
+
+We'll determine the sequence context of one antibiotic resistance gene in one sample using one radius. 
+
+
+Install companion software needed for this analysis:
+```
+conda install sourmash=4.0.0 fastp=0.20.1 bbmap=38.70 khmer=3.0.0a3 groot=1.1.2 samtools=1.12 seqkit=0.16.0 bandage=0.8.1 blast=2.11.0
+```
+
+Then, download the the sequencing data and perform quality control.
+This sample was taken at week 25 when the individual was on antibiotics.
+
+```
+mkdir -p inputs/raw
+wget -O inputs/raw/HSM67VFJ.tar https://ibdmdb.org/tunnel/static/HMP2/WGS/1818/HSM67VFJ.tar
+```
+
+Adapter trim and (lightly) quality trim with fastp:
+```
+mkdir -p outputs/fastp
+fastp --in1 inputs/raw/HSM67VFJ_R1.fastq.gz \
+      --in2 inputs/raw/HSM67VFJ_R2.fastq.gz \
+      --out1 outputs/fastp/HSM67VFJ_R1.trim.fq.gz \
+      --out2 outputs/fastp/HSM67VFJ_R2.trim.fq.gz \
+      --detect_adapter_for_pe \
+      --qualified_quality_phred 4 \
+      --length_required 31 --correction \
+      --json outputs/fastp/HSM67VFJ.json \
+      --html outputs/fastp/HSM67VFJ.html
+``` 
+
+Remove "host" (e.g. human) DNA from the sequencing reads
+You will need the masked human k-mer data available [here](https://drive.google.com/file/d/0B3llHR93L14wd0pSSnFULUlhcUk/edit?usp=sharing).
+Download and save this file to `inputs/host/inputs/host/hg19_main_mask_ribo_animal_allplant_allfungus.fa.gz`.
+This step can take up to 64GB of ram.
+To reduce this, change `-Xmx64g` to a lower number, e.g. `-Xmx16g`.
+```
+mkdir -p outputs/bbduk
+bbduk.sh -Xmx64g t=3 k=31 \
+     in=outputs/fastp/HSM67VFJ_R1.trim.fq.gz \
+     in2=outputs/fastp/HSM67VFJ_R2.trim.fq.gz \
+     out=outputs/bbduk/HSM67VFJ_R1.nohost.fq.gz \
+     out2=outputs/bbduk/HSM67VFJ_R2.nohost.fq.gz \
+     outm=outputs/bbduk/HSM67VFJ_R1.human.fq.gz \
+     outm2=outputs/bbduk/HSM67VFJ_R2.human.fq.gz \
+     ref=inputs/host/hg19_main_mask_ribo_animal_allplant_allfungus.fa.gz
+```
+
+K-mer trim the reads.
+This step can take up to 60GB of ram as written.
+To reduce this, change `-M 60e9` to a lower number, e.g. `-M 16e9`. 
+```
+mkdir -p outputs/abundtrim
+interleave-reads.py outputs/bbduk/HSM67VFJ_R1.nohost.fq.gz outputs/bbduk/HSM67VFJ_R2.nohost.fq.gz | \
+      trim-low-abund.py --gzip -C 3 -Z 18 -M 60e9 -V - -o outputs/abundtrim/HSM67VFJ.abundtrim.fq.gz
+```
+
+After quality control is complete, we'll use [Groot](https://github.com/will-rowe/groot) to identify reads that encode antibiotic resistance genes. 
+Groot uses a database from which it identifies genes of interest. 
+Download the ARG90 database:
+
+```
+groot get -d arg-annot
+```
+
+Then, index the database. `-p` specifies how many threads to use during indexing.
+```
+groot index -m arg-annot.90 -i groot-index -w 100 -p 8
+```
+
+Run groot on the sequencing reads:
+```
+mkdir outputs/groot
+groot align -i groot-index -f outputs/abundtrim/HSM67VFJ.abundtrim.fq.gz \
+  -p 2 -g outputs/groot/HSM67VFJ_arg90.graph > outputs/groot/HSM67VFJ_arg90.bam
+```
+
+And generate a report that summarizes the antibiotic resistance reads identified.
+`-c` indicates the amount of coverage for a gene to be reported.
+```
+groot report --bamFile outputs/groot/HSM67VFJ_arg90.bam -c .9 > outputs/groot/HSM67VFJ_arg90_report.txt
+```
+A snakemake pipeline encoding this workflow is available [here](https://github.com/taylorreiter/2021-sgc-arg).
+Running this workflow on all samples in the times series, we see that the context of the antibiotic resistance gene *cfxA4* changes over time.
+
+![](https://i.imgur.com/jM3Lets.png) *Sequence context of antibiotic resistance gene cfxA4 over time and at different radiuses.*
+
 ### Querying by sourmash minhash hash values
 
 [Sourmash](https://sourmash.readthedocs.io/en/latest/) enables [rapid comparisons across large sequencing datasets](https://f1000research.com/articles/8-1006) using scaled minhashing. 
