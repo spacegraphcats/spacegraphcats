@@ -103,7 +103,7 @@ We'll determine the sequence context of one antibiotic resistance gene in one sa
 
 Install companion software needed for this analysis:
 ```
-conda install sourmash=4.0.0 fastp=0.20.1 bbmap=38.70 khmer=3.0.0a3 groot=1.1.2 samtools=1.12 seqkit=0.16.0 bandage=0.8.1 blast=2.11.0
+conda install sourmash=4.0.0 fastp=0.20.1 bbmap=38.70 khmer=3.0.0a3 groot=1.1.2 samtools=1.12 bandage=0.8.1 blast=2.11.0
 ```
 
 Then, download the the sequencing data and perform quality control.
@@ -179,6 +179,95 @@ And generate a report that summarizes the antibiotic resistance reads identified
 ```
 groot report --bamFile outputs/groot/HSM67VFJ_arg90.bam -c .9 > outputs/groot/HSM67VFJ_arg90_report.txt
 ```
+The `groot report` function produces the following report:
+```
+argannot~~~(Bla)cfxA5~~~AY769934:28-993 1452    966     776M1D186M3D
+argannot~~~(Bla)cfxA~~~U38243:150-1115  1551    966     886M80D
+argannot~~~(Bla)CEP-A-44~~~U05885:556-1458      624     903     613M2D287M1D
+argannot~~~(Bla)cfxA4~~~AY769933:1-966  1453    966     963M3D
+argannot~~~(Tet)TetW~~~AJ222769:3687-5606       154     1920    44D1851M25D
+argannot~~~(Bla)cfxA2~~~AF504910:1-966  1606    966     501M6D456M3D
+```
+
+The columns specify `"arg", "read_count", "gene_length", "coverage"` of each antibiotic resistance gene in the sequencing sample.
+
+Using the bam file which recorded which reads map to which antibiotic resistance genes, we can estimate the proportion of reads that mapped to any ARG.
+
+```
+mapped=$(samtools view -c -F 4 outputs/groot/HSM67VFJ_arg90.bam)
+proportion=$(echo "scale=10 ; $mapped / 10000000" | bc)
+printf "HSM67VFJ,$proportion" > outputs/groot/HSM67VFJ_proportion.txt
+```
+
+We see that for this sample, a small proportion of reads mapped against the ARG database
+
+```
+HSM67VFJ,.0010801000
+```
+
+Now that we've identified which antibiotic resistance genes are in this sample, we can select one of them and use it as a spacegraphcats query to determine its context.
+We'll start by downloading the FASTA sequences for antibiotic resistance genes in the ARG database and indexing those sequences with samtools.
+
+```
+mkdir -p inputs/arg_db
+wget -O inputs/arg_db/argannot-args.fna https://github.com/will-rowe/groot/raw/master/db/full-ARG-databases/arg-annot-db/argannot-args.fna
+samtools faidx inputs/arg_db/argannot-args.fna
+```
+
+Then, extract a single sequence that was identified in the sample.
+
+```
+mkdir -p outputs/arg90_matches
+samtools faidx inputs/arg_db/argannot-args.fna argannot~~~(Bla)cfxA4~~~AY769933:1-966 > outputs/arg90_matches/cfxA4_AY769933.fna
+```
+
+Make a configuration file for spacegraphcats, and save it as `outputs/sgc_conf/HSM67VFJ_r1_conf.yml`.
+
+```
+catlas_base: HSM67VFJ
+input_sequences:
+- outputs/abundtrim/HSM67VFJ.abundtrim.fq.gz
+ksize: 31
+radius: 1
+search:
+- outputs/arg90_matches/cfxA4_AY769933.fna
+searchquick: outputs/arg90_matches/cfxA4_AY769933.fna
+```
+
+Run spacegraphcats to extract the sequence context around the antibiotic resistance gene.
+```
+python -m spacegraphcats run \
+     outputs/sgc_conf/HSM67VFJ_r1_conf.yml \
+     extract_contigs extract_reads \
+     --nolock --outdir=outputs/sgc_arg_queries_r1 \
+     --rerun-incomplete 
+```
+
+Lastly, use bcalm and bandage to plot the context extracted by spacegraphcats.
+
+```
+mkdir -p outputs/bcalm/HSM67VFJ_r1
+bcalm -in outputs/sgc_arg_queries_r1/HSM67VFJ_k31_r1_search_oh0/cfxA4_AY769933.fna.cdbg_ids.reads.gz \
+     -out-dir outputs/bcalm/HSM67VFJ_r1 \
+     -kmer-size 31 -abundance-min 1 \
+     -out outputs/bcalm/HSM67VFJ_r1/cfxA4_AY769933.fna.cdbg_ids.reads.gz
+```
+
+Download the script to conver the bcalm file to a gfa file
+```
+wget https://raw.githubusercontent.com/spacegraphcats/2018-paper-spacegraphcats/master/pipeline-analyses/variant_snakemake/convertToGFA.py
+chmod 777 convertToGFA.py
+python ./convertToGFA.py outputs/bcalm/HSM67VFJ_r1/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.fa outputs/bcalm/HSM67VFJ_r1/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.gfa 31
+```
+
+Use the bandage command line cli to plot the results with the antibiotic resistance gene highlighted.
+
+```
+Bandage image outputs/bcalm/HSM67VFJ_r1/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.gfa \
+     outputs/bandage/HSM67VFJ_r1/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.png \
+     --query outputs/arg90_matches/cfxA4_AY769933.fna
+```
+
 A snakemake pipeline encoding this workflow is available [here](https://github.com/taylorreiter/2021-sgc-arg).
 Running this workflow on all samples in the times series, we see that the context of the antibiotic resistance gene *cfxA4* changes over time.
 
