@@ -32,13 +32,13 @@ You will have a bunch of new output files:
     * contigs.mphf - Minimal Perfect Hash Function parameters for all of the k-mers in the cDBG; produced by `index_contigs_by_kmer.py`
     * contigs.sig - sourmash signature for cDBG nodes. Defaults to scaled = 1000.
     * contigs.sizes - sizes of all cDBG nodes in pickle format; produced by `index_cdbg_by_kmer.py`
-    * first_doms.txt - the dominating set information for the cDBG; produced by `spacegraphcats.catlas.catlas`
-    * catlas.csv - the catlas for the cDBG; produced by `spacegraphcats.catlas.catlas`
+    * first_doms.txt - the dominating set information for the cDBG; produced by `spacegraphcats/catlas/catlas.py`
+    * catlas.csv - the catlas for the cDBG; produced by `spacegraphcats/catlas/catlas.py`
     * commands.log - a partial log of all of the commands
 * the `dory_k21_r1_search_oh0/` directory contains the output of a search:
     * results.csv - summary results for the queries (containment, similarity, etc.)
     * dory-head.fa.cdbg_ids.txt.gz - cDBG node IDs (unitig IDs) matching query
-    * dory-head.fa.cdbg_ids.reads.gz - if `extract_reads` is used, reads from the original sequencing file that contain k-mers in the query neighborhood contigs
+    * dory-head.fa.cdbg_ids.reads.gz - if `extract_reads` is used, reads from the original sequencing file that contain k-mers in the query neighborhood contigs. Reads will be output in the same format as the input data, e.g. in FASTQ if the original data was FASTQ, or FASTA if the original data was FASTA.
     * dory-head.fa.contigs.sig - the sourmash signature of the entire match in the cDBG
     * dory-head.fa.frontier.txt.gz - catlas node IDs matching query
     * dory-head.fa.response.txt - response curve showing how much overhead is gained for each node

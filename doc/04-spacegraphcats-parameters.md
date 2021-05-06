@@ -2,7 +2,7 @@
 
 There are two parameters that control the behavior of spacegraphcats: k-mer size (*k*) and radius size (*r*).
 Both of these parameters are specified in the config file.
-We have tested spacegraphcats behavior most extensively with a k-size = 31 and radius = 1, but below we explore how these 
+We have tested spacegraphcats behavior most extensively with a k-size = 31 and radius = 1, but below we explore how these parameters behave with different values in real metagenomes. 
 As we have not exhaustively tested different parameters, below we discuss the role of these parameters in changing spacegraphcats outputs in the context of a variety of sequencing data. 
 Our goal is to help the user build an intuition for the behavior of these parameters and how they may impact spacegraphcats output in the context of different sequencing data. 
 
