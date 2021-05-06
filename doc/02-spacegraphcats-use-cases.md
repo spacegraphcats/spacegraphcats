@@ -112,6 +112,7 @@ This sample was taken at week 25 when the individual was on antibiotics.
 ```
 mkdir -p inputs/raw
 wget -O inputs/raw/HSM67VFJ.tar https://ibdmdb.org/tunnel/static/HMP2/WGS/1818/HSM67VFJ.tar
+tar xf inputs/raw/HSM67VFJ.tar -C inputs/raw
 ```
 
 Adapter trim and (lightly) quality trim with fastp:
