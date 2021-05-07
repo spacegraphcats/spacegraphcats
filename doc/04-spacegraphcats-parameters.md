@@ -62,7 +62,7 @@ Anecdotally:
 2. Using the same query neighborhoods described above, running singleM demonstrated that some query neighborhoods contained reads from marker genes consistent with different taxonomic ranks. 
 Singlem searches reads for 14 marker genes, and assigns taxonomy to a sample based on those marker genes. 
 Given that there is more likely to be shared k-mers in conserved single copy marker genes, it is possible that spacegraphcats pulls in some reads from these conserved regions.
-3. Using a gene of interest as a query, query neighborhoods often contain variation for that gene, as well sequences for upstream genes that are typcially co-located in a genome (e.g. querying with *gyrA* leads to the paritial recover of *gyrB*. 
+3. Using a gene of interest as a query, query neighborhoods often contain variation for that gene, as well sequences for upstream genes that are typcially co-located in a genome (e.g. querying with *gyrA* leads to the paritial recover of *gyrB*). 
 
 ### Querying a metagenome with a "complete" metagenome assembled genome
 
