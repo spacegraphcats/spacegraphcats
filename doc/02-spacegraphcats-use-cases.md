@@ -276,6 +276,11 @@ Additionallly, using different radius sizes, we can see that the amount of seque
 
 ![](https://i.imgur.com/jM3Lets.png) *Sequence context of antibiotic resistance gene cfxA4 over time and at different radiuses.*
 
+## Alpha functionality
+
+While we have some tried and true use cases for spacegraphcats, we have even more "alpha functionality" -- functionality for which the code and rationale exist, and may have even been run quite a few times, but that hasn't been extensively explored or applied to many real biological problems yet. 
+We document this functionality below.  
+
 ### Querying by sourmash minhash hash values
 
 [Sourmash](https://sourmash.readthedocs.io/en/latest/) enables [rapid comparisons across large sequencing datasets](https://f1000research.com/articles/8-1006) using scaled minhashing. 
@@ -294,7 +299,42 @@ spacegraphcats <conf> extract_reads_for_hashvals
 The `hashval_ksize` parameter can be different from the k-mer size used to build the cDBG.
 However, for now you can only specify one in a config file; make duplicate config files with different `hashval_ksize` values to do queries on multiple ksizes.
 
-### Multifasta
+In practice, we have not found querying only by hash value extremely useful; sourmash (typically) subsamples to 1/1000th or 1/2000th of the k-mers in a sequence.
+Subsampling facilitates rapid and accurate comparisons between sequences, but this resolution provides an incomplete picture of the sequence landscape, missing a lot of important sequence context (e.g. genes, etc.).
+Potentially more importantly, while querying with a hash value may return reads in the neighborhood of the k-mer represented by that hash value, those reads may or may not assemble.
+If they do not assemble, it becomes really hard to identify what the functional/taxonomic identity of that hash value may be.
+We realized this after implementing `hashval_query` and `extract_reads_for_hashvals`, and then implemented multifast queries (see next section).
+
+### Multifasta queries
+
+To circumvent assembly issues that may occur if reads in a neighborhood of a hash value do not assemble, we developed a "multifasta query" that transfers the annotation of a gene query to hash values in that gene's neighborhood.
+The underlying goal of "multifasta queries" is to annotate hash values with genes that are in their graph neighborhood.
+
+To do this, spacegraphcats builds an index with a set of FASTA records, e.g. gene sequences from a reference genome, and then queries with a set of "interesting" hash values.
+Spacegraphcats will output a CSV file containing hashval-to-record-name multimappings, where both hash values and record names may appear multiple times.
+
+To run a multifasta query, the configuration file should include multifasta-specific fields:
+
+```
+multifasta_reference:
+- GCF_000021665.1_ASM2166v1_cds_from_genomic.fna
+
+multifasta_scaled: 1000
+multifasta_query_sig: data/63-os223.sig
+```
+
+Where the `multifasta_reference` contains the gene in a query of interest, `multifasta_scaled` indicates the scaled value for sourmash to use, and `multifasta_query_sig` is a sourmash signature file that contains the hash values that represent k-mers of interest.
+
+Then, run spacegraphcats:
+
+```
+python -m spacegraphcats twofoo multifasta_query
+```
+
+### graphgrep
+
+
+### Protein queries
 
 ## Working with spacegraphcats results
 
