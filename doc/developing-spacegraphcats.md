@@ -5,6 +5,9 @@ The DAG below gives an overview of the steps in the pipeline and the scripts tha
 
 ![](https://i.imgur.com/HQ21aM1.png)
 
+The spacegraphcats command line interface uses the [click API](https://click.palletsprojects.com/).
+This also allows any snakemake flag to be added to the spacegraphcats CLI (e.g. `--unlock`).
+ 
 ## spacegraphcats files and what scripts produce them
 
 * the `dory_k21_r1/` directory contains the various files of the catlas constructed by spacegraphcats:
