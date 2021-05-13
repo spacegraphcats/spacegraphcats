@@ -35,5 +35,7 @@ nav:
     - "Spacegraphcats use cases": "02-spacegraphcats-use-cases.md"
     - "Visualizing spacegraphcats outputs": "03-visualizing-spacegraphcats.md"
     - "Tuning parameters in spacegraphcats": "04-spacegraphcats-parameters.md"
+    - "Alpha functionality in spacegraphcats": "05-alpha-spacegraphcats.md"
+    - "Integrating spacegraphcats into a snakemake workflow": "06-snakemake-spacegraphcats.md"
     - "Calculating taxonomic purity of spacegraphcats outputs": "calculating-taxonomic-purity.md"
   - "Developer's guide": "developing-spacegraphcats.md"
