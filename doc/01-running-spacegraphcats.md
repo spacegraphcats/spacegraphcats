@@ -44,6 +44,24 @@ You will have a bunch of new output files:
     * dory-head.fa.response.txt - response curve showing how much overhead is gained for each node
     * command.txt - a partial log of the commands run
 
+The `results.csv` file contains the following information:
+
++ `query`:  the file path to the query used by spacegraphcats 
++ `containment`: the containment of the query in the retrieved neighborhood
++ `similarity`: the similarity of the query to the retrieved neighborhood
++ `bp`: the number of basepairs in the neighborhood
++ `contigs`: the number of unitigs contained in the query from the cDBG
++ `ksize`: the k-mer size used to perform the query
++ `num_query_kmers`: the number of k-mers in the query 
++ `best_containment`: tbd
++ `cdbg_min_overhead`: tbd
++ `catlas_min_overhead`: tbd
+
+Note that:
+
++ if the query Q is entirely in the indexed metagenome M, then 1/similarity is the relative neighborhood size, because |Q intersect M| is |Q|, and |Q union M| is |M|, so 1/similarity is |M|/|Q|. This does not hold if the query is not entirely within the indexed metagenome.
++ `num_query_kmers` is |Q|, not |Q intersect M|
+
 ## Configuring and running spacegraphcats itself
 
 There are three important top-level files.
