@@ -333,6 +333,37 @@ python -m spacegraphcats twofoo multifasta_query
 
 ### graphgrep
 
+`graphgrep` takes a different approach to querying the CDB than is implemented with the catlas. 
+The goal of `graphgrep` is to simplify the retrieval of contigs and/or reads based on k-mer queries into the cDBG.
+To do this, it implements a `--radius` option that does neighborhood retrieval in a way that is different from catlas neighborhood expansion.
+Briefly, `--radius` does a local expansion around matching cDBG nodes without using dominators, which means 1) the catlas does not need to be built, which helps address our current memory issues where in some cases, catlas building is the blocking step; 2) the reads/contigs output here are different from (a superset of) the reads output by our current neighborhood query.
+The k-mer index is still required for `graphgrep`.
+
+A sister command, `graphgrep_iter` does the search without having a k-mer index into the cDBG.
+
+For large and/or many queries, we expect this code to be (much) slower than spacegraphcats neighborhood retrieval. 
+`graphgrep_iter` will also be quite slow for large graphs.
+
+The read index is still required to output reads instead of contig.
+
+The k-mer index and the reads index are the slowest of the indexing operations performed in a full catlas build, so `graphgrep*` doesn't solve these performance issues.
+However, in the specific case where k-mer indexing or catlas building can't be done due to RAM limitations, this may be a useful solution.
+
+`graphgrep*` is currently implemented in pull request #372 and is not a part of the main code base. 
+
+Basic usage:
+
+Output contigs to stdout:
+
+```
+python -m spacegraphcats.search.graphgrep twofoo-short twofoo-short_k31 twofoo-short_k31_r1 tests/test-data/63.short.fa.gz
+```
+
+Output reads to stdout:
+
+```
+python -m spacegraphcats.search.graphgrep -R twofoo-short twofoo-short_k31 twofoo-short_k31_r1 tests/test-data/63.short.fa.gz
+```
 
 ### Protein queries
 
