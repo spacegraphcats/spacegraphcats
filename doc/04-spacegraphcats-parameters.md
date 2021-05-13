@@ -46,11 +46,18 @@ As the radius expands, the pieces "dominated" by each node in the dominating set
 
 When using the "default" spacegraphcats parameters, relatively little k-mer sequence overlap is necessary between the query sequence and the query neighborhood to recover substantial portions of closely related genomes.  
 The figure below is reproduced from the spacegraphcats paper. 
-It demonstrates that with a Jaccard similarity between 10^-2 and 10^-3, 20-40% of a target genome sequence is recovered from a metagenome query. 
-This jumps to >80% when Jaccard similarity exceeds 10^-1. 
+It demonstrates that with a Jaccard similarity between 10<sup>-2</sup> and 10<sup>-3</sup>, 20-40% of a target genome sequence is recovered from a metagenome query. 
+This jumps to >80% when Jaccard similarity exceeds 10<sup>-1</sup>. 
 Panel B shows that an approximately 1 Mbp overlap between two genomes is sufficient to recover approximately 2.3 Mbp of unknown sequence from the closely related *Proteiniclasticum* genomes.
   
 ![](https://media.springernature.com/full/springer-static/image/art%3A10.1186%2Fs13059-020-02066-4/MediaObjects/13059_2020_2066_Fig2_HTML.png?as=webp) *Source: [Brown et al. 2020](https://doi.org/10.1186/s13059-020-02066-4)*
+
+Below, we show an approximate conversion between Jaccard similarity and Average Nucleotide Identity (ANI) at different k-mer sizes using simulated sequences ([notebook here](https://github.com/bluegenes/2021-simseq-compare/blob/main/notebooks/007.jaccard-to-true-ANI-explore.ipynb)).
+A Jaccard similarity of 0.10 corresponds approximately to 95% ANI at a k-mer size of 31.
+
+![](https://i.imgur.com/01TaIw3.png) *Image courtesy of Tessa Pierce Ward.*
+ 
+
 
 ## Do unwanted sequences sneak in, especially at larger radius sizes?
 
