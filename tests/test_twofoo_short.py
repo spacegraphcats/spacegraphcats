@@ -224,8 +224,8 @@ def test_extract_reads_paired():
         last_name = name
 
     print(f"reads: {len(read_names)}; singletons: {num_single}; paired: {num_paired}")
-    assert len(read_names) == 988
-    assert num_single == 616  # this is singletons + first reads
+    assert len(read_names) == 996
+    assert num_single == 624  # this is singletons + first reads
     assert num_paired == 372
 
     assert num_single + num_paired == len(read_names)
@@ -274,7 +274,7 @@ def test_check_md5():
 
     assert m.hexdigest() == "fc9ee74aa29e5d72d2a08c40eee5a0f4", m.hexdigest()
 
-    assert m2.hexdigest() == "92ca814ba49a72022be556aacda59782", m2.hexdigest()
+    assert m2.hexdigest() == "414e8005d8f382413e234bd947644fe6", m2.hexdigest()
 
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
