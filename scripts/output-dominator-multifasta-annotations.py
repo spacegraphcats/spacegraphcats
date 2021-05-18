@@ -35,7 +35,7 @@ def main():
     ki_start = time.time()
     kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
     notify('loaded {} k-mers in index ({:.1f}s)',
-           len(kmer_idx.mphf_to_kmer), time.time() - ki_start)
+           len(kmer_idx), time.time() - ki_start)
 
     notify(f'loading multifasta pickle from {args.multifasta_pickle}')
     with open(args.multifasta_pickle, 'rb') as fp:
