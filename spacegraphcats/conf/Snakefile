@@ -1,10 +1,13 @@
 #
 # Snakemake configuration file for running spacegraphcats pipelines.
 #
-# Quickstart: `spacegraphcats dory-test searchquick`
+# Quickstart: `spacegraphcats run dory-test search`
 #
 import sys
 import os
+
+from spacegraphcats import version
+print(f"\nThis is spacegraphcats {version.version}.\n")
 
 ##
 ## pull values in from config file / command line:
@@ -29,7 +32,7 @@ def fix_relative_input_paths(filenames):
     abs_filenames = []
     for filename in filenames:
         if not filename.startswith('/'):
-            print(f'...sgc is updating input file {filename} with outdir prefix {startdir}', file=sys.stderr)
+            #print(f'...sgc is updating input file {filename} with outdir prefix {startdir}', file=sys.stderr)
             filename = os.path.join(startdir, filename)
         abs_filenames.append(filename)
     return abs_filenames
@@ -49,9 +52,8 @@ radius = config['radius']
 # search overhead
 overhead = config.get('overhead', 0.0)
 
-# fix paths to searchquick, search files
+# fix paths to search files
 config['search'] = fix_relative_input_paths(config.get('search', []))
-config['searchquick'] = fix_relative_input_paths(config.get('searchqiuck', []))
 
 # paper evaluation: do not expand the cDBG nodes using the domset
 cdbg_only = ""
@@ -59,6 +61,9 @@ catlas_suffix = ""
 if config.get('cdbg_only', False):
     cdbg_only = "--cdbg-only"
     catlas_suffix = "_cdbg"
+
+# debugging/evaluation only: shuffle cDBG nodes?
+cdbg_shuffle_seed = config.get('cdbg_shuffle_seed')
 
 # suffix to add to search output
 experiment = config.get('experiment', '')
@@ -71,7 +76,6 @@ decompose_minsize = config.get('decompose_minsize', 5000)
 decompose_maxsize = config.get('decompose_maxsize', 50000)
 
 # hashval queries / query_by_hashval
-hashval_ksize = config.get('hashval_ksize', ksize)
 
 hashval_queries = ''
 if config.get('hashval_queries', ''):
@@ -94,10 +98,9 @@ multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
 cdbg_dir = f'{catlas_base}_k{ksize}'
 catlas_dir = f'{catlas_base}_k{ksize}_r{radius}{catlas_suffix}'
 search_dir = f'{catlas_dir}_search_oh{int(overhead*100)}{search_out_suffix}'
-hashval_query_dir = f'{catlas_dir}_hashval_k{hashval_ksize}'
 
-# internal definitions for convenience:
-python=sys.executable  # define as the version of Python running snakemake
+hashval_ksize = config.get('hashval_ksize', ksize)
+hashval_query_dir = f'{catlas_dir}_hashval_k{hashval_ksize}'
 
 onsuccess:
     print('\n-------- DONE --------\n', file=sys.stderr)
@@ -147,6 +150,7 @@ rule bcalm_cdbg:
     output:
         f"{cdbg_dir}/bcalm.unitigs.fa",
     log: f"{catlas_dir}/bcalm.{catlas_dir}.log.txt",
+    shadow: "shallow"
     shell: """
         # can we run it?
         bcalm >& /dev/null || \
@@ -181,9 +185,14 @@ rule bcalm_catlas_sort:
         db = f"{cdbg_dir}/bcalm.unitigs.predb",
         mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
         sig = f"{cdbg_dir}/bcalm.unitigs.fa.sig",
+    shadow: "shallow"
+    params:
+        ksize = ksize,
+        seed = cdbg_shuffle_seed if cdbg_shuffle_seed is not None else 42
     shell: """
-        {python} -m spacegraphcats.cdbg.sort_bcalm_unitigs \
-            -k {ksize} {input.unitigs} {output.db} {output.mapping}
+        python -Werror -m spacegraphcats.cdbg.sort_bcalm_unitigs \
+            -k {params.ksize} {input.unitigs} {output.db} {output.mapping} \
+            --seed {params.seed}
      """
 
 # build catlas input from bcalm output by reformatting; optionally,
@@ -198,17 +207,29 @@ rule bcalm_catlas_prepare_input:
         info = f"{catlas_dir}/contigs.info.csv",
         sig = f"{catlas_dir}/contigs.sig",
         db = f"{cdbg_dir}/bcalm.unitigs.db",
+    shadow: "shallow"
     params:
         remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else "",
         contigs_prefix = f"{catlas_dir}/contigs"
     shell: """
-        {python} -m spacegraphcats.cdbg.bcalm_to_gxt2 \
+        python -Werror -m spacegraphcats.cdbg.bcalm_to_gxt2 \
             {params.remove_pendants} \
             {input.unitigs} {input.db} {input.mapping} \
             {output.gxt} {params.contigs_prefix}
         mv {input.db} {output.db}
         chmod u-w {output.db}
      """
+
+# output contigs file
+rule dump_contigs:
+    input:
+        db = f"{cdbg_dir}/bcalm.unitigs.db",
+    output:
+        f"{cdbg_dir}/contigs.fa.gz"
+    shell: """
+        python -Werror -m spacegraphcats.cdbg.dump_contigs_db_to_fasta \
+            {input.db} | gzip > {output}
+    """
 
 # combine all the reads into a single bgzf file, which permits random indexing.
 rule reads_bgzf:
@@ -217,7 +238,7 @@ rule reads_bgzf:
     output:
         "{catlas_base}/{catlas_base}.reads.bgz"
     shell: """
-        {python} -m spacegraphcats.utils.make_bgzf {input} -o {output}
+        python -Werror -m spacegraphcats.utils.make_bgzf {input} -o {output}
      """
 
 # label the reads by contig
@@ -226,13 +247,15 @@ rule index_reads:
         reads = f"{catlas_base}/{catlas_base}.reads.bgz",
         mphf = f"{catlas_dir}/contigs.mphf",
         mphf_idx = f"{catlas_dir}/contigs.indices",
+    shadow: "shallow"
     output:
         f"{catlas_dir}/reads.bgz.index",
     params:
-        paired_reads = "-P" if config.get('paired_reads', 0) else "",
+        paired_reads = "-P" if config.get('paired_reads', 1) else "",
+        ksize = ksize,
     shell: """
-        {python} -m spacegraphcats.cdbg.index_reads -k {ksize} {catlas_dir} \
-            {input.reads} {output} {params.paired_reads}
+        python -Werror -m spacegraphcats.cdbg.index_reads {catlas_dir} \
+            {input.reads} {output} {params.paired_reads} -k {params.ksize}
     """
 
 
@@ -245,7 +268,7 @@ rule build_catlas:
         f"{catlas_dir}/catlas.csv",
         f"{catlas_dir}/commands.log",
     shell: """
-        {python} -m spacegraphcats.catlas.catlas --no_checkpoint \
+        python -Werror -m spacegraphcats.catlas.catlas --no_checkpoint \
             {catlas_dir} {radius}
     """
 
@@ -256,9 +279,12 @@ rule make_contigs_kmer_index:
     output:
         f"{catlas_dir}/contigs.mphf",
         f"{catlas_dir}/contigs.indices",
+    shadow: "shallow"
+    params:
+        ksize = ksize,
     shell: """
-        {python} -m spacegraphcats.cdbg.index_cdbg_by_kmer \
-            -k {ksize} {catlas_dir} --contigs-db {input.db}
+        python -Werror -m spacegraphcats.cdbg.index_cdbg_by_kmer \
+            -k {params.ksize} {catlas_dir} --contigs-db {input.db}
     """
 
 ### Search rules.
@@ -274,25 +300,6 @@ def make_query_base(searchfiles):
         x.append(f"{search_dir}/{basename}.frontier.txt.gz")
     return x
 
-# do a quick search!
-rule searchquick:
-    input:
-        config['searchquick'],
-        f"{catlas_dir}/first_doms.txt",
-        f"{catlas_dir}/catlas.csv",
-        f"{catlas_dir}/contigs.mphf",
-        f"{catlas_dir}/contigs.indices",
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
-    output:
-        f"{search_dir}/results.csv",
-        make_query_base(config['searchquick']),
-    shell: """
-        {python} -m spacegraphcats.search.query_by_sequence {catlas_dir} \
-            {search_dir} --query {config[searchquick]} -k {ksize} {cdbg_only} \
-            --contigs-db {input.db}
-    """
-
-
 # do a full search!
 rule search:
     input:
@@ -305,13 +312,15 @@ rule search:
     output:
         f"{search_dir}/results.csv",
         make_query_base(config['search']),
+    shadow: "shallow"
+    params:
+        ksize = ksize,
+        cdbg_only = cdbg_only,
     shell: """
-        {python} -m spacegraphcats.search.query_by_sequence \
-            {catlas_dir} {search_dir} --query {config[search]} -k {ksize} \
-            {cdbg_only} --contigs-db {input.db}
+        python -Werror -m spacegraphcats.search.query_by_sequence \
+            {catlas_dir} {search_dir} --query {config[search]} \
+            -k {params.ksize} {params.cdbg_only} --contigs-db {input.db}
     """
-
-ruleorder: search > searchquick
 
 ### Extract contigs and reads.
 
@@ -337,7 +346,7 @@ rule extract_contigs_single_file:
     output:
         f"{search_dir}/{{queryname}}.cdbg_ids.contigs.fa.gz",
     shell: """
-        {python} -m spacegraphcats.search.extract_contigs \
+        python -Werror -m spacegraphcats.search.extract_contigs \
             --contigs-db {input.db} \
             {input.cdbg_ids} -o {output}
     """
@@ -350,8 +359,9 @@ rule extract_reads_single_file:
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
         f"{search_dir}/{{queryname}}.cdbg_ids.reads.gz",
+    shadow: "shallow"
     shell: """
-        {python} -m spacegraphcats.search.extract_reads {input.reads} \
+        python -Werror -m spacegraphcats.search.extract_reads {input.reads} \
             {input.labels} {input.cdbg_ids} -o {output}
     """
 
@@ -372,7 +382,7 @@ rule decompose_catlas:
     output:
         directory(f"{catlas_dir}_decompose"),
     shell: """
-        {python} -m spacegraphcats.search.decompose_catlas {catlas_dir} \
+        python -Werror -m spacegraphcats.search.decompose_catlas {catlas_dir} \
                --minsize={decompose_minsize} --maxsize={decompose_maxsize} \
                {output}
     """
@@ -384,7 +394,7 @@ rule extract_reads_for_decomposition:
         outdir = f"{catlas_dir}_decompose",
     shell: """
         for i in {input.outdir}/*.txt.gz; do
-            python -m spacegraphcats.search.extract_reads \
+            python -Werror -m spacegraphcats.search.extract_reads \
                 {input.reads} {input.labels} $i \
                 -o {inputoutdir}/$(basename $i .txt.gz).reads.gz;
         done
@@ -398,9 +408,11 @@ rule build_hashval_query_index:
         f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{hashval_query_dir}/index.pickle",
+    params:
+        hashval_ksize = hashval_ksize,
     shell: """
-        {python} -m spacegraphcats.cdbg.index_cdbg_by_minhash \
-            -k {hashval_ksize} {input} {output}
+        python -Werror -m spacegraphcats.cdbg.index_cdbg_by_minhash \
+            -k {params.hashval_ksize} {input} {output}
     """
 
 # do a full search!
@@ -413,10 +425,12 @@ checkpoint hashval_query:
     output:
         csv=f"{hashval_query_dir}/hashval_results.csv",
         outdir=directory(f"{hashval_query_dir}/contigs"),
+    params:
+        hashval_ksize = hashval_ksize,
     shell: """
         mkdir -p {output.outdir}
-        {python} -m spacegraphcats.search.query_by_hashval \
-                 -k {hashval_ksize} {catlas_dir} \
+        python -Werror -m spacegraphcats.search.query_by_hashval \
+                 -k {params.hashval_ksize} {catlas_dir} \
                  {input.pickle} {input.queries} {hashval_query_dir} \
                  --contigs-db {input.contigs_db}
     """
@@ -444,7 +458,7 @@ rule extract_reads_single_hashval_file:
         expand("{h}/reads/{{hashval}}.cdbg_ids.reads.gz",
                h=hashval_query_dir)
     shell: """
-        {python} -m spacegraphcats.search.extract_reads {input.reads} \
+        python -Werror -m spacegraphcats.search.extract_reads {input.reads} \
             {input.labels} {input.cdbg_ids} -o {output}
     """
 
@@ -470,7 +484,7 @@ rule extract_by_shadow_ratio_rule:
     output:
         catlas_dir + ".shadow.{shadow_ratio_maxsize}.fa"
     shell: """
-        {python} -m spacegraphcats.search.extract_nodes_by_shadow_ratio \
+        python -Werror -m spacegraphcats.search.extract_nodes_by_shadow_ratio \
             --contigs-db {input.contigs_db} \
             --maxsize={wildcards.shadow_ratio_maxsize} \
             {catlas_dir} {output}
@@ -492,7 +506,7 @@ rule build_multifasta_hashval_index:
         ksize = ksize,
         scaled = config.get('multifasta_scaled', 1000)
     shell: """
-        {python} -m spacegraphcats.cdbg.index_cdbg_by_minhash \
+        python -Werror -m spacegraphcats.cdbg.index_cdbg_by_minhash \
             -k {params.ksize} --scaled {params.scaled} {input} {output}
     """
 
@@ -509,7 +523,7 @@ rule build_multifasta_index:
     params:
         ksize = ksize,
     shell: """
-        {python} -m spacegraphcats.search.index_cdbg_by_multifasta \
+        python -Werror -m spacegraphcats.search.index_cdbg_by_multifasta \
              {catlas_dir} {output} --query {input.queries} -k {params.ksize}
     """
 
@@ -524,7 +538,7 @@ rule query_multifasta_by_signature:
         ksize = ksize,
         scaled = config.get('multifasta_scaled', 1000)
     shell: """
-        {python} -m spacegraphcats.search.query_multifasta_by_sig \
+        python -Werror -m spacegraphcats.search.query_multifasta_by_sig \
             --hashvals {input.hashvals} --multi-idx {input.multi_idx} \
             --query-sig {input.query_sig} --output {output} \
             -k {params.ksize} --scaled {params.scaled}
@@ -539,7 +553,7 @@ rule build_cdbg_list_by_record:
     output:
         f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
     shell: """
-        {python} -m spacegraphcats.search.extract_cdbg_by_multifasta \
+        python -Werror -m spacegraphcats.search.extract_cdbg_by_multifasta \
             --multi-idx {input.multi_idx} --output {output} \
             --info-csv {input.info_csv}
     """
@@ -554,6 +568,6 @@ rule extract_reads_single_file_multifasta:
     output:
         f"{catlas_dir}_multifasta/{{queryname}}.reads.gz",
     shell: """
-        {python} -m spacegraphcats.search.extract_reads {input.reads} \
+        python -Werror -m spacegraphcats.search.extract_reads {input.reads} \
             {input.labels} {input.cdbg_ids} -o {output}
     """

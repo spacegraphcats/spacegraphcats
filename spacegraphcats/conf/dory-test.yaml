@@ -8,8 +8,6 @@ radius: 1
 search:
 - data/dory-head.fa
 - data/random-query-nomatch.fa
-searchquick:
-- data/dory-head.fa
 
 hashval_ksize: 31
 hashval_queries: data/dory-k31-hashval-queries.txt

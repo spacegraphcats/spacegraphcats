@@ -11,7 +11,7 @@ import sourmash
 import screed
 
 from spacegraphcats.search.catlas import CAtlas
-from spacegraphcats.click import run_snakemake
+from spacegraphcats.__main__ import run_snakemake
 from . import pytest_utils as utils
 
 # NOTE re dependencies (@pytest.mark.dependency):
@@ -54,6 +54,18 @@ def test_build_and_search():
     for filename in output_files:
         fullpath = os.path.join(_tempdir, filename)
         assert os.path.exists(fullpath), fullpath
+
+
+@pytest.mark.dependency(depends=["test_build_and_search"])
+def test_dump_contigs():
+    global _tempdir
+
+    conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
+    target = "dump_contigs"
+    status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
+    assert status == 0
+
+    assert os.path.exists(f"{_tempdir}/twofoo-short_k31/contigs.fa.gz")
 
 
 @pytest.mark.pairing
@@ -212,8 +224,8 @@ def test_extract_reads_paired():
         last_name = name
 
     print(f"reads: {len(read_names)}; singletons: {num_single}; paired: {num_paired}")
-    assert len(read_names) == 988
-    assert num_single == 616  # this is singletons + first reads
+    assert len(read_names) == 996
+    assert num_single == 624  # this is singletons + first reads
     assert num_paired == 372
 
     assert num_single + num_paired == len(read_names)
@@ -262,7 +274,7 @@ def test_check_md5():
 
     assert m.hexdigest() == "fc9ee74aa29e5d72d2a08c40eee5a0f4", m.hexdigest()
 
-    assert m2.hexdigest() == "92ca814ba49a72022be556aacda59782", m2.hexdigest()
+    assert m2.hexdigest() == "414e8005d8f382413e234bd947644fe6", m2.hexdigest()
 
 
 @pytest.mark.dependency(depends=["test_build_and_search"])

@@ -56,7 +56,7 @@ def main(argv=sys.argv[1:]):
             "We will REQUIRE that some of the reads are in pairs (-P/--expect-paired)"
         )
     else:
-        print("We will NOT require that some of theads be in pairs (default).")
+        print("We will NOT require that some of the reads be in pairs (default).")
 
     if args.ignore_paired:
         print("Ignoring paired reads (-N/--ignore-paired)")
@@ -100,10 +100,16 @@ def main(argv=sys.argv[1:]):
     last_record = None
     last_offset = None
     n_paired_reads = 0
+
+    idx_start = time.time()
     for record, offset in search_utils.iterate_bgzf(reader):
         n += 1
         if total_bp >= watermark:
-            print(f"... {watermark:5.2e} bp thru reads", end="\r", file=sys.stderr)
+            print(
+                f"... {watermark:5.2e} bp thru reads - {time.time() - idx_start:.1f}s",
+                end="\r",
+                file=sys.stderr,
+            )
             watermark += watermark_size
 
             if args.expect_paired:
@@ -162,12 +168,16 @@ def main(argv=sys.argv[1:]):
 
     db.commit()
     notify(f"{total_bp:5.2e} bp in {n} reads")
-    notify(f"{n_paired_reads} paired of {n} reads")
+    notify(f"{2*n_paired_reads} paired of {n} reads; {n-2*n_paired_reads} singletons")
     notify(f"found reads for {len(total_cdbg_ids)} cDBG IDs")
+    notify(f"{time.time() - idx_start:.1f}s seconds total")
     assert max(total_cdbg_ids) + 1 == len(total_cdbg_ids)
 
+    notify("creating indices in database.")
+    idx_start = time.time()
     cursor.execute("CREATE INDEX offset_idx ON sequences (offset)")
     cursor.execute("CREATE INDEX cdbg_id_idx ON sequences (cdbg_id)")
+    notify(f"{time.time() - idx_start:.1f}s seconds total")
     db.close()
     print(f"done; closing {dbfilename}!")
 

@@ -1,5 +1,5 @@
 """Algorithms for r-dominating set computation."""
-from collections import defaultdict
+from collections import defaultdict, deque
 from .graph import Graph, DictGraph
 
 from typing import List, Set, Dict, Union
@@ -259,6 +259,13 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     print("assigning to dominators")
     domgraph = DictGraph(nodes=SortedSet(domset))
 
+    # We need both in-neighbors and out-neighbors.
+    neighbors = defaultdict(list)
+    for v in graph:
+        for u in graph.in_neighbors(v, 1):
+            neighbors[v] += [u]
+            neighbors[u] += [v]
+
     # We need to assign each vertex to a unique closest dominator.  A value of
     # -1 indicates this vertex has not yet been assigned to a dominator.
     assigned_dominator = {v: -1 for v in graph}  # type: Dict[int, int]
@@ -273,21 +280,19 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
     # vertex at distance d from a dominator has to wait until its neighbors at
     # distance d-1 are assigned in order to pick an appropriate assignment (a
     # dominator already found in its neighborhood).
-    for _ in range(radius):
-        for v in graph:
-            label = assigned_dominator[v]
-            if label >= 0:
-                # Push value to unassigned in-neighbors
-                for u in graph.in_neighbors(v, 1):
-                    if assigned_dominator[u] < 0:
-                        assigned_dominator[u] = label
-            else:
-                # Pull value
-                for u in graph.in_neighbors(v, 1):
-                    # TODO: could instead use some min/max voting here
-                    if assigned_dominator[u] >= 0:
-                        assigned_dominator[v] = assigned_dominator[u]
-                        break
+
+    # breadth-first search
+    q = deque(((v, v, 0) for v in domset))
+    while q:
+        s, v, d = q.popleft()
+        assert 0 <= d < radius
+
+        for w in neighbors[v]:
+            if assigned_dominator[w] == -1:
+                assigned_dominator[w] = s
+                if d + 1 < radius:
+                    q.append((s, w, d + 1))
+
     # Sanity-check
     for v, value in enumerate(assigned_dominator):
         assert value >= 0

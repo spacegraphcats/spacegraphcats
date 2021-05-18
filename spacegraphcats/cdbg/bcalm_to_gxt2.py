@@ -194,7 +194,6 @@ class SqliteAsDict:
         assert self.c.rowcount == 1
 
     def __delitem__(self, key):
-        print(f"removing sequence {key}")
         self.c.execute("DELETE FROM sequences WHERE id=?", (key,))
 
     def close(self):
