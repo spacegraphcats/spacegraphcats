@@ -81,12 +81,12 @@ For this to be possible, a genome likely needs to have very little strain variat
 
 Given these conditions, we were curious whether 
 1. CMAGs contain additional variation not captured by curation techniques, and 
-2. Using spacegraphcats to query a metagenome with a CMAG it preciptated leads tothe recovery of "off target" sequences. 
+2. Using spacegraphcats to query a metagenome with a CMAG it precipitated leads to the recovery of "off target" sequences. 
 
-A snakefile is available for this analysis [here](https://github.com/taylorreiter/2019-pere/blob/master/Snakefile).
+A Snakemake workflow is available for this analysis [here](https://github.com/taylorreiter/2019-pere/blob/master/Snakefile).
 
 After k-mer trimming the metagenome, we used a CMAG to query into the assembly graph. 
-We retrieved the reads for the query neighborhood and mapped these back CMAG assembly, and then retrieved unmapped reads.  
+We retrieved the reads for the query neighborhood and mapped these back to the CMAG assembly, and then retrieved unmapped reads.  
 99.82% of reads in the query neighborhood mapped back to the query, indicating there was little strain variation in the reads not accounted for in the assembly.
 Using megahit, the unmapped reads assembled into 5 contigs ranging in size from 179-208bp. 
 When BLASTed (`blastn`, `blastx`) against the NCBI nr database, four of the five contigs matched 16S or 23S ribosomal RNA. 

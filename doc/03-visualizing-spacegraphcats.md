@@ -60,7 +60,7 @@ conda create -n blast  blast=2.9.0
 conda activate blast
 ```
 
-Then sym link the blast executable into `usr/local/bin`, where Bandage looks for it
+Then symlink the blast executable into `usr/local/bin`, where Bandage looks for it
 
 ```
 ln -s  ~/miniconda3/envs/blast/bin/blastn /usr/local/bin/
