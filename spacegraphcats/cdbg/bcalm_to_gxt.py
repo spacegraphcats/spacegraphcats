@@ -227,7 +227,7 @@ def main(argv):
     else:
         logging.basicConfig(filename=logfile, filemode="w", level=logging.WARNING)
 
-    logging.debug("starting bcalm_to_gxt2 run.")
+    logging.debug("starting bcalm_to_gxt run.")
 
     with open(args.mapping_pickle, "rb") as fp:
         (ksize, neighbors) = pickle.load(fp)

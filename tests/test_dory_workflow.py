@@ -120,7 +120,7 @@ def test_dory_sort_bcalm_diff_seed(location):
 
 @pytest_utils.in_tempdir
 def test_dory_query_workflow(location):
-    from spacegraphcats.cdbg import bcalm_to_gxt2, sort_bcalm_unitigs
+    from spacegraphcats.cdbg import bcalm_to_gxt, sort_bcalm_unitigs
 
     copy_dory_head()
     copy_dory_subset()
@@ -157,7 +157,7 @@ def test_dory_query_workflow(location):
         "dory_k21_r1/contigs",
     ]
 
-    assert bcalm_to_gxt2.main(args) == 0
+    assert bcalm_to_gxt.main(args) == 0
 
     db = sqlite3.connect("dory_k21/bcalm.unitigs.db")
     all_seqs = list(search_utils.contigs_iter_sqlite(db))
@@ -229,7 +229,7 @@ def test_dory_query_workflow(location):
 
 @pytest_utils.in_tempdir
 def test_dory_query_workflow_remove_pendants(location):
-    from spacegraphcats.cdbg import bcalm_to_gxt2, sort_bcalm_unitigs
+    from spacegraphcats.cdbg import bcalm_to_gxt, sort_bcalm_unitigs
 
     copy_dory_head()
     copy_dory_subset()
@@ -265,7 +265,7 @@ def test_dory_query_workflow_remove_pendants(location):
         "dory_k21_r1/contigs",
     ]
 
-    assert bcalm_to_gxt2.main(args) == 0
+    assert bcalm_to_gxt.main(args) == 0
 
     db = sqlite3.connect("dory_k21/bcalm.unitigs.db")
     all_seqs = list(search_utils.contigs_iter_sqlite(db))
