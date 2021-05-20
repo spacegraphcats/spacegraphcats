@@ -152,11 +152,6 @@ rule bcalm_cdbg:
     log: f"{catlas_dir}/bcalm.{catlas_dir}.log.txt",
     shadow: "shallow"
     shell: """
-        # can we run it?
-        bcalm >& /dev/null || \
-            (printf "**\n** ERROR: Cannot run bcalm! Is it installed?\n**\n"; \
-             false)
-
         # ok, run bcalm for real; use tee to both save & output stderr,
         # per https://stackoverflow.com/questions/692000/how-do-i-write-stderr-to-a-file-while-using-tee-with-a-pipe
         bcalm -in {input} -out {cdbg_dir}/bcalm \
