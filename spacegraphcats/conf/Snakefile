@@ -212,7 +212,7 @@ rule bcalm_catlas_prepare_input:
         remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else "",
         contigs_prefix = f"{catlas_dir}/contigs"
     shell: """
-        python -Werror -m spacegraphcats.cdbg.bcalm_to_gxt2 \
+        python -Werror -m spacegraphcats.cdbg.bcalm_to_gxt \
             {params.remove_pendants} \
             {input.unitigs} {input.db} {input.mapping} \
             {output.gxt} {params.contigs_prefix}
