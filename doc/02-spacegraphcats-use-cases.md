@@ -10,8 +10,8 @@ Please see [Installing spacegraphcats](00-installing-spacegraphcats.md).
 
 As discussed in the [primer on metagenomics and assembly graphs](0a-primer.md), assembly and binning are lossy processes that leave many reads uncharacterized in metagenome analysis. 
 Spacegraphcats can be used to recover unassembled and unbinned reads that "belong" to a metagenome bin by using the metagenome bin as a query. 
-We recommend the [Atlas](https://metagenome-atlas.readthedocs.io/en/latest/) automated metagenome analysis pipeline to produce the initial bins. 
-(Alternatively, the [genome-grist](https://github.com/dib-lab/genome-grist) pipeline may be used to identify the reference genomes to in a metagenome that can be used as queries.)
+We recommend using the [Atlas](https://metagenome-atlas.readthedocs.io/en/latest/) automated metagenome analysis pipeline to produce the initial bins. 
+(Alternatively, the [genome-grist](https://github.com/dib-lab/genome-grist) pipeline may be used to identify the list of known reference genomes to be used as queries for a metagenome.)
 Then, each bin can be used as a query, producing a query neighborhood that reassociates unassembled and unbinned reads that are graph-adjacent to the query.  
 In a metagenome from an oil reservoir, bin completion with spacegraphcats identified strain-variable regions in genes that were present in the bin (e.g. *gyrA* in panel A of the figure below) and identified unbinned genes that augmented the functional content of the metagenome by 13% (panel B of the figure below).
 
@@ -94,7 +94,7 @@ For example, one can query with a gene of interest.
 In the example below, we identify antibiotic resistance genes in time series human stool metagenomes using [GROOT](https://github.com/will-rowe/groot), and then use the identified genes as spacegraphcats queries.
 Using this method, we can see how the context of antibiotic resistance genes changes over time.
 
-The dataset used below if a time series from a single individual with Crohn's disease, sequenced by the [Integrative Human Microbiome Project (iHMP)](https://ibdmdb.org/).
+The dataset used below is a time series from a single individual with Crohn's disease, sequenced by the [Integrative Human Microbiome Project (iHMP)](https://ibdmdb.org/).
 The stool microbiome from this individual was sequenced at 12 different timepoints over 37 weeks, and the individual was on antibiotics at various times during the that timeframe.
 
 ![](https://i.imgur.com/H7JiYvr.png) *Times of sequencing and antibiotic exposure for individual H4017 from the Integrative Human Microbiome Project.*
