@@ -104,7 +104,7 @@ We'll determine the sequence context of one antibiotic resistance gene in one sa
 
 Install companion software needed for this analysis:
 ```
-conda install sourmash=4.0.0 fastp=0.20.1 bbmap=38.70 khmer=3.0.0a3 groot=1.1.2 samtools=1.12 bandage=0.8.1 blast=2.11.0
+conda install sourmash>=4.1.0,<5 fastp=0.20.1 bbmap=38.70 khmer=3.0.0a3 groot=1.1.2 samtools=1.12 bandage=0.8.1 blast=2.11.0
 ```
 
 Then, download the the sequencing data and perform quality control.
