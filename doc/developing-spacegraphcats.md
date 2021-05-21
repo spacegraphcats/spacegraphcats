@@ -10,6 +10,12 @@ This also allows any snakemake flag to be added to the spacegraphcats CLI (e.g. 
  
 ## spacegraphcats files and what scripts produce them
 
+* the `dory_k21/` directory contains the various cDBG files
+    * `bcalm.inputlist.txt`
+    * `bcalm.unitigs.fa`
+    * `bcalm.unitigs.pickle`
+    * `bcalm.unitigs.db` - database of unitigs in the cDBG. A FASTA file can be produced from this file by running `python -m spacegraphcats.cdbg.dump_contigs_db_to_fasta dory_k21/bcalm.unitigs.db`. 
+    * `bcalm.unitigs.fa.sig` - sourmash signuare for the cDBG nodes. Defaults to scaled = 1000. 
 * the `dory_k21_r1/` directory contains the various files of the catlas constructed by spacegraphcats:
     * cdbg.gxt - the cDBG connection graph, in a custom format; produced by `bcalm_to_gxt.py`
     * reads.bgz.index - a BGZF file containing the cDBG unitigs; produced by `bcalm_to_gxt.py`
