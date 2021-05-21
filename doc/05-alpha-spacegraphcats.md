@@ -71,7 +71,7 @@ The read index is still required to output reads instead of contig.
 The k-mer index and the reads index are the slowest of the indexing operations performed in a full catlas build, so `graphgrep*` doesn't solve these performance issues.
 However, in the specific case where k-mer indexing or catlas building can't be done due to RAM limitations, this may be a useful solution.
 
-`graphgrep*` is currently implemented in pull request #372 and is not a part of the main code base. 
+`graphgrep*` is currently implemented in [pull request #372](https://github.com/spacegraphcats/spacegraphcats/pull/372) and is not a part of the main code base. 
 
 Basic usage:
 
