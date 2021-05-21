@@ -152,11 +152,6 @@ rule bcalm_cdbg:
     log: f"{catlas_dir}/bcalm.{catlas_dir}.log.txt",
     shadow: "shallow"
     shell: """
-        # can we run it?
-        bcalm >& /dev/null || \
-            (printf "**\n** ERROR: Cannot run bcalm! Is it installed?\n**\n"; \
-             false)
-
         # ok, run bcalm for real; use tee to both save & output stderr,
         # per https://stackoverflow.com/questions/692000/how-do-i-write-stderr-to-a-file-while-using-tee-with-a-pipe
         bcalm -in {input} -out {cdbg_dir}/bcalm \
@@ -212,7 +207,7 @@ rule bcalm_catlas_prepare_input:
         remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else "",
         contigs_prefix = f"{catlas_dir}/contigs"
     shell: """
-        python -Werror -m spacegraphcats.cdbg.bcalm_to_gxt2 \
+        python -Werror -m spacegraphcats.cdbg.bcalm_to_gxt \
             {params.remove_pendants} \
             {input.unitigs} {input.db} {input.mapping} \
             {output.gxt} {params.contigs_prefix}
