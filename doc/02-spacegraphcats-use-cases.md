@@ -255,7 +255,7 @@ bcalm -in outputs/sgc_arg_queries_r1/HSM67VFJ_k31_r1_search_oh0/cfxA4_AY769933.f
      -out outputs/bcalm/HSM67VFJ_r1/cfxA4_AY769933.fna.cdbg_ids.reads.gz
 ```
 
-Download the script to conver the bcalm file to a gfa file
+Download the script to convert the bcalm file to a gfa file
 ```
 wget https://raw.githubusercontent.com/spacegraphcats/2018-paper-spacegraphcats/master/pipeline-analyses/variant_snakemake/convertToGFA.py
 chmod 777 convertToGFA.py
