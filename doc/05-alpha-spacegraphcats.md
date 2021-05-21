@@ -25,7 +25,7 @@ In practice, we have not found querying only by hash value extremely useful; sou
 Subsampling facilitates rapid and accurate comparisons between sequences, but this resolution provides an incomplete picture of the sequence landscape, missing a lot of important sequence context (e.g. genes, etc.).
 Potentially more importantly, while querying with a hash value may return reads in the neighborhood of the k-mer represented by that hash value, those reads may or may not assemble.
 If they do not assemble, it becomes really hard to identify what the functional/taxonomic identity of that hash value may be.
-We realized this after implementing `hashval_query` and `extract_reads_for_hashvals`, and then implemented multifast queries (see next section).
+We realized this after implementing `hashval_query` and `extract_reads_for_hashvals`, and then implemented multifasta queries (see next section).
 
 ## Multifasta queries
 
@@ -71,7 +71,7 @@ The read index is still required to output reads instead of contig.
 The k-mer index and the reads index are the slowest of the indexing operations performed in a full catlas build, so `graphgrep*` doesn't solve these performance issues.
 However, in the specific case where k-mer indexing or catlas building can't be done due to RAM limitations, this may be a useful solution.
 
-`graphgrep*` is currently implemented in pull request #372 and is not a part of the main code base. 
+`graphgrep*` is currently implemented in [pull request #372](https://github.com/spacegraphcats/spacegraphcats/pull/372) and is not a part of the main code base. 
 
 Basic usage:
 
@@ -276,5 +276,5 @@ similarity   match
  26.0%       podarV_prot_ruminis.nbhd.contigs.fa
 ```
 
-There is a lot to be done with understanding how protein searches or, and what all they bring in. 
+There is a lot to be done with understanding how protein searches work, and what all they bring in. 
 Please keep this in mind if you choose to use this functionality!
