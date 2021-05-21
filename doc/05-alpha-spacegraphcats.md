@@ -276,5 +276,5 @@ similarity   match
  26.0%       podarV_prot_ruminis.nbhd.contigs.fa
 ```
 
-There is a lot to be done with understanding how protein searches or, and what all they bring in. 
+There is a lot to be done with understanding how protein searches work, and what all they bring in. 
 Please keep this in mind if you choose to use this functionality!
