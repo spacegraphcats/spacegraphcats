@@ -15,7 +15,7 @@ This also allows any snakemake flag to be added to the spacegraphcats CLI (e.g. 
     * `bcalm.unitigs.fa`
     * `bcalm.unitigs.pickle`
     * `bcalm.unitigs.db` - database of unitigs in the cDBG. A FASTA file can be produced from this file by running `python -m spacegraphcats.cdbg.dump_contigs_db_to_fasta dory_k21/bcalm.unitigs.db`. 
-    * `bcalm.unitigs.fa.sig` - sourmash signuare for the cDBG nodes. Defaults to scaled = 1000. 
+    * `bcalm.unitigs.fa.sig` - sourmash signature for the cDBG nodes. Defaults to scaled = 1000. 
 * the `dory_k21_r1/` directory contains the various files of the catlas constructed by spacegraphcats:
     * cdbg.gxt - the cDBG connection graph, in a custom format; produced by `bcalm_to_gxt.py`
     * reads.bgz.index - a BGZF file containing the cDBG unitigs; produced by `bcalm_to_gxt.py`
@@ -75,4 +75,3 @@ Note that there is significant overlap with the *Shewanella baltica* OS185 genom
 `akker-reads.abundtrim.gz` is a collection of reads from podar that maps to *Akkermansia muciniphila* ATCC BAA-835 via `bwa aln`.
 The `akker-reads` do not have strain variation.
 For a full example workflow using this data set, see the repository [spacegraphcats-twofoo-example](https://github.com/spacegraphcats/spacegraphcats-twofoo-example).
-
