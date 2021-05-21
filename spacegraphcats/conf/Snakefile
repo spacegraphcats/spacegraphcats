@@ -279,6 +279,7 @@ rule make_contigs_kmer_index:
     output:
         f"{catlas_dir}/contigs.mphf",
         f"{catlas_dir}/contigs.indices",
+        f"{catlas_dir}/contigs.sizes",
     shadow: "shallow"
     params:
         ksize = ksize,
