@@ -136,7 +136,7 @@ In the `spacegraphcats/` top level directory (containing e.g. `README.md`),
 run:
 
 ```
-python -m spacegraphcats dory-test search
+python -m spacegraphcats run dory-test search
 ```
 
 This should run in a few seconds, and you should see something like this in the output:
@@ -191,7 +191,7 @@ which will take a few minutes.
 
 Then, run:
 ```
-python -m spacegraphcats twofoo search
+python -m spacegraphcats run twofoo search
 ```
 
 which will generate searches of the twofoo synthetic data set with `data/2.fa.gz`, `data/47.fa.gz`, and `data/63.fa.gz`.
@@ -201,5 +201,5 @@ It should take about 5 minutes on a relatively recent laptop, and will require ~
 If this succeeds, your install is all good - give yourself a high five!
 you've made it!
 
-See [running spacegraphcats](running-spacegraphcats.md) for next steps and
+See [running spacegraphcats](01-running-spacegraphcats.md) for next steps and
 more information on config files.
