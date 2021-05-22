@@ -148,7 +148,7 @@ rule bcalm_cdbg:
     input:
         f"{cdbg_dir}/bcalm.inputlist.txt"
     output:
-        f"{cdbg_dir}/bcalm.unitigs.fa",
+        temp(f"{cdbg_dir}/bcalm.unitigs.fa"),
     log: f"{catlas_dir}/bcalm.{catlas_dir}.log.txt",
     shadow: "shallow"
     shell: """
@@ -231,7 +231,7 @@ rule reads_bgzf:
     input:
         input_sequences
     output:
-        "{catlas_base}/{catlas_base}.reads.bgz"
+        "{catlas_base}/reads.bgz"
     shell: """
         python -Werror -m spacegraphcats.utils.make_bgzf {input} -o {output}
      """
@@ -239,7 +239,7 @@ rule reads_bgzf:
 # label the reads by contig
 rule index_reads:
     input:
-        reads = f"{catlas_base}/{catlas_base}.reads.bgz",
+        reads = f"{catlas_base}/reads.bgz",
         mphf = f"{catlas_dir}/contigs.mphf",
         mphf_idx = f"{catlas_dir}/contigs.indices",
     shadow: "shallow"
@@ -350,7 +350,7 @@ rule extract_contigs_single_file:
 # get reads for a single query
 rule extract_reads_single_file:
     input:
-        reads = f"{catlas_base}/{catlas_base}.reads.bgz",
+        reads = f"{catlas_base}/reads.bgz",
         labels = f"{catlas_dir}/reads.bgz.index",
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
@@ -385,7 +385,7 @@ rule decompose_catlas:
 
 rule extract_reads_for_decomposition:
     input:
-        reads = f"{catlas_base}/{catlas_base}.reads.bgz",
+        reads = f"{catlas_base}/reads.bgz",
         labels = f"{catlas_dir}/reads.bgz.index",
         outdir = f"{catlas_dir}_decompose",
     shell: """
@@ -446,7 +446,7 @@ def aggregate_hashval_query(wildcards):
 # get reads for a single hashval query
 rule extract_reads_single_hashval_file:
     input:
-        reads = f"{catlas_base}/{catlas_base}.reads.bgz",
+        reads = f"{catlas_base}/reads.bgz",
         labels = f"{catlas_dir}/reads.bgz.index",
         cdbg_ids = expand("{h}/contigs/{{hashval}}.cdbg_ids.txt.gz",
                           h=hashval_query_dir)
@@ -557,7 +557,7 @@ rule build_cdbg_list_by_record:
 # get reads for a single multifasta record
 rule extract_reads_single_file_multifasta:
     input:
-        reads = f"{catlas_base}/{catlas_base}.reads.bgz",
+        reads = f"{catlas_base}/reads.bgz",
         labels = f"{catlas_dir}/reads.bgz.index",
         cdbg_ids = f"{catlas_dir}_multifasta/{{queryname}}.cdbg_ids.txt.gz",
         in_csv = f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",

@@ -45,7 +45,7 @@ def test_build_and_search():
     assert status == 0
 
     output_files = [
-        "twofoo-short_k31/bcalm.unitigs.fa",
+        "twofoo-short_k31/bcalm.unitigs.db",
         "twofoo-short_k31_r1/catlas.csv",
         "twofoo-short_k31_r1/contigs.mphf",
         "twofoo-short_k31_r1_search_oh0/results.csv",
@@ -78,7 +78,7 @@ def test_label_reads():
     status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
     assert status == 0
 
-    assert os.path.exists(f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz")
+    assert os.path.exists(f"{_tempdir}/twofoo-short/reads.bgz")
 
 
 @pytest.mark.pairing
@@ -88,7 +88,7 @@ def test_index_reads_paired():
     global _tempdir
     from spacegraphcats.cdbg import index_reads
 
-    test_reads = f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz"
+    test_reads = f"{_tempdir}/twofoo-short/reads.bgz"
     output_index = os.path.join(_tempdir, "xxx.reads.index")
 
     retval = index_reads.main(
@@ -134,7 +134,7 @@ def test_index_reads_nopairing():
     global _tempdir
     from spacegraphcats.cdbg import index_reads
 
-    test_reads = f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz"
+    test_reads = f"{_tempdir}/twofoo-short/reads.bgz"
     output_index = os.path.join(_tempdir, "xxx.reads.index")
 
     retval = index_reads.main(

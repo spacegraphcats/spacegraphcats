@@ -386,7 +386,7 @@ def test_dory_make_bgzf(location):
 
     # run make_bgzf
     print("** running make_bgzf")
-    args = ["dory-subset.fa", "-o", "dory.reads.bgz"]
+    args = ["dory-subset.fa", "-o", "reads.bgz"]
     assert make_bgzf.main(args) == 0
 
 
@@ -397,7 +397,7 @@ def test_dory_index_reads(location):
 
     # run make_bgzf - FIXTURE
     print("** running make_bgzf")
-    args = ["dory-subset.fa", "-o", "dory.reads.bgz"]
+    args = ["dory-subset.fa", "-o", "reads.bgz"]
     assert make_bgzf.main(args) == 0
 
     # make k-mer search index - FIXTURE
@@ -410,7 +410,7 @@ def test_dory_index_reads(location):
         "-k",
         "21",
         "dory_k21_r1",
-        "dory.reads.bgz",
+        "reads.bgz",
         "dory_k21_r1/reads.bgz.index",
     ]
     assert index_reads.main(args) == 0
@@ -423,7 +423,7 @@ def test_dory_index_reads_require_paired_fail(location):
 
     # run make_bgzf - FIXTURE
     print("** running make_bgzf")
-    args = ["dory-subset.fa", "-o", "dory.reads.bgz"]
+    args = ["dory-subset.fa", "-o", "reads.bgz"]
     assert make_bgzf.main(args) == 0
 
     # make k-mer search index - FIXTURE
@@ -436,7 +436,7 @@ def test_dory_index_reads_require_paired_fail(location):
         "-k",
         "21",
         "dory_k21_r1",
-        "dory.reads.bgz",
+        "reads.bgz",
         "dory_k21_r1/reads.bgz.index",
         "-P",
     ]
@@ -451,7 +451,7 @@ def test_dory_index_reads_check_args_fail(location):
         "-k",
         "21",
         "dory_k21_r1",
-        "dory.reads.bgz",
+        "reads.bgz",
         "dory_k21_r1/reads.bgz.index",
         "-P",
         "-N",
@@ -467,7 +467,7 @@ def test_dory_extract_reads(location):
 
     # run make_bgzf - FIXTURE
     print("** running make_bgzf")
-    args = ["dory-subset.fa", "-o", "dory.reads.bgz"]
+    args = ["dory-subset.fa", "-o", "reads.bgz"]
     assert make_bgzf.main(args) == 0
 
     # make k-mer search index - FIXTURE
@@ -480,7 +480,7 @@ def test_dory_extract_reads(location):
         "-k",
         "21",
         "dory_k21_r1",
-        "dory.reads.bgz",
+        "reads.bgz",
         "dory_k21_r1/reads.bgz.index",
     ]
     assert index_reads.main(args) == 0
@@ -488,7 +488,7 @@ def test_dory_extract_reads(location):
     # run extract_reads
     print("** running extract_reads")
     args = [
-        "dory.reads.bgz",
+        "reads.bgz",
         "dory_k21_r1/reads.bgz.index",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
@@ -511,7 +511,7 @@ def test_dory_extract_reads_fq(location):
 
     # run make_bgzf - FIXTURE
     print("** running make_bgzf")
-    args = ["dory-subset.fq", "-o", "dory.reads.bgz"]
+    args = ["dory-subset.fq", "-o", "reads.bgz"]
     assert make_bgzf.main(args) == 0
 
     # make k-mer search index - FIXTURE
@@ -524,7 +524,7 @@ def test_dory_extract_reads_fq(location):
         "-k",
         "21",
         "dory_k21_r1",
-        "dory.reads.bgz",
+        "reads.bgz",
         "dory_k21_r1/reads.bgz.labels",
     ]
     assert index_reads.main(args) == 0
@@ -532,7 +532,7 @@ def test_dory_extract_reads_fq(location):
     # run extract_reads
     print("** running extract_reads")
     args = [
-        "dory.reads.bgz",
+        "reads.bgz",
         "dory_k21_r1/reads.bgz.labels",
         "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.txt.gz",
         "-o",
