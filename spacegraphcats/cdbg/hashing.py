@@ -20,12 +20,13 @@ def hash_sequence(seq, ksize):
     return hashing_fn(seq)
 
 
-class MPHF_KmerIndex(object):
+class MPHF_KmerIndex:
     """
     Support kmer -> cDBG node id queries.
     """
 
-    def __init__(self, bbhash_table, sizes):
+    def __init__(self, ksize, bbhash_table, sizes):
+        self.ksize = ksize
         self.table = bbhash_table
         self.sizes = sizes
 
@@ -105,6 +106,16 @@ class MPHF_KmerIndex(object):
 
         return dom_matches
 
+    def save(self, location):
+        "Save kmer index."
+        mphf_filename = os.path.join(location, "contigs.mphf")
+        array_filename = os.path.join(location, "contigs.indices")
+        sizes_filename = os.path.join(location, "contigs.sizes")
+
+        self.table.save(mphf_filename, array_filename)
+        with open(sizes_filename, "wb") as fp:
+            pickle.dump((self.ksize, self.sizes), fp)
+
     @classmethod
     def from_directory(cls, location):
         "Load kmer index created by search.contigs_by_kmer."
@@ -114,8 +125,6 @@ class MPHF_KmerIndex(object):
 
         table = BBHashTable.load(mphf_filename, array_filename)
         with open(sizes_filename, "rb") as fp:
-            sizes = pickle.load(fp)
+            ksize, sizes = pickle.load(fp)
 
-        return cls(table, sizes)
-
-
+        return cls(ksize, table, sizes)
