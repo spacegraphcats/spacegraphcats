@@ -104,11 +104,13 @@ hashval_query_dir = f'{catlas_dir}_hashval_k{hashval_ksize}'
 
 onsuccess:
     print('\n-------- DONE --------\n', file=sys.stderr)
-    if os.path.exists(catlas_dir):
-        print(f'catlas output directory: {catlas_dir}', file=sys.stderr)
-        if os.path.exists(search_dir):
-            print(f'search output directory: {search_dir}', file=sys.stderr)
-        print('')
+    if os.path.exists(cdbg_dir):
+        print(f'cDBG output directory: {cdbg_dir}', file=sys.stderr)
+        if os.path.exists(catlas_dir):
+            print(f'catlas output directory: {catlas_dir}', file=sys.stderr)
+            if os.path.exists(search_dir):
+                print(f'search output directory: {search_dir}', file=sys.stderr)
+            print('')
 
 
 ###############################################################################
@@ -149,7 +151,7 @@ rule bcalm_cdbg:
         f"{cdbg_dir}/bcalm.inputlist.txt"
     output:
         temp(f"{cdbg_dir}/bcalm.unitigs.fa"),
-    log: f"{catlas_dir}/bcalm.{catlas_dir}.log.txt",
+    log: f"{cdbg_dir}/bcalm.log.txt",
     shadow: "shallow"
     shell: """
         # ok, run bcalm for real; use tee to both save & output stderr,
