@@ -39,7 +39,9 @@ class CAtlas:
         self.max_level = -1
         self.root = -1
         # load everything from the catlas file
-        for line in open(catlas_file, "rt"):
+
+        fp = open(catlas_file, "rt")
+        for line in fp:
             node_id, cdbg_id, level, children = line.strip().split(",")
             # parse out the children
             node_id = int(node_id)
@@ -66,6 +68,8 @@ class CAtlas:
             if level == 1:
                 self._cdbg_to_catlas[int(cdbg_id)] = node_id
 
+        fp.close()
+
     def __load_first_level(self, domfile):
         """
         Load the mapping between first layer catlas and the original DBG nodes.
@@ -87,6 +91,7 @@ class CAtlas:
             self.layer1_to_cdbg[equiv_cdbg_to_catlas] = beneath
             for cdbg_id in beneath:
                 self.cdbg_to_layer1[cdbg_id] = equiv_cdbg_to_catlas
+        fp.close()
 
     def __load_size_info(self, sizefile, min_abund):
         kmer_sizes = {}

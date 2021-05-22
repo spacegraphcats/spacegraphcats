@@ -55,7 +55,7 @@ def main(argv):
 
     # ...and kmer index.
     ki_start = time.time()
-    kmer_idx = MPHF_KmerIndex.from_directory(args.catlas_prefix)
+    kmer_idx = MPHF_KmerIndex.from_directory(args.cdbg_prefix)
     notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
 
     # calculate the k-mer sizes for each catlas node.

@@ -27,7 +27,6 @@ import time
 import collections
 import sqlite3
 
-import screed
 from spacegraphcats.utils.logging import notify
 from spacegraphcats.utils.bgzf.bgzf import BgzfReader
 from spacegraphcats.search import search_utils
@@ -167,6 +166,8 @@ def main(argv=sys.argv[1:]):
             last_offset = offset
 
     db.commit()
+    reader.close()
+
     notify(f"{total_bp:5.2e} bp in {n} reads")
     notify(f"{2*n_paired_reads} paired of {n} reads; {n-2*n_paired_reads} singletons")
     notify(f"found reads for {len(total_cdbg_ids)} cDBG IDs")

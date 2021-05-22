@@ -167,12 +167,13 @@ class Query:
         # build hashes for all the query k-mers & create signature
         notify("loading query kmers...", end=" ")
 
-        for record in screed.open(self.filename):
-            if self.name is None:
-                self.name = record.name
-            if len(record.sequence) >= int(ksize):
-                self.kmers.update(hash_sequence(record.sequence, self.ksize))
-            mh.add_sequence(record.sequence, True)
+        with screed.open(self.filename) as records_iter:
+            for record in records_iter:
+                if self.name is None:
+                    self.name = record.name
+                if len(record.sequence) >= int(ksize):
+                    self.kmers.update(hash_sequence(record.sequence, self.ksize))
+                mh.add_sequence(record.sequence, True)
 
         self.sig = sourmash.SourmashSignature(
             mh, name=self.name, filename=self.filename
@@ -375,6 +376,8 @@ def main(argv):
 
         q_output.write(csv_writer, csvoutfp, outdir, args.catlas_prefix)
     # end main loop!
+
+    csvoutfp.close()
 
     return 0
 
