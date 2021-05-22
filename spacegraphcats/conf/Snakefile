@@ -246,7 +246,7 @@ rule index_reads:
         mphf_idx = f"{cdbg_dir}/contigs.indices",
     shadow: "shallow"
     output:
-        f"{catlas_dir}/reads.bgz.index",
+        f"{cdbg_dir}/reads.bgz.index",
     params:
         paired_reads = "-P" if config.get('paired_reads', 1) else "",
         ksize = ksize,
@@ -353,7 +353,7 @@ rule extract_contigs_single_file:
 rule extract_reads_single_file:
     input:
         reads = f"{catlas_base}/reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.index",
+        labels = f"{cdbg_dir}/reads.bgz.index",
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
         f"{search_dir}/{{queryname}}.cdbg_ids.reads.gz",
@@ -388,7 +388,7 @@ rule decompose_catlas:
 rule extract_reads_for_decomposition:
     input:
         reads = f"{catlas_base}/reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.index",
+        labels = f"{cdbg_dir}/reads.bgz.index",
         outdir = f"{catlas_dir}_decompose",
     shell: """
         for i in {input.outdir}/*.txt.gz; do
@@ -449,7 +449,7 @@ def aggregate_hashval_query(wildcards):
 rule extract_reads_single_hashval_file:
     input:
         reads = f"{catlas_base}/reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.index",
+        labels = f"{cdbg_dir}/reads.bgz.index",
         cdbg_ids = expand("{h}/contigs/{{hashval}}.cdbg_ids.txt.gz",
                           h=hashval_query_dir)
     output:
@@ -560,7 +560,7 @@ rule build_cdbg_list_by_record:
 rule extract_reads_single_file_multifasta:
     input:
         reads = f"{catlas_base}/reads.bgz",
-        labels = f"{catlas_dir}/reads.bgz.index",
+        labels = f"{cdbg_dir}/reads.bgz.index",
         cdbg_ids = f"{catlas_dir}_multifasta/{{queryname}}.cdbg_ids.txt.gz",
         in_csv = f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
     output:
