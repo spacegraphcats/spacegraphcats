@@ -5,6 +5,7 @@ import shutil
 import os
 
 from spacegraphcats.__main__ import run_snakemake
+from spacegraphcats.snakemake import (catlas_search, catlas_build, catlas_extract_reads)
 from . import pytest_utils as utils
 
 # NOTE re dependencies (@pytest.mark.dependency):
@@ -78,7 +79,6 @@ def test_dory_build_kmer_index():
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))
 
-    from spacegraphcats.snakemake import catlas_build
     for filename in catlas_build(dory_conf):
         filename = os.path.join(_tempdir, filename)
         assert os.path.exists(filename), filename
@@ -95,6 +95,10 @@ def test_dory_search():
     )
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))
+
+    for filename in catlas_search(dory_conf):
+        filename = os.path.join(_tempdir, filename)
+        assert os.path.exists(filename), filename
 
 
 @pytest.mark.dependency(depends=["test_dory_build_kmer_index"])
@@ -115,12 +119,15 @@ def test_dory_extract_reads():
     global _tempdir
 
     dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
-    target = "dory_k21_r1_search_oh0/dory-head.fa.cdbg_ids.reads.gz"
+    target = "extract_reads"
     status = run_snakemake(
         dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
     )
     assert status == 0
-    assert os.path.exists(os.path.join(_tempdir, target))
+
+    for filename in catlas_extract_reads(dory_conf):
+        filename = os.path.join(_tempdir, filename)
+        assert os.path.exists(filename), filename
 
 
 @pytest.mark.dependency(depends=["test_dory_search"])
