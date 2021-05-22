@@ -11,16 +11,18 @@ def catlas_build(conf_file):
     ksize = jj["ksize"]
     radius = jj["radius"]
 
-    dirname = "{}_k{}_r{}".format(catlas_base, ksize, radius)
+    cdbg_dir = f"{catlas_base}_k{ksize}"
+    catlas_dir = f"{catlas_base}_k{ksize}_r{radius}"
 
     z = []
-    z.append(os.path.join(catlas_base, "bcalm.{}.k31.unitigs.fa".format(catlas_base)))
-    z.append(os.path.join(dirname, "catlas.csv"))
-    z.append(os.path.join(dirname, "cdbg.gxt"))
-    z.append(os.path.join(dirname, "contigs.fa.gz.indices"))
-    z.append(os.path.join(dirname, "contigs.fa.gz.info.csv"))
-    z.append(os.path.join(dirname, "contigs.fa.gz.mphf"))
-    z.append(os.path.join(dirname, "first_doms.txt"))
+    z.append(os.path.join(cdbg_dir, "bcalm.unitigs.db")),
+    z.append(os.path.join(cdbg_dir, "cdbg.gxt"))
+    z.append(os.path.join(cdbg_dir, "contigs.indices"))
+    z.append(os.path.join(cdbg_dir, "contigs.sizes"))
+    z.append(os.path.join(cdbg_dir, "contigs.info.csv"))
+    z.append(os.path.join(cdbg_dir, "contigs.mphf"))
+    z.append(os.path.join(catlas_dir, "catlas.csv"))
+    z.append(os.path.join(catlas_dir, "first_doms.txt"))
     return z
 
 

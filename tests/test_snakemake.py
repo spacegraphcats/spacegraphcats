@@ -78,6 +78,11 @@ def test_dory_build_kmer_index():
     assert status == 0
     assert os.path.exists(os.path.join(_tempdir, target))
 
+    from spacegraphcats.snakemake import catlas_build
+    for filename in catlas_build(dory_conf):
+        filename = os.path.join(_tempdir, filename)
+        assert os.path.exists(filename), filename
+
 
 @pytest.mark.dependency(depends=["test_dory_build_kmer_index"])
 def test_dory_search():
