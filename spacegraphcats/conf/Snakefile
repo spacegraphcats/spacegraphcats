@@ -136,9 +136,9 @@ rule check:
 rule build:
     input:
         f"{catlas_dir}/catlas.csv",
-        f"{catlas_dir}/contigs.mphf",
-        f"{catlas_dir}/contigs.indices",
-        f"{catlas_dir}/contigs.info.csv",
+        f"{cdbg_dir}/contigs.mphf",
+        f"{cdbg_dir}/contigs.indices",
+        f"{cdbg_dir}/contigs.info.csv",
 
 rule clean:
     shell: """
@@ -200,14 +200,14 @@ rule bcalm_catlas_prepare_input:
         db = f"{cdbg_dir}/bcalm.unitigs.predb",
         mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
     output:
-        gxt = f"{catlas_dir}/cdbg.gxt",
-        info = f"{catlas_dir}/contigs.info.csv",
-        sig = f"{catlas_dir}/contigs.sig",
+        gxt = f"{cdbg_dir}/cdbg.gxt",
+        info = f"{cdbg_dir}/contigs.info.csv",
+        sig = f"{cdbg_dir}/contigs.sig",
         db = f"{cdbg_dir}/bcalm.unitigs.db",
     shadow: "shallow"
     params:
         remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else "",
-        contigs_prefix = f"{catlas_dir}/contigs"
+        contigs_prefix = f"{cdbg_dir}/contigs"
     shell: """
         python -Werror -m spacegraphcats.cdbg.bcalm_to_gxt \
             {params.remove_pendants} \
@@ -242,8 +242,8 @@ rule reads_bgzf:
 rule index_reads:
     input:
         reads = f"{catlas_base}/reads.bgz",
-        mphf = f"{catlas_dir}/contigs.mphf",
-        mphf_idx = f"{catlas_dir}/contigs.indices",
+        mphf = f"{cdbg_dir}/contigs.mphf",
+        mphf_idx = f"{cdbg_dir}/contigs.indices",
     shadow: "shallow"
     output:
         f"{catlas_dir}/reads.bgz.index",
@@ -251,7 +251,7 @@ rule index_reads:
         paired_reads = "-P" if config.get('paired_reads', 1) else "",
         ksize = ksize,
     shell: """
-        python -Werror -m spacegraphcats.cdbg.index_reads {catlas_dir} \
+        python -Werror -m spacegraphcats.cdbg.index_reads {cdbg_dir} \
             {input.reads} {output} {params.paired_reads} -k {params.ksize}
     """
 
@@ -259,14 +259,14 @@ rule index_reads:
 # build catlas!
 rule build_catlas:
     input:
-        f"{catlas_dir}/cdbg.gxt",
+        f"{cdbg_dir}/cdbg.gxt",
     output:
         f"{catlas_dir}/first_doms.txt",
         f"{catlas_dir}/catlas.csv",
         f"{catlas_dir}/commands.log",
     shell: """
         python -Werror -m spacegraphcats.catlas.catlas --no_checkpoint \
-            {catlas_dir} {radius}
+            {cdbg_dir} {catlas_dir} {radius}
     """
 
 # index contigs, count node sizes
@@ -274,15 +274,15 @@ rule make_contigs_kmer_index:
     input:
         db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
-        f"{catlas_dir}/contigs.mphf",
-        f"{catlas_dir}/contigs.indices",
-        f"{catlas_dir}/contigs.sizes",
+        f"{cdbg_dir}/contigs.mphf",
+        f"{cdbg_dir}/contigs.indices",
+        f"{cdbg_dir}/contigs.sizes",
     shadow: "shallow"
     params:
         ksize = ksize,
     shell: """
         python -Werror -m spacegraphcats.cdbg.index_cdbg_by_kmer \
-            -k {params.ksize} {catlas_dir} --contigs-db {input.db}
+            -k {params.ksize} {cdbg_dir} --contigs-db {input.db}
     """
 
 ### Search rules.
@@ -304,8 +304,8 @@ rule search:
         config['search'],
         f"{catlas_dir}/first_doms.txt",
         f"{catlas_dir}/catlas.csv",
-        f"{catlas_dir}/contigs.mphf",
-        f"{catlas_dir}/contigs.indices",
+        f"{cdbg_dir}/contigs.mphf",
+        f"{cdbg_dir}/contigs.indices",
         db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{search_dir}/results.csv",
@@ -316,7 +316,7 @@ rule search:
         cdbg_only = cdbg_only,
     shell: """
         python -Werror -m spacegraphcats.search.query_by_sequence \
-            {catlas_dir} {search_dir} --query {config[search]} \
+            {cdbg_dir} {catlas_dir} {search_dir} --query {config[search]} \
             -k {params.ksize} {params.cdbg_only} --contigs-db {input.db}
     """
 
@@ -513,9 +513,9 @@ rule build_multifasta_index:
         queries = multifasta_query_seqs,
         doms = f"{catlas_dir}/first_doms.txt",
         catlas = f"{catlas_dir}/catlas.csv",
-        mphf = f"{catlas_dir}/contigs.mphf",
-        indices = f"{catlas_dir}/contigs.indices",
-        sizes = f"{catlas_dir}/contigs.sizes",
+        mphf = f"{cdbg_dir}/contigs.mphf",
+        indices = f"{cdbg_dir}/contigs.indices",
+        sizes = f"{cdbg_dir}/contigs.sizes",
     output:
         f"{catlas_dir}_multifasta/multifasta.pickle",
     params:
@@ -547,7 +547,7 @@ rule query_multifasta_by_signature:
 rule build_cdbg_list_by_record:
     input:
         multi_idx = f"{catlas_dir}_multifasta/multifasta.pickle",
-        info_csv = f"{catlas_dir}/contigs.info.csv",
+        info_csv = f"{cdbg_dir}/contigs.info.csv",
     output:
         f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
     shell: """

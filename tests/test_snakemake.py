@@ -71,7 +71,7 @@ def test_dory_build_kmer_index():
     global _tempdir
 
     dory_conf = utils.relative_file("spacegraphcats/conf/dory-test.yaml")
-    target = "dory_k21_r1/contigs.mphf"
+    target = "dory_k21/contigs.mphf"
     status = run_snakemake(
         dory_conf, verbose=True, outdir=_tempdir, extra_args=[target]
     )

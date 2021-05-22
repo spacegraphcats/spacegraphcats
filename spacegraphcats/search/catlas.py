@@ -8,8 +8,9 @@ class CAtlas:
     """CAtlas class for searching."""
 
     def __init__(
-        self, catlas_directory, load_domfile=True, load_sizefile=False, min_abund=0.0
+            self, cdbg_directory, catlas_directory, load_domfile=True, load_sizefile=False, min_abund=0.0
     ):
+        self.cdbg_dir = cdbg_directory
         self.name = catlas_directory
 
         # catlas node ID -> parent
@@ -31,7 +32,7 @@ class CAtlas:
             domfile = os.path.join(catlas_directory, "first_doms.txt")
             self.__load_first_level(domfile)
         if load_sizefile is not None:
-            sizefile = os.path.join(catlas_directory, "contigs.info.csv")
+            sizefile = os.path.join(cdbg_directory, "contigs.info.csv")
             self.__load_size_info(sizefile, min_abund)
 
     def __load_catlas(self, catlas_file):

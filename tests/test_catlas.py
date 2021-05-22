@@ -9,11 +9,12 @@ thisdir = os.path.dirname(__file__)
 def test_catlas_info():
     from spacegraphcats.search.catlas_info import main as catlas_info_main
 
+    cdbg_prefix = os.path.join(thisdir, "test-data/catlas.dory_k21")
     catlas_prefix = os.path.join(thisdir, "test-data/catlas.dory_k21_r1")
 
     try:
         old_out, sys.stdout = sys.stdout, io.StringIO()
-        catlas_info_main([catlas_prefix])
+        catlas_info_main([cdbg_prefix, catlas_prefix])
     finally:
         output, sys.stdout = sys.stdout, old_out
 
@@ -31,8 +32,9 @@ Sequential graph with 736 nodes
 
 class Test_LoadCatlas(object):
     def setup(self):
+        cdbg_prefix = os.path.join(thisdir, "test-data/catlas.dory_k21")
         catlas_prefix = os.path.join(thisdir, "test-data/catlas.dory_k21_r1")
-        self.catlas = CAtlas(catlas_prefix)
+        self.catlas = CAtlas(cdbg_prefix, catlas_prefix)
 
     def test_root(self):
         assert self.catlas.root == 744

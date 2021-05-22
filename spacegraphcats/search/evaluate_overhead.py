@@ -18,6 +18,7 @@ from spacegraphcats.search import search_utils
 
 def main(argv):
     p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("cdbg_prefix")
     p.add_argument("catlas_prefix")
     p.add_argument("query")
     p.add_argument("cdbg_nodefile")
@@ -42,7 +43,7 @@ def main(argv):
     print("done.")
 
     print("loading catlas...", end=" ")
-    catlas = CAtlas(args.catlas_prefix)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
     layer1_to_cdbg = catlas.layer1_to_cdbg
     print("done.")
 

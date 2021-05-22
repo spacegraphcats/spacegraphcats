@@ -19,7 +19,7 @@ from . import search_utils
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
-    p.add_argument("catlas_prefix", help="catlas prefix")
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("query")
     p.add_argument("--contigs-db", required=True)
     p.add_argument(
@@ -32,7 +32,7 @@ def main(argv=sys.argv[1:]):
     contigs_db = sqlite3.connect(args.contigs_db)
 
     # load k-mer MPHF index
-    kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
+    kmer_idx = search_utils.load_kmer_index(args.cdbg_prefix)
 
     # build hashes for all the query k-mers
     print("loading query kmers...")

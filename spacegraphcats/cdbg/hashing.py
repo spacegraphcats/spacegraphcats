@@ -106,11 +106,11 @@ class MPHF_KmerIndex(object):
         return dom_matches
 
     @classmethod
-    def from_catlas_directory(cls, catlas_prefix):
+    def from_directory(cls, location):
         "Load kmer index created by search.contigs_by_kmer."
-        mphf_filename = os.path.join(catlas_prefix, "contigs.mphf")
-        array_filename = os.path.join(catlas_prefix, "contigs.indices")
-        sizes_filename = os.path.join(catlas_prefix, "contigs.sizes")
+        mphf_filename = os.path.join(location, "contigs.mphf")
+        array_filename = os.path.join(location, "contigs.indices")
+        sizes_filename = os.path.join(location, "contigs.sizes")
 
         table = BBHashTable.load(mphf_filename, array_filename)
         with open(sizes_filename, "rb") as fp:

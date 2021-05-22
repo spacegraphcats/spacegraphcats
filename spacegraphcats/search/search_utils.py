@@ -211,13 +211,13 @@ def contigs_iter_sqlite(contigs_db):
 ### MPHF stuff
 
 
-def load_kmer_index(catlas_prefix):
+def load_kmer_index(cdbg_prefix):
     "Load kmer index created by search.contigs_by_kmer."
-    return MPHF_KmerIndex.from_catlas_directory(catlas_prefix)
+    return MPHF_KmerIndex.from_directory(cdbg_prefix)
 
 
-def load_cdbg_size_info(catlas_prefix, min_abund=0.0):
-    filename = os.path.join(catlas_prefix, "contigs.info.csv")
+def load_cdbg_size_info(cdbg_prefix, min_abund=0.0):
+    filename = os.path.join(cdbg_prefix, "contigs.info.csv")
     with open(filename, "rt") as fp:
         cdbg_kmer_sizes = {}
         cdbg_weighted_kmer_sizes = {}
