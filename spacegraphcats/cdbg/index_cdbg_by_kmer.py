@@ -12,7 +12,6 @@ no k-mer will appear in more than one cDBG node and every k-mer will
 be in at least one cDBG node, i.e. k <-> cdbg_id is bijective.
 """
 import sys
-import os
 import argparse
 import pickle
 import sqlite3
@@ -121,26 +120,21 @@ def main(argv):
     p.add_argument("catlas_prefix")
     p.add_argument("--contigs-db", required=True)
     p.add_argument("-k", "--ksize", default=31, type=int)
-    a = p.parse_args(argv)
+    args = p.parse_args(argv)
 
-    mphf_filename = os.path.join(a.catlas_prefix, "contigs.mphf")
-    array_filename = os.path.join(a.catlas_prefix, "contigs.indices")
-    sizes_filename = os.path.join(a.catlas_prefix, "contigs.sizes")
-
-    sqlite_db = sqlite3.connect(a.contigs_db)
+    sqlite_db = sqlite3.connect(args.contigs_db)
 
     def create_records_iter():
         from spacegraphcats.search import search_utils
 
-        print(f"reading cDBG nodes from sqlite DB {a.contigs_db}")
+        print(f"reading cDBG nodes from sqlite DB {args.contigs_db}")
         return search_utils.contigs_iter_sqlite(sqlite_db)
 
-    table, sizes = build_mphf(a.ksize, create_records_iter)
-    print(f"done! saving to {mphf_filename} and {array_filename}")
+    table, sizes = build_mphf(args.ksize, create_records_iter)
+    print(f"done! saving to {args.catlas_prefix}")
 
-    table.save(mphf_filename, array_filename)
-    with open(sizes_filename, "wb") as fp:
-        pickle.dump(sizes, fp)
+    kmer_idx = MPHF_KmerIndex(args.ksize, table, sizes)
+    kmer_idx.save(args.catlas_prefix)
 
     return 0
 
