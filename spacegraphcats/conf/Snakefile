@@ -306,6 +306,7 @@ rule search:
         f"{catlas_dir}/catlas.csv",
         f"{cdbg_dir}/contigs.mphf",
         f"{cdbg_dir}/contigs.indices",
+        f"{cdbg_dir}/contigs.info.csv",
         db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
         f"{search_dir}/results.csv",
