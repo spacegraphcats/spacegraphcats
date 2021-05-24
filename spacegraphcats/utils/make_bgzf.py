@@ -23,18 +23,19 @@ def main(argv=sys.argv[1:]):
 
     for input_file in args.input_files:
         print("turning {} into a block-gzipped (BGZF) file".format(input_file))
-        for n, record in enumerate(screed.open(input_file)):
-            offset = outfp.tell()
-            if hasattr(record, "quality"):
-                outfp.write(
-                    "@{}\n{}\n+\n{}\n".format(
-                        record.name, record.sequence, record.quality
+        with screed.open(input_file) as records_iter:
+            for n, record in enumerate(records_iter):
+                offset = outfp.tell()
+                if hasattr(record, "quality"):
+                    outfp.write(
+                        "@{}\n{}\n+\n{}\n".format(
+                            record.name, record.sequence, record.quality
+                        )
                     )
-                )
-            else:
-                outfp.write(">{}\n{}\n".format(record.name, record.sequence))
-            if n % 100000 == 0:
-                print("offset for {} is {}".format(n, offset), end="\r")
+                else:
+                    outfp.write(">{}\n{}\n".format(record.name, record.sequence))
+                if n % 100000 == 0:
+                    print("offset for {} is {}".format(n, offset), end="\r")
         print("")
 
     outfp.close()

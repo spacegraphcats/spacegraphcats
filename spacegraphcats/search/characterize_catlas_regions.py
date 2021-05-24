@@ -85,6 +85,7 @@ def compute_matrix(group_info, group_ident, ksize, output):
 
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--contigs-db", required=True)
@@ -100,7 +101,7 @@ def main(args=sys.argv[1:]):
     print("ksize: {}".format(args.ksize))
     print("min_abund: {}".format(args.min_abund))
 
-    catlas = CAtlas(args.catlas_prefix, load_sizefile=True, min_abund=args.min_abund)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix, load_sizefile=True, min_abund=args.min_abund)
     catlas.decorate_with_shadow_sizes()
 
     # everything is loaded!

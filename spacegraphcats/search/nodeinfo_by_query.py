@@ -16,6 +16,7 @@ from . import search_utils
 
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("query")
     p.add_argument("output")
@@ -31,7 +32,7 @@ def main(args=sys.argv[1:]):
 
     basename = os.path.basename(args.catlas_prefix)
     # load catlas DAG
-    catlas = CAtlas(args.catlas_prefix)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
     top_node_id, dag, dag_levels = catlas.root, catlas.children, catlas.levels
 
     print("loaded {} nodes from catlas {}".format(len(dag), catlas))
@@ -61,7 +62,7 @@ def main(args=sys.argv[1:]):
     )
 
     # load k-mer index, query, etc. etc.
-    kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
+    kmer_idx = search_utils.load_kmer_index(args.cdbg_prefix)
 
     query_kmers = set()
     for record in screed.open(args.query):

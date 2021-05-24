@@ -157,7 +157,7 @@ search output directory: dory_k21_r1_search_oh0
 
 You will have a bunch of new output files:
 
-* the `dory/` directory contains the BCALM assembly of the input files into a compact De Bruijn graph; the key file here is `dory/bcalm.dory.k21.unitigs.fa`. There is also an output log file, `bcalm.dory.k21.unitigs.fa.log.txt`, that contains the console output of BCALM's run.
+* the `dory_k21/` directory contains the BCALM assembly of the input files into a compact De Bruijn graph; the key file here is `dory_k21/bcalm.unitigs.db`. There is also an output log file, `bcalm.log.txt`, that contains the console output of BCALM's run.
 * the `dory_k21_r1/` directory contains the various files of the catlas constructed by spacegraphcats:
     * cdbg.gxt
     * contigs.fa.gz

@@ -20,6 +20,7 @@ from spacegraphcats.search import search_utils
 
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--contigs-db", required=True)
@@ -37,7 +38,7 @@ def main(args=sys.argv[1:]):
     contigs_db = sqlite3.connect(args.contigs_db)
 
     # load catlas DAG
-    catlas = CAtlas(args.catlas_prefix, load_sizefile=True)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix, load_sizefile=True)
     print("loaded {} nodes from catlas {}".format(len(catlas), catlas))
     print("loaded {} layer 1 catlas nodes".format(len(catlas.layer1_to_cdbg)))
 

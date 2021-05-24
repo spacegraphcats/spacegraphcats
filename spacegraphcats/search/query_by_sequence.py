@@ -167,12 +167,13 @@ class Query:
         # build hashes for all the query k-mers & create signature
         notify("loading query kmers...", end=" ")
 
-        for record in screed.open(self.filename):
-            if self.name is None:
-                self.name = record.name
-            if len(record.sequence) >= int(ksize):
-                self.kmers.update(hash_sequence(record.sequence, self.ksize))
-            mh.add_sequence(record.sequence, True)
+        with screed.open(self.filename) as records_iter:
+            for record in records_iter:
+                if self.name is None:
+                    self.name = record.name
+                if len(record.sequence) >= int(ksize):
+                    self.kmers.update(hash_sequence(record.sequence, self.ksize))
+                mh.add_sequence(record.sequence, True)
 
         self.sig = sourmash.SourmashSignature(
             mh, name=self.name, filename=self.filename
@@ -276,6 +277,7 @@ def main(argv):
     """
 
     p = argparse.ArgumentParser(description=main.__doc__)
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
@@ -316,14 +318,14 @@ def main(argv):
         sys.exit(-1)
 
     # load catlas DAG
-    catlas = CAtlas(args.catlas_prefix)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
     notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
     notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
     catlas_name = os.path.basename(args.catlas_prefix.rstrip(("/")))
 
     # ...and kmer index.
     ki_start = time.time()
-    kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
+    kmer_idx = MPHF_KmerIndex.from_directory(args.cdbg_prefix)
     assert args.ksize == kmer_idx.ksize
     notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
 
@@ -375,6 +377,8 @@ def main(argv):
 
         q_output.write(csv_writer, csvoutfp, outdir, args.catlas_prefix)
     # end main loop!
+
+    csvoutfp.close()
 
     return 0
 
