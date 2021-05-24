@@ -30,7 +30,7 @@ jobs:
         uses: s-weigand/setup-conda@v1
         with:
             activate-conda: false
-      - run: conda install -c conda-forge -c bioconda bcalm
+      - run: conda install -c conda-forge -c bioconda bcalm mamba
 
       - name: Install Python dependencies
         run: pip install -U -r requirements.txt
