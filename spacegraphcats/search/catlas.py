@@ -8,8 +8,9 @@ class CAtlas:
     """CAtlas class for searching."""
 
     def __init__(
-        self, catlas_directory, load_domfile=True, load_sizefile=False, min_abund=0.0
+            self, cdbg_directory, catlas_directory, load_domfile=True, load_sizefile=False, min_abund=0.0
     ):
+        self.cdbg_dir = cdbg_directory
         self.name = catlas_directory
 
         # catlas node ID -> parent
@@ -30,15 +31,17 @@ class CAtlas:
         if load_domfile:
             domfile = os.path.join(catlas_directory, "first_doms.txt")
             self.__load_first_level(domfile)
-        if load_sizefile:
-            sizefile = os.path.join(catlas_directory, "contigs.info.csv")
+        if load_sizefile is not None:
+            sizefile = os.path.join(cdbg_directory, "contigs.info.csv")
             self.__load_size_info(sizefile, min_abund)
 
     def __load_catlas(self, catlas_file):
         self.max_level = -1
         self.root = -1
         # load everything from the catlas file
-        for line in open(catlas_file, "rt"):
+
+        fp = open(catlas_file, "rt")
+        for line in fp:
             node_id, cdbg_id, level, children = line.strip().split(",")
             # parse out the children
             node_id = int(node_id)
@@ -65,6 +68,8 @@ class CAtlas:
             if level == 1:
                 self._cdbg_to_catlas[int(cdbg_id)] = node_id
 
+        fp.close()
+
     def __load_first_level(self, domfile):
         """
         Load the mapping between first layer catlas and the original DBG nodes.
@@ -86,6 +91,7 @@ class CAtlas:
             self.layer1_to_cdbg[equiv_cdbg_to_catlas] = beneath
             for cdbg_id in beneath:
                 self.cdbg_to_layer1[cdbg_id] = equiv_cdbg_to_catlas
+        fp.close()
 
     def __load_size_info(self, sizefile, min_abund):
         kmer_sizes = {}

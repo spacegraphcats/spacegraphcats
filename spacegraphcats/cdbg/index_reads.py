@@ -27,7 +27,6 @@ import time
 import collections
 import sqlite3
 
-import screed
 from spacegraphcats.utils.logging import notify
 from spacegraphcats.utils.bgzf.bgzf import BgzfReader
 from spacegraphcats.search import search_utils
@@ -39,7 +38,7 @@ DEFAULT_KSIZE = 31
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
-    p.add_argument("catlas_prefix", help="catlas prefix")
+    p.add_argument("cdbg_prefix", help="cDBG prefix")
     p.add_argument("reads")
     p.add_argument("savename")
     p.add_argument("-k", "--ksize", default=DEFAULT_KSIZE, type=int)
@@ -75,7 +74,8 @@ def main(argv=sys.argv[1:]):
 
     # load k-mer MPHF index: { kmers -> cDBG IDs }
     ki_start = time.time()
-    kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
+    kmer_idx = MPHF_KmerIndex.from_directory(args.cdbg_prefix)
+    assert args.ksize == kmer_idx.ksize
     notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
 
     total_bp = 0
@@ -167,6 +167,8 @@ def main(argv=sys.argv[1:]):
             last_offset = offset
 
     db.commit()
+    reader.close()
+
     notify(f"{total_bp:5.2e} bp in {n} reads")
     notify(f"{2*n_paired_reads} paired of {n} reads; {n-2*n_paired_reads} singletons")
     notify(f"found reads for {len(total_cdbg_ids)} cDBG IDs")

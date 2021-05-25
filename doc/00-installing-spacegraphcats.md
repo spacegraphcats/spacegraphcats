@@ -34,6 +34,11 @@ Once it's created, activate the environment you just created:
 conda activate sgc
 ```
 
+and install spacegraphcats from the development directory:
+```
+pip install -e ./spacegraphcats/
+```
+
 and voila, done!
 
 ## 2. Installing dependencies in a virtual environment
@@ -71,6 +76,12 @@ pip install -r requirements.txt
 ```
 
 This will take a few minutes.
+
+Finally, install the git repo in developer mode:
+
+```
+pip install -e ./spacegraphcats/
+```
 
 ## 3. Installing dependencies on a blank Ubuntu machine
 
@@ -112,13 +123,20 @@ pip install -r requirements.txt
 
 This will take a few minutes.
 
+
+Finally, install the git repo in developer mode:
+
+```
+pip install -e ./spacegraphcats/
+```
+
 ## Step II: Test spacegraphcats by running a small test: dory.
 
 In the `spacegraphcats/` top level directory (containing e.g. `README.md`),
 run:
 
 ```
-python -m spacegraphcats dory-test search
+python -m spacegraphcats run dory-test search
 ```
 
 This should run in a few seconds, and you should see something like this in the output:
@@ -139,7 +157,7 @@ search output directory: dory_k21_r1_search_oh0
 
 You will have a bunch of new output files:
 
-* the `dory/` directory contains the BCALM assembly of the input files into a compact De Bruijn graph; the key file here is `dory/bcalm.dory.k21.unitigs.fa`. There is also an output log file, `bcalm.dory.k21.unitigs.fa.log.txt`, that contains the console output of BCALM's run.
+* the `dory_k21/` directory contains the BCALM assembly of the input files into a compact De Bruijn graph; the key file here is `dory_k21/bcalm.unitigs.db`. There is also an output log file, `bcalm.log.txt`, that contains the console output of BCALM's run.
 * the `dory_k21_r1/` directory contains the various files of the catlas constructed by spacegraphcats:
     * cdbg.gxt
     * contigs.fa.gz
@@ -173,7 +191,7 @@ which will take a few minutes.
 
 Then, run:
 ```
-python -m spacegraphcats twofoo search
+python -m spacegraphcats run twofoo search
 ```
 
 which will generate searches of the twofoo synthetic data set with `data/2.fa.gz`, `data/47.fa.gz`, and `data/63.fa.gz`.
@@ -183,5 +201,5 @@ It should take about 5 minutes on a relatively recent laptop, and will require ~
 If this succeeds, your install is all good - give yourself a high five!
 you've made it!
 
-See [running spacegraphcats](running-spacegraphcats.md) for next steps and
+See [running spacegraphcats](01-running-spacegraphcats.md) for next steps and
 more information on config files.

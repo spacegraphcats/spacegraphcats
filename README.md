@@ -5,13 +5,18 @@ Explore large, annoying graphs using hierarchies of dominating sets - because
 in space, no one can hear you miao!
 
 This is a collaboration between the
-[Theory In Practice](https://github.com/TheoryInPractice/) lab at NC
-State and the
-[Lab for Data Intensive Biology](https://github.com/dib-lab/) at UC
-Davis, generously supported by the Moore Foundation's
+[Theory In Practice](https://github.com/TheoryInPractice/) lab at University of Utah, the
+[Lab for Data Intensive Biology](https://github.com/dib-lab/) at UC Davis, and
+[Dr. Felix Reidl](https://www.dcs.bbk.ac.uk/about/people/academic-staff/felix/) at Birkbeck University of London. 
+Initial development of spacegraphcats was generously supported by the Moore Foundation's
 [Data Driven Discovery Initiative](https://www.moore.org/initiative-strategy-detail?initiativeId=data-driven-discovery).
 
 ![spacegraphcats graph](https://github.com/spacegraphcats/spacegraphcats/raw/master/pics/logo.png)
+
+## Documentation
+
+This README file contains quickstart information.
+For use cases and other information, please see the spacegraphcats documentation at https://spacegraphcats.github.io/spacegraphcats.
 
 ## Installation and execution quickstart
 
@@ -45,7 +50,7 @@ spacegraphcats also uses functionality from
 
 ## Citation information
 
-See the biorxiv preprint [Exploring neighborhoods in large metagenome assembly graphs reveals hidden sequence diversity](https://biorxiv.org/content/early/2018/11/05/462788), Brown et al., 2018, doi: https://doi.org/10.1101/462788.
+See the Genome Biology publication [Exploring neighborhoods in large metagenome assembly graphs using spacegraphcats reveals hidden sequence diversity](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02066-4), Brown et al., 2020, doi: https://doi.org/10.1186/s13059-020-02066-4.
 
 ## Pointers to interesting code
 
