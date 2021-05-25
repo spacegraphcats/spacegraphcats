@@ -20,6 +20,7 @@ def main(argv):
     """
 
     p = argparse.ArgumentParser(description=main.__doc__)
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
@@ -48,13 +49,14 @@ def main(argv):
             sys.exit(-1)
 
     # load catlas DAG
-    catlas = CAtlas(args.catlas_prefix)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
     notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
     notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
 
     # ...and kmer index.
     ki_start = time.time()
-    kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
+    kmer_idx = MPHF_KmerIndex.from_directory(args.cdbg_prefix)
+    assert args.ksize == kmer_idx.ksize
     notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
 
     # calculate the k-mer sizes for each catlas node.

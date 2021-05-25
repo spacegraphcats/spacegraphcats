@@ -21,6 +21,7 @@ from .catlas import CAtlas
 
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser()
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("query")
     p.add_argument("output")
@@ -37,7 +38,7 @@ def main(args=sys.argv[1:]):
     contigs_db = sqlite3.connect(args.contigs_db)
 
     basename = os.path.basename(args.catlas_prefix)
-    catlas = CAtlas(args.catlas_prefix)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
 
     # load catlas DAG
     print("loaded {} nodes from catlas {}".format(len(catlas), catlas))
@@ -50,7 +51,7 @@ def main(args=sys.argv[1:]):
     # ...and load cdbg node sizes
     print("loading contig size info")
     cdbg_kmer_sizes, cdbg_weighted_kmer_sizes = search_utils.load_cdbg_size_info(
-        args.catlas_prefix
+        args.cdbg_prefix
     )
 
     # decorate catlas with cdbg node sizes underneath them
@@ -67,7 +68,7 @@ def main(args=sys.argv[1:]):
     )
 
     # load k-mer index, query, etc. etc.
-    kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
+    kmer_idx = search_utils.load_kmer_index(args.cdbg_prefix)
 
     query_kmers = set()
     for record in screed.open(args.query):

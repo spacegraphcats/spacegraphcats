@@ -16,17 +16,18 @@ from typing import List, Dict, Set
 UPPER_RADIUS = 1
 
 
-class Project(object):
+class Project:
     """Methods for coordinating whole projects."""
 
-    def __init__(self, directory, r, checkpoint=True):
+    def __init__(self, in_dir, out_dir, r, checkpoint=True):
         """
-        Make a project in directory at raidus r.
+        Make a project in out_dir at raidus r.
 
         This object stores the intermediate variables for the CAtlas building
         so that they can be checkpointed as necessary.
         """
-        self.dir = directory
+        self.in_dir = in_dir
+        self.out_dir = out_dir
         self.r = r
         self.checkpoint = checkpoint
         self.graph = None
@@ -36,14 +37,14 @@ class Project(object):
         self.root = CAtlas(self.idx, -1, self.level, list())
 
         # project file names
-        self.domfilename = os.path.join(self.dir, "first_doms.txt")
-        self.graphfilename = os.path.join(self.dir, "cdbg.gxt")
-        self.catlasfilename = os.path.join(self.dir, "catlas.csv")
+        self.domfilename = os.path.join(self.out_dir, "first_doms.txt")
+        self.graphfilename = os.path.join(self.in_dir, "cdbg.gxt")
+        self.catlasfilename = os.path.join(self.out_dir, "catlas.csv")
 
     def existing_checkpoints(self):
         """Get the existing checkpoint files."""
         files = []
-        for f in os.listdir(self.dir):
+        for f in os.listdir(self.out_dir):
             name, ext = os.path.splitext(f)
             if ext == ".checkpoint":
                 r, level = map(int, name.split("_"))
@@ -129,7 +130,7 @@ class Project(object):
             self._save()
 
 
-class CAtlas(object):
+class CAtlas:
     """Hierarchical atlas for querying graphs."""
 
     LEVEL_THRESHOLD = 10
@@ -323,12 +324,13 @@ def main(args):
     """Build a CAtlas for the provided input graph."""
     # unpack command line arguments
     r = args.radius
-    proj_dir = args.project
+    in_dir = args.cdbg_dir
+    out_dir = args.catlas_dir
     checkpoint = not args.no_checkpoint
     level = args.level
 
     # make checkpoint
-    proj = Project(proj_dir, r, checkpoint)
+    proj = Project(in_dir, out_dir, r, checkpoint)
 
     print("reading graph")
     if level:
@@ -356,7 +358,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("project", help="Project directory", type=str)
+    parser.add_argument("cdbg_dir", help="cDBG directory", type=str)
+    parser.add_argument("catlas_dir", help="catlas directory", type=str)
     parser.add_argument("radius", help="Catlas radius", type=int)
     parser.add_argument(
         "-n",
@@ -377,6 +380,6 @@ if __name__ == "__main__":
     # prof = cProfile.Profile()
     # prof.run("main(args)")
     # prof.print_stats('tottime')
-    log_command(args.project, sys.argv)
+    log_command(args.catlas_dir, sys.argv)
 
     sys.exit(exit_val)

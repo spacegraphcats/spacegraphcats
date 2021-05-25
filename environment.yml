@@ -5,7 +5,7 @@ channels:
     - defaults
 dependencies:
     - bcalm=2.2.3
-    - snakemake-minimal=5.32.2
+    - snakemake-minimal=6.4.0
     - screed>=1.0.5,<2
     - khmer=3.0.0a3
     - numpy
@@ -14,4 +14,4 @@ dependencies:
     - click=7.1.2
     - pyflakes
     - bbhash>=0.5.4
-    - sourmash>=4,<5
+    - sourmash>=4.1.1,<5

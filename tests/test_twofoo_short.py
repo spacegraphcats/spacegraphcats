@@ -45,9 +45,9 @@ def test_build_and_search():
     assert status == 0
 
     output_files = [
-        "twofoo-short_k31/bcalm.unitigs.fa",
+        "twofoo-short_k31/bcalm.unitigs.db",
+        "twofoo-short_k31/contigs.mphf",
         "twofoo-short_k31_r1/catlas.csv",
-        "twofoo-short_k31_r1/contigs.mphf",
         "twofoo-short_k31_r1_search_oh0/results.csv",
     ]
 
@@ -78,7 +78,7 @@ def test_label_reads():
     status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
     assert status == 0
 
-    assert os.path.exists(f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz")
+    assert os.path.exists(f"{_tempdir}/twofoo-short/reads.bgz")
 
 
 @pytest.mark.pairing
@@ -88,12 +88,12 @@ def test_index_reads_paired():
     global _tempdir
     from spacegraphcats.cdbg import index_reads
 
-    test_reads = f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz"
+    test_reads = f"{_tempdir}/twofoo-short/reads.bgz"
     output_index = os.path.join(_tempdir, "xxx.reads.index")
 
     retval = index_reads.main(
         [
-            f"{_tempdir}/twofoo-short_k31_r1",
+            f"{_tempdir}/twofoo-short_k31",
             test_reads,
             output_index,
             "-k",
@@ -134,12 +134,12 @@ def test_index_reads_nopairing():
     global _tempdir
     from spacegraphcats.cdbg import index_reads
 
-    test_reads = f"{_tempdir}/twofoo-short/twofoo-short.reads.bgz"
+    test_reads = f"{_tempdir}/twofoo-short/reads.bgz"
     output_index = os.path.join(_tempdir, "xxx.reads.index")
 
     retval = index_reads.main(
         [
-            f"{_tempdir}/twofoo-short_k31_r1",
+            f"{_tempdir}/twofoo-short_k31",
             test_reads,
             output_index,
             "-k",
@@ -180,7 +180,7 @@ def test_check_contigs_vs_unitigs():
     bcalm_sig = "twofoo-short_k31/bcalm.unitigs.fa.sig"
     bcalm_out = sourmash.load_one_signature(os.path.join(_tempdir, bcalm_sig))
 
-    catlas_sig = "twofoo-short_k31_r1/contigs.sig"
+    catlas_sig = "twofoo-short_k31/contigs.sig"
     catlas_out = sourmash.load_one_signature(os.path.join(_tempdir, catlas_sig))
 
     assert bcalm_out.similarity(catlas_out) == 1.0
@@ -256,7 +256,7 @@ def test_check_results():
 def test_check_md5():
     global _tempdir
 
-    gxt = os.path.join(_tempdir, "twofoo-short_k31_r1/cdbg.gxt")
+    gxt = os.path.join(_tempdir, "twofoo-short_k31/cdbg.gxt")
     catlas = os.path.join(_tempdir, "twofoo-short_k31_r1/catlas.csv")
 
     with open(gxt, "rb") as fp:
@@ -283,7 +283,7 @@ def test_check_catlas_vs_contigs():
 
     cdbg_prefix = os.path.join(_tempdir, "twofoo-short_k31")
     catlas_prefix = os.path.join(_tempdir, "twofoo-short_k31_r1")
-    catlas = CAtlas(catlas_prefix)
+    catlas = CAtlas(cdbg_prefix, catlas_prefix)
     print("loaded {} nodes from catlas {}", len(catlas), catlas_prefix)
     print("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
 

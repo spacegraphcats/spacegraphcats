@@ -127,6 +127,7 @@ def execute_query(hashval, catlas, hashval_to_contig_id, mh=None):
 
 def main(argv):
     p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("mh_index_picklefile", help="pickled hashval index")
     p.add_argument("hashval_list", help="file with list of hashvals")
@@ -173,7 +174,7 @@ def main(argv):
         sys.exit(-1)
 
     # load catlas DAG
-    catlas = CAtlas(args.catlas_prefix)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
     notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
     notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
 
