@@ -23,19 +23,23 @@ import screed
 
 def main():
     p = argparse.ArgumentParser(description=main.__doc__)
+    p.add_argument('cdbg_prefix', help='cdbg prefix')
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('samples', nargs='+')
+    p.add_argument('--level', type=int, default=1)
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
     args = p.parse_args()
 
+    level = args.level
+
     # load catlas DAG
-    catlas = CAtlas(args.catlas_prefix, load_sizefile=True)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix, load_sizefile=True)
     notify('loaded {} nodes from catlas {}', len(catlas), args.catlas_prefix)
     notify('loaded {} layer 1 catlas nodes', len(catlas.layer1_to_cdbg))
 
     ki_start = time.time()
-    kmer_idx = MPHF_KmerIndex.from_catlas_directory(args.catlas_prefix)
+    kmer_idx = MPHF_KmerIndex.from_directory(args.cdbg_prefix)
     notify('loaded {} k-mers in index ({:.1f}s)',
            len(kmer_idx), time.time() - ki_start)
 
@@ -55,7 +59,7 @@ def main():
 
         notify(f'done! read {total_hashes} total k-mers.')
 
-        # aggregate to domset
+        # aggregate to layer1 domset
         dom_counts = defaultdict(int)
         for cdbg_id, count in cdbg_counts.items():
             if cdbg_id is None:
@@ -72,14 +76,17 @@ def main():
                 count = cdbg_counts[cdbg_id]
                 w.writerow([cdbg_id, count])
 
-        outfile = f"{sample}.dom_abund.csv"
-        notify(f'outputting dom node abundances to {outfile}')
+        outfile = f"{sample}.dom_abund.{level}.csv"
+        notify(f'outputting dom node abundances for level {level} to {outfile}')
         with open(outfile, 'wt') as fp:
             w = csv.writer(fp)
             w.writerow(['dom_id', 'abund'])
             for node_id in sorted(catlas):
-                if catlas.levels[node_id] == 1:
-                    count = dom_counts[node_id]
+                if catlas.levels[node_id] == level:
+                    leaves = catlas.leaves([node_id])
+                    count = 0
+                    for leaf_id in leaves:
+                        count += dom_counts[leaf_id]
                     w.writerow([node_id, count])
 
     return 0
