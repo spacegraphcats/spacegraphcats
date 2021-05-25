@@ -17,11 +17,6 @@ import sqlite3
 import screed
 import sourmash
 from sourmash import MinHash
-import argparse
-import os
-import sys
-import time
-import gzip
 
 from .search_utils import get_reads_by_cdbg
 
@@ -71,4 +66,3 @@ def main(argv=sys.argv[1:]):
 
 if __name__ == "__main__":
     sys.exit(main())
-

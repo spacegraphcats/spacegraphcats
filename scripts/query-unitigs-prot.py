@@ -12,25 +12,26 @@ import sourmash
 from spacegraphcats.search import search_utils
 
 
-dna_to_aa={'TTT':'F','TTC':'F', 'TTA':'L','TTG':'L',
-                'TCT':'S','TCC':'S','TCA':'S','TCG':'S',
-                'TAT':'Y','TAC':'Y', 'TAA':'*','TAG':'*','TGA':'*',
-                'TGT':'C','TGC':'C', 'TGG':'W',
-                'CTT':'L','CTC':'L','CTA':'L','CTG':'L',
-                'CCT':'P','CCC':'P','CCA':'P','CCG':'P',
-                'CAT':'H','CAC':'H', 'CAA':'Q','CAG':'Q',
-                'CGT':'R','CGC':'R','CGA':'R','CGG':'R',
-                'ATT':'I','ATC':'I','ATA':'I', 'ATG':'M',
-                'ACT':'T','ACC':'T','ACA':'T','ACG':'T',
-                'AAT':'N','AAC':'N', 'AAA':'K','AAG':'K',
-                'AGT':'S','AGC':'S', 'AGA':'R','AGG':'R',
-                'GTT':'V','GTC':'V','GTA':'V','GTG':'V',
-                'GCT':'A','GCC':'A','GCA':'A','GCG':'A',
-                'GAT':'D','GAC':'D', 'GAA':'E','GAG':'E',
-                'GGT':'G','GGC':'G','GGA':'G','GGG':'G'}
+dna_to_aa = {'TTT': 'F', 'TTC': 'F', 'TTA': 'L', 'TTG': 'L',
+             'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S',
+             'TAT': 'Y', 'TAC': 'Y', 'TAA': '*', 'TAG': '*', 'TGA': '*',
+             'TGT': 'C', 'TGC': 'C', 'TGG': 'W',
+             'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L',
+             'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P',
+             'CAT': 'H', 'CAC': 'H', 'CAA': 'Q', 'CAG': 'Q',
+             'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R',
+             'ATT': 'I', 'ATC': 'I', 'ATA': 'I', 'ATG': 'M',
+             'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T',
+             'AAT': 'N', 'AAC': 'N', 'AAA': 'K', 'AAG': 'K',
+             'AGT': 'S', 'AGC': 'S', 'AGA': 'R', 'AGG': 'R',
+             'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
+             'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
+             'GAT': 'D', 'GAC': 'D', 'GAA': 'E', 'GAG': 'E',
+             'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G'}
+
+__complementTranslation = {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N"}
 
 
-__complementTranslation = { "A": "T", "C": "G", "G": "C", "T": "A", "N": "N" }
 def complement(s):
     """
     Return complement of 's'.
@@ -46,9 +47,10 @@ def reverse(s):
     r = "".join(reversed(s))
     return r
 
+
 def peptides(seq, start):
     for i in range(start, len(seq), 3):
-        yield dna_to_aa.get(seq[i:i+3], "X")
+        yield dna_to_aa.get(seq[i:i + 3], "X")
 
 
 def translate(seq, n_frames):
@@ -60,6 +62,7 @@ def translate(seq, n_frames):
     for i in range(n_frames):
         pep = peptides(revcomp, i)
         yield "".join(pep)
+
 
 def kmers(seq, k):
     for start in range(len(seq) - k + 1):
