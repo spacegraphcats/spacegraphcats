@@ -92,18 +92,18 @@ def main():
         notify(f'outputting dom node abundances for all levels to {outfile}')
         with open(outfile, 'wt') as fp:
             w = csv.writer(fp)
-            w.writerow(['dom_id', 'abund', 'size'])
+            w.writerow(['dom_id', 'level', 'abund', 'size'])
             for node_id in sorted(catlas):
                 leaves = catlas.leaves([node_id])
+                level = catlas.levels[node_id]
 
                 count = 0
                 size = 0
                 for leaf_id in leaves:
                     count += dom_counts[leaf_id]
                     size += dom_sizes[leaf_id]
-                w.writerow([node_id, count, size])
+                w.writerow([node_id, level, count, size])
 
-                level = catlas.levels[node_id]
                 level_counts[level] += count
                 level_sizes[level] += size
 
