@@ -227,7 +227,7 @@ def main(argv):
     else:
         logging.basicConfig(filename=logfile, filemode="w", level=logging.WARNING)
 
-    logging.debug("starting bcalm_to_gxt2 run.")
+    logging.debug("starting bcalm_to_gxt run.")
 
     with open(args.mapping_pickle, "rb") as fp:
         (ksize, neighbors) = pickle.load(fp)
@@ -286,28 +286,29 @@ def main(argv):
 
     # start the gxt file by writing the number of nodes (unitigs))
     print(f"Outputting graph information to '{args.gxt_out}'...")
-    gxtfp = open(args.gxt_out, "wt")
-    gxtfp.write("{}\n".format(n))
+    with open(args.gxt_out, "wt") as gxtfp:
+        gxtfp.write("{}\n".format(n))
 
-    # write out all of the links, in 'from to' format.
-    n_edges = 0
-    for v, N in sorted(neighbors.items()):
-        for u in sorted(N):
-            gxtfp.write("{} {}\n".format(aliases[v], aliases[u]))
-            n_edges += 1
+        # write out all of the links, in 'from to' format.
+        n_edges = 0
+        for v, N in sorted(neighbors.items()):
+            for u in sorted(N):
+                gxtfp.write("{} {}\n".format(aliases[v], aliases[u]))
+                n_edges += 1
 
     print("...done! {} vertices, {} edges".format(n, n_edges))
 
     info_filename = args.contigs_prefix + ".info.csv"
-    info_fp = open(info_filename, "wt")
 
-    info_fp.write("contig_id,offset,mean_abund,n_kmers\n")
-    for v, i in aliases.items():
-        info_fp.write("{},{},{:.3f},{}\n".format(i, 0, mean_abunds[v], sizes[v]))
+    with open(info_filename, "wt") as info_fp:
+        info_fp.write("contig_id,offset,mean_abund,n_kmers\n")
+        for v, i in aliases.items():
+            info_fp.write("{},{},{:.3f},{}\n".format(i, 0, mean_abunds[v], sizes[v]))
 
     # output sourmash signature for output contigs
     out_sig = sourmash.SourmashSignature(out_mh, filename=args.contigs_prefix)
-    sourmash.save_signatures([out_sig], open(args.contigs_prefix + ".sig", "wt"))
+    with open(args.contigs_prefix + ".sig", "wt") as fp:
+        sourmash.save_signatures([out_sig], fp)
 
     sequences.close()
 

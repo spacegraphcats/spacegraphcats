@@ -9,6 +9,7 @@ from ..catlas.graph_io import read_from_gxt
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
+    p.add_argument("cdbg_prefix")
     p.add_argument("catlas_prefix")
     args = p.parse_args(argv)
 
@@ -17,7 +18,7 @@ def main(argv=sys.argv[1:]):
     basename = os.path.basename(args.catlas_prefix)
     gxtfile = os.path.join(args.catlas_prefix, "cdbg.gxt")
 
-    catlas = CAtlas(args.catlas_prefix)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
     top_node_id, dag, dag_levels = catlas.root, catlas.children, catlas.levels
 
     print(

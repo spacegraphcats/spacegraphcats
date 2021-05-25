@@ -17,7 +17,7 @@ from . import search_utils
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
-    p.add_argument("catlas_prefix", help="catlas prefix")
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("queries", nargs="+")
     p.add_argument(
         "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
@@ -27,11 +27,11 @@ def main(argv=sys.argv[1:]):
 
     assert args.output, "must supply -o"
 
-    x = search_utils.load_cdbg_size_info(args.catlas_prefix)
+    x = search_utils.load_cdbg_size_info(args.cdbg_prefix)
     cdbg_kmer_sizes, cdbg_weighted_kmer_sizes = x
 
     # load k-mer MPHF index
-    kmer_idx = search_utils.load_kmer_index(args.catlas_prefix)
+    kmer_idx = search_utils.load_kmer_index(args.cdbg_prefix)
 
     # build hashes for all the query k-mers
     print("loading query kmers...")
