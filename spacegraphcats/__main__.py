@@ -47,25 +47,28 @@ def run_snakemake(
     # add rest of snakemake arguments
     cmd += list(extra_args)
 
-    # add configfile - try looking for it a few different ways.
-    configfiles = []
+    configfiles = [
+        get_package_configfile("defaults.conf"),
+        get_package_configfile("system.conf")
+    ]
+    # add user=specified configfile - try looking for it a few different ways.
     if os.path.isfile(configfile):
-        configfiles = [configfile]
+        configfiles.append(configfile)
     elif os.path.isfile(get_package_configfile(configfile)):
-        configfiles = [get_package_configfile(configfile)]
+        configfiles.append(get_package_configfile(configfile))
     else:
         for suffix in ".yaml", ".conf":
             tryfile = configfile + suffix
             if os.path.isfile(tryfile):
-                configfiles = [tryfile]
+                configfiles.append(tryfile)
                 break
 
             tryfile = get_package_configfile(tryfile)
             if os.path.isfile(tryfile):
-                configfiles = [tryfile]
+                configfiles.append(tryfile)
                 break
 
-    if not configfiles:
+    if len(configfiles) == 2:
         raise ValueError(f"cannot find config file '{configfile}'")
 
     cmd += ["--configfile"] + configfiles
