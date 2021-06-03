@@ -194,9 +194,9 @@ query, and the reads for the neighborhoods around each query.
 The `spacegraphcats` script has several targets, in addition to `search`.
 
 * `python -m spacegraphcats run twofoo build` will build the catlas
-* `python -m spacegraphcats twofoo clean` should remove the build targets.
-* `python -m spacegraphcats twofoo extract_contigs` -- get contigs for search results; see above.
-* `python -m spacegraphcats twofoo extract_reads` -- get reads for search results; see above.
+* `python -m spacegraphcats run twofoo clean` should remove the build targets.
+* `python -m spacegraphcats run twofoo extract_contigs` -- get contigs for search results; see above.
+* `python -m spacegraphcats run twofoo extract_reads` -- get reads for search results; see above.
 
 You can also specify `--radius <n>` to override the radius defined in the YAML config file and `--experiment foo` to append a `_foo` to the search directory.)
 
