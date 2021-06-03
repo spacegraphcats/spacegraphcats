@@ -228,6 +228,120 @@ def test_dory_query_workflow(location):
         assert "nbhd:TRINITY_DN290219_c0_g1_i1" in name
 
 
+# CTB note: this test can be merged with test_dory_query_workflow if we
+# create checkpoint fixture that supports setting checkpoint to both
+# true and false. We'll also need to make the tempdir stuff a fixture, too;
+# sourmash has both of these so we can swipe code from there.
+@pytest_utils.in_tempdir
+def test_dory_query_workflow_checkpoint(location):
+    from spacegraphcats.cdbg import bcalm_to_gxt, sort_bcalm_unitigs
+
+    copy_dory_head()
+    copy_dory_subset()
+
+    # make the output directory
+    try:
+        os.mkdir("dory_k21")
+        os.mkdir("dory_k21_r1")
+    except FileExistsError:
+        pass
+
+    # sort the bcalm file
+    args = [
+        "-k",
+        "21",
+        relative_file("data/bcalm.dory.k21.unitigs.fa"),
+        "dory_k21/bcalm.unitigs.db",
+        "dory_k21/bcalm.unitigs.pickle",
+    ]
+
+    assert sort_bcalm_unitigs.main(args) == 0
+
+    db = sqlite3.connect("dory_k21/bcalm.unitigs.db")
+    all_seqs = list(search_utils.contigs_iter_sqlite(db))
+    assert len(all_seqs) == 736, len(all_seqs)
+
+    # convert the bcalm file to gxt
+    args = [
+        "-P",
+        relative_file("data/bcalm.dory.k21.unitigs.fa"),
+        "dory_k21/bcalm.unitigs.db",
+        "dory_k21/bcalm.unitigs.pickle",
+        "dory_k21/cdbg.gxt",
+        "dory_k21/contigs",
+    ]
+
+    assert bcalm_to_gxt.main(args) == 0
+
+    db = sqlite3.connect("dory_k21/bcalm.unitigs.db")
+    all_seqs = list(search_utils.contigs_iter_sqlite(db))
+    assert len(all_seqs) == 736, len(all_seqs)
+
+    with open("dory_k21/cdbg.gxt", "rb") as fp:
+        data = fp.read()
+    m = hashlib.md5()
+    m.update(data)
+    assert m.hexdigest() == "79d74806263900d54078eced695ec193", m.hexdigest()
+
+    # build catlas
+    args = pytest_utils.Args()
+    args.no_checkpoint = False
+    args.level = 0
+    args.radius = 1
+    args.cdbg_dir = "dory_k21"
+    args.catlas_dir = "dory_k21_r1"
+    print("** running catlas")
+    assert catlas.main(args) == 0
+
+    # make k-mer search index
+    args = "-k 21 dory_k21 --contigs-db dory_k21/bcalm.unitigs.db".split()
+    print("** running index_cdbg_by_kmer")
+    assert index_cdbg_by_kmer.main(args) == 0
+
+    # check that we get the kmer -> cDBG assignments we expect
+    kmer_idx = MPHF_KmerIndex.from_directory("dory_k21")
+    assert kmer_idx.table[10218271035842461694] == 118
+    assert kmer_idx.table[8436068710919520258] == 118
+    assert kmer_idx.table[13994045974119358468] == 118
+    assert kmer_idx.table[11971930231572094512] == 187
+
+    # do search!!
+    args = "dory_k21 dory_k21_r1 dory_k21_r1_search_oh0 --query dory-head.fa -k 21 --contigs-db dory_k21/bcalm.unitigs.db".split()
+    try:
+        assert query_by_sequence.main(args) == 0
+    except SystemExit as e:
+        assert e.code == 0, str(e)
+
+    # check output!
+    output_path = "dory_k21_r1_search_oh0/"
+    assert os.path.exists(output_path + "command.txt")
+    assert os.path.exists(output_path + "dory-head.fa.frontier.txt.gz")
+    assert os.path.exists(output_path + "dory-head.fa.cdbg_ids.txt.gz")
+    assert os.path.exists(output_path + "dory-head.fa.response.txt")
+    assert os.path.exists(output_path + "dory-head.fa.contigs.sig")
+    assert os.path.exists(output_path + "results.csv")
+
+    with gzip.open(output_path + "dory-head.fa.cdbg_ids.txt.gz", "rt") as fp:
+        match_ids = [x.strip() for x in fp]
+        assert match_ids == ["118", "187"]
+
+    with open(output_path + "results.csv", "rt") as fp:
+        lines = fp.readlines()
+        assert len(lines) == 2
+
+        last_line = lines[-1].strip()
+        assert (
+            last_line == "dory-head.fa,1.0,1.0,1671,2,21,1631,1.0,0.0,0.0,dory_k21_r1"
+        )
+
+    sigfile = output_path + "dory-head.fa.contigs.sig"
+    with open(sigfile, "rt") as fp:
+        sig = sourmash.load_one_signature(fp)
+        name = str(sig)
+        assert "from dory_k21_r1" in name
+        assert "nbhd:TRINITY_DN290219_c0_g1_i1" in name
+
+
 @pytest_utils.in_tempdir
 def test_dory_query_workflow_remove_pendants(location):
     from spacegraphcats.cdbg import bcalm_to_gxt, sort_bcalm_unitigs
