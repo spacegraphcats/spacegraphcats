@@ -39,6 +39,10 @@ def fix_relative_input_paths(filenames):
 
 # name of catlas
 catlas_base = config['catlas_base']
+if not catlas_base:
+    print("config parameter 'catlas_base' must be non-empty.",
+          file=sys.stderr)
+    sys.exit(-1)
 
 # sequence files to use when building catlas
 input_sequences = fix_relative_input_paths(config['input_sequences'])
@@ -48,9 +52,6 @@ ksize = config['ksize']
 
 # radius for catlas building
 radius = config['radius']
-
-# search overhead
-overhead = config.get('overhead', 0.0)
 
 # fix paths to search files
 config['search'] = fix_relative_input_paths(config.get('search', []))
@@ -97,7 +98,7 @@ multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
 
 cdbg_dir = f'{catlas_base}_k{ksize}'
 catlas_dir = f'{catlas_base}_k{ksize}_r{radius}{catlas_suffix}'
-search_dir = f'{catlas_dir}_search_oh{int(overhead*100)}{search_out_suffix}'
+search_dir = f'{catlas_dir}_search_oh0{search_out_suffix}'
 
 hashval_ksize = config.get('hashval_ksize', ksize)
 hashval_query_dir = f'{catlas_dir}_hashval_k{hashval_ksize}'
