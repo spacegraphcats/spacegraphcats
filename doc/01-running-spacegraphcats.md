@@ -71,7 +71,10 @@ There are three important top-level files.
 
 3. The configuration files are relatively simple, and are (by convention) contained in the `conf/` directory, although you can put them elsewhere. The filenames should end in either `.yaml` or `.conf`.
 
-To run spacegraphcats on a new data set, you will need to write a new config file.
+To run spacegraphcats on a new data set, you will need to write a new
+config file. An empty template is available as
+`spacegraphcats/conf/empty.yaml`, and you can display the empty config
+file with `python -m spacegraphcats showconf empty`.
 
 ## Config files: the `dory` example
 
