@@ -7,7 +7,7 @@ Please see [Installing spacegraphcats](00-installing-spacegraphcats.md).
 ## Running spacegraphcats search & output files
 
 ```
-python -m spacegraphcats dory-test search
+python -m spacegraphcats run dory-test search
 ```
 
 This should run in a few seconds, and you should see something like this in the output:
@@ -128,7 +128,7 @@ which will take a few minutes.
 
 Then, run:
 ```
-python -m spacegraphcats twofoo search
+python -m spacegraphcats run twofoo search
 ```
 
 which will generate searches of the twofoo synthetic data set with `data/2.fa.gz`, `data/47.fa.gz`, and `data/63.fa.gz`.
@@ -170,7 +170,7 @@ corresponding to them, by using the targets `extract_reads` and
 `extract_contigs`.
 
 ```
-python -m spacegraphcats twofoo extract_contigs extract_reads
+python -m spacegraphcats run twofoo extract_contigs extract_reads
 ```
 
 This will produce the files:
@@ -211,7 +211,7 @@ Last, but not least: snakemake locks the directory to make sure processes don't 
 First, build the twofoo data set with r5:
 
 ```
-python -m spacegraphcats twofoo build --radius=5
+python -m spacegraphcats run twofoo build --radius=5
 ```
 
 Then, extract nodes with many cDBG nodes and few k-mers (by ratio):
