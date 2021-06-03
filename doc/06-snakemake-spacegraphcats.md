@@ -57,8 +57,7 @@ for sample in SAMPLES:
            'input_sequences': ['outputs/abundtrim/' + sample + '.abundtrim.fq.gz'],
            'ksize': 31, 
            'radius': 1,
-           'search': genome_query_paths,
-           'searchquick': genome_query_paths[0]}
+           'search': genome_query_paths}
     with io.open("inputs/sgc_conf/" + sample + '_r1_conf.yml', 'w', encoding='utf8') as outfile:
         yaml.dump(yml, outfile, default_flow_style=False, allow_unicode=True, sort_keys=False)
 ```
