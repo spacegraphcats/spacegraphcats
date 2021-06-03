@@ -49,7 +49,6 @@ def run_snakemake(
 
     configfiles = [
         get_package_configfile("defaults.conf"),
-        get_package_configfile("system.conf")
     ]
     # add user=specified configfile - try looking for it a few different ways.
     if os.path.isfile(configfile):
@@ -68,7 +67,7 @@ def run_snakemake(
                 configfiles.append(tryfile)
                 break
 
-    if len(configfiles) == 2:
+    if len(configfiles) == 1:
         raise ValueError(f"cannot find config file '{configfile}'")
 
     cmd += ["--configfile"] + configfiles
