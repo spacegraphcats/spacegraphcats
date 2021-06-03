@@ -7,7 +7,7 @@ Please see [Installing spacegraphcats](00-installing-spacegraphcats.md).
 ## Running spacegraphcats search & output files
 
 ```
-python -m spacegraphcats dory-test search
+python -m spacegraphcats run dory-test search
 ```
 
 This should run in a few seconds, and you should see something like this in the output:
@@ -67,55 +67,55 @@ There are three important top-level files.
 
 1. The script `python -m spacegraphcats` uses [snakemake](https://snakemake.readthedocs.io/en/stable/) to run the pipeline.
 
-2. The Snakefile itself is under `conf/Snakefile`, and is not intended to be particularly human readable :). The snakemake run is configured by a JSON config file.
+2. The Snakefile itself is under `conf/Snakefile`, and is not intended to be particularly human readable :). The snakemake run is configured by a [YAML config file](https://www.cloudbees.com/blog/yaml-tutorial-everything-you-need-get-started/).
 
-3. The configuration files are relatively simple, and are (by convention) contained in the `conf/` directory, although you can put them elsewhere.
+3. The configuration files are relatively simple, and are (by convention) contained in the `conf/` directory, although you can put them elsewhere. The filenames should end in either `.yaml` or `.conf`.
 
-To run spacegraphcats on a new data set, you will need to write a new config file.
+To run spacegraphcats on a new data set, you will need to write a new
+config file. An empty template is available as
+`spacegraphcats/conf/empty.yaml`, and you can display the empty config
+file with `python -m spacegraphcats showconf empty`.
 
 ## Config files: the `dory` example
 
 Config files look like this:
 ```
-{
-    "catlas_base": "dory",
-    "input_sequences": ["data/dory-subset.fa"],
-    "ksize": 21,
-    "radius": 1,
-
-    "searchquick": ['data/dory-head.fa'],
-    "searchseeds": "43",
-    "search": ['data/dory-head.fa'],
-}
+catlas_base: dory
+input_sequences:
+- data/dory-subset.fq
+keep_graph_pendants: true
+paired_reads: false
+ksize: 21
+radius: 1
+search:
+- data/dory-head.fa
 ```
 
 Here, the `catlas_base`, `ksize`, and `radius` are used to name output directories - hence `dory/` and `dory_k21_r1/`, above. `catlas_base` is arbitrary, `ksize` is the k-mer size (we suggest 21 or 31), and `radius` is the domset radius (we suggest 1).
 
 The `input_sequences` contains the set of input files (FASTA or FASTQ, potentially gzipped) to use to build the compact De Bruijn graph. Note, these should be k-mer-error-trimmed, or otherwise you will have very big cDBGs... see [the error trimming information from Brown et al. for an example](https://github.com/spacegraphcats/2018-paper-spacegraphcats/tree/master/pipeline-base#pipeline-to-generate-files-needed-for-figures-2-and-3). Note that the `trim-low-abund.py` command is in the khmer package, which is a requirement for spacegraphcats, so you will already have it installed.
 
-The `searchquick` and `search` specify the *query files* that you are using to search the catlas.
+The `search` entry specifies the *query files* that you are using to search the catlas.
 
 So, in brief, this config file:
 
 * builds a catlas with k=21 and r=1 from `data/dory-subset.fa`;
-* searches with `data/dory-head.fa` when you call either `search` or `searchquick`.
+* searches with `data/dory-head.fa` when you call `search`.
 
 ## A larger example: `twofoo`
 
 Here you can see another config file, for a synthetic mixture
 of two genomes (Akkermansia and Shewanella baltica OS 223) from the Shakya et al., 2014, benchmark study:
 ```
-{
-    "catlas_base": "twofoo",
-    "input_sequences": ["twofoo.fq.gz"],
-    "ksize": 31,
-    "radius": 1,
-
-    "searchquick": ["data/63.fa.gz"],
-
-    "search": ["data/2.fa.gz", "data/47.fa.gz", "data/63.fa.gz"],
-
-}
+catlas_base: twofoo
+input_sequences:
+- twofoo.fq.gz
+ksize: 31
+radius: 1
+search:
+- data/2.fa.gz
+- data/47.fa.gz
+- data/63.fa.gz
 ```
 
 To run this, you'll first need to download and prepare the input file, `twofoo.fq.gz`:
@@ -128,7 +128,7 @@ which will take a few minutes.
 
 Then, run:
 ```
-python -m spacegraphcats twofoo search
+python -m spacegraphcats run twofoo search
 ```
 
 which will generate searches of the twofoo synthetic data set with `data/2.fa.gz`, `data/47.fa.gz`, and `data/63.fa.gz`.
@@ -170,7 +170,7 @@ corresponding to them, by using the targets `extract_reads` and
 `extract_contigs`.
 
 ```
-python -m spacegraphcats twofoo extract_contigs extract_reads
+python -m spacegraphcats run twofoo extract_contigs extract_reads
 ```
 
 This will produce the files:
@@ -191,14 +191,14 @@ query, and the reads for the neighborhoods around each query.
 
 ### The `spacegraphcats` script
 
-The `spacegraphcats` script has several targets, in addition to `search` and `searchquick`.
+The `spacegraphcats` script has several targets, in addition to `search`.
 
-* `python -m spacegraphcats twofoo build` will build the catlas
-* `python -m spacegraphcats twofoo clean` should remove the build targets.
-* `python -m spacegraphcats twofoo extract_contigs` -- get contigs for search results; see above.
-* `python -m spacegraphcats twofoo extract_reads` -- get reads for search results; see above.
+* `python -m spacegraphcats run twofoo build` will build the catlas
+* `python -m spacegraphcats run twofoo clean` should remove the build targets.
+* `python -m spacegraphcats run twofoo extract_contigs` -- get contigs for search results; see above.
+* `python -m spacegraphcats run twofoo extract_reads` -- get reads for search results; see above.
 
-You can also specify `--radius <n>` to override the radius defined in the JSON config file; `--overhead <fraction>` to specify an overhead for searches; and `--experiment foo` to append a `_foo` to the search directory.)
+You can also specify `--radius <n>` to override the radius defined in the YAML config file and `--experiment foo` to append a `_foo` to the search directory.)
 
 Last, but not least: snakemake locks the directory to make sure processes don't step on each other. This is important when catlases need to be built (you don't want two different `search` commands stepping on each other during the catlas building phase) but once you have built catlases you can do searches in parallel.  To enable this add `--nolock` to the run command. 
 
@@ -211,7 +211,7 @@ Last, but not least: snakemake locks the directory to make sure processes don't 
 First, build the twofoo data set with r5:
 
 ```
-python -m spacegraphcats twofoo build --radius=5
+python -m spacegraphcats run twofoo build --radius=5
 ```
 
 Then, extract nodes with many cDBG nodes and few k-mers (by ratio):
