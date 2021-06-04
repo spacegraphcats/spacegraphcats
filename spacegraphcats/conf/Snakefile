@@ -153,11 +153,12 @@ rule bcalm_cdbg:
     output:
         temp(f"{cdbg_dir}/bcalm.unitigs.fa"),
     log: f"{cdbg_dir}/bcalm.log.txt",
+    threads: 16
     shadow: "shallow"
     shell: """
         # ok, run bcalm for real; use tee to both save & output stderr,
         # per https://stackoverflow.com/questions/692000/how-do-i-write-stderr-to-a-file-while-using-tee-with-a-pipe
-        bcalm -in {input} -out {cdbg_dir}/bcalm \
+        bcalm -in {input} -out {cdbg_dir}/bcalm -nb-cores {threads} \
            -kmer-size {ksize} -abundance-min 1 > >(tee -a {log} >& 2)
 
         # remove large temp files: .h5, unitig glue files
