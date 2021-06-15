@@ -739,10 +739,11 @@ def test_dory_multifasta_query(location):
     args = "--hashvals dory_k21_r1_multifasta/hashval.pickle --multi-idx dory_k21_r1_multifasta/multifasta.pickle  --query-sig dory-subset.fq.sig --output dory_k21_r1_multifasta/query-results.csv -k 21 --scaled 100"
     assert query_multifasta_by_sig.main(args.split()) == 0
 
-    args = "--multi-idx dory_k21_r1_multifasta/multifasta.pickle --output dory_k21_r1_multifasta/multifasta.cdbg_by_record.csv --info-csv dory_k21/contigs.info.csv"
+    args = "--multi-idx dory_k21_r1_multifasta/multifasta.pickle --output-cdbg-record dory_k21_r1_multifasta/multifasta.cdbg_by_record.csv --output-cdbg-annot dory_k21_r1_multifasta/multifasta.cdbg_annot.csv --info-csv dory_k21/contigs.info.csv"
     assert extract_cdbg_by_multifasta.main(args.split()) == 0
 
     assert os.path.exists("dory_k21_r1_multifasta/multifasta.cdbg_by_record.csv")
+    assert os.path.exists("dory_k21_r1_multifasta/multifasta.cdbg_annot.csv")
     assert os.path.exists("dory_k21_r1_multifasta/query-results.csv")
 
 

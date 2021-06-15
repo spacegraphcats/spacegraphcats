@@ -14,11 +14,13 @@ def main(argv):
     p = argparse.ArgumentParser(description=main.__doc__)
     p.add_argument("--multi-idx")
     p.add_argument("--info-csv")
-    p.add_argument("--output")
+    p.add_argument("--output-cdbg-record")
+    p.add_argument("--output-cdbg-annot")
     args = p.parse_args(argv)
 
     assert args.multi_idx
-    assert args.output
+    assert args.output_cdbg_record
+    assert args.output_cdbg_annot
 
     with open(args.multi_idx, "rb") as fp:
         catlas_base, records_to_cdbg, cdbg_to_records = pickle.load(fp)
@@ -34,7 +36,7 @@ def main(argv):
             cdbg_info[cdbg_id] = row
         print(f"loaded {len(cdbg_info)} info records for {catlas_base}")
 
-    with open(args.output, "wt") as fp:
+    with open(args.output_cdbg_record, "wt") as fp:
         w = csv.writer(fp)
         w.writerow(
             [
@@ -55,13 +57,13 @@ def main(argv):
 
             # write out cdbg id list
             cdbg_file = f"record{filenum}-nbhd.cdbg_ids.txt.gz"
-            cdbg_file = os.path.join(os.path.dirname(args.output), cdbg_file)
+            cdbg_file = os.path.join(os.path.dirname(args.output_cdbg_record), cdbg_file)
             with gzip.open(cdbg_file, "wt") as outfp:
                 outfp.write("\n".join([str(i) for i in cdbg_ids]))
 
             # generate *name* of reads.fa.gz file to make
             reads_file = f"record{filenum}-nbhd.reads.fa.gz"
-            reads_file = os.path.join(os.path.dirname(args.output), reads_file)
+            reads_file = os.path.join(os.path.dirname(args.output_cdbg_record), reads_file)
 
             # generate info: total k-mers, mean_abund / weighted
             total_kmers = 0
@@ -91,6 +93,39 @@ def main(argv):
             filenum += 1
 
     print(f"wrote {filenum+1} files containing cdbg_ids.")
+
+    # write out cdbg id to record mapping, one per row
+    with open(args.output_cdbg_annot, "wt") as fp:
+        w = csv.writer(fp)
+        w.writerow(
+            [
+                "filename",
+                "record_name",
+                "record_number",
+                "catlas_base",
+                "cdbg_id",
+            ]
+        )
+    
+        filenum = 0
+        for (filename, record_name), cdbg_ids in records_to_cdbg.items():
+            if not cdbg_ids:
+                continue
+
+            record_number = f"record{filenum}"
+            for cdbg_id in cdbg_ids:
+                cdbg_id = str(cdbg_id)
+                w.writerow(
+                     [
+                        filename,
+                        record_name,
+                        record_number,
+                        catlas_base,
+                        cdbg_id,
+                    ]
+                )
+
+            filenum += 1
 
     return 0
 
