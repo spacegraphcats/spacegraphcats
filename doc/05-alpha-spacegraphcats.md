@@ -50,7 +50,7 @@ Where the `multifasta_reference` contains the gene in a query of interest, `mult
 Then, run spacegraphcats:
 
 ```
-python -m spacegraphcats twofoo multifasta_query
+python -m spacegraphcats run twofoo multifasta_query
 ```
 
 ## graphgrep
