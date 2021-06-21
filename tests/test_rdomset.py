@@ -119,9 +119,12 @@ class ParserRDomset(unittest.TestCase):
         self.assertEqual(set(domgraph.arcs(1)), set([(2, 5), (2, 6), (5, 2), (5, 6), (6, 2), (6, 5)]))
 
         # error cases (should raise an error when the given vertex set is not an r-dominating set)
-        self.assertRaises(AssertionError, lambda: domination_graph(g, [], r))
-        self.assertRaises(AssertionError, lambda: domination_graph(g, [0], r))
-        self.assertRaises(AssertionError, lambda: domination_graph(g, [0, 5, 6, 7, 9], r))
+        self.assertRaises(AssertionError, domination_graph, g, [], r)
+        self.assertRaises(AssertionError, domination_graph, g, [0], r)
+        self.assertRaises(AssertionError, domination_graph, g, [0, 5, 6, 7, 9], r)
+
+        g2 = Graph(num_nodes=10, radius=r)  # isolated vertices
+        self.assertRaises(AssertionError, domination_graph, g2, [0, 1], r)
 
 
 if __name__ == "__main__":
