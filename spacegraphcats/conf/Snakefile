@@ -552,11 +552,12 @@ rule build_cdbg_list_by_record:
         multi_idx = f"{catlas_dir}_multifasta/multifasta.pickle",
         info_csv = f"{cdbg_dir}/contigs.info.csv",
     output:
-        f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
+        cdbg_record = f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
+        cdbg_annot = f"{catlas_dir}_multifasta/multifasta.cdbg_annot.csv",
     shell: """
         python -Werror -m spacegraphcats.search.extract_cdbg_by_multifasta \
-            --multi-idx {input.multi_idx} --output {output} \
-            --info-csv {input.info_csv}
+            --multi-idx {input.multi_idx} --output-cdbg-record {output.cdbg_record} \
+            --output-cdbg-annot {output.cdbg_annot} --info-csv {input.info_csv}
     """
 
 # get reads for a single multifasta record
