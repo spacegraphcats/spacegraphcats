@@ -756,3 +756,14 @@ def test_dory_shadow_extract(location):
     args = "dory_k21 dory_k21_r1 shadow_out --contigs-db dory_k21/bcalm.unitigs.db".split()
     print("** running extract_nodes_by_shadow_ratio")
     assert extract_nodes_by_shadow_ratio.main(args) == 0
+
+
+@pytest_utils.in_tempdir
+def test_dory_cdbg_and_catlas_abund(location):
+    # run extract_nodes_by_shadow_ratio
+    copy_dory_catlas()
+
+    # make k-mer search index
+    args = "dory_k21 dory_k21_r1 dory-head.fa".split()
+    print("** running count-dominator-abundance.py")
+    #assert extract_nodes_by_shadow_ratio.main(args) == 0
