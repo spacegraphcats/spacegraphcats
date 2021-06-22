@@ -1,4 +1,6 @@
-# spacegraphcats ![Test](https://github.com/spacegraphcats/spacegraphcats/workflows/Test/badge.svg) [![codecov](https://codecov.io/gh/spacegraphcats/spacegraphcats/branch/master/graph/badge.svg)](https://codecov.io/gh/spacegraphcats/spacegraphcats) [![DOI](https://zenodo.org/badge/58208221.svg)](https://zenodo.org/badge/latestdoi/58208221)
+# spacegraphcats
+
+![Test](https://github.com/spacegraphcats/spacegraphcats/workflows/Test/badge.svg) [![codecov](https://codecov.io/gh/spacegraphcats/spacegraphcats/branch/master/graph/badge.svg)](https://codecov.io/gh/spacegraphcats/spacegraphcats) [![DOI](https://zenodo.org/badge/58208221.svg)](https://zenodo.org/badge/latestdoi/58208221) <a href="https://pypi.org/project/spacegraphcats/"><img alt="PyPI" src="https://badge.fury.io/py/spacegraphcats.svg"></a>
 
 
 Explore large, annoying graphs using hierarchies of dominating sets - because

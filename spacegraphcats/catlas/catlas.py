@@ -55,7 +55,7 @@ class Project:
 
     def cp_name(self, level):
         """Return the name of the checkpoint file after level level."""
-        return os.path.join(self.dir, "{}_{}.checkpoint".format(self.r, level))
+        return os.path.join(self.out_dir, "{}_{}.checkpoint".format(self.r, level))
 
     def load_furthest_checkpoint(self):
         """Load the checkpoint that is furthest along."""
