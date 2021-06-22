@@ -40,6 +40,9 @@ def main():
     notify('loaded {} k-mers in index ({:.1f}s)',
            len(kmer_idx), time.time() - ki_start)
 
+    catlas_root_children = set(catlas.children[catlas.root])
+    max_level = max(catlas.levels.values())
+
     # calculate the k-mer sizes beneath node, for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)
 
@@ -93,6 +96,7 @@ def main():
         with open(outfile, 'wt') as fp:
             w = csv.writer(fp)
             w.writerow(['dom_id', 'level', 'abund', 'size'])
+
             for node_id in sorted(catlas):
                 leaves = catlas.leaves([node_id])
                 level = catlas.levels[node_id]
@@ -107,14 +111,45 @@ def main():
                 level_counts[level] += count
                 level_sizes[level] += size
 
-        print('level_counts:', level_counts)
+            # recover level info for those nodes that represent entire
+            # components of the graph, and hence are attached
+            # directly to catlas root; they no longer appear in catlas
+            # structure (until root node is reached).
+            #
+            # NOTE: these node_ids will appear multiple times in the
+            # dom_abund.csv file!
+
+            for node_id in catlas_root_children:
+                stop_level = catlas.levels[node_id]
+                leaves = catlas.leaves([node_id])
+
+                count = 0
+                size = 0
+                for leaf_id in leaves:
+                    count += dom_counts[leaf_id]
+                    size += dom_sizes[leaf_id]
+
+                for level in range(stop_level + 1, max_level):
+                    level_counts[level] += count
+                    level_sizes[level] += size
+                    w.writerow([node_id, level, count, size])
+
+        level_count_values = set(level_counts.values())
+        assert len(level_count_values) == 1
+        level_count = list(level_count_values)[0]
+
+        level_sizes_values = set(level_sizes.values())
+        assert len(level_sizes_values) == 1
+        level_size = list(level_sizes_values)[0]
+
+        print(f'each catlas level has {level_count} sum counts')
         print('total_cdbg_counts:', total_cdbg_counts)
         print('dom_counts:', sum(dom_counts.values()))
 
         assert total_cdbg_counts == sum(dom_counts.values())
 
+        print(f'each catlas level has {level_size} k-mers underneath')
         print('total_cdbg_sizes:', sum(catlas.cdbg_sizes.values()))
-        print('sum level sizes:', level_sizes)
 
 
     return 0
