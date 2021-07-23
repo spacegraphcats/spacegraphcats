@@ -4,7 +4,7 @@ Hashing code for k-mers -> hash values.
 import os
 import pickle
 
-import khmer
+import sourmash
 from bbhash_table import BBHashTable
 
 hashing_fn = None
@@ -12,10 +12,13 @@ hashing_ksize = None
 
 
 def hash_sequence(seq, ksize):
+    "Hash the given sequence at the given ksize."
     global hashing_fn, hashing_ksize
+
+    # initialize the hashing function, if needed.
     if hashing_fn is None or hashing_ksize != ksize:
-        kh = khmer.Nodetable(ksize, 1, 1)
-        hashing_fn, hashing_ksize = kh.get_kmer_hashes, ksize
+        mh = sourmash.MinHash(n=0, ksize=ksize, scaled=1)
+        hashing_fn, hashing_ksize = mh.seq_to_hashes, ksize
 
     return hashing_fn(seq)
 
