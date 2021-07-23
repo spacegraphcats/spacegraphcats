@@ -188,10 +188,10 @@ def test_dory_query_workflow(location):
     kmer_idx = MPHF_KmerIndex.from_directory("dory_k21")
 
     # CTB: these are brittle with the hashing function.
-    #assert kmer_idx.table[10218271035842461694] == 118
-    #assert kmer_idx.table[8436068710919520258] == 118
-    #assert kmer_idx.table[13994045974119358468] == 118
-    #assert kmer_idx.table[11971930231572094512] == 187
+    assert kmer_idx.table[11004452562135275780] == 187
+    assert kmer_idx.table[18392389941331767593] == 187
+    assert kmer_idx.table[5870372511640715632] == 187
+    assert kmer_idx.table[15614278719837004159] == 118
 
     # do search!!
     args = "dory_k21 dory_k21_r1 dory_k21_r1_search_oh0 --query dory-head.fa -k 21 --contigs-db dory_k21/bcalm.unitigs.db".split()
@@ -304,10 +304,10 @@ def test_dory_query_workflow_checkpoint(location):
     kmer_idx = MPHF_KmerIndex.from_directory("dory_k21")
 
     # CTB: these are brittle with the hashing function.
-    #assert kmer_idx.table[10218271035842461694] == 118
-    #assert kmer_idx.table[8436068710919520258] == 118
-    #assert kmer_idx.table[13994045974119358468] == 118
-    #assert kmer_idx.table[11971930231572094512] == 187
+    assert kmer_idx.table[11004452562135275780] == 187
+    assert kmer_idx.table[18392389941331767593] == 187
+    assert kmer_idx.table[5870372511640715632] == 187
+    assert kmer_idx.table[15614278719837004159] == 118
 
     # do search!!
     args = "dory_k21 dory_k21_r1 dory_k21_r1_search_oh0 --query dory-head.fa -k 21 --contigs-db dory_k21/bcalm.unitigs.db".split()
