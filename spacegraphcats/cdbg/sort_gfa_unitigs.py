@@ -64,48 +64,56 @@ def main(argv):
     
     last_pos = 0
     for n, (line, offset) in enumerate(iter_lines_and_pos(unitigs_fp)):
+        # NOTE: here, 'offset' is used as a unique identifier for 'S'
+        # records, is all.
+
         if n % 10000 == 0:
             print(f"... {n}", end="\r")
             sys.stdout.flush()
 
-        if line[0] != 'S':
-            continue
+        if line[0] == 'S':
+            _, name, sequence = line.strip().split('\t')
 
-        _, name, sequence = line.strip().split('\t')
+            total_bp += len(sequence)
 
-        total_bp += len(sequence)
+            # first, get unitig ID
+            contig_id = int(name)
 
-        # first, get unitig ID
-        contig_id = int(name)
+            # second, make space to track the various links
+            neighbors[contig_id] = []
 
-        # second, track the various links
-        #@CTB links = [x for x in name_split[1:] if x.startswith("L:")]
-        links = []
-        neighbors[contig_id] = links
+            # third, get mean abund
+            if 0:
+                abund = [x for x in name_split[1:] if x.startswith("km:")]
+                assert len(abund) == 1, abund
+                abund = abund[0].split(":")
+                assert len(abund) == 3
+                abund = float(abund[2])
+            abund = 0.0
 
-        # third, get mean abund
-        if 0:
-            abund = [x for x in name_split[1:] if x.startswith("km:")]
-            assert len(abund) == 1, abund
-            abund = abund[0].split(":")
-            assert len(abund) == 3
-            abund = float(abund[2])
-        abund = 0.0
+            # fourth, get the min hash val for this sequence
+            mh = empty_mh.copy_and_clear()
+            mh.add_sequence(sequence)
+            assert len(mh) == 1, (len(mh), sequence)
+            min_hashval = next(iter(mh.hashes))
 
-        # fourth, get the min hash val for this sequence
-        mh = empty_mh.copy_and_clear()
-        mh.add_sequence(sequence)
-        assert len(mh) == 1, (len(mh), sequence)
-        min_hashval = next(iter(mh.hashes))
+            # fifth, record input k-mers to a bulk signature
+            in_mh.add_sequence(sequence)
 
-        # fifth, record input k-mers to a bulk signature
-        in_mh.add_sequence(sequence)
-
-        # add to database
-        cursor.execute(
-            "INSERT INTO sequences (id, sequence, offset, min_hashval, abund) VALUES (?, ?, ?, ?, ?)",
-            (contig_id, sequence, offset, str(min_hashval), abund),
-        )
+            # add to database
+            cursor.execute(
+                "INSERT INTO sequences (id, sequence, offset, min_hashval, abund) VALUES (?, ?, ?, ?, ?)",
+                (contig_id, sequence, offset, str(min_hashval), abund),
+            )
+        elif line[0] == 'L':
+            _, fr, fro, to, too, overlap = line.strip().split()
+            assert overlap == '30M' # k-mer size - 1
+            fr = int(fr)
+            to = int(to)
+            neighbors[fr].append(to)
+            neighbors[to].append(fr)
+        else:
+            assert line[0] in ('H',)
 
     db.commit()
 
@@ -148,10 +156,9 @@ def main(argv):
         new_key = remapping[old_key]
         link_ids = set()
         for x in links:
-            link_id = int(x.split(":")[2])
-            if link_id != old_key:  # neighbors != self!
-                new_link_id = remapping[link_id]
-                link_ids.add(new_link_id)
+            link_id = x
+            new_link_id = remapping[link_id]
+            link_ids.add(new_link_id)
 
         # allow isolated nodes - link_ids can be empty.
         new_neighbors[new_key] = link_ids
