@@ -45,17 +45,17 @@ For a brief look at some internal commands, see [this slideshow](https://hackmd.
 Spacegraphcats optionally outputs the reads that contain k-mers in a neighborhood. 
 This requires being able to go from k-mer to cDBG unitig to read. 
 Below we describe how is this implemented.
-The code for that retrieval is in [extract_reads.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/spacegraphcats/search/extract_reads.py).
+The code for that retrieval is in [extract_reads.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/search/extract_reads.py).
 
 First, we put all of the reads in a BGZF file, which is a gzipped file that can be accessed by position. 
 This lets us retrieve reads based solely on an offset into that file. 
-See [make_bgzf.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/spacegraphcats/utils/make_bgzf.py) and [bgzf/](https://github.com/spacegraphcats/spacegraphcats/tree/master/spacegraphcats/utils/bgzf) for our copy of the BGZF indexing code, taken from BioPython.
+See [make_bgzf.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/utils/make_bgzf.py) and [bgzf/](https://github.com/spacegraphcats/spacegraphcats/tree/latest/spacegraphcats/utils/bgzf) for our copy of the BGZF indexing code, taken from BioPython.
 
 Then, we build a table that connects query k-mers to cDBG unitig IDs. 
 Here the offset in the table is the MPHF of the query k-mer, built using bbhash, and the value in the table is the number of the cDBG unitig. 
 This connects with internal spacegraphcats stuff.
 
-Last but not least, we build a sqlite unitig-to-read offset table in [label_cdbg.py](https://github.com/spacegraphcats/spacegraphcats/blob/master/spacegraphcats/cdbg/label_cdbg.py). 
+Last but not least, we build a sqlite unitig-to-read offset table in [label_cdbg.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/cdbg/label_cdbg.py). 
 This is a multimap table (read, unitig ID) that lets us query for the BGZF offset for all reads that belong to a given unitig ID. 
 Once we have the read offsets for a given unitig ID, using the bgzf code we can reach into a sequence file and retrieve the relevant read(s) directly. 
 
