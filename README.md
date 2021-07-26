@@ -22,7 +22,7 @@ For use cases and other information, please see the spacegraphcats documentation
 
 ## Installation and execution quickstart
 
-See [installation instructions](https://github.com/spacegraphcats/spacegraphcats/blob/latest/doc/installing-spacegraphcats.md) and [the run guide](https://github.com/spacegraphcats/spacegraphcats/blob/latest/doc/running-spacegraphcats.md).
+See [installation instructions](https://github.com/spacegraphcats/spacegraphcats/blob/latest/doc/00-installing-spacegraphcats.md) and [the run guide](https://github.com/spacegraphcats/spacegraphcats/blob/latest/doc/01-running-spacegraphcats.md).
 
 For help or support with this software, please
 [file an issue on GitHub](https://github.com/spacegraphcats/spacegraphcats/issues). Thank
@@ -67,11 +67,11 @@ BCALM cDBGs is in function `contract_degree_two` in
 
 Part of the `indexPieces` code for indexing cDBG nodes by dominating
 nodes is
-[cdbg/index_contigs_by_kmer.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/cdbg/index_contigs_by_kmer.py). The
+[cdbg/index_cdbg_by_kmer.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/cdbg/index_cdbg_by_kmer.py). The
 remainder is implemented in `search`, below.
 
 The `search` code for extracting query neighborhoods is in
-[search/extract_nodes_by_query.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/search/extract_nodes_by_query.py);
+[search/query_by_sequence.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/search/query_by_sequence.py);
 see especially the call to `kmer_idx.count_cdbg_matches(...)`.
 
 ### Interesting library functionality
@@ -79,7 +79,7 @@ see especially the call to `kmer_idx.count_cdbg_matches(...)`.
 Code for indexing large FASTQ/FASTA read files by cDBG unitig, and
 extracting the reads corresponding to individual unitigs from BGZF
 files, is available in
-[cdbg/label_cdbg.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/cdbg/label_cdbg.py)
+[cdbg/label_cdbg.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/cdbg/index_reads.py)
 and
 [search/search_utils.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/search/search_utils.py),
 `get_reads_by_cdbg`, respectively.
