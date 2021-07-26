@@ -165,7 +165,7 @@ rule bcalm_cdbg:
         rm -f {cdbg_dir}/bcalm.{{h5,unitigs.fa.glue*}}
     """
 
-# create list of input files for bcalm
+# create list of input files for bcalm and bifrost
 rule bcalm_cdbg_inpfiles:
     input:
         input_sequences
@@ -177,52 +177,92 @@ rule bcalm_cdbg_inpfiles:
                 fp.write(f'{name}\n')
 
 # sort and remap bcalm output
-rule bcalm_catlas_sort:
-    input:
-        unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
-    output:
-        db = f"{cdbg_dir}/bcalm.unitigs.predb",
-        mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
-        sig = f"{cdbg_dir}/bcalm.unitigs.fa.sig",
-    shadow: "shallow"
-    params:
-        ksize = ksize,
-        seed = cdbg_shuffle_seed if cdbg_shuffle_seed is not None else 42
-    shell: """
-        python -Werror -m spacegraphcats.cdbg.sort_bcalm_unitigs \
-            -k {params.ksize} {input.unitigs} {output.db} {output.mapping} \
-            --seed {params.seed}
-     """
+if 0:
+    rule bcalm_catlas_sort:
+        input:
+            unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
+        output:
+            db = f"{cdbg_dir}/unitigs.predb",
+            mapping = f"{cdbg_dir}/unitigs.pickle",
+            sig = f"{cdbg_dir}/unitigs.fa.sig",
+        shadow: "shallow"
+        params:
+            ksize = ksize,
+            seed = cdbg_shuffle_seed if cdbg_shuffle_seed is not None else 42
+        shell: """
+            python -Werror -m spacegraphcats.cdbg.sort_bcalm_unitigs \
+                -k {params.ksize} {input.unitigs} {output.db} {output.mapping} \
+                --seed {params.seed}
+         """
 
-# build catlas input from bcalm output by reformatting; optionally,
+# build catlas input from cdbg output by reformatting; optionally,
 # remove pendants
-rule bcalm_catlas_prepare_input:
+# @CTB rename away from bcalm.
+rule cdbg_catlas_prepare_input:
     input:
-        unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
-        db = f"{cdbg_dir}/bcalm.unitigs.predb",
-        mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
+        db = f"{cdbg_dir}/unitigs.predb",
+        mapping = f"{cdbg_dir}/unitigs.pickle",
     output:
         gxt = f"{cdbg_dir}/cdbg.gxt",
         info = f"{cdbg_dir}/contigs.info.csv",
         sig = f"{cdbg_dir}/contigs.sig",
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        db = f"{cdbg_dir}/unitigs.db",
     shadow: "shallow"
     params:
-        remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else "",
+        #remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else "",
+        remove_pendants = "",
         contigs_prefix = f"{cdbg_dir}/contigs"
     shell: """
         python -Werror -m spacegraphcats.cdbg.bcalm_to_gxt \
             {params.remove_pendants} \
-            {input.unitigs} {input.db} {input.mapping} \
+            {input.db} {input.mapping} \
             {output.gxt} {params.contigs_prefix}
         mv {input.db} {output.db}
         chmod u-w {output.db}
      """
 
+
+# build cDBG using bifrost
+rule bifrost_cdbg:
+    input:
+        f"{cdbg_dir}/bcalm.inputlist.txt"
+    output:
+        temp(f"{cdbg_dir}/bifrost.unitigs.gfa"),
+    log: f"{cdbg_dir}/bifrost.log.txt",
+    threads: 16
+    shadow: "shallow"
+    params:
+        gfa_prefix = lambda wildcards, output: output[0][:-4]
+    shell: """
+        # ok, run bifrost
+        echo {params.gfa_prefix}
+        Bifrost build -r {input} -o {params.gfa_prefix} -t {threads} \
+           -k {ksize} -v > >(tee -a {log} >& 2)
+    """
+
+
+# sort and remap bifrost output
+rule bifrost_catlas_sort:
+    input:
+        unitigs = f"{cdbg_dir}/bifrost.unitigs.gfa",
+    output:
+        db = f"{cdbg_dir}/unitigs.predb",
+        mapping = f"{cdbg_dir}/unitigs.pickle",
+        sig = f"{cdbg_dir}/unitigs.sig",
+    shadow: "shallow"
+    params:
+        ksize = ksize,
+        seed = cdbg_shuffle_seed if cdbg_shuffle_seed is not None else 42
+    shell: """
+        python -Werror -m spacegraphcats.cdbg.sort_gfa_unitigs \
+            -k {params.ksize} {input.unitigs} {output.db} {output.mapping} \
+            --seed {params.seed} --sig {output.sig}
+     """
+
 # output contigs file
 rule dump_contigs:
     input:
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        db = f"{cdbg_dir}/unitigs.db",
     output:
         f"{cdbg_dir}/contigs.fa.gz"
     shell: """
@@ -274,7 +314,7 @@ rule build_catlas:
 # index contigs, count node sizes
 rule make_contigs_kmer_index:
     input:
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        db = f"{cdbg_dir}/unitigs.db",
     output:
         f"{cdbg_dir}/contigs.mphf",
         f"{cdbg_dir}/contigs.indices",
@@ -309,7 +349,7 @@ rule search:
         f"{cdbg_dir}/contigs.mphf",
         f"{cdbg_dir}/contigs.indices",
         f"{cdbg_dir}/contigs.info.csv",
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        db = f"{cdbg_dir}/unitigs.db",
     output:
         f"{search_dir}/results.csv",
         make_query_base(config['search']),
@@ -342,7 +382,7 @@ def make_extract_reads_base(searchfiles):
 # get contigs for a single query
 rule extract_contigs_single_file:
     input:
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        db = f"{cdbg_dir}/unitigs.db",
         cdbg_ids = f"{search_dir}/{{queryname}}.cdbg_ids.txt.gz",
     output:
         f"{search_dir}/{{queryname}}.cdbg_ids.contigs.fa.gz",
@@ -406,7 +446,7 @@ rule extract_reads_for_decomposition:
 # build hashval query index
 rule build_hashval_query_index:
     input:
-        f"{cdbg_dir}/bcalm.unitigs.db",
+        f"{cdbg_dir}/unitigs.db",
     output:
         f"{hashval_query_dir}/index.pickle",
     params:
@@ -422,7 +462,7 @@ checkpoint hashval_query:
         queries = hashval_queries,
         pickle = f"{hashval_query_dir}/index.pickle",
         catlas = f"{catlas_dir}/catlas.csv",
-        contigs_db = f"{cdbg_dir}/bcalm.unitigs.db"
+        contigs_db = f"{cdbg_dir}/unitigs.db"
     output:
         csv=f"{hashval_query_dir}/hashval_results.csv",
         outdir=directory(f"{hashval_query_dir}/contigs"),
@@ -481,7 +521,7 @@ rule extract_by_shadow_ratio_rule:
     input:
         doms = f"{catlas_dir}/first_doms.txt",
         catlas = f"{catlas_dir}/catlas.csv",
-        contigs_db = f"{cdbg_dir}/bcalm.unitigs.db",
+        contigs_db = f"{cdbg_dir}/unitigs.db",
     output:
         catlas_dir + ".shadow.{shadow_ratio_maxsize}.fa"
     shell: """
@@ -500,7 +540,7 @@ rule multifasta_query:
 
 rule build_multifasta_hashval_index:
     input:
-        f"{cdbg_dir}/bcalm.unitigs.db",
+        f"{cdbg_dir}/unitigs.db",
     output:
         f"{catlas_dir}_multifasta/hashval.pickle",
     params:
