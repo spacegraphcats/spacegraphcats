@@ -150,7 +150,6 @@ def test_dory_query_workflow(location):
     # convert the bcalm file to gxt
     args = [
         "-P",
-        relative_file("data/bcalm.dory.k21.unitigs.fa"),
         "dory_k21/bcalm.unitigs.db",
         "dory_k21/bcalm.unitigs.pickle",
         "dory_k21/cdbg.gxt",
@@ -264,7 +263,6 @@ def test_dory_query_workflow_checkpoint(location):
     # convert the bcalm file to gxt
     args = [
         "-P",
-        relative_file("data/bcalm.dory.k21.unitigs.fa"),
         "dory_k21/bcalm.unitigs.db",
         "dory_k21/bcalm.unitigs.pickle",
         "dory_k21/cdbg.gxt",
@@ -373,7 +371,6 @@ def test_dory_query_workflow_remove_pendants(location):
 
     # convert the bcalm file to gxt
     args = [
-        relative_file("data/bcalm.dory.k21.unitigs.fa"),
         "dory_k21/bcalm.unitigs.db",
         "dory_k21/bcalm.unitigs.pickle",
         "dory_k21/cdbg.gxt",
