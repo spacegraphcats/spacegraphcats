@@ -19,10 +19,14 @@ from spacegraphcats.search.search_utils import my_fasta_iter
 
 def main(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument("gfa_unitigs")
-    parser.add_argument("sqlite_db_out")
-    parser.add_argument("mapping_pickle_out")
-    parser.add_argument("-k", "--ksize", type=int, default=31)
+    parser.add_argument("gfa_unitigs", help="input GFA file for cDBG")
+    parser.add_argument("sqlite_db_out",
+                        help="output SQLite databsae for unitigs")
+    parser.add_argument("mapping_pickle_out",
+                        help="output pickle file for graph structure")
+    parser.add_argument("--sig")
+    parser.add_argument("-k", "--ksize", type=int, default=31,
+                        help="k-mer size used to build cDBG")
     parser.add_argument("--seed", type=int, default=42,
                         help="minimizer seed for sorting contigs")
     args = parser.parse_args(argv)
@@ -63,6 +67,7 @@ def main(argv):
             line = fp.readline()
     
     last_pos = 0
+    k_overlap_str = f"{ksize-1}M"
     for n, (line, offset) in enumerate(iter_lines_and_pos(unitigs_fp)):
         # NOTE: here, 'offset' is used as a unique identifier for 'S'
         # records, is all.
@@ -107,7 +112,7 @@ def main(argv):
             )
         elif line[0] == 'L':
             _, fr, fro, to, too, overlap = line.strip().split()
-            assert overlap == '30M' # k-mer size - 1
+            assert overlap == k_overlap_str # k-mer size - 1
             fr = int(fr)
             to = int(to)
             neighbors[fr].append(to)
@@ -191,8 +196,9 @@ def main(argv):
 
     # output sourmash signature for input contigs
     in_sig = sourmash.SourmashSignature(in_mh, filename=args.gfa_unitigs)
-    with open(args.gfa_unitigs + ".sig", "wt") as fp:
-        sourmash.save_signatures([in_sig], fp)
+    if args.sig:
+        with open(args.sig, "wt") as fp:
+            sourmash.save_signatures([in_sig], fp)
 
     return 0
 
