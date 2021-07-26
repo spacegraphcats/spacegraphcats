@@ -55,7 +55,7 @@ Then, we build a table that connects query k-mers to cDBG unitig IDs.
 Here the offset in the table is the MPHF of the query k-mer, built using bbhash, and the value in the table is the number of the cDBG unitig. 
 This connects with internal spacegraphcats stuff.
 
-Last but not least, we build a sqlite unitig-to-read offset table in [label_cdbg.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/cdbg/label_cdbg.py). 
+Last but not least, we build a sqlite unitig-to-read offset table in [index_cdbg_by_kmer.py](https://github.com/spacegraphcats/spacegraphcats/blob/latest/spacegraphcats/cdbg/index_cdbg_by_kmer.py). 
 This is a multimap table (read, unitig ID) that lets us query for the BGZF offset for all reads that belong to a given unitig ID. 
 Once we have the read offsets for a given unitig ID, using the bgzf code we can reach into a sequence file and retrieve the relevant read(s) directly. 
 
