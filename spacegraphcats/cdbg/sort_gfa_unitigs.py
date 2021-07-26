@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-Sort the bcalm unitigs.fa output (a cDBG) into deterministic order.
+Sort GFA output (a cDBG) into deterministic order.
 Produces output consumed by `bcalm_to_gxt`.
 
 Also saves all of the graph information for later perusal.
@@ -21,7 +21,7 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument("gfa_unitigs", help="input GFA file for cDBG")
     parser.add_argument("sqlite_db_out",
-                        help="output SQLite databsae for unitigs")
+                        help="output SQLite database for unitigs")
     parser.add_argument("mapping_pickle_out",
                         help="output pickle file for graph structure")
     parser.add_argument("--sig")

@@ -197,6 +197,7 @@ if 0:
 
 # build catlas input from cdbg output by reformatting; optionally,
 # remove pendants
+# @CTB rename away from bcalm.
 rule cdbg_catlas_prepare_input:
     input:
         db = f"{cdbg_dir}/unitigs.predb",
