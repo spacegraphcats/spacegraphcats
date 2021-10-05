@@ -170,6 +170,8 @@ def main(argv):
     with open(args.bcalm_unitigs + ".sig", "wt") as fp:
         sourmash.save_signatures([in_sig], fp)
 
+    db.close()
+
     return 0
 
 
