@@ -80,6 +80,7 @@ def main(argv=sys.argv[1:]):
         )
     )
     print(f"DONE extracting reads for {args.node_list_file}")
+    outfp.close()
 
     return 0
 
