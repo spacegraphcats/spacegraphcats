@@ -310,6 +310,7 @@ def main(argv):
         sourmash.save_signatures([out_sig], fp)
 
     sequences.close()
+    db.close()
 
     return 0
 
