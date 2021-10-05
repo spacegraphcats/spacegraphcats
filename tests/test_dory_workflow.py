@@ -8,6 +8,7 @@ import sqlite3
 import screed
 import sourmash
 
+import pytest
 from . import pytest_utils
 from .pytest_utils import pkg_file, relative_file
 
@@ -16,7 +17,6 @@ from spacegraphcats.cdbg import index_cdbg_by_kmer, MPHF_KmerIndex
 from spacegraphcats.search import query_by_sequence
 from spacegraphcats.search import characterize_catlas_regions
 from spacegraphcats.search import extract_unassembled_nodes
-from spacegraphcats.search import evaluate_overhead
 from spacegraphcats.search import catlas_info
 from spacegraphcats.search import extract_contigs
 from spacegraphcats.search import extract_contigs_cdbg
@@ -667,6 +667,9 @@ def test_dory_extract_reads_fq(location):
 
 @pytest_utils.in_tempdir
 def test_dory_evaluate_overhead(location):
+    pytest.importorskip('khmer')
+    from spacegraphcats.search import evaluate_overhead
+
     copy_dory_catlas()
     copy_dory_head()
     copy_dory_catlas_search()
@@ -682,6 +685,7 @@ def test_dory_evaluate_overhead(location):
         "--contigs-db",
         "dory_k21/bcalm.unitigs.db",
     ]
+
     print("** running evaluate_overhead")
     assert evaluate_overhead.main(args) == 0
 

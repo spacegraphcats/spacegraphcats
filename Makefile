@@ -54,10 +54,10 @@ twofoo.fq.gz: shew-reads.abundtrim.gz akker-reads.abundtrim.gz
 #
 
 dory-test: data/dory-subset.fa data/dory-head.fa
-	python -m spacegraphcats run dory-test search
-	python -m spacegraphcats run dory-test extract_reads
-	python -m spacegraphcats run dory-test extract_contigs
-	python -m spacegraphcats run dory-test multifasta_query
+	python -m spacegraphcats run dory-test search -p
+	python -m spacegraphcats run dory-test extract_reads -p
+	python -m spacegraphcats run dory-test extract_contigs -p
+	python -m spacegraphcats run dory-test multifasta_query -p
 
 #twofoo/bcalm.twofoo.k31.unitigs.fa:
 #	mkdir -p twofoo
