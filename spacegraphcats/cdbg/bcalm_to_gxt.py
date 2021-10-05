@@ -202,7 +202,6 @@ class SqliteAsDict:
 
 def main(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument("bcalm_unitigs")
     parser.add_argument("sqlite_db")
     parser.add_argument("mapping_pickle")
     parser.add_argument("gxt_out")

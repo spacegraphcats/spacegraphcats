@@ -198,7 +198,6 @@ rule bcalm_catlas_sort:
 # remove pendants
 rule bcalm_catlas_prepare_input:
     input:
-        unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
         db = f"{cdbg_dir}/bcalm.unitigs.predb",
         mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
     output:
@@ -213,7 +212,7 @@ rule bcalm_catlas_prepare_input:
     shell: """
         python -m spacegraphcats.cdbg.bcalm_to_gxt \
             {params.remove_pendants} \
-            {input.unitigs} {input.db} {input.mapping} \
+            {input.db} {input.mapping} \
             {output.gxt} {params.contigs_prefix}
         mv {input.db} {output.db}
         chmod u-w {output.db}
