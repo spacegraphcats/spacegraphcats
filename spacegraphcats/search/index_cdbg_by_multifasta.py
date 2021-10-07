@@ -24,15 +24,6 @@ def main(argv):
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
-    p.add_argument(
-        "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
-    )
-    p.add_argument(
-        "--scaled",
-        default=1000,
-        type=float,
-        help="scaled value for contigs minhash output",
-    )
     p.add_argument("-v", "--verbose", action="store_true")
 
     args = p.parse_args(argv)
@@ -56,15 +47,16 @@ def main(argv):
     # ...and kmer index.
     ki_start = time.time()
     kmer_idx = MPHF_KmerIndex.from_directory(args.cdbg_prefix)
-    assert args.ksize == kmer_idx.ksize
-    notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
+
+    ksize = kmer_idx.ksize
+    notify(f"Using ksize {ksize} from k-mer index.")
+    notify("loaded {} k-mers in index ({:.1f}s)",
+           len(kmer_idx), time.time() - ki_start)
 
     # calculate the k-mer sizes for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)
 
-    # get a single ksize & scaled
-    ksize = int(args.ksize)
-    scaled = int(args.scaled)
+    # use the same ksize as the kmer index.
 
     records_to_cdbg = {}
     cdbg_to_records = defaultdict(set)
