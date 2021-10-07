@@ -66,7 +66,6 @@ ksize: 31
 radius: 1
 search:
 - GCA_001508995.1_ASM150899v1_genomic.fna.gz
-searchquick: GCA_001508995.1_ASM150899v1_genomic.fna.gz
 ```
 
 run spacegraphcats:
@@ -233,7 +232,6 @@ ksize: 31
 radius: 1
 search:
 - outputs/arg90_matches/cfxA4_AY769933.fna
-searchquick: outputs/arg90_matches/cfxA4_AY769933.fna
 ```
 
 Run spacegraphcats to extract the sequence context around the antibiotic resistance gene.

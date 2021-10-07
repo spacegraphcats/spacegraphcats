@@ -8,7 +8,7 @@ This is a collaboration between the
 Initial development of spacegraphcats was generously supported by the Moore Foundation's
 [Data Driven Discovery Initiative](https://www.moore.org/initiative-strategy-detail?initiativeId=data-driven-discovery).
 
-![spacegraphcats graph](https://github.com/spacegraphcats/spacegraphcats/raw/master/pics/logo.png)
+![spacegraphcats graph](https://github.com/spacegraphcats/spacegraphcats/raw/latest/pics/logo.png)
 
 ## Citation information
 

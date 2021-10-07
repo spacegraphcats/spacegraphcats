@@ -1,0 +1,6 @@
+catlas_base: dory
+input_sequences:
+- data/dory-subset.fq
+search:
+- data/dory-head.fa
+- data/random-query-nomatch.fa

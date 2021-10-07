@@ -39,6 +39,10 @@ def fix_relative_input_paths(filenames):
 
 # name of catlas
 catlas_base = config['catlas_base']
+if not catlas_base:
+    print("config parameter 'catlas_base' must be non-empty.",
+          file=sys.stderr)
+    sys.exit(-1)
 
 # sequence files to use when building catlas
 input_sequences = fix_relative_input_paths(config['input_sequences'])
@@ -48,9 +52,6 @@ ksize = config['ksize']
 
 # radius for catlas building
 radius = config['radius']
-
-# search overhead
-overhead = config.get('overhead', 0.0)
 
 # fix paths to search files
 config['search'] = fix_relative_input_paths(config.get('search', []))
@@ -97,7 +98,7 @@ multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
 
 cdbg_dir = f'{catlas_base}_k{ksize}'
 catlas_dir = f'{catlas_base}_k{ksize}_r{radius}{catlas_suffix}'
-search_dir = f'{catlas_dir}_search_oh{int(overhead*100)}{search_out_suffix}'
+search_dir = f'{catlas_dir}_search_oh0{search_out_suffix}'
 
 hashval_ksize = config.get('hashval_ksize', ksize)
 hashval_query_dir = f'{catlas_dir}_hashval_k{hashval_ksize}'
@@ -152,11 +153,12 @@ rule bcalm_cdbg:
     output:
         temp(f"{cdbg_dir}/bcalm.unitigs.fa"),
     log: f"{cdbg_dir}/bcalm.log.txt",
+    threads: 16
     shadow: "shallow"
     shell: """
         # ok, run bcalm for real; use tee to both save & output stderr,
         # per https://stackoverflow.com/questions/692000/how-do-i-write-stderr-to-a-file-while-using-tee-with-a-pipe
-        bcalm -in {input} -out {cdbg_dir}/bcalm \
+        bcalm -in {input} -out {cdbg_dir}/bcalm -nb-cores {threads} \
            -kmer-size {ksize} -abundance-min 1 > >(tee -a {log} >& 2)
 
         # remove large temp files: .h5, unitig glue files
@@ -196,7 +198,6 @@ rule bcalm_catlas_sort:
 # remove pendants
 rule bcalm_catlas_prepare_input:
     input:
-        unitigs = f"{cdbg_dir}/bcalm.unitigs.fa",
         db = f"{cdbg_dir}/bcalm.unitigs.predb",
         mapping = f"{cdbg_dir}/bcalm.unitigs.pickle",
     output:
@@ -211,7 +212,7 @@ rule bcalm_catlas_prepare_input:
     shell: """
         python -Werror -m spacegraphcats.cdbg.bcalm_to_gxt \
             {params.remove_pendants} \
-            {input.unitigs} {input.db} {input.mapping} \
+            {input.db} {input.mapping} \
             {output.gxt} {params.contigs_prefix}
         mv {input.db} {output.db}
         chmod u-w {output.db}
@@ -550,11 +551,12 @@ rule build_cdbg_list_by_record:
         multi_idx = f"{catlas_dir}_multifasta/multifasta.pickle",
         info_csv = f"{cdbg_dir}/contigs.info.csv",
     output:
-        f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
+        cdbg_record = f"{catlas_dir}_multifasta/multifasta.cdbg_by_record.csv",
+        cdbg_annot = f"{catlas_dir}_multifasta/multifasta.cdbg_annot.csv",
     shell: """
         python -Werror -m spacegraphcats.search.extract_cdbg_by_multifasta \
-            --multi-idx {input.multi_idx} --output {output} \
-            --info-csv {input.info_csv}
+            --multi-idx {input.multi_idx} --output-cdbg-record {output.cdbg_record} \
+            --output-cdbg-annot {output.cdbg_annot} --info-csv {input.info_csv}
     """
 
 # get reads for a single multifasta record
