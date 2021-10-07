@@ -1,4 +1,22 @@
 #! /usr/bin/env python
+"""
+Produce an index that connects cDBG nodes to matching records in a FASTA file.
+
+This is primarily used for annotating cDBG neighborhoods with FASTA records.
+
+In brief,
+* load catlas & k-mer index into cDBG
+* for every record in one or more query FASTA files,
+  - find all cDBG nodes that match to the k-mers in that record
+  - find all dominators that contain those cDBG nodes, and expand cDBG IDs
+    to all nodes under those dominators
+  - build dictionary 'cdbg_to_records',
+    'cdbg_id' => set( (query_file, record_name) )
+  - build dictionary 'records_to_cdbg',
+    ('query_file, record_name') => set( cdbg_ids )
+
+* save constructed dictionaries to a pickle file as index.
+"""
 import argparse
 import os
 import sys
@@ -14,11 +32,6 @@ from .catlas import CAtlas
 
 
 def main(argv):
-    """\
-    Query a catlas with a sequence (read, contig, or genome), and retrieve
-    cDBG node IDs and MinHash signatures for the matching unitigs in the graph.
-    """
-
     p = argparse.ArgumentParser(description=main.__doc__)
     p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("catlas_prefix", help="catlas prefix")
