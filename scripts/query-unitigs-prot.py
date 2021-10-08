@@ -1,6 +1,20 @@
 #! /usr/bin/env python
-# @CTB: note, this approach could also be used for dna k-mers, for
-# k < cDBG_ksize
+"""Do a search of the unitigs with a protein query.
+
+Usage:
+
+   query-unitigs-prot.py <query_faa_file> <unitigs_sqlite_db> -k <prot_ksize> \
+        --out-prefix <prefix>
+
+This will search <unitigs_sqlite_db> with the protein sequence(s) in
+<query_faa_file>, and save the resulting cDBG IDs to <prefix>.nodes.gz.
+
+These cdbg IDs can then be used to retrieve neighborhoods with
+extract_neighborhoods_by_cdbg_ids.
+
+CTB note: A similar approach can also be used for DNA k-mer search where
+k < cDBG ksize.
+"""
 import sys
 import argparse
 import os
