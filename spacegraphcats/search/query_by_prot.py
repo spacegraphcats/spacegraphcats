@@ -33,6 +33,8 @@ def main(args):
     p.add_argument('-k', '--ksize', type=int, default=10,
                    help='protein ksize')
     p.add_argument('--out-prefix')
+    p.add_argument('--query-is-dna', help="translate query into protein",
+                   action='store_true')
     args = p.parse_args(args)
 
     out_prefix = args.out_prefix
@@ -50,11 +52,17 @@ def main(args):
     ## query: for all of the query sequences (which are protein),
     ## translate them into k-mers at protein ksize.
     query_kmers = set()
+
+    if args.query_is_dna:
+        add_as_protein = False
+    else:
+        add_as_protein = True
+
     for n, record in enumerate(screed.open(args.query)):
         if n and n % 1000 == 0:
             print(f'... {n} {len(query_kmers)} (query)', end='\r', file=sys.stderr)
         these_hashes = translate_mh.seq_to_hashes(record.sequence,
-                                                  is_protein=True)
+                                                  is_protein=add_as_protein)
         query_kmers.update(these_hashes)
     n += 1
 

@@ -771,3 +771,20 @@ def test_dory_protein_search(location):
         assert int(lines[0].strip()) == 145
         assert int(lines[1].strip()) == 63
         assert len(lines) == 2
+
+
+@pytest_utils.in_tempdir
+def test_dory_translate_search(location):
+    # run query_by_prot with --query-is-dna
+    copy_dory_catlas()
+
+    queryfile = relative_file('data/dory-dna-translate-query.fa')
+
+    args = f"{queryfile} dory_k21/bcalm.unitigs.db --query-is-dna".split()
+    query_by_prot.main(args)
+
+    with gzip.open('dory-dna-translate-query.fa.nodes.gz') as fp:
+        lines = fp.readlines()
+        assert int(lines[0].strip()) == 145
+        assert int(lines[1].strip()) == 63
+        assert len(lines) == 2
