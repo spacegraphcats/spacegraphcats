@@ -100,7 +100,7 @@ def main(args):
     dna_ksize = args.ksize * 3
 
     dna_mh = sourmash.MinHash(n=0, scaled=1000, ksize=dna_ksize)
-    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=dna_ksize,
+    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize,
                                is_protein=True)
 
     ## query: for all of the query sequences (which are protein),
