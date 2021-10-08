@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 """
-Query a catlas with a sequence (read, contig, or genome), and retrieve
-cDBG node IDs and MinHash signatures for the matching unitigs in the graph.
+Query a catlas with a set of cDBG node IDs, and then "promote" them into
+the larger neighborhood, and provide the cDBG node IDs for that neighborhood.
 
-XX optionally retrieve/save contig sequences? It wouldn't add much time...
+CTB: optionally retrieve/save contig sequences? It wouldn't add much time...
 Just disk space.
 """
 import argparse
