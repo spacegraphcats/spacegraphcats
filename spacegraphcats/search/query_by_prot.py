@@ -26,71 +26,16 @@ import sourmash
 from spacegraphcats.search import search_utils
 
 
-dna_to_aa = {'TTT': 'F', 'TTC': 'F', 'TTA': 'L', 'TTG': 'L',
-             'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S',
-             'TAT': 'Y', 'TAC': 'Y', 'TAA': '*', 'TAG': '*', 'TGA': '*',
-             'TGT': 'C', 'TGC': 'C', 'TGG': 'W',
-             'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L',
-             'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P',
-             'CAT': 'H', 'CAC': 'H', 'CAA': 'Q', 'CAG': 'Q',
-             'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R',
-             'ATT': 'I', 'ATC': 'I', 'ATA': 'I', 'ATG': 'M',
-             'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T',
-             'AAT': 'N', 'AAC': 'N', 'AAA': 'K', 'AAG': 'K',
-             'AGT': 'S', 'AGC': 'S', 'AGA': 'R', 'AGG': 'R',
-             'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
-             'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
-             'GAT': 'D', 'GAC': 'D', 'GAA': 'E', 'GAG': 'E',
-             'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G'}
-
-__complementTranslation = {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N"}
-
-
-def complement(s):
-    """
-    Return complement of 's'.
-    """
-    c = "".join(__complementTranslation[n] for n in s)
-    return c
-
-
-def reverse(s):
-    """
-    Return reverse of 's'.
-    """
-    r = "".join(reversed(s))
-    return r
-
-
-def peptides(seq, start):
-    for i in range(start, len(seq), 3):
-        yield dna_to_aa.get(seq[i:i + 3], "X")
-
-
-def translate(seq, n_frames):
-    for i in range(n_frames):
-        pep = peptides(seq, i)
-        yield "".join(pep)
-
-    revcomp = reverse(complement((seq)))
-    for i in range(n_frames):
-        pep = peptides(revcomp, i)
-        yield "".join(pep)
-
-
-def kmers(seq, k):
-    for start in range(len(seq) - k + 1):
-        yield seq[start:start + k]
-
-
-def main():
+def main(args):
     p = argparse.ArgumentParser()
     p.add_argument('query')
     p.add_argument('unitigs_db')
     p.add_argument('-k', '--ksize', type=int, default=10,
                    help='protein ksize')
     p.add_argument('--out-prefix')
-    args = p.parse_args()
+    p.add_argument('--query-is-dna', help="translate query into protein",
+                   action='store_true')
+    args = p.parse_args(args)
 
     out_prefix = args.out_prefix
     if not out_prefix:
@@ -100,17 +45,26 @@ def main():
     dna_ksize = args.ksize * 3
 
     dna_mh = sourmash.MinHash(n=0, scaled=1000, ksize=dna_ksize)
-    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=dna_ksize,
+    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize,
                                is_protein=True)
+    translate_mh = prot_mh.copy_and_clear()
 
     ## query: for all of the query sequences (which are protein),
     ## translate them into k-mers at protein ksize.
     query_kmers = set()
+
+    if args.query_is_dna:
+        add_as_protein = False
+    else:
+        add_as_protein = True
+
     for n, record in enumerate(screed.open(args.query)):
         if n and n % 1000 == 0:
             print(f'... {n} {len(query_kmers)} (query)', end='\r', file=sys.stderr)
-        these_kmers = kmers(record.sequence, prot_ksize)
-        query_kmers.update(these_kmers)
+        these_hashes = translate_mh.seq_to_hashes(record.sequence,
+                                                  is_protein=add_as_protein)
+        query_kmers.update(these_hashes)
+    n += 1
 
     print(f'loaded {n} query sequences {len(query_kmers)} prot kmers (query)', file=sys.stderr)
 
@@ -119,7 +73,9 @@ def main():
     ## second: decompose into k-mers, save k-mers
     ## third: look for overlaps with query_kmers
 
+    # cDBG records matching to queries:
     matching_cdbg = set()
+    # total number of k-mers in cDBG:
     cdbg_kmers = 0
 
     db = sqlite3.connect(args.unitigs_db)
@@ -129,34 +85,20 @@ def main():
 
         # translate into protein sequences
         seq = record.sequence
-        seqlen = len(seq)
-        if seqlen < dna_ksize:
-            continue
-        elif seqlen == dna_ksize:
-            prots = list(translate(seq, 1))
-            assert len(prots) == 2
-        elif seqlen == dna_ksize + 1:
-            prots = list(translate(seq, 2))
-            assert len(prots) == 4
-        else:
-            prots = list(translate(seq, 3))
-            assert len(prots) == 6
-
-        # convert into k-mers
-        record_kmers = set()
-        for prot in prots:
-            these_kmers = set(kmers(prot, prot_ksize))
-            record_kmers.update(these_kmers)
-
-        cdbg_kmers += len(record_kmers)
+        record_hashes = translate_mh.seq_to_hashes(record.sequence)
+        record_hashes = set(record_hashes)
+        cdbg_kmers += len(record_hashes)
 
         # do we have an overlap with query??
-        if record_kmers & query_kmers:
+        if record_hashes & query_kmers:
             # if so, save etc.
             matching_cdbg.add(record.name)
+
+            # track sequence in DNA space...
             dna_mh.add_sequence(record.sequence)
-            for prot in prots:
-                prot_mh.add_protein(prot)
+            # ...and in protein space.
+            prot_mh.add_sequence(record.sequence)
+    n += 1
 
     print(f'loaded {n} query sequences (unitigs)', file=sys.stderr)
     print(f'total matches: {len(matching_cdbg)}', file=sys.stderr)
@@ -179,4 +121,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

@@ -31,6 +31,7 @@ from spacegraphcats.search import index_cdbg_by_multifasta
 from spacegraphcats.search import query_multifasta_by_sig
 from spacegraphcats.search import extract_cdbg_by_multifasta
 from spacegraphcats.search import search_utils
+from spacegraphcats.search import query_by_prot
 
 
 def copy_dory_catlas():
@@ -753,3 +754,37 @@ def test_dory_shadow_extract(location):
     args = "dory_k21 dory_k21_r1 shadow_out --contigs-db dory_k21/bcalm.unitigs.db".split()
     print("** running extract_nodes_by_shadow_ratio")
     assert extract_nodes_by_shadow_ratio.main(args) == 0
+
+
+@pytest_utils.in_tempdir
+def test_dory_protein_search(location):
+    # run query_by_prot
+    copy_dory_catlas()
+
+    queryfile = relative_file('data/dory-prot-query.faa')
+
+    args = f"{queryfile} dory_k21/bcalm.unitigs.db".split()
+    query_by_prot.main(args)
+
+    with gzip.open('dory-prot-query.faa.nodes.gz') as fp:
+        lines = fp.readlines()
+        assert int(lines[0].strip()) == 145
+        assert int(lines[1].strip()) == 63
+        assert len(lines) == 2
+
+
+@pytest_utils.in_tempdir
+def test_dory_translate_search(location):
+    # run query_by_prot with --query-is-dna
+    copy_dory_catlas()
+
+    queryfile = relative_file('data/dory-dna-translate-query.fa')
+
+    args = f"{queryfile} dory_k21/bcalm.unitigs.db --query-is-dna".split()
+    query_by_prot.main(args)
+
+    with gzip.open('dory-dna-translate-query.fa.nodes.gz') as fp:
+        lines = fp.readlines()
+        assert int(lines[0].strip()) == 145
+        assert int(lines[1].strip()) == 63
+        assert len(lines) == 2
