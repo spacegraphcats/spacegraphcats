@@ -32,6 +32,7 @@ from spacegraphcats.search import query_multifasta_by_sig
 from spacegraphcats.search import extract_cdbg_by_multifasta
 from spacegraphcats.search import search_utils
 from spacegraphcats.search import query_by_prot
+from spacegraphcats.search import extract_neighborhoods_by_cdbg_ids
 
 
 def copy_dory_catlas():
@@ -788,3 +789,24 @@ def test_dory_translate_search(location):
         assert int(lines[0].strip()) == 145
         assert int(lines[1].strip()) == 63
         assert len(lines) == 2
+
+
+@pytest_utils.in_tempdir
+def test_extract_neighborhoods_by_cdbg_ids(location):
+    # run extract_neighborhoods_by_cdbg_ids
+    copy_dory_catlas()
+
+    with gzip.open('node-list.txt.gz', 'wt') as fp:
+        print('145', file=fp)
+        print('63', file=fp)
+
+    cmdline = 'dory_k21 dory_k21_r1 node-list.txt.gz -o xyz.out'.split()
+    extract_neighborhoods_by_cdbg_ids.main(cmdline)
+
+    with gzip.open('xyz.out', 'rt') as fp:
+        lines = fp.readlines()
+        nodes = set( [int(x.strip()) for x in lines] )
+
+        assert 63 in nodes
+        assert 145 in nodes
+        assert len(nodes) == 2

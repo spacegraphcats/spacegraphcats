@@ -28,13 +28,14 @@ from .catlas import CAtlas
 
 def main(argv=sys.argv[1:]):
     p = argparse.ArgumentParser()
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("input_node_list_file", help="a cdbg_ids.txt.gz file")
     p.add_argument("-o", "--output-node-list-file", required=True)
     args = p.parse_args(argv)
 
     # load catlas DAG
-    catlas = CAtlas(args.catlas_prefix)
+    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
     notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
     notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
     catlas_name = os.path.basename(args.catlas_prefix.rstrip(("/")))
@@ -65,4 +66,4 @@ def main(argv=sys.argv[1:]):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))
