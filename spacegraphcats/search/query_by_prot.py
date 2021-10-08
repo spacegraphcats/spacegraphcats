@@ -83,14 +83,14 @@ def kmers(seq, k):
         yield seq[start:start + k]
 
 
-def main():
+def main(args):
     p = argparse.ArgumentParser()
     p.add_argument('query')
     p.add_argument('unitigs_db')
     p.add_argument('-k', '--ksize', type=int, default=10,
                    help='protein ksize')
     p.add_argument('--out-prefix')
-    args = p.parse_args()
+    args = p.parse_args(args)
 
     out_prefix = args.out_prefix
     if not out_prefix:
@@ -179,4 +179,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))
