@@ -14,4 +14,4 @@ dependencies:
     - click=7.1.2
     - pyflakes
     - bbhash>=0.5.4
-    - sourmash>=4.1.1,<5
+    - sourmash>=4.2.2,<5
