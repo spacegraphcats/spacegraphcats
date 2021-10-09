@@ -1,4 +1,9 @@
 #! /usr/bin/env python
+"""
+XXX
+
+Translated version of index_cdbg_by_multifasta.py.
+"""
 import argparse
 import os
 import sys
@@ -30,7 +35,8 @@ def main(argv):
 
     # @CTB add this to config file for sgc
     p.add_argument(
-        "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
+        "-k", "--ksize", default=10, type=int,
+        help="protein k-mer size (default: 10)"
     )
     # @CTB add this to config file too :)
     p.add_argument('--query-is-dna', help='translate query to protein as well',
