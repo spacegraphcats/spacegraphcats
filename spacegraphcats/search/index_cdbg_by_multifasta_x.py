@@ -92,11 +92,12 @@ def main(argv):
 
     # track all hashes by record, as well as file origin of query
     record_hashes = defaultdict(set)
-    query_name_to_filename = {}
-    all_kmers = set()
+    query_idx_to_name = {}
+    hashval_to_queries = defaultdict(set)
     
     # read all the queries into memory.
-    n_total_queries = 0
+    this_query_idx = 0
+    all_kmers = set()
     for filename in args.query:
         print(f"Reading query from '{filename}'")
 
@@ -104,18 +105,14 @@ def main(argv):
         for record in screed_fp:
             these_hashes = prot_mh.seq_to_hashes(record.sequence,
                                                  is_protein=add_as_protein)
-            these_hashes = set(these_hashes)
-            record_hashes[record.name] = these_hashes
+
+            query_idx_to_name[this_query_idx] = (filename, record.name)
+            for hashval in these_hashes:
+                hashval_to_queries[hashval].add(this_query_idx)
+
             all_kmers.update(these_hashes)
-
-            if record.name in query_name_to_filename:
-                print(f"ERROR: record '{record.name}' from '{filename}' is a duplicate!", file=sys.stderr)
-                print(f"...also appears in '{query_name_to_filename[record.name]}'", file=sys.stderr)
-                print("Failing because this violates our assumptions in this script.", file=sys.stderr)
-                sys.exit(-1)
-
-            query_name_to_filename[record.name] = filename
-            n_total_queries += 1
+            
+            this_query_idx += 1
 
         screed_fp.close()
 
@@ -132,27 +129,31 @@ def main(argv):
     for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
         # translate into protein sequences
         unitig_hashes = prot_mh.seq_to_hashes(record.sequence)
-        unitig_hashes = set(unitig_hashes)
 
         # do we have an overlap with any query??
-        if unitig_hashes & all_kmers:
+        matching_kmers = set(unitig_hashes) & all_kmers
+        matching_query_idx = set()
+        for hashval in matching_kmers:
+            matching_query_idx.update(hashval_to_queries[hashval])
+
+        if matching_query_idx:
             # yes, match!
             cdbg_node = int(record.name)
 
-            # iterate over all queries... this is where things get potentially
-            # slow, b/c this is quadratic!
-            for query_name, query_hashes in record_hashes.items():
-                # match to this record?
-                if unitig_hashes & query_hashes:
-                    matching_cdbg[query_name].add(cdbg_node)
+            for query_idx in matching_query_idx:
+                matching_cdbg[query_idx].add(cdbg_node)
 
         screed_fp.close()
+
+    print('...done!')
+
+    print('Expanding neighborhoods:')
 
     # ok, last iteration? expand neighborhoods.
     records_to_cdbg = {}
     cdbg_to_records = defaultdict(set)
-    for query_name, cdbg_nodes in matching_cdbg.items():
-        query_filename = query_name_to_filename[query_name]
+    for query_idx, cdbg_nodes in matching_cdbg.items():
+        query_filename, query_name = query_idx_to_name[query_idx]
         dominators = set()
         for cdbg_node in cdbg_nodes:
             dominators.add(catlas.cdbg_to_layer1[cdbg_node])
@@ -172,7 +173,7 @@ def main(argv):
     with open(outfile, "wb") as fp:
         print(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
-        print(f"saved {len(records_to_cdbg)} query names with cDBG node mappings (of {n_total_queries} queries total)")
+        print(f"saved {len(records_to_cdbg)} query names with cDBG node mappings (of {this_query_idx + 1} queries total)")
         n_cdbg_match = len(cdbg_to_records)
         n_cdbg_total = len(catlas.cdbg_to_layer1)
         print(f"saved {n_cdbg_match} cDBG IDs (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) with at least one query match")
