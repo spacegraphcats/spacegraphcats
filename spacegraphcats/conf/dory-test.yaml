@@ -21,5 +21,3 @@ multifasta_query_sig: data/dory-subset.fq.sig
 multifasta_reference_x:
 - data/dory-prot-query.faa
 # @CTB add ksize, query_is_protein
-
-

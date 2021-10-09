@@ -27,10 +27,12 @@ def main(argv):
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
-    # @CTB add to config file for sgc
+
+    # @CTB add this to config file for sgc
     p.add_argument(
         "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
     )
+    # @CTB add this to config file too :)
     p.add_argument('--query-is-dna', help='translate query to protein as well',
                    action='store_true')
     p.add_argument("-v", "--verbose", action="store_true")
@@ -60,14 +62,18 @@ def main(argv):
     prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize,
                                is_protein=True)
 
-    record_kmers = defaultdict(set)
-    all_kmers = set()
-    
+    # translate query, or not?
     if args.query_is_dna:
         add_as_protein = False
     else:
         add_as_protein = True
 
+    # track all hashes by record, as well as file origin of query
+    record_hashes = defaultdict(set)
+    query_name_to_filename = {}
+    all_kmers = set()
+    
+    # read all the queries into memory.
     for filename in args.query:
         print(f"Reading query from '{filename}'")
 
@@ -76,8 +82,18 @@ def main(argv):
             these_hashes = prot_mh.seq_to_hashes(record.sequence,
                                                  is_protein=add_as_protein)
             these_hashes = set(these_hashes)
-            record_kmers[record.name] = these_hashes
+            record_hashes[record.name] = these_hashes
             all_kmers.update(these_hashes)
+
+            if record.name in query_name_to_filename:
+                print(f"ERROR: record '{record.name}' from '{filename}' is a duplicate!", file=sys.stderr)
+                print(f"...also appears in '{query_name_to_filename[record.name]}'", file=sys.stderr)
+                print("Failing because this violates our assumptions in this script.", file=sys.stderr)
+                sys.exit(-1)
+
+            query_name_to_filename[record.name] = filename
+
+        screed_fp.close()
 
     # iterate over unitigs next
     ## now unitigs... for all of the unitigs (which are DNA),
@@ -89,7 +105,6 @@ def main(argv):
 
     db = sqlite3.connect(unitigs_db)
     for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
-
         # translate into protein sequences
         seq = record.sequence
 
@@ -101,8 +116,9 @@ def main(argv):
             # yes, match!
             cdbg_node = int(record.name)
 
-            # iterate over all queries... slow.
-            for query_name, query_hashes in record_kmers.items():
+            # iterate over all queries... this is where things get potentially
+            # slow, b/c this is quadratic!
+            for query_name, query_hashes in record_hashes.items():
                 # match to this record?
                 if unitig_hashes & query_hashes:
                     matching_cdbg[query_name].add(cdbg_node)
@@ -113,6 +129,7 @@ def main(argv):
     records_to_cdbg = {}
     cdbg_to_records = defaultdict(set)
     for query_name, cdbg_nodes in matching_cdbg.items():
+        query_filename = query_name_to_filename[query_name]
         dominators = set()
         for cdbg_node in cdbg_nodes:
             dominators.add(catlas.cdbg_to_layer1[cdbg_node])
@@ -122,13 +139,16 @@ def main(argv):
         shadow = catlas.shadow(dominators)
         print(f"got {len(shadow)} cdbg_nodes under {len(dominators)} dominators")
 
-        records_to_cdbg[('XXX', record.name)] = shadow
+        records_to_cdbg[(query_filename, query_name)] = shadow
         for cdbg_node in shadow:
             cdbg_to_records[cdbg_node].add((filename, record.name))
 
     with open(outfile, "wb") as fp:
         print(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
+
+    import pprint
+    pprint.pprint(records_to_cdbg)
 
     return 0
 
