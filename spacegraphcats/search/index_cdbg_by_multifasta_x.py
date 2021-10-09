@@ -1,13 +1,23 @@
 #! /usr/bin/env python
 """
-XXX
+Annotate/index the cDBG with FASTA records from one or more query files,
+in protein space.
 
-Translated version of index_cdbg_by_multifasta.py.
+This can be used, for example, to connect cDBG nodes to gene names.
+
+In brief, this script
+- reads query sequences from FASTA files
+- records hashes from query sequences in protein space
+- iterates over the cDBG unitigs and finds cDBG nodes that match to each
+  query. (This is potentially a quadratic step.)
+- produces mappings from query to cDBG nodes, and vice versa.
+- saves to pickle file.
+
+See index_cdbg_by_multifasta for a pure DNA-space version of this script.
 """
 import argparse
 import os
 import sys
-import time
 import pickle
 from collections import defaultdict
 import sqlite3
@@ -16,7 +26,6 @@ import screed
 import sourmash
 
 from ..utils.logging import notify, error
-from . import MPHF_KmerIndex, hash_sequence
 from .catlas import CAtlas
 from . import search_utils
 
@@ -63,10 +72,10 @@ def main(argv):
     # translate query, or not?
     if args.query_is_dna:
         add_as_protein = False
-        print(f"Translating queries from DNA into protein.")
+        print("Translating queries from DNA into protein.")
     else:
         add_as_protein = True
-        print(f"Queries are proteins; no translation occurring.")
+        print("Queries are proteins; no translation occurring.")
 
     # load catlas DAG
     catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
@@ -115,8 +124,6 @@ def main(argv):
     db = sqlite3.connect(unitigs_db)
     for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
         # translate into protein sequences
-        seq = record.sequence
-
         unitig_hashes = prot_mh.seq_to_hashes(record.sequence)
         unitig_hashes = set(unitig_hashes)
 

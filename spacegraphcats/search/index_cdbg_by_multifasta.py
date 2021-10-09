@@ -1,4 +1,17 @@
 #! /usr/bin/env python
+"""
+Annotate/index the cDBG with FASTA records from one or more DNA query files.
+
+This can be used, for example, to connect cDBG nodes to gene names.
+
+In brief, this script
+- reads query sequences from FASTA files
+- for each query sequence, finds matching cDBG nodes using the k-mer index
+- produces mappings from query to cDBG nodes, and vice versa.
+- saves to pickle file.
+
+See index_cdbg_by_multifasta_x for a protein-space version of this script.
+"""
 import argparse
 import os
 import sys
