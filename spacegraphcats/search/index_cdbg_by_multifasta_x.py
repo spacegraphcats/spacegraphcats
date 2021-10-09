@@ -10,10 +10,14 @@ In brief, this script
 - records hashes from query sequences in protein space
 - iterates over the cDBG unitigs and finds cDBG nodes that match to each
   query. (This is potentially a quadratic step.)
+- expands cDBG unitigs into neighborhood using level 1 dominators
 - produces mappings from query to cDBG nodes, and vice versa.
 - saves to pickle file.
 
 See index_cdbg_by_multifasta for a pure DNA-space version of this script.
+
+NOTE: unlike index_cdbg_by_multifasta, query records with no match are NOT
+saved.
 """
 import argparse
 import os
@@ -165,10 +169,10 @@ def main(argv):
     with open(outfile, "wb") as fp:
         print(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
-
-    # @CTB remove.
-    import pprint
-    pprint.pprint(records_to_cdbg)
+        print(f"saved {len(records_to_cdbg)} query names with cDBG node mappings")
+        n_cdbg_match = len(cdbg_to_records)
+        n_cdbg_total = len(catlas.cdbg_to_layer1)
+        print(f"saved {n_cdbg_match} (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) cDBG IDs with at least one query match")
 
     return 0
 

@@ -7,6 +7,7 @@ This can be used, for example, to connect cDBG nodes to gene names.
 In brief, this script
 - reads query sequences from FASTA files
 - for each query sequence, finds matching cDBG nodes using the k-mer index
+- expands cDBG unitigs into neighborhood using level 1 dominators
 - produces mappings from query to cDBG nodes, and vice versa.
 - saves to pickle file.
 
@@ -80,10 +81,13 @@ def main(argv):
     scaled = int(args.scaled)
 
     records_to_cdbg = {}
+    n_records_found = 0
     cdbg_to_records = defaultdict(set)
+
     for filename in args.query:
         print(f"Reading from '{filename}'")
-        for record in screed.open(filename):
+        screed_fp = screed.open(filename)
+        for record in screed_fp:
             if len(record.sequence) < int(ksize):
                 continue
 
@@ -104,8 +108,12 @@ def main(argv):
             print(f"got {len(shadow)} cdbg_nodes under {len(dominators)} dominators")
 
             records_to_cdbg[(filename, record.name)] = shadow
-            for cdbg_node in shadow:
-                cdbg_to_records[cdbg_node].add((filename, record.name))
+            if shadow:
+                n_records_found += 1
+                for cdbg_node in shadow:
+                    cdbg_to_records[cdbg_node].add((filename, record.name))
+
+        screed_fp.close()
 
     if not records_to_cdbg:
         print("WARNING: nothing in query matched to cDBG. Saving empty dictionaries.", file=sys.stderr)
@@ -113,6 +121,10 @@ def main(argv):
     with open(outfile, "wb") as fp:
         print(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
+        print(f"saved {n_records_found} query names with cDBG node mappings")
+        n_cdbg_match = len(cdbg_to_records)
+        n_cdbg_total = len(catlas.cdbg_to_layer1)
+        print(f"saved {n_cdbg_match} (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) cDBG IDs with at least one query match")
 
     return 0
 

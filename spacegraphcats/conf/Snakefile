@@ -98,7 +98,7 @@ multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
 
 # multifasta protein queries
 
-multifasta_query_x_seqs = config.get('multifasta_reference_x',
+multifasta_query_x_seqs = config.get('multifasta_x_reference',
                                      ['** does not exist **'])
 if not isinstance(multifasta_query_x_seqs, list):
     print('ERROR: multifasta_reference_x must be a YAML list.')
