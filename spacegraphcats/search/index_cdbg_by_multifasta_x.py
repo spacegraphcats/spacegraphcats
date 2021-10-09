@@ -96,6 +96,7 @@ def main(argv):
     all_kmers = set()
     
     # read all the queries into memory.
+    n_total_queries = 0
     for filename in args.query:
         print(f"Reading query from '{filename}'")
 
@@ -114,6 +115,7 @@ def main(argv):
                 sys.exit(-1)
 
             query_name_to_filename[record.name] = filename
+            n_total_queries += 1
 
         screed_fp.close()
 
@@ -125,6 +127,7 @@ def main(argv):
 
     matching_cdbg = defaultdict(set)
 
+    print(f"Iterating through unitigs in '{unitigs_db}'")
     db = sqlite3.connect(unitigs_db)
     for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
         # translate into protein sequences
@@ -169,10 +172,10 @@ def main(argv):
     with open(outfile, "wb") as fp:
         print(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
-        print(f"saved {len(records_to_cdbg)} query names with cDBG node mappings")
+        print(f"saved {len(records_to_cdbg)} query names with cDBG node mappings (of {n_total_queries} queries total)")
         n_cdbg_match = len(cdbg_to_records)
         n_cdbg_total = len(catlas.cdbg_to_layer1)
-        print(f"saved {n_cdbg_match} (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) cDBG IDs with at least one query match")
+        print(f"saved {n_cdbg_match} cDBG IDs (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) with at least one query match")
 
     return 0
 
