@@ -21,4 +21,4 @@ multifasta_query_sig: data/dory-subset.fq.sig
 multifasta_reference_x:
 - data/dory-prot-query.faa
 multifasta_x_protein_ksize: 10
-multifasta_x_query_is_dna: true
+multifasta_x_query_is_dna: false
