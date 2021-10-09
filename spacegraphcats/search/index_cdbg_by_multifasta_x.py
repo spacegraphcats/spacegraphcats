@@ -33,12 +33,10 @@ def main(argv):
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
 
-    # @CTB add this to config file for sgc
     p.add_argument(
         "-k", "--ksize", default=10, type=int,
         help="protein k-mer size (default: 10)"
     )
-    # @CTB add this to config file too :)
     p.add_argument('--query-is-dna', help='translate query to protein as well',
                    action='store_true')
     p.add_argument("-v", "--verbose", action="store_true")
@@ -56,6 +54,20 @@ def main(argv):
             error("query seq file {} does not exist.", filename)
             sys.exit(-1)
 
+    # get a single ksize for query
+    prot_ksize = int(args.ksize)
+    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize,
+                               is_protein=True)
+    print(f"Using protein k-mer size {prot_ksize}")
+
+    # translate query, or not?
+    if args.query_is_dna:
+        add_as_protein = False
+        print(f"Translating queries from DNA into protein.")
+    else:
+        add_as_protein = True
+        print(f"Queries are proteins; no translation occurring.")
+
     # load catlas DAG
     catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
     notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
@@ -63,16 +75,7 @@ def main(argv):
 
     unitigs_db = os.path.join(args.cdbg_prefix, 'bcalm.unitigs.db')
 
-    # get a single ksize for query
-    prot_ksize = int(args.ksize)
-    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize,
-                               is_protein=True)
-
-    # translate query, or not?
-    if args.query_is_dna:
-        add_as_protein = False
-    else:
-        add_as_protein = True
+    ### done loading! now let's do the thing.
 
     # track all hashes by record, as well as file origin of query
     record_hashes = defaultdict(set)
@@ -140,7 +143,7 @@ def main(argv):
         for cdbg_node in cdbg_nodes:
             dominators.add(catlas.cdbg_to_layer1[cdbg_node])
 
-        print(f"got {len(dominators)} dominators for {record.name[:15]}")
+        print(f"got {len(dominators)} dominators for {query_name[:15]}")
 
         shadow = catlas.shadow(dominators)
         print(f"got {len(shadow)} cdbg_nodes under {len(dominators)} dominators")
@@ -149,10 +152,14 @@ def main(argv):
         for cdbg_node in shadow:
             cdbg_to_records[cdbg_node].add((filename, record.name))
 
+    if not records_to_cdbg:
+        print("WARNING: nothing in query matched to cDBG. Saving empty dictionaries.", file=sys.stderr)
+
     with open(outfile, "wb") as fp:
         print(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
 
+    # @CTB remove.
     import pprint
     pprint.pprint(records_to_cdbg)
 

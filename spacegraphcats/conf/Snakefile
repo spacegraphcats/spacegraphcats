@@ -99,12 +99,14 @@ multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
 # multifasta protein queries
 
 multifasta_query_x_seqs = config.get('multifasta_reference_x',
-                                    ['** does not exist **'])
+                                     ['** does not exist **'])
 if not isinstance(multifasta_query_x_seqs, list):
     print('ERROR: multifasta_reference_x must be a YAML list.')
     sys.exit(-1)
 
 multifasta_query_x_seqs = fix_relative_input_paths(multifasta_query_x_seqs)
+multifasta_x_ksize = config.get('multifasta_x_protein_ksize', 10)
+multifasta_x_query_is_dna = config.get('multifasta_x_query_is_dna', False)
 
 ### build some variables for internal use
 
@@ -599,11 +601,12 @@ rule build_multifasta_x_index:
     output:
         f"{catlas_dir}_multifasta/multifasta_x.pickle",
     params:
-        ksize = ksize,
+        ksize = multifasta_x_ksize,
+        query_is_dna = "--query-is-dna" if multifasta_x_query_is_dna else ""
     shell: """
         python -Werror -m spacegraphcats.search.index_cdbg_by_multifasta_x \
              {cdbg_dir} {catlas_dir} {output} --query {input.queries} \
-             -k {params.ksize}
+             -k {params.ksize} {params.query_is_dna}
     """
 
 # @CTB

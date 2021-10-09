@@ -94,6 +94,9 @@ def main(argv):
             for cdbg_node in shadow:
                 cdbg_to_records[cdbg_node].add((filename, record.name))
 
+    if not records_to_cdbg:
+        print("WARNING: nothing in query matched to cDBG. Saving empty dictionaries.", file=sys.stderr)
+
     with open(outfile, "wb") as fp:
         print(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
