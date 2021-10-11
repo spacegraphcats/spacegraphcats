@@ -10,15 +10,12 @@ import sys
 import argparse
 import time
 from collections import defaultdict, Counter
-import csv
 import pickle
 
-import spacegraphcats
-from spacegraphcats.utils.logging import notify, error, debug
-from spacegraphcats.search import search_utils
-from spacegraphcats.search import MPHF_KmerIndex, hash_sequence
+from spacegraphcats.utils.logging import notify
+from spacegraphcats.search import MPHF_KmerIndex
 from spacegraphcats.search.catlas import CAtlas
-import screed
+
 from sourmash import lca
 from sourmash.lca import LCA_Database
 

@@ -13,9 +13,7 @@ import time
 from collections import defaultdict
 import csv
 
-import spacegraphcats
-from spacegraphcats.utils.logging import notify, error, debug
-from spacegraphcats.search import search_utils
+from spacegraphcats.utils.logging import notify
 from spacegraphcats.search import MPHF_KmerIndex, hash_sequence
 from spacegraphcats.search.catlas import CAtlas
 import screed

@@ -11,12 +11,9 @@ from collections import defaultdict
 import csv
 import pickle
 
-import spacegraphcats
-from spacegraphcats.utils.logging import notify, error, debug
-from spacegraphcats.search import search_utils
-from spacegraphcats.search import MPHF_KmerIndex, hash_sequence
+from spacegraphcats.utils.logging import notify
+from spacegraphcats.search import MPHF_KmerIndex
 from spacegraphcats.search.catlas import CAtlas
-import screed
 
 
 def main():
