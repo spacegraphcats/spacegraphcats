@@ -12,6 +12,7 @@ import argparse
 import time
 from collections import defaultdict
 import csv
+import os
 
 from spacegraphcats.utils.logging import notify
 from spacegraphcats.search import MPHF_KmerIndex, hash_sequence
@@ -26,6 +27,8 @@ def main():
     p.add_argument('samples', nargs='+')
     p.add_argument('-k', '--ksize', default=31, type=int,
                    help='k-mer size (default: 31)')
+    p.add_argument('--outdir', default=None,
+                   help='output directory; by default, {catlas_prefix}_abund')
     args = p.parse_args()
 
     # load catlas DAG
@@ -44,11 +47,23 @@ def main():
     # calculate the k-mer sizes beneath node, for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)
 
+    # set and/or create output dir
+    outdir = args.outdir
+    if not outdir:
+        catlas_name = os.path.dirname(args.catlas_prefix)
+        outdir = f"{catlas_name}_abund"
+    if not os.path.exists(outdir):
+        os.makedirs(outdir, exist_ok=True)
+
+    notify(f"Outputting files to directory '{outdir}'")
+
     #
     # run through each sample, calculating all the things.
     #
 
     for sample in args.samples:
+        sample_name = os.path.basename(sample)
+
         # here, cdbg_counts is the summed k-mer abundance from the counts
         # of k-mers in the sample, for each cdbg_id.
 
@@ -63,6 +78,7 @@ def main():
                 cdbg_counts[cdbg_id] += 1
 
         notify(f'done! read {total_hashes} total k-mers/abundances.')
+        notify('--')
 
         # aggregate to layer1 domset across all cDBG nodes
         dom_counts = defaultdict(int)
@@ -73,7 +89,9 @@ def main():
             dom_counts[dom_id] += count
             dom_sizes[dom_id] += catlas.cdbg_sizes[cdbg_id]
 
-        outfile = f"{sample}.cdbg_abund.csv"
+        outfile = f"{sample_name}.cdbg_abund.csv"
+        outfile = os.path.join(outdir, outfile)
+
         notify(f'outputting cDBG abundances to {outfile}')
         total_cdbg_counts = 0
         with open(outfile, 'wt') as fp:
@@ -89,7 +107,9 @@ def main():
         level_counts = defaultdict(int)
         level_sizes = defaultdict(int)
 
-        outfile = f"{sample}.dom_abund.csv"
+        outfile = f"{sample_name}.dom_abund.csv"
+        outfile = os.path.join(outdir, outfile)
+
         notify(f'outputting dom node abundances for all levels to {outfile}')
         with open(outfile, 'wt') as fp:
             w = csv.writer(fp)
@@ -140,15 +160,14 @@ def main():
         assert len(level_sizes_values) == 1
         level_size = list(level_sizes_values)[0]
 
-        print(f'each catlas level has {level_count} sum counts')
-        print('total_cdbg_counts:', total_cdbg_counts)
-        print('dom_counts:', sum(dom_counts.values()))
+        print(f'- each catlas level has {level_count} sum counts')
+        print('- total_cdbg_counts:', total_cdbg_counts)
+        print('- dom_counts:', sum(dom_counts.values()))
 
         assert total_cdbg_counts == sum(dom_counts.values())
 
-        print(f'each catlas level has {level_size} k-mers underneath')
-        print('total_cdbg_sizes:', sum(catlas.cdbg_sizes.values()))
-
+        print(f'- each catlas level has {level_size} k-mers underneath')
+        print('- total_cdbg_sizes:', sum(catlas.cdbg_sizes.values()))
 
     return 0
 
