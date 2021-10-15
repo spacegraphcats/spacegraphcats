@@ -1,4 +1,22 @@
 #! /usr/bin/env python
+"""
+Produce an index that connects cDBG nodes to matching records in a FASTA file.
+
+This is primarily used for annotating cDBG neighborhoods with FASTA records.
+
+In brief,
+* load catlas & k-mer index into cDBG
+* for every record in one or more query FASTA files,
+  - find all cDBG nodes that match to the k-mers in that record
+  - find all dominators that contain those cDBG nodes, and expand cDBG IDs
+    to all nodes under those dominators
+  - build dictionary 'cdbg_to_records',
+    'cdbg_id' => set( (query_file, record_name) )
+  - build dictionary 'records_to_cdbg',
+    ('query_file, record_name') => set( cdbg_ids )
+
+* save constructed dictionaries to a pickle file as index.
+"""
 import argparse
 import os
 import sys
@@ -14,25 +32,11 @@ from .catlas import CAtlas
 
 
 def main(argv):
-    """\
-    Query a catlas with a sequence (read, contig, or genome), and retrieve
-    cDBG node IDs and MinHash signatures for the matching unitigs in the graph.
-    """
-
     p = argparse.ArgumentParser(description=main.__doc__)
     p.add_argument("cdbg_prefix", help="cdbg prefix")
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
-    p.add_argument(
-        "-k", "--ksize", default=31, type=int, help="k-mer size (default: 31)"
-    )
-    p.add_argument(
-        "--scaled",
-        default=1000,
-        type=float,
-        help="scaled value for contigs minhash output",
-    )
     p.add_argument("-v", "--verbose", action="store_true")
 
     args = p.parse_args(argv)
@@ -56,15 +60,16 @@ def main(argv):
     # ...and kmer index.
     ki_start = time.time()
     kmer_idx = MPHF_KmerIndex.from_directory(args.cdbg_prefix)
-    assert args.ksize == kmer_idx.ksize
-    notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
+
+    ksize = kmer_idx.ksize
+    notify(f"Using ksize {ksize} from k-mer index.")
+    notify("loaded {} k-mers in index ({:.1f}s)",
+           len(kmer_idx), time.time() - ki_start)
 
     # calculate the k-mer sizes for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)
 
-    # get a single ksize & scaled
-    ksize = int(args.ksize)
-    scaled = int(args.scaled)
+    # use the same ksize as the kmer index.
 
     records_to_cdbg = {}
     cdbg_to_records = defaultdict(set)

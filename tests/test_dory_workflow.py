@@ -729,7 +729,7 @@ def test_dory_multifasta_query(location):
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")
-    args = "dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta.pickle --query dory-head.fa -k 21"
+    args = "dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta.pickle --query dory-head.fa"
     assert index_cdbg_by_multifasta.main(args.split()) == 0
 
     args = "-k 21 --scaled 100 dory_k21/bcalm.unitigs.db dory_k21_r1_multifasta/hashval.pickle"
