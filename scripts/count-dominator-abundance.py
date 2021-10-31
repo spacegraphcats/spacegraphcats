@@ -29,6 +29,8 @@ def main():
                    help='k-mer size (default: 31)')
     p.add_argument('--outdir', default=None,
                    help='output directory; by default, {catlas_prefix}_abund')
+    p.add_argument('--prefix', default="",
+                   help="A prefix to use for all output file names.")
     args = p.parse_args()
 
     # load catlas DAG
@@ -89,7 +91,7 @@ def main():
             dom_counts[dom_id] += count
             dom_sizes[dom_id] += catlas.cdbg_sizes[cdbg_id]
 
-        outfile = f"{sample_name}.cdbg_abund.csv"
+        outfile = f"{args.prefix}{sample_name}.cdbg_abund.csv"
         outfile = os.path.join(outdir, outfile)
 
         notify(f'outputting cDBG abundances to {outfile}')
@@ -107,7 +109,7 @@ def main():
         level_counts = defaultdict(int)
         level_sizes = defaultdict(int)
 
-        outfile = f"{sample_name}.dom_abund.csv"
+        outfile = f"{args.prefix}{sample_name}.dom_abund.csv"
         outfile = os.path.join(outdir, outfile)
 
         notify(f'outputting dom node abundances for all levels to {outfile}')
