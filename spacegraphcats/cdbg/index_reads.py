@@ -175,7 +175,7 @@ def main(argv=sys.argv[1:]):
     notify(f"{time.time() - idx_start:.1f}s seconds total")
 
     fail_exit = False
-    if max(total_cdbg_ids) + 1 != len(total_cdbg_ids) or 1:
+    if max(total_cdbg_ids) + 1 != len(total_cdbg_ids):
         fail_exit = True
         notify(f"ERROR: max cDBG ID found is {max(total_cdbg_ids)}, different from:")
         notify(f"ERROR: length of distinct cDBG IDs found is {len(total_cdbg_ids)}")
