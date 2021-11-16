@@ -1,4 +1,14 @@
 #! /usr/bin/env python
+"""
+Extract useful information from a multifasta annotation of the cDBG nodes.
+
+This script takes in a multifasta_index produced by index_cdbg_by_multifasta*
+and outputs:
+* a CSV file with one multifasta query per line, containing summary information
+  about the cDBG nodes to which that query matches.
+* individual files for each annotation, listing the cDBG IDs and the name
+  of a (potential) output file for where reads will be extracted.
+"""
 import argparse
 import csv
 import gzip
@@ -12,22 +22,20 @@ def main(argv):
     """
 
     p = argparse.ArgumentParser(description=main.__doc__)
-    p.add_argument("--multi-idx")
-    p.add_argument("--info-csv")
-    p.add_argument("--output-cdbg-record")
-    p.add_argument("--output-cdbg-annot")
+    p.add_argument("--multi-idx", required=True)
+    p.add_argument("--info-csv", required=True)
+    p.add_argument("--output-cdbg-record", required=True)
+    p.add_argument("--output-cdbg-annot", required=True)
     args = p.parse_args(argv)
 
-    assert args.multi_idx
-    assert args.output_cdbg_record
-    assert args.output_cdbg_annot
-
+    # load records <-> cDBG dictionaries
     with open(args.multi_idx, "rb") as fp:
         catlas_base, records_to_cdbg, cdbg_to_records = pickle.load(fp)
         print(
             f"loaded {len(cdbg_to_records)} cdbg to sequence record mappings for {catlas_base}"
         )
 
+    # read in the information about the underlying cDBG nodes
     cdbg_info = {}
     with open(args.info_csv, "rt") as fp:
         r = csv.DictReader(fp)
@@ -36,6 +44,7 @@ def main(argv):
             cdbg_info[cdbg_id] = row
         print(f"loaded {len(cdbg_info)} info records for {catlas_base}")
 
+    # create the per-annotation information file.
     with open(args.output_cdbg_record, "wt") as fp:
         w = csv.writer(fp)
         w.writerow(
@@ -50,6 +59,7 @@ def main(argv):
             ]
         )
 
+        # iterate over all annotations {queryfile, query_record} -> cDBG IDs
         filenum = 0
         for (filename, record_name), cdbg_ids in records_to_cdbg.items():
             if not cdbg_ids:

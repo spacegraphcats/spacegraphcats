@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+"Print out some basic information about the catlas."
 import argparse
 import os
 import sys
