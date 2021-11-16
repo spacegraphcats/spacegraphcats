@@ -173,7 +173,14 @@ def main(argv=sys.argv[1:]):
     notify(f"{2*n_paired_reads} paired of {n} reads; {n-2*n_paired_reads} singletons")
     notify(f"found reads for {len(total_cdbg_ids)} cDBG IDs")
     notify(f"{time.time() - idx_start:.1f}s seconds total")
-    assert max(total_cdbg_ids) + 1 == len(total_cdbg_ids)
+
+    fail_exit = False
+    if max(total_cdbg_ids) + 1 != len(total_cdbg_ids) or 1:
+        fail_exit = True
+        notify(f"ERROR: max cDBG ID found is {max(total_cdbg_ids)}, different from:")
+        notify(f"ERROR: length of distinct cDBG IDs found is {len(total_cdbg_ids)}")
+        # this could happen if reads being indexed are different from reads
+        # used to build cDBG. any other options?
 
     notify("creating indices in database.")
     idx_start = time.time()
@@ -185,8 +192,11 @@ def main(argv=sys.argv[1:]):
 
     if args.expect_paired:
         if not n_paired_reads:
+            fail_exit = True
             print("ERROR: no paired reads!? but -P/--expect-paired set. Failing.")
-            return -1
+
+    if fail_exit:
+        return -1
 
     return 0
 
