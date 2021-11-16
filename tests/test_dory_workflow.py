@@ -1,3 +1,6 @@
+"""
+Test many (most?) spacegraphcats scripts against the 'dory' small example data.
+"""
 import os.path
 import shutil
 import glob
@@ -28,6 +31,7 @@ from spacegraphcats.search import extract_reads
 from spacegraphcats.cdbg import index_cdbg_by_minhash
 from spacegraphcats.search import query_by_hashval
 from spacegraphcats.search import index_cdbg_by_multifasta
+from spacegraphcats.search import index_cdbg_by_multifasta_x
 from spacegraphcats.search import query_multifasta_by_sig
 from spacegraphcats.search import extract_cdbg_by_multifasta
 from spacegraphcats.search import search_utils
@@ -744,6 +748,19 @@ def test_dory_multifasta_query(location):
     assert os.path.exists("dory_k21_r1_multifasta/multifasta.cdbg_by_record.csv")
     assert os.path.exists("dory_k21_r1_multifasta/multifasta.cdbg_annot.csv")
     assert os.path.exists("dory_k21_r1_multifasta/query-results.csv")
+
+
+@pytest_utils.in_tempdir
+def test_dory_multifasta_annot_x(location):
+    copy_dory_head()
+    copy_dory_catlas()
+
+    queryfile = relative_file('data/dory-prot-query.faa')
+
+    # index by multifasta
+    os.mkdir("dory_k21_r1_multifasta")
+    args = f"dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta_x.pickle --query {queryfile} -k 10"
+    assert index_cdbg_by_multifasta_x.main(args.split()) == 0
 
 
 @pytest_utils.in_tempdir

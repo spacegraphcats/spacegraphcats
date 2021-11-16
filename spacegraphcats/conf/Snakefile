@@ -83,6 +83,8 @@ if config.get('hashval_queries', ''):
     filename = config.get('hashval_queries', '')
     hashval_queries = fix_relative_input_paths([filename])[0]
 
+# multifasta queries
+
 multifasta_query_seqs = config.get('multifasta_reference',
                                    ['** does not exist **'])
 if not isinstance(multifasta_query_seqs, list):
@@ -93,6 +95,18 @@ multifasta_query_seqs = fix_relative_input_paths(multifasta_query_seqs)
 multifasta_query_sig = config.get('multifasta_query_sig',
                                   '** does not exist **')
 multifasta_query_sig = fix_relative_input_paths([multifasta_query_sig])[0]
+
+# multifasta protein queries
+
+multifasta_query_x_seqs = config.get('multifasta_x_reference',
+                                     ['** does not exist **'])
+if not isinstance(multifasta_query_x_seqs, list):
+    print('ERROR: multifasta_reference_x must be a YAML list.')
+    sys.exit(-1)
+
+multifasta_query_x_seqs = fix_relative_input_paths(multifasta_query_x_seqs)
+multifasta_x_ksize = config.get('multifasta_x_protein_ksize', 10)
+multifasta_x_query_is_dna = config.get('multifasta_x_query_is_dna', False)
 
 ### build some variables for internal use
 
@@ -571,4 +585,41 @@ rule extract_reads_single_file_multifasta:
     shell: """
         python -Werror -m spacegraphcats.search.extract_reads {input.reads} \
             {input.labels} {input.cdbg_ids} -o {output}
+    """
+
+
+# build multifasta_x annotation/index for translated queries
+
+rule build_multifasta_x_index:
+    input:
+        queries = multifasta_query_x_seqs,
+        doms = f"{catlas_dir}/first_doms.txt",
+        catlas = f"{catlas_dir}/catlas.csv",
+        mphf = f"{cdbg_dir}/contigs.mphf",
+        indices = f"{cdbg_dir}/contigs.indices",
+        sizes = f"{cdbg_dir}/contigs.sizes",
+    output:
+        f"{catlas_dir}_multifasta_x/multifasta_x.pickle",
+    params:
+        ksize = multifasta_x_ksize,
+        query_is_dna = "--query-is-dna" if multifasta_x_query_is_dna else ""
+    shell: """
+        python -Werror -m spacegraphcats.search.index_cdbg_by_multifasta_x \
+             {cdbg_dir} {catlas_dir} {output} --query {input.queries} \
+             -k {params.ksize} {params.query_is_dna}
+    """
+
+# this rule also creates a bunch of files named record{n}-nbhd.cdbg_ids.txt.gz
+# see rule extract_reads_single_hashval_file for how to get the reads.
+rule build_cdbg_list_by_record_x:
+    input:
+        multi_idx = f"{catlas_dir}_multifasta_x/multifasta_x.pickle",
+        info_csv = f"{cdbg_dir}/contigs.info.csv",
+    output:
+        cdbg_record = f"{catlas_dir}_multifasta_x/multifasta_x.cdbg_by_record.csv",
+        cdbg_annot = f"{catlas_dir}_multifasta_x/multifasta_x.cdbg_annot.csv",
+    shell: """
+        python -Werror -m spacegraphcats.search.extract_cdbg_by_multifasta \
+            --multi-idx {input.multi_idx} --output-cdbg-record {output.cdbg_record} \
+            --output-cdbg-annot {output.cdbg_annot} --info-csv {input.info_csv}
     """
