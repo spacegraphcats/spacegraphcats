@@ -102,7 +102,7 @@ def main(argv):
 
             filenum += 1
 
-    print(f"wrote {filenum+1} files containing cdbg_ids.")
+    print(f"wrote {filenum} files containing cdbg_ids.")
 
     # write out cdbg id to record mapping, one per row
     with open(args.output_cdbg_annot, "wt") as fp:
