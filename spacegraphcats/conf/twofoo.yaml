@@ -18,7 +18,8 @@ multifasta_scaled: 1000
 multifasta_query_sig: data/63-os223.sig
 
 multifasta_x_reference:
-- data/shew-genes.faa.gz
+- shew/GCF_000017325.1_ASM1732v1_protein.faa.gz
+- shew/GCF_000021665.1_ASM2166v1_protein.faa.gz
 multifasta_x_protein_ksize: 10
 multifasta_x_query_is_dna: false
-multifasta_x_search_mode: gather+nbhd
+multifasta_x_search_mode: search+nbhd
