@@ -751,7 +751,7 @@ def test_dory_multifasta_query(location):
 
 
 @pytest_utils.in_tempdir
-def test_dory_multifasta_annot_x(location):
+def test_dory_multifasta_annot_x_mode_1(location):
     copy_dory_head()
     copy_dory_catlas()
 
@@ -759,7 +759,33 @@ def test_dory_multifasta_annot_x(location):
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")
-    args = f"dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta_x.pickle --query {queryfile} -k 10"
+    args = f"dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta_x.pickle --query {queryfile} -k 10 --mode 1"
+    assert index_cdbg_by_multifasta_x.main(args.split()) == 0
+
+
+@pytest_utils.in_tempdir
+def test_dory_multifasta_annot_x_mode_2(location):
+    copy_dory_head()
+    copy_dory_catlas()
+
+    queryfile = relative_file('data/dory-prot-query.faa')
+
+    # index by multifasta
+    os.mkdir("dory_k21_r1_multifasta")
+    args = f"dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta_x.pickle --query {queryfile} -k 10 --mode 2"
+    assert index_cdbg_by_multifasta_x.main(args.split()) == 0
+
+
+@pytest_utils.in_tempdir
+def test_dory_multifasta_annot_x_mode_3(location):
+    copy_dory_head()
+    copy_dory_catlas()
+
+    queryfile = relative_file('data/dory-prot-query.faa')
+
+    # index by multifasta
+    os.mkdir("dory_k21_r1_multifasta")
+    args = f"dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta_x.pickle --query {queryfile} -k 10 --mode 3"
     assert index_cdbg_by_multifasta_x.main(args.split()) == 0
 
 

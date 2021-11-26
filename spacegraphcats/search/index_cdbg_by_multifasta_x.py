@@ -129,6 +129,23 @@ class CounterGather:
                 if counter[dataset_id] == 0:
                     del counter[dataset_id]
 
+    def do_full_gather(self):
+        "Get all matching names for the original query."
+        matching_kmers = set(self.orig_query_set)
+        filtered_names = {}
+
+        x = self.peek(matching_kmers)
+        while x:
+            cont, match_set, name, intersect_set = x
+            self.consume(intersect_set)
+            matching_kmers -= intersect_set
+            assert name not in filtered_names
+            filtered_names[name] = len(intersect_set)
+
+            x = self.peek(matching_kmers)
+
+        return filtered_names
+
 
 def main(argv):
     """\
@@ -141,6 +158,7 @@ def main(argv):
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
+    p.add_argument('--mode', type=int, default=1)
 
     p.add_argument(
         "-k", "--ksize", default=10, type=int,
@@ -258,7 +276,7 @@ def main(argv):
     filtered_query_matches_by_cdbg = {}
 
     # (1) any match whatsoever, promoted to neighborhood
-    if 1:
+    if args.mode == 1:
         # expand matches to neighborhood with no filtering
         for dom_id, shadow in catlas.layer1_to_cdbg.items():
             this_query_idx = set()
@@ -275,9 +293,44 @@ def main(argv):
                     filtered_query_matches_by_cdbg[cdbg_id] = this_query_idx
 
     # (2) gather-filtered matches by cDBG node, promoted to neighborhood
+    elif args.mode == 2:
+        for cdbg_id, this_query_idx in query_matches_by_cdbg.items():
+            record = list(search_utils.get_contigs_by_cdbg_sqlite(db, [cdbg_id]))[0]
+            unitig_hashes = set(prot_mh.seq_to_hashes(record.sequence))
+
+            # get all matching kmers
+            matching_kmers = unitig_hashes & all_kmers
+
+            # create gather counter with query == unitig hashes that match
+            counter = CounterGather(matching_kmers)
+
+            # build set of matches -
+            for query_idx in this_query_idx:
+                hashes = query_idx_to_hashes[query_idx]
+                counter.add(hashes, query_idx)
+
+            # @CTB: track / print out the % unassigned?
+            this_filtered_query_idx = set(counter.do_full_gather())
+
+            # update query_matches_by_cdbg with filtered indices
+            query_matches_by_cdbg[cdbg_id] = this_filtered_query_idx
+
+        # now, expand matches to neighborhood
+        for dom_id, shadow in catlas.layer1_to_cdbg.items():
+            this_query_idx = set()
+
+            # collect query_idx into a single set...
+            empty = set()
+            for cdbg_id in shadow:
+                this_query_idx.update(query_matches_by_cdbg.get(cdbg_id, empty))
+
+            if this_query_idx:
+                # ...and assign that set back to each cdbg ID
+                for cdbg_id in shadow:
+                    assert not cdbg_id in filtered_query_matches_by_cdbg
+                    filtered_query_matches_by_cdbg[cdbg_id] = this_query_idx
     # (3) gather-filtered matches by neighborhood
-    # (4) gather-filtered matches by entire graph
-    elif 1:
+    elif args.mode == 3:
         # collect cdbg_ids by dominator
         for dom_id, shadow in catlas.layer1_to_cdbg.items():
             # collect matching query_idx across this dominator
@@ -308,18 +361,8 @@ def main(argv):
                 hashes = query_idx_to_hashes[query_idx]
                 counter.add(hashes, query_idx)
 
-            # filter!
-            this_filtered_query_idx = set()
-            x = counter.peek(matching_kmers)
-            while x:
-                cont, match_set, name, intersect_set = x
-                counter.consume(intersect_set)
-                matching_kmers -= intersect_set
-                this_filtered_query_idx.add(name)
-
-                x = counter.peek(matching_kmers)
-
             # @CTB: track / print out the % unassigned?
+            this_filtered_query_idx = set(counter.do_full_gather())
 
             # store by cdbg_id
             for cdbg_id in shadow:
@@ -327,6 +370,8 @@ def main(argv):
                 assert not cdbg_id in filtered_query_matches_by_cdbg
                 filtered_query_matches_by_cdbg[cdbg_id] = \
                     this_filtered_query_idx
+
+    # (4) gather-filtered matches by entire graph NOT IMPLEMENTED yet ;).
 
     print('...done!')
 
