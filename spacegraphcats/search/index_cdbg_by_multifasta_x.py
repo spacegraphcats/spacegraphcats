@@ -195,6 +195,7 @@ def main(argv):
     # (on disk, etc.)
     # read all the queries into memory.
     this_query_idx = 0
+    query_idx_to_hashes = {}
     all_kmers = set()
     for filename in args.query:
         print(f"Reading query from '{filename}'")
@@ -203,8 +204,10 @@ def main(argv):
         for record in screed_fp:
             these_hashes = prot_mh.seq_to_hashes(record.sequence,
                                                  is_protein=add_as_protein)
+            these_hashes = set(these_hashes)
 
             query_idx_to_name[this_query_idx] = (filename, record.name)
+            query_idx_to_hashes[this_query_idx] = these_hashes
             for hashval in these_hashes:
                 hashval_to_queries[hashval].add(this_query_idx)
 
@@ -214,71 +217,141 @@ def main(argv):
 
         screed_fp.close()
 
-    # iterate over unitigs next
-    ## now unitigs... for all of the unitigs (which are DNA),
+    # iterate over unitigs next, to assign possible matches to each
+    # (this is the prefetch stage.)
+    #
+    ## for all of the unitigs (which are DNA),
     ## first: translate the unitig into protein (up to six sequences),
     ## second: decompose into k-mers, save k-mers
-    ## third: look for overlaps with query_kmers
+    ## third: look for overlaps with query_kmers, save info on matches.
 
-    matching_cdbg = defaultdict(set)
+    query_matches_by_cdbg = {}
 
     print(f"Iterating through unitigs in '{unitigs_db}'")
     db = sqlite3.connect(unitigs_db)
     for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
         # translate into protein sequences
-        unitig_hashes = prot_mh.seq_to_hashes(record.sequence)
+        unitig_hashes = set(prot_mh.seq_to_hashes(record.sequence))
 
-        # do we have an overlap with any query??
-        matching_kmers = set(unitig_hashes) & all_kmers
-        matching_query_idx = set()
-        for hashval in matching_kmers:
-            matching_query_idx.update(hashval_to_queries[hashval])
+        # do we have an overlap with any query at all??
+        matching_kmers = unitig_hashes & all_kmers
+        if matching_kmers:
 
-        if matching_query_idx:
-            # yes, match!
-            cdbg_node = int(record.name)
+            # get specific query_idx that match for this node.
+            matching_query_idx = set()
+            for hashval in matching_kmers:
+                matching_query_idx.update(hashval_to_queries[hashval])
 
-            # @CTB: here we probably want to track hashes, instead of
-            # nodes.
-            for query_idx in matching_query_idx:
-                matching_cdbg[query_idx].add(cdbg_node)
+            # save match!
+            cdbg_id = int(record.name)
+            query_matches_by_cdbg[cdbg_id] = matching_query_idx
 
-        screed_fp.close()
+    # now, do some kind of summarization.
+    #
+    # options:
+    # (1) any match whatsoever, promoted to neighborhood (OG mode)
+    # (2) gather-filtered matches by cDBG node, promoted to neighborhood
+    # (3) gather-filtered matches by neighborhood
+    # (4) gather-filtered matches by entire graph
+
+    # cdbg_id => set([query_idx])
+    filtered_query_matches_by_cdbg = {}
+
+    # (1) any match whatsoever, promoted to neighborhood
+    if 1:
+        # expand matches to neighborhood with no filtering
+        for dom_id, shadow in catlas.layer1_to_cdbg.items():
+            this_query_idx = set()
+
+            # collect query_idx into a single set...
+            empty = set()
+            for cdbg_id in shadow:
+                this_query_idx.update(query_matches_by_cdbg.get(cdbg_id, empty))
+
+            if this_query_idx:
+                # ...and assign that set back to each cdbg ID
+                for cdbg_id in shadow:
+                    assert not cdbg_id in filtered_query_matches_by_cdbg
+                    filtered_query_matches_by_cdbg[cdbg_id] = this_query_idx
+
+    # (2) gather-filtered matches by cDBG node, promoted to neighborhood
+    # (3) gather-filtered matches by neighborhood
+    # (4) gather-filtered matches by entire graph
+    elif 1:
+        # collect cdbg_ids by dominator
+        for dom_id, shadow in catlas.layer1_to_cdbg.items():
+            # collect matching query_idx across this dominator
+            dom_matching_query_idx = set()
+            for cdbg_id in shadow:
+                if cdbg_id in query_matches_by_cdbg:
+                    m = query_matches_by_cdbg[cdbg_id]
+                    dom_matching_query_idx.update(m)
+
+            # skip dominators that have no cDBG matches
+            if not dom_matching_query_idx:
+                continue
+
+            # now, calculate & aggregate unitig hashes across dominator
+            dom_hashes = set()
+            for record in search_utils.get_contigs_by_cdbg_sqlite(db, shadow):
+                unitig_hashes = set(prot_mh.seq_to_hashes(record.sequence))
+                dom_hashes.update(unitig_hashes)
+
+            # get all matching kmers
+            matching_kmers = dom_hashes & all_kmers
+
+            # create gather counter with query == dom hashes that match
+            counter = CounterGather(matching_kmers)
+
+            # build set of matches -
+            for query_idx in dom_matching_query_idx:
+                hashes = query_idx_to_hashes[query_idx]
+                counter.add(hashes, query_idx)
+
+            # filter!
+            this_filtered_query_idx = set()
+            x = counter.peek(matching_kmers)
+            while x:
+                cont, match_set, name, intersect_set = x
+                counter.consume(intersect_set)
+                matching_kmers -= intersect_set
+                this_filtered_query_idx.add(name)
+
+                x = counter.peek(matching_kmers)
+
+            # @CTB: track / print out the % unassigned?
+
+            # store by cdbg_id
+            for cdbg_id in shadow:
+                # dominators should be disjoint
+                assert not cdbg_id in filtered_query_matches_by_cdbg
+                filtered_query_matches_by_cdbg[cdbg_id] = \
+                    this_filtered_query_idx
 
     print('...done!')
 
-    # @CTB: we might want to (optionally) expand neighborhoods first,
-    # to get list/set of hashes.
+    # ok, last iteration: make output data structures by resolving
+    # query_idx to (query_filename, query_name)
+    records_to_cdbg = defaultdict(set)
+    cdbg_to_records = {}
+    for cdbg_id, query_idx_set in filtered_query_matches_by_cdbg.items():
+        matches = set()
+        for query_idx in query_idx_set:
+            query_filename, query_name = query_idx_to_name[query_idx]
 
-    print('Expanding neighborhoods:')
+            matches.add((query_filename, query_name))
+            records_to_cdbg[(query_filename, query_name)].add(cdbg_id)
 
-    # ok, last iteration? expand neighborhoods.
-    records_to_cdbg = {}
-    cdbg_to_records = defaultdict(set)
-    for query_idx, cdbg_nodes in matching_cdbg.items():
-        query_filename, query_name = query_idx_to_name[query_idx]
-        dominators = set()
-        for cdbg_node in cdbg_nodes:
-            dominators.add(catlas.cdbg_to_layer1[cdbg_node])
-
-        print(f"got {len(dominators)} dominators for {query_name[:15]}")
-
-        shadow = catlas.shadow(dominators)
-        print(f"got {len(shadow)} cdbg_nodes under {len(dominators)} dominators")
-
-        records_to_cdbg[(query_filename, query_name)] = shadow
-
-        # @CTB: here, we want to do something with hashes?
-        for cdbg_node in shadow:
-            cdbg_to_records[cdbg_node].add((filename, record.name))
-
+        cdbg_to_records[cdbg_id] = matches
+        
+    # done! output.
     if not records_to_cdbg:
         print("WARNING: nothing in query matched to cDBG. Saving empty dictionaries.", file=sys.stderr)
 
     with open(outfile, "wb") as fp:
         print(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
-        print(f"saved {len(records_to_cdbg)} query names with cDBG node mappings (of {this_query_idx + 1} queries total)")
+        print(f"saved {len(records_to_cdbg)} query names with cDBG node mappings (of {len(query_idx_to_name)} queries total)")
         n_cdbg_match = len(cdbg_to_records)
         n_cdbg_total = len(catlas.cdbg_to_layer1)
         print(f"saved {n_cdbg_match} cDBG IDs (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) with at least one query match")
