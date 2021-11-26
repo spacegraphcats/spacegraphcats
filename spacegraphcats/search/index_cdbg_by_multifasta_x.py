@@ -145,8 +145,6 @@ class CounterGather:
 
             x = self.peek(matching_kmers)
 
-        pprint.pprint('XXX', filtered_names)
-
         return filtered_names
 
 
