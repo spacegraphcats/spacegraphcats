@@ -335,7 +335,7 @@ def main(argv):
             if this_query_idx:
                 # ...and assign that set back to each cdbg ID
                 for cdbg_id in shadow:
-                    assert not cdbg_id not in filtered_query_matches_by_cdbg
+                    assert cdbg_id not in filtered_query_matches_by_cdbg
                     filtered_query_matches_by_cdbg[cdbg_id] = this_query_idx
     # (3) gather-filtered matches by neighborhood
     elif args.mode == "gather+nbhd":
