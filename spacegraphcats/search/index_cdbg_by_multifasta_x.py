@@ -25,6 +25,7 @@ import sys
 import pickle
 from collections import defaultdict, Counter
 import sqlite3
+import pprint
 
 import screed
 import sourmash
@@ -144,6 +145,8 @@ class CounterGather:
 
             x = self.peek(matching_kmers)
 
+        pprint.pprint('XXX', filtered_names)
+
         return filtered_names
 
 
@@ -158,7 +161,7 @@ def main(argv):
     p.add_argument("catlas_prefix", help="catlas prefix")
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
-    p.add_argument('--mode', type=int, default=1)
+    p.add_argument('--mode', type=str, default="search+nbhd")
 
     p.add_argument(
         "-k", "--ksize", default=10, type=int,
@@ -173,6 +176,13 @@ def main(argv):
 
     if not args.query:
         print("must specify at least one query file using --query.")
+        sys.exit(-1)
+
+    if args.mode not in ("search+nbhd", "gather+cdbg", "gather+nbhd"):
+        print("Please specify a valid match mode with --mode.",
+              file=sys.stderr)
+        print("Valid modes are: 'search+nbhd', 'gather+cdbg', 'gather+nbhd'",
+              file=sys.stderr)
         sys.exit(-1)
 
     # make sure all of the query sequences exist.
@@ -276,7 +286,7 @@ def main(argv):
     filtered_query_matches_by_cdbg = {}
 
     # (1) any match whatsoever, promoted to neighborhood
-    if args.mode == 1:
+    if args.mode == "search+nbhd":
         # expand matches to neighborhood with no filtering
         for dom_id, shadow in catlas.layer1_to_cdbg.items():
             this_query_idx = set()
@@ -293,7 +303,7 @@ def main(argv):
                     filtered_query_matches_by_cdbg[cdbg_id] = this_query_idx
 
     # (2) gather-filtered matches by cDBG node, promoted to neighborhood
-    elif args.mode == 2:
+    elif args.mode == "gather+cdbg":
         for cdbg_id, this_query_idx in query_matches_by_cdbg.items():
             record = list(search_utils.get_contigs_by_cdbg_sqlite(db, [cdbg_id]))[0]
             unitig_hashes = set(prot_mh.seq_to_hashes(record.sequence))
@@ -330,7 +340,7 @@ def main(argv):
                     assert not cdbg_id in filtered_query_matches_by_cdbg
                     filtered_query_matches_by_cdbg[cdbg_id] = this_query_idx
     # (3) gather-filtered matches by neighborhood
-    elif args.mode == 3:
+    elif args.mode == "gather+nbhd":
         # collect cdbg_ids by dominator
         for dom_id, shadow in catlas.layer1_to_cdbg.items():
             # collect matching query_idx across this dominator
@@ -370,6 +380,8 @@ def main(argv):
                 assert not cdbg_id in filtered_query_matches_by_cdbg
                 filtered_query_matches_by_cdbg[cdbg_id] = \
                     this_filtered_query_idx
+    else:
+        assert 0
 
     # (4) gather-filtered matches by entire graph NOT IMPLEMENTED yet ;).
 
