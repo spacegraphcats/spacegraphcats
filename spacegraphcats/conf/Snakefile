@@ -107,6 +107,8 @@ if not isinstance(multifasta_query_x_seqs, list):
 multifasta_query_x_seqs = fix_relative_input_paths(multifasta_query_x_seqs)
 multifasta_x_ksize = config.get('multifasta_x_protein_ksize', 10)
 multifasta_x_query_is_dna = config.get('multifasta_x_query_is_dna', False)
+multifasta_x_search_mode = config.get('multifasta_x_search_mode',
+                                      "search+nbhd")
 
 ### build some variables for internal use
 
@@ -602,11 +604,12 @@ rule build_multifasta_x_index:
         f"{catlas_dir}_multifasta_x/multifasta_x.pickle",
     params:
         ksize = multifasta_x_ksize,
-        query_is_dna = "--query-is-dna" if multifasta_x_query_is_dna else ""
+        query_is_dna = "--query-is-dna" if multifasta_x_query_is_dna else "",
+        mode = multifasta_x_search_mode,
     shell: """
         python -Werror -m spacegraphcats.search.index_cdbg_by_multifasta_x \
              {cdbg_dir} {catlas_dir} {output} --query {input.queries} \
-             -k {params.ksize} {params.query_is_dna}
+             -k {params.ksize} {params.query_is_dna} --mode {params.mode}
     """
 
 # this rule also creates a bunch of files named record{n}-nbhd.cdbg_ids.txt.gz
