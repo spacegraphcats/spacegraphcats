@@ -116,7 +116,7 @@ def main(argv):
                 "cdbg_id",
             ]
         )
-    
+
         filenum = 0
         for (filename, record_name), cdbg_ids in records_to_cdbg.items():
             if not cdbg_ids:
@@ -126,7 +126,7 @@ def main(argv):
             for cdbg_id in cdbg_ids:
                 cdbg_id = str(cdbg_id)
                 w.writerow(
-                     [
+                    [
                         filename,
                         record_name,
                         record_number,

@@ -906,7 +906,7 @@ def test_extract_neighborhoods_by_cdbg_ids(location):
 
     with gzip.open('xyz.out', 'rt') as fp:
         lines = fp.readlines()
-        nodes = set( [int(x.strip()) for x in lines] )
+        nodes = set([int(x.strip()) for x in lines])
 
         assert 63 in nodes
         assert 145 in nodes

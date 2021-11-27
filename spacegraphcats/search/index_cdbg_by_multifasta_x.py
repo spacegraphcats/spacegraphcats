@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 """
 Annotate/index the cDBG with FASTA records from one or more query files,
 in protein space.
@@ -92,8 +91,8 @@ def main(argv):
 
     # load catlas DAG
     catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
-    notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
-    notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
+    notify(f"loaded {len(catlas)} nodes from catlas {args.catlas_prefix}")
+    notify(f"loaded {len(catlas.layer1_to_cdbg}} layer 1 catlas nodes")
 
     unitigs_db = os.path.join(args.cdbg_prefix, 'bcalm.unitigs.db')
 
@@ -125,7 +124,7 @@ def main(argv):
                 hashval_to_queries[hashval].add(this_query_idx)
 
             all_kmers.update(these_hashes)
-            
+
             this_query_idx += 1
 
         screed_fp.close()
@@ -285,7 +284,7 @@ def main(argv):
             records_to_cdbg[(query_filename, query_name)].add(cdbg_id)
 
         cdbg_to_records[cdbg_id] = matches
-        
+
     # done! output.
     if not records_to_cdbg:
         print("WARNING: nothing in query matched to cDBG. Saving empty dictionaries.", file=sys.stderr)

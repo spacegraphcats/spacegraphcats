@@ -58,7 +58,7 @@ def test_counter_gather_1_b():
     set1 = set(range(0, 10))
     set2 = set(range(7, 15))
     set3 = set(range(13, 17))
-    
+
     # load up the counter
     counter = CounterGather(query)
     counter.add(set1, 'match1')
@@ -76,7 +76,7 @@ def test_counter_gather_1_b():
 def test_counter_gather_exact_match():
     # query == match
     query = set(range(0, 20))
-    
+
     # load up the counter
     counter = CounterGather(query)
     counter.add(query, "somewhere over the rainbow")
@@ -91,7 +91,7 @@ def test_counter_gather_exact_match():
 def test_counter_gather_add_after_peek():
     # query == match
     query = set(range(0, 20))
-    
+
     # load up the counter
     counter = CounterGather(query)
     counter.add(query, "somewhere over the rainbow")
@@ -197,7 +197,6 @@ def test_counter_gather_3_test_consume():
     match2 = set(range(7, 15))
     match3 = set(range(13, 17))
 
-
     # load up the counter
     counter = CounterGather(query)
     counter.add(match1, 'loc a')
@@ -210,7 +209,7 @@ def test_counter_gather_3_test_consume():
     pprint.pprint(counter.setlist)
     pprint.pprint(counter.locations)
 
-    assert counter.setlist == [ match1, match2, match3 ]
+    assert counter.setlist == [match1, match2, match3]
     assert counter.locations == ['loc a', 'loc b', 'loc c']
     assert list(counter.counter.items()) == [(0, 10), (1, 8), (2, 4)]
 
@@ -223,7 +222,7 @@ def test_counter_gather_3_test_consume():
     assert cur_query == query
 
     counter.consume(intersect_mh)
-    assert counter.setlist == [ match1, match2, match3 ]
+    assert counter.setlist == [match1, match2, match3]
     assert counter.locations == ['loc a', 'loc b', 'loc c']
     assert list(counter.counter.items()) == [(1, 5), (2, 4)]
 
@@ -236,7 +235,7 @@ def test_counter_gather_3_test_consume():
     assert cur_query != query
 
     counter.consume(intersect_mh)
-    assert counter.setlist == [ match1, match2, match3 ]
+    assert counter.setlist == [match1, match2, match3]
     assert counter.locations == ['loc a', 'loc b', 'loc c']
     assert list(counter.counter.items()) == [(2, 2)]
 
@@ -249,7 +248,7 @@ def test_counter_gather_3_test_consume():
     assert cur_query != query
 
     counter.consume(intersect_mh)
-    assert counter.setlist == [ match1, match2, match3 ]
+    assert counter.setlist == [match1, match2, match3]
     assert counter.locations == ['loc a', 'loc b', 'loc c']
     assert list(counter.counter.items()) == []
 
@@ -260,6 +259,6 @@ def test_counter_gather_3_test_consume():
     assert not results
 
     counter.consume(intersect_mh)
-    assert counter.setlist == [ match1, match2, match3 ]
+    assert counter.setlist == [match1, match2, match3]
     assert counter.locations == ['loc a', 'loc b', 'loc c']
     assert list(counter.counter.items()) == []

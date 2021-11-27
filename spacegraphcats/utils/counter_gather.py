@@ -1,5 +1,6 @@
 from collections import Counter
 
+
 class CounterGather:
     """
     A refactoring of sourmash.index.CounterGather to use sets of hashes.
