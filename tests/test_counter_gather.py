@@ -1,7 +1,7 @@
 # tests adapted from sourmash test_index.py
 import pytest
 
-from spacegraphcats.search.index_cdbg_by_multifasta_x import CounterGather
+from spacegraphcats.utils.counter_gather import CounterGather
 
 
 def _consume_all(query, counter):
