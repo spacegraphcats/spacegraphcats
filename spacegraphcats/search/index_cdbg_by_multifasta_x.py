@@ -47,6 +47,7 @@ def main(argv):
     p.add_argument("output")
     p.add_argument("--query", help="query sequences", nargs="+")
     p.add_argument('--mode', type=str, default="search+nbhd")
+    p.add_argument('--query-by-file', default=False, action="store_true")
 
     p.add_argument(
         "-k", "--ksize", default=10, type=int,
@@ -69,12 +70,20 @@ def main(argv):
         print("Valid modes are: 'search+nbhd', 'gather+cdbg', 'gather+nbhd'",
               file=sys.stderr)
         sys.exit(-1)
+    print(f"Using query mode: {args.mode}")
 
     # make sure all of the query sequences exist.
     for filename in args.query:
         if not os.path.exists(filename):
             error("query seq file {} does not exist.", filename)
             sys.exit(-1)
+
+    if args.query_by_file:
+        print("Aggregating queries by file because --query-by-file specified.",
+              file=sys.stderr)
+    else:
+        print("Using individual records from query files.",
+              file=sys.stderr)
 
     # get a single ksize for query
     prot_ksize = int(args.ksize)
@@ -104,8 +113,9 @@ def main(argv):
     query_idx_to_name = {}
     hashval_to_queries = defaultdict(set)
 
-    # @CTB: as a future optimization, we could use an LCA database here
+    # CTB: as a future optimization, we could use an LCA database here
     # (on disk, etc.)
+
     # read all the queries into memory.
     this_query_idx = 0
     query_idx_to_hashes = {}
@@ -114,19 +124,38 @@ def main(argv):
         print(f"Reading query from '{filename}'")
 
         screed_fp = screed.open(filename)
-        for record in screed_fp:
-            these_hashes = prot_mh.seq_to_hashes(record.sequence,
-                                                 is_protein=add_as_protein)
-            these_hashes = set(these_hashes)
+        if args.query_by_file:
+            # aggregate all queries in each file to one record
+            these_hashes = set()
+            for record in screed_fp:
+                hashes = prot_mh.seq_to_hashes(record.sequence,
+                                               is_protein=add_as_protein)
+                these_hashes.update(hashes)
 
-            query_idx_to_name[this_query_idx] = (filename, record.name)
+            name = os.path.basename(filename)
+            query_idx_to_name[this_query_idx] = (filename, name)
             query_idx_to_hashes[this_query_idx] = these_hashes
+
             for hashval in these_hashes:
                 hashval_to_queries[hashval].add(this_query_idx)
 
             all_kmers.update(these_hashes)
 
             this_query_idx += 1
+        else:
+            for record in screed_fp:
+                these_hashes = prot_mh.seq_to_hashes(record.sequence,
+                                                     is_protein=add_as_protein)
+                these_hashes = set(these_hashes)
+
+                query_idx_to_name[this_query_idx] = (filename, record.name)
+                query_idx_to_hashes[this_query_idx] = these_hashes
+                for hashval in these_hashes:
+                    hashval_to_queries[hashval].add(this_query_idx)
+
+                all_kmers.update(these_hashes)
+
+                this_query_idx += 1
 
         screed_fp.close()
 
