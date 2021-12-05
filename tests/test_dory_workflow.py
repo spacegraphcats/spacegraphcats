@@ -37,6 +37,7 @@ from spacegraphcats.search import extract_cdbg_by_multifasta
 from spacegraphcats.search import search_utils
 from spacegraphcats.search import query_by_prot
 from spacegraphcats.search import extract_neighborhoods_by_cdbg_ids
+from spacegraphcats.search import count_dominator_abundance
 
 
 def copy_dory_catlas():
@@ -831,11 +832,12 @@ def test_extract_neighborhoods_by_cdbg_ids(location):
 
 @pytest_utils.in_tempdir
 def test_dory_cdbg_and_catlas_abund(location):
-    # run extract_nodes_by_shadow_ratio
+    # run count_dominator_abundance
     copy_dory_catlas()
+    copy_dory_subset()
 
-    # make k-mer search index
-    args = "dory_k21 dory_k21_r1 dory-head.fa".split()
-    print("** running count-dominator-abundance.py")
-    #assert extract_nodes_by_shadow_ratio.main(args) == 0
-    # CTB file this in with an actual test :eyeroll:
+    args = "dory_k21 dory_k21_r1 dory-subset.fa".split()
+    print("** running count_dominator_abundance")
+    assert count_dominator_abundance.main(args) == 0
+
+    assert os.path.exists('dory_k21_r1_abund')

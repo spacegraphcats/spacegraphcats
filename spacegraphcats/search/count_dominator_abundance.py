@@ -21,7 +21,7 @@ from spacegraphcats.search.catlas import CAtlas
 import screed
 
 
-def main():
+def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser(description=main.__doc__)
     p.add_argument('cdbg_prefix', help='cdbg prefix')
     p.add_argument('catlas_prefix', help='catlas prefix')
@@ -32,7 +32,7 @@ def main():
                    help='output directory; by default, {catlas_prefix}_abund')
     p.add_argument('--prefix', default="",
                    help="A prefix to use for all output file names.")
-    args = p.parse_args()
+    args = p.parse_args(args)
 
     # load catlas DAG
     catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix, load_sizefile=True)
@@ -53,7 +53,8 @@ def main():
     # set and/or create output dir
     outdir = args.outdir
     if not outdir:
-        catlas_name = os.path.dirname(args.catlas_prefix)
+        catlas_name = os.path.basename(args.catlas_prefix)
+        assert catlas_name
         outdir = f"{catlas_name}_abund"
     if not os.path.exists(outdir):
         os.makedirs(outdir, exist_ok=True)
