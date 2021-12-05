@@ -846,6 +846,22 @@ def test_dory_cdbg_and_catlas_abund(location):
         lines = fp.readlines()
         assert len(lines) == 737
 
+        total_abund = 0
+        total_node_size = 0
+        for line in lines[1:]:
+            line = line.strip().split(',')
+            total_abund += int(line[1])
+            total_node_size += int(line[2])
+
+        assert total_abund == 240920
+        assert total_node_size == 212475
+
     with open('dory_k21_r1_abund/dory-subset.fa.dom_abund.csv', newline="") as fp:
         lines = fp.readlines()
         assert len(lines) == 2836
+
+        for line in lines:
+            line = line.strip().split(',')
+            if line[1] == '7':             # top dom node
+                assert line[2] == '240920' # total k-mer abundances
+                assert line[3] == '212475' # total number of k-mers
