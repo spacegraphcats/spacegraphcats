@@ -52,7 +52,8 @@ def main(args=sys.argv[1:]):
     # set and/or create output dir
     outdir = args.outdir
     if not outdir:
-        catlas_name = os.path.basename(args.catlas_prefix)
+        catlas_name = args.catlas_prefix.rstrip('/')
+        catlas_name = os.path.basename(catlas_name)
         assert catlas_name
         outdir = f"{catlas_name}_abund"
     if not os.path.exists(outdir):
