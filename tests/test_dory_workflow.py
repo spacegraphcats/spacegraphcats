@@ -841,3 +841,11 @@ def test_dory_cdbg_and_catlas_abund(location):
     assert count_dominator_abundance.main(args) == 0
 
     assert os.path.exists('dory_k21_r1_abund')
+
+    with open('dory_k21_r1_abund/dory-subset.fa.cdbg_abund.csv', newline="") as fp:
+        lines = fp.readlines()
+        assert len(lines) == 737
+
+    with open('dory_k21_r1_abund/dory-subset.fa.dom_abund.csv', newline="") as fp:
+        lines = fp.readlines()
+        assert len(lines) == 2836
