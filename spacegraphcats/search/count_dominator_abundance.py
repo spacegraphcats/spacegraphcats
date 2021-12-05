@@ -26,8 +26,6 @@ def main(args=sys.argv[1:]):
     p.add_argument('cdbg_prefix', help='cdbg prefix')
     p.add_argument('catlas_prefix', help='catlas prefix')
     p.add_argument('samples', nargs='+')
-    p.add_argument('-k', '--ksize', default=31, type=int,
-                   help='k-mer size (default: 31)')
     p.add_argument('--outdir', default=None,
                    help='output directory; by default, {catlas_prefix}_abund')
     p.add_argument('--prefix', default="",
@@ -49,6 +47,7 @@ def main(args=sys.argv[1:]):
 
     # calculate the k-mer sizes beneath node, for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)
+    ksize = kmer_idx.ksize
 
     # set and/or create output dir
     outdir = args.outdir
@@ -75,7 +74,7 @@ def main(args=sys.argv[1:]):
         cdbg_counts = defaultdict(int)
         total_hashes = 0
         for record in screed.open(sample):
-            hashes = hash_sequence(record.sequence, args.ksize)
+            hashes = hash_sequence(record.sequence, ksize)
             total_hashes += len(hashes)
             for hashval in hashes:
                 cdbg_id = kmer_idx.get_cdbg_id(hashval)
