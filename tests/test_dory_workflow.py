@@ -38,6 +38,7 @@ from spacegraphcats.search import extract_cdbg_by_multifasta
 from spacegraphcats.search import search_utils
 from spacegraphcats.search import query_by_prot
 from spacegraphcats.search import extract_neighborhoods_by_cdbg_ids
+from spacegraphcats.search import count_dominator_abundance
 
 
 def copy_dory_catlas():
@@ -943,3 +944,40 @@ def test_extract_neighborhoods_by_cdbg_ids(location):
         assert 63 in nodes
         assert 145 in nodes
         assert len(nodes) == 2
+
+
+@pytest_utils.in_tempdir
+def test_dory_cdbg_and_catlas_abund(location):
+    # run count_dominator_abundance
+    copy_dory_catlas()
+    copy_dory_subset()
+
+    args = "dory_k21 dory_k21_r1 dory-subset.fa".split()
+    print("** running count_dominator_abundance")
+    assert count_dominator_abundance.main(args) == 0
+
+    assert os.path.exists('dory_k21_r1_abund')
+
+    with open('dory_k21_r1_abund/dory-subset.fa.cdbg_abund.csv', newline="") as fp:
+        lines = fp.readlines()
+        assert len(lines) == 737
+
+        total_abund = 0
+        total_node_size = 0
+        for line in lines[1:]:
+            line = line.strip().split(',')
+            total_abund += int(line[1])
+            total_node_size += int(line[2])
+
+        assert total_abund == 240920
+        assert total_node_size == 212475
+
+    with open('dory_k21_r1_abund/dory-subset.fa.dom_abund.csv', newline="") as fp:
+        lines = fp.readlines()
+        assert len(lines) == 2836
+
+        for line in lines:
+            line = line.strip().split(',')
+            if line[1] == '7':             # top dom node
+                assert line[2] == '240920' # total k-mer abundances
+                assert line[3] == '212475' # total number of k-mers
