@@ -1,11 +1,12 @@
 #! /usr/bin/env python
 """
-Given a catlas and a sample, calculate the abundances of the catlas domset
-in the sample.
+Given a catlas and a set of reads from a sample, calculate the
+abundances of the catlas domset in the sample.
 
 One use for this is when you have a catlas built from multiple samples,
 and you want to output expression directly on the domset using
 abundances from individual samples.
+
 """
 import sys
 import argparse
