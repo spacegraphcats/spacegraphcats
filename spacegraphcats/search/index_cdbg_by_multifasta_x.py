@@ -61,16 +61,14 @@ def main(argv):
     outfile = args.output
 
     if not args.query:
-        print("must specify at least one query file using --query.")
+        error("must specify at least one query file using --query.")
         sys.exit(-1)
 
     if args.mode not in ("search+nbhd", "gather+cdbg", "gather+nbhd"):
-        print("Please specify a valid match mode with --mode.",
-              file=sys.stderr)
-        print("Valid modes are: 'search+nbhd', 'gather+cdbg', 'gather+nbhd'",
-              file=sys.stderr)
+        error("Please specify a valid match mode with --mode.")
+        error("Valid modes are: 'search+nbhd', 'gather+cdbg', 'gather+nbhd'")
         sys.exit(-1)
-    print(f"Using query mode: {args.mode}")
+    notify(f"Using query mode: {args.mode}")
 
     # make sure all of the query sequences exist.
     for filename in args.query:
@@ -79,25 +77,24 @@ def main(argv):
             sys.exit(-1)
 
     if args.query_by_file:
-        print("Aggregating queries by file because --query-by-file specified.",
-              file=sys.stderr)
+        notify("Aggregating queries by file because --query-by-file specified.")
+
     else:
-        print("Using individual records from query files.",
-              file=sys.stderr)
+        notify("Using individual records from query files.")
 
     # get a single ksize for query
     prot_ksize = int(args.ksize)
     prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize,
                                is_protein=True)
-    print(f"Using protein k-mer size {prot_ksize}")
+    notify(f"Using protein k-mer size {prot_ksize}")
 
     # translate query, or not?
     if args.query_is_dna:
         add_as_protein = False
-        print("Translating queries from DNA into protein.")
+        notify("Translating queries from DNA into protein.")
     else:
         add_as_protein = True
-        print("Queries are proteins; no translation occurring.")
+        notify("Queries are proteins; no translation occurring.")
 
     # load catlas DAG
     catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
@@ -121,7 +118,7 @@ def main(argv):
     query_idx_to_hashes = {}
     all_kmers = set()
     for filename in args.query:
-        print(f"Reading query from '{filename}'")
+        notify(f"Reading query from '{filename}'")
 
         screed_fp = screed.open(filename)
         if args.query_by_file:
@@ -169,7 +166,7 @@ def main(argv):
 
     query_matches_by_cdbg = {}
 
-    print(f"Iterating through unitigs in '{unitigs_db}'")
+    notify(f"Iterating through unitigs in '{unitigs_db}'")
     db = sqlite3.connect(unitigs_db)
     for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
         # translate into protein sequences
@@ -199,8 +196,7 @@ def main(argv):
     # cdbg_id => set([query_idx])
     filtered_query_matches_by_cdbg = {}
 
-    print(f"Doing filtering/promotion of matches: mode is {args.mode}",
-          file=sys.stderr)
+    notify(f"Doing filtering/promotion of matches: mode is {args.mode}")
 
     # (1) any match whatsoever, promoted to neighborhood
     if args.mode == "search+nbhd":
@@ -314,7 +310,7 @@ def main(argv):
         # (4) gather-filtered matches by entire graph NOT IMPLEMENTED yet ;).
         assert 0
 
-    print('...done!')
+    notify('...done!')
 
     # ok, last iteration: make output data structures by resolving
     # query_idx to (query_filename, query_name)
@@ -332,16 +328,16 @@ def main(argv):
         cdbg_to_records[cdbg_id] = matches
 
     if not records_to_cdbg:
-        print("WARNING: nothing in query matched to cDBG. Saving empty dictionaries.", file=sys.stderr)
+        notify("WARNING: nothing in query matched to cDBG. Saving empty dictionaries.")
 
     # done! output.
     with open(outfile, "wb") as fp:
-        print(f"saving pickled index to '{outfile}'")
+        notify(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
-        print(f"saved {len(records_to_cdbg)} query names with cDBG node mappings (of {len(query_idx_to_name)} queries total)")
+        notify(f"saved {len(records_to_cdbg)} query names with cDBG node mappings (of {len(query_idx_to_name)} queries total)")
         n_cdbg_match = len(cdbg_to_records)
         n_cdbg_total = len(catlas.cdbg_to_layer1)
-        print(f"saved {n_cdbg_match} cDBG IDs (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) with at least one query match")
+        notify(f"saved {n_cdbg_match} cDBG IDs (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) with at least one query match")
 
     return 0
 
