@@ -61,14 +61,14 @@ def load_sketch(db, sketch_id):
     c2.execute("SELECT hashval FROM hashes WHERE sketch_id=?", (sketch_id,))
 
     for hashval, in c2:
-        print('XXX', hashval)
         mh.add_hash(hashval)
 
     ss = sourmash.SourmashSignature(mh, name=name, filename=filename)
     return ss
 
 
-def get_matching_name_filename(query_cursor, unitig_mh):
+def get_matching_sketches(db, unitig_mh):
+    query_cursor = db.cursor()
     query_cursor.execute("DROP TABLE IF EXISTS hash_query")
     query_cursor.execute("CREATE TEMPORARY TABLE hash_query (hashval INTEGER PRIMARY KEY)")
     for hashval in unitig_mh.hashes:
@@ -79,10 +79,10 @@ def get_matching_name_filename(query_cursor, unitig_mh):
     #overlap, = query_cursor.fetchone()
 
     # do we have an overlap with any query at all??
-    query_cursor.execute("SELECT DISTINCT sketches.name,sketches.filename FROM sketches,hashes WHERE sketches.id=hashes.sketch_id AND hashes.hashval IN (SELECT hashval FROM hash_query)")
+    query_cursor.execute("SELECT DISTINCT sketches.id FROM sketches,hashes WHERE sketches.id=hashes.sketch_id AND hashes.hashval IN (SELECT hashval FROM hash_query)")
 
-    for name, filename in query_cursor:
-        yield name, filename
+    for sketch_id, in query_cursor:
+        yield load_sketch(db, sketch_id)
 
 
 def get_matching_hashes(query_cursor, unitig_mh):
@@ -169,7 +169,8 @@ def main(argv):
     notify(f"loaded {len(catlas)} nodes from catlas {args.catlas_prefix}")
     notify(f"loaded {len(catlas.layer1_to_cdbg)} layer 1 catlas nodes")
 
-    unitigs_db = os.path.join(args.cdbg_prefix, 'bcalm.unitigs.db')
+    unitigs_db_path = os.path.join(args.cdbg_prefix, 'bcalm.unitigs.db')
+    unitigs_db = sqlite3.connect(unitigs_db_path)
 
     ### done loading! now let's do the thing.
 
@@ -182,198 +183,77 @@ def main(argv):
     # CTB: as a future optimization, we could use an LCA database here
     # (on disk, etc.)
 
+    assert args.mode in ("search+nbhd", "gather+nbhd")
+
     # read all the queries into memory.
     this_query_idx = 0
     query_idx_to_hashes = {}
     all_kmers = set()
-    assert len(args.query) == 1
     first_sketch = None
-    for filename in args.query:
-        notify(f"Reading query from database '{filename}'")
 
-        query_db = sqlite3.connect(filename,
-                                   detect_types=sqlite3.PARSE_DECLTYPES)
+    assert len(args.query) == 1
+    annot_database = args.query[0]
+    notify(f"Reading annotation database: '{annot_database}'")
+    annot_db = sqlite3.connect(annot_database,
+                               detect_types=sqlite3.PARSE_DECLTYPES)
 
+    # get protein MinHash object to use.
+    for sketch_id, name, filename, ksize, scaled, is_protein in load_all_signature_metadata(annot_db):
+        first_sketch = load_sketch(annot_db, sketch_id)
+        assert first_sketch.minhash.is_protein
+        assert first_sketch.minhash.ksize == args.ksize
+        prot_mh = first_sketch.minhash.copy_and_clear()
+        break
 
-        for sketch_id, name, filename, ksize, scaled, is_protein in load_all_signature_metadata(query_db):
-            first_sketch = load_sketch(query_db, sketch_id)
-            assert first_sketch.minhash.is_protein
-            assert first_sketch.minhash.ksize == args.ksize
-            prot_mh = first_sketch.minhash.copy_and_clear()
-            #print('XXX', prot_mh.scaled, prot_mh.is_protein, prot_mh.ksize)
-            break
+    cdbg_to_records = {}
 
-        for sketch_id, name, filename, ksize, scaled, is_protein in load_all_signature_metadata(query_db):
-            assert prot_mh.scaled == scaled
-            assert prot_mh.ksize == ksize
-            assert is_protein
+    # collect cdbg_ids by dominator; this involves iterating across
+    # all dominators, which could maybe be optimized...
+    # then aggregate into one set of hashes, and run gather.
 
-            query_idx_to_name[this_query_idx] = (filename, name)
-            name_to_query_idx[(filename, name)] = this_query_idx
-            this_query_idx += 1
-
-    # iterate over unitigs next, to assign possible matches to each
-    # (this is the prefetch stage.)
-    #
-    ## for all of the unitigs (which are DNA),
-    ## first: translate the unitig into protein (up to six sequences),
-    ## second: decompose into k-mers, save k-mers
-    ## third: look for overlaps with query_kmers, save info on matches.
-
-    query_matches_by_cdbg = {}
-
-    notify(f"Iterating through unitigs in '{unitigs_db}'")
-    db = sqlite3.connect(unitigs_db)
-    query_cursor = query_db.cursor()
-    for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
+    print(f'Iterating over {len(catlas.layer1_to_cdbg)} dominators.')
+    for n, (dom_id, shadow) in enumerate(catlas.layer1_to_cdbg.items()):
         if n % 100 == 0:
-            print('...', n, len(query_matches_by_cdbg))
-            if n >= 1000:
-                break
-        # translate into protein sequences
-        unitig_mh = prot_mh.copy_and_clear()
-        unitig_mh.add_sequence(record.sequence, force=True)
+            print('...', n)
+        #  calculate & aggregate unitig hashes across dominator
+        dom_mh = prot_mh.copy_and_clear()
+        for record in search_utils.get_contigs_by_cdbg_sqlite(unitigs_db, shadow):
+            dom_mh.add_sequence(record.sequence, force=True)
 
-        if not unitig_mh:         # empty? skipme.
-            continue
+        # get overlapping signatures
+        matches = list(get_matching_sketches(annot_db, dom_mh))
 
-        matching_query_idx = set()
-        for (name, filename) in get_matching_name_filename(query_cursor, unitig_mh):
-            query_idx = name_to_query_idx[(filename, name)]
-            matching_query_idx.add(query_idx)
+        matching_annots = set()
 
-        if matching_query_idx:
-            # save match!
-            cdbg_id = int(record.name)
-            query_matches_by_cdbg[cdbg_id] = matching_query_idx
+        # filter? do a gather, if requested
+        if args.mode == 'gather+nbhd':
+            # build gather counter
+            counter = sourmash.index.CounterGather(dom_mh)
+            for m in matches:
+                counter.add(m)
 
-    # now, do some kind of summarization.
-    #
-    # options:
-    # (1) any match whatsoever, promoted to neighborhood (OG mode)
-    # (2) gather-filtered matches by cDBG node, promoted to neighborhood
-    # (3) gather-filtered matches by neighborhood
-    # (4) gather-filtered matches by entire graph - NOT IMPLEMENTED
+            # build the min set cov
+            while 1:
+                result = counter.peek(dom_mh, 0)
+                if result:
+                    (sr, intersect_mh) = result
+                    counter.consume(intersect_mh)
+                    matching_annots.add((sr.signature.filename, sr.signature.name))
+                else:
+                    break
+        else:
+            # no filter.
+            assert args.mode == 'search+nbhd'
+            for m in matches:
+                matching_annots.add((m.filename, m.name))
 
-    # cdbg_id => set([query_idx])
-    filtered_query_matches_by_cdbg = {}
-
-    notify(f"Doing filtering/promotion of matches: mode is {args.mode}")
-
-    # (1) any match whatsoever, promoted to neighborhood
-    if args.mode == "search+nbhd":
-        # expand matches to neighborhood with no filtering
-        for dom_id, shadow in catlas.layer1_to_cdbg.items():
-            # collect query_idx from across neighborhood into a single set...
-            this_query_idx = set()
-            empty = set()
-            for cdbg_id in shadow:
-                mm = query_matches_by_cdbg.get(cdbg_id, empty)
-                this_query_idx.update(mm)
-
-            # ...and assign that set back to each cdbg ID
-            if this_query_idx:
-                for cdbg_id in shadow:
-                    assert cdbg_id not in filtered_query_matches_by_cdbg
-                    filtered_query_matches_by_cdbg[cdbg_id] = this_query_idx
-
-    # (2) gather-filtered matches by cDBG node, promoted to neighborhood
-    elif args.mode == "gather+cdbg":
-        # look only at cDBG nodes with matches.
-        for cdbg_id, this_query_idx in query_matches_by_cdbg.items():
-            # for each node,
-
-            # retrieve sequence
-            record = search_utils.get_contigs_by_cdbg_sqlite(db, [cdbg_id])
-            record = list(record)[0]
-
-            # convert to hashes
-            unitig_mh = prot_mh.copy_and_clear()
-            unitig_mh.add_sequence(record.sequence, force=True)
-
-            # get all matching kmers
-            matching_kmers = set(get_matching_hashes(query_cursor, unitig_mh))
-            assert matching_kmers
-
-            # create gather counter with query == unitig hashes that match
-            counter = CounterGather(matching_kmers)
-
-            # retrieve matches by query_idx and fill counter
-            for query_idx in this_query_idx:
-                filename, name = query_idx_to_name[query_idx]
-                hashes = set(get_hashes_by_sketch_name_filename(query_cursor, name, filename))
-                counter.add(hashes, query_idx)
-
-            # filter matches by min-set-cov
-            this_filtered_query_idx = counter.do_full_gather()
-
-            # update query_matches_by_cdbg with filtered indices
-            query_matches_by_cdbg[cdbg_id] = set(this_filtered_query_idx)
-
-        # now, expand matches to neighborhood
-        for dom_id, shadow in catlas.layer1_to_cdbg.items():
-            this_query_idx = set()
-
-            # collect query_idx into a single set...
-            empty = set()
-            for cdbg_id in shadow:
-                mm = query_matches_by_cdbg.get(cdbg_id, empty)
-                this_query_idx.update(mm)
-
-            if this_query_idx:
-                # ...and assign that set back to each cdbg ID
-                for cdbg_id in shadow:
-                    assert cdbg_id not in filtered_query_matches_by_cdbg
-                    filtered_query_matches_by_cdbg[cdbg_id] = this_query_idx
-
-    # (3) gather-filtered matches by neighborhood
-    elif args.mode == "gather+nbhd":
-        # collect cdbg_ids by dominator; this involves iterating across
-        # all dominators, which could be optimized...
-
-        for dom_id, shadow in catlas.layer1_to_cdbg.items():
-            # collect matching query_idx for all cDBG IDs under this dominator
-            dom_matching_query_idx = set()
-            for cdbg_id in shadow:
-                if cdbg_id in query_matches_by_cdbg:
-                    m = query_matches_by_cdbg[cdbg_id]
-                    dom_matching_query_idx.update(m)
-
-            # skip dominators that have no cDBG nodes with matches
-            if not dom_matching_query_idx:
-                continue
-
-            # now, calculate & aggregate unitig hashes across dominator
-            dom_mh = prot_mh.copy_and_clear()
-            for record in search_utils.get_contigs_by_cdbg_sqlite(db, shadow):
-                dom_mh.add_sequence(record.sequence, force=True)
-
-            # get all matching kmers
-            matching_kmers = set(get_matching_hashes(query_cursor, dom_mh))
-            assert matching_kmers
-
-            # create gather counter with query == dom hashes that match
-            counter = CounterGather(matching_kmers)
-
-            # build set of matches -
-            for query_idx in dom_matching_query_idx:
-                filename, name = query_idx_to_name[query_idx]
-                hashes = set(get_hashes_by_sketch_name_filename(query_cursor, name, filename))
-                counter.add(hashes, query_idx)
-
-            # filter matches by min-set-cov
-            this_filtered_query_idx = counter.do_full_gather()
-
-            # store by cdbg_id
+        # store by cdbg_id
+        if matching_annots:
             for cdbg_id in shadow:
                 # note: dominators should be disjoint, so we can directly
                 # assign set rather than updating! but assert anyway.
-                assert cdbg_id not in filtered_query_matches_by_cdbg
-                filtered_query_matches_by_cdbg[cdbg_id] = \
-                    set(this_filtered_query_idx)
-    else:
-        # (4) gather-filtered matches by entire graph NOT IMPLEMENTED yet ;).
-        assert 0
+                assert cdbg_id not in cdbg_to_records
+                cdbg_to_records[cdbg_id] = set(matching_annots)
 
     notify('...done!')
 
@@ -381,17 +261,9 @@ def main(argv):
     # query_idx to (query_filename, query_name)
 
     records_to_cdbg = defaultdict(set)
-    cdbg_to_records = {}
-    for cdbg_id, query_idx_set in filtered_query_matches_by_cdbg.items():
-        matches = set()
-        for query_idx in query_idx_set:
-            # @CTB SQL retrieve
-            query_filename, query_name = query_idx_to_name[query_idx]
-
-            matches.add((query_filename, query_name))
-            records_to_cdbg[(query_filename, query_name)].add(cdbg_id)
-
-        cdbg_to_records[cdbg_id] = matches
+    for cdbg_id, matching_annots in cdbg_to_records.items():
+        for (filename, name) in matching_annots:
+            records_to_cdbg[(filename, name)].add(cdbg_id)
 
     if not records_to_cdbg:
         notify("WARNING: nothing in query matched to cDBG. Saving empty dictionaries.")
