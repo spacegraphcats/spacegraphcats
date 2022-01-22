@@ -109,7 +109,7 @@ multifasta_x_ksize = config.get('multifasta_x_protein_ksize', 10)
 multifasta_x_query_is_dna = config.get('multifasta_x_query_is_dna', False)
 multifasta_x_search_mode = config.get('multifasta_x_search_mode',
                                       "search+nbhd")
-multifasta_x_query_by_file = config.get('multifasta_x_query_by_file', 'False')
+multifasta_x_query_by_file = config.get('multifasta_x_query_by_file', False)
 
 ### build some variables for internal use
 
