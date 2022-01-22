@@ -191,7 +191,9 @@ def main(argv):
     for filename in args.query:
         notify(f"Reading query from database '{filename}'")
 
-        query_db = sqlite3.connect(filename)
+        query_db = sqlite3.connect(filename,
+                                   detect_types=sqlite3.PARSE_DECLTYPES)
+
 
         for sketch_id, name, filename, ksize, scaled, is_protein in load_all_signature_metadata(query_db):
             first_sketch = load_sketch(query_db, sketch_id)
