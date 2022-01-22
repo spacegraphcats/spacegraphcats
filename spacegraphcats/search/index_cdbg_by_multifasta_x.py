@@ -35,6 +35,74 @@ from .catlas import CAtlas
 from . import search_utils
 
 
+MAX_SQLITE_INT = 2 ** 63 - 1
+sqlite3.register_adapter(
+    int, lambda x: hex(x) if x > MAX_SQLITE_INT else x)
+sqlite3.register_converter(
+    'integer', lambda b: int(b, 16 if b[:2] == b'0x' else 10))
+
+
+def load_all_signature_metadata(db):
+    c = db.cursor()
+    c.execute("SELECT id, name, num, scaled, ksize, filename, is_dna, is_protein, is_dayhoff, is_hp, track_abundance, seed FROM sketches")
+    for (id, name, num, scaled, ksize, filename, is_dna, is_protein, is_dayhoff, is_hp, track_abundance, seed) in c:
+        yield id, name, filename, ksize, scaled, is_protein
+
+
+def load_sketch(db, sketch_id):
+    c2 = db.cursor()
+
+    c2.execute("SELECT name, num, scaled, ksize, filename, is_dna, is_protein, is_dayhoff, is_hp, track_abundance, seed FROM sketches WHERE id=?", (sketch_id,))
+
+    name, num, scaled, ksize, filename, is_dna, is_protein, is_dayhoff, is_hp, track_abundance, seed = c2.fetchone()
+
+    mh = sourmash.MinHash(n=num, ksize=ksize, scaled=scaled, seed=seed, is_protein=is_protein, dayhoff=is_dayhoff, hp=is_hp, track_abundance=track_abundance)
+
+    c2.execute("SELECT hashval FROM hashes WHERE sketch_id=?", (sketch_id,))
+
+    for hashval, in c2:
+        mh.add_hash(hashval)
+
+    ss = sourmash.SourmashSignature(mh, name=name, filename=filename)
+    return ss
+
+
+def get_matching_name_filename(query_cursor, unitig_mh):
+    query_cursor.execute("DROP TABLE IF EXISTS hash_query")
+    query_cursor.execute("CREATE TEMPORARY TABLE hash_query (hashval INTEGER PRIMARY KEY)")
+    for hashval in unitig_mh.hashes:
+        query_cursor.execute("INSERT INTO hash_query (hashval) VALUES (?)", (hashval,))
+
+    #overlap = False
+    #query_cursor.execute("SELECT EXISTS (SELECT 1 FROM hashes WHERE hashes.hashval IN (SELECT hashval FROM hash_query))")
+    #overlap, = query_cursor.fetchone()
+
+    # do we have an overlap with any query at all??
+    query_cursor.execute("SELECT DISTINCT sketches.name,sketches.filename FROM sketches,hashes WHERE sketches.id=hashes.sketch_id AND hashes.hashval IN (SELECT hashval FROM hash_query)")
+
+    for name, filename in query_cursor:
+        yield name, filename
+
+
+def get_matching_hashes(query_cursor, unitig_mh):
+    query_cursor.execute("DROP TABLE IF EXISTS hash_query")
+    query_cursor.execute("CREATE TEMPORARY TABLE hash_query (hashval INTEGER PRIMARY KEY)")
+    for hashval in unitig_mh.hashes:
+        query_cursor.execute("INSERT INTO hash_query (hashval) VALUES (?)", (hashval,))
+
+    query_cursor.execute("SELECT DISTINCT hashes.hashval FROM hashes,hash_query WHERE hashes.hashval=hash_query.hashval")
+
+    for hashval in query_cursor:
+        yield hashval
+
+
+def get_hashes_by_sketch_name_filename(query_cursor, name, filename):
+    query_cursor.execute("SELECT DISTINCT hashes.hashval FROM hashes,sketches where sketches.name=? and sketches.filename=?", (name, filename))
+
+    for hashval in query_cursor:
+        yield hashval
+
+
 def main(argv):
     """\
     Query a catlas with a sequence (read, contig, or genome), and retrieve
@@ -73,7 +141,7 @@ def main(argv):
     # make sure all of the query sequences exist.
     for filename in args.query:
         if not os.path.exists(filename):
-            error("query seq file {} does not exist.", filename)
+            error("query db file {} does not exist.", filename)
             sys.exit(-1)
 
     if args.query_by_file:
@@ -84,12 +152,11 @@ def main(argv):
 
     # get a single ksize for query
     prot_ksize = int(args.ksize)
-    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize,
-                               is_protein=True)
     notify(f"Using protein k-mer size {prot_ksize}")
 
     # translate query, or not?
     if args.query_is_dna:
+        assert False # @CTB
         add_as_protein = False
         notify("Translating queries from DNA into protein.")
     else:
@@ -108,6 +175,7 @@ def main(argv):
     # track all hashes by record, as well as file origin of query
     record_hashes = defaultdict(set)
     query_idx_to_name = {}
+    name_to_query_idx = {}
     hashval_to_queries = defaultdict(set)
 
     # CTB: as a future optimization, we could use an LCA database here
@@ -117,44 +185,29 @@ def main(argv):
     this_query_idx = 0
     query_idx_to_hashes = {}
     all_kmers = set()
+    assert len(args.query) == 1
+    first_sketch = None
     for filename in args.query:
-        notify(f"Reading query from '{filename}'")
+        notify(f"Reading query from database '{filename}'")
 
-        screed_fp = screed.open(filename)
-        if args.query_by_file:
-            # aggregate all queries in each file to one record
-            these_hashes = set()
-            for record in screed_fp:
-                hashes = prot_mh.seq_to_hashes(record.sequence,
-                                               is_protein=add_as_protein)
-                these_hashes.update(hashes)
+        query_db = sqlite3.connect(filename)
 
-            name = os.path.basename(filename)
+        for sketch_id, name, filename, ksize, scaled, is_protein in load_all_signature_metadata(query_db):
+            first_sketch = load_sketch(query_db, sketch_id)
+            assert first_sketch.minhash.is_protein
+            assert first_sketch.minhash.ksize == args.ksize
+            prot_mh = first_sketch.minhash.copy_and_clear()
+            #print('XXX', prot_mh.scaled, prot_mh.is_protein, prot_mh.ksize)
+            break
+
+        for sketch_id, name, filename, ksize, scaled, is_protein in load_all_signature_metadata(query_db):
+            assert prot_mh.scaled == scaled
+            assert prot_mh.ksize == ksize
+            assert is_protein
+
             query_idx_to_name[this_query_idx] = (filename, name)
-            query_idx_to_hashes[this_query_idx] = these_hashes
-
-            for hashval in these_hashes:
-                hashval_to_queries[hashval].add(this_query_idx)
-
-            all_kmers.update(these_hashes)
-
+            name_to_query_idx[(filename, name)] = this_query_idx
             this_query_idx += 1
-        else:
-            for record in screed_fp:
-                these_hashes = prot_mh.seq_to_hashes(record.sequence,
-                                                     is_protein=add_as_protein)
-                these_hashes = set(these_hashes)
-
-                query_idx_to_name[this_query_idx] = (filename, record.name)
-                query_idx_to_hashes[this_query_idx] = these_hashes
-                for hashval in these_hashes:
-                    hashval_to_queries[hashval].add(this_query_idx)
-
-                all_kmers.update(these_hashes)
-
-                this_query_idx += 1
-
-        screed_fp.close()
 
     # iterate over unitigs next, to assign possible matches to each
     # (this is the prefetch stage.)
@@ -168,19 +221,25 @@ def main(argv):
 
     notify(f"Iterating through unitigs in '{unitigs_db}'")
     db = sqlite3.connect(unitigs_db)
+    query_cursor = query_db.cursor()
     for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
+        if n % 100 == 0:
+            print('...', n, len(query_matches_by_cdbg))
+            if n >= 1000:
+                break
         # translate into protein sequences
-        unitig_hashes = set(prot_mh.seq_to_hashes(record.sequence))
+        unitig_mh = prot_mh.copy_and_clear()
+        unitig_mh.add_sequence(record.sequence, force=True)
 
-        # do we have an overlap with any query at all??
-        matching_kmers = unitig_hashes & all_kmers
-        if matching_kmers:
+        if not unitig_mh:         # empty? skipme.
+            continue
 
-            # get specific query_idx that match for this node.
-            matching_query_idx = set()
-            for hashval in matching_kmers:
-                matching_query_idx.update(hashval_to_queries[hashval])
+        matching_query_idx = set()
+        for (name, filename) in get_matching_name_filename(query_cursor, unitig_mh):
+            query_idx = name_to_query_idx[(filename, name)]
+            matching_query_idx.add(query_idx)
 
+        if matching_query_idx:
             # save match!
             cdbg_id = int(record.name)
             query_matches_by_cdbg[cdbg_id] = matching_query_idx
@@ -226,10 +285,11 @@ def main(argv):
             record = list(record)[0]
 
             # convert to hashes
-            unitig_hashes = set(prot_mh.seq_to_hashes(record.sequence))
+            unitig_mh = prot_mh.copy_and_clear()
+            unitig_mh.add_sequence(record.sequence, force=True)
 
             # get all matching kmers
-            matching_kmers = unitig_hashes & all_kmers
+            matching_kmers = set(get_matching_hashes(query_cursor, unitig_mh))
             assert matching_kmers
 
             # create gather counter with query == unitig hashes that match
@@ -237,7 +297,8 @@ def main(argv):
 
             # retrieve matches by query_idx and fill counter
             for query_idx in this_query_idx:
-                hashes = query_idx_to_hashes[query_idx]
+                filename, name = query_idx_to_name[query_idx]
+                hashes = set(get_hashes_by_sketch_name_filename(query_cursor, name, filename))
                 counter.add(hashes, query_idx)
 
             # filter matches by min-set-cov
@@ -280,20 +341,21 @@ def main(argv):
                 continue
 
             # now, calculate & aggregate unitig hashes across dominator
-            dom_hashes = set()
+            dom_mh = prot_mh.copy_and_clear()
             for record in search_utils.get_contigs_by_cdbg_sqlite(db, shadow):
-                unitig_hashes = set(prot_mh.seq_to_hashes(record.sequence))
-                dom_hashes.update(unitig_hashes)
+                dom_mh.add_sequence(record.sequence, force=True)
 
             # get all matching kmers
-            matching_kmers = dom_hashes & all_kmers
+            matching_kmers = set(get_matching_hashes(query_cursor, dom_mh))
+            assert matching_kmers
 
             # create gather counter with query == dom hashes that match
             counter = CounterGather(matching_kmers)
 
             # build set of matches -
             for query_idx in dom_matching_query_idx:
-                hashes = query_idx_to_hashes[query_idx]
+                filename, name = query_idx_to_name[query_idx]
+                hashes = set(get_hashes_by_sketch_name_filename(query_cursor, name, filename))
                 counter.add(hashes, query_idx)
 
             # filter matches by min-set-cov
@@ -320,6 +382,7 @@ def main(argv):
     for cdbg_id, query_idx_set in filtered_query_matches_by_cdbg.items():
         matches = set()
         for query_idx in query_idx_set:
+            # @CTB SQL retrieve
             query_filename, query_name = query_idx_to_name[query_idx]
 
             matches.add((query_filename, query_name))
