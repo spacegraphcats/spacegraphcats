@@ -757,7 +757,7 @@ def test_dory_multifasta_annot_x_mode_1(location):
     copy_dory_head()
     copy_dory_catlas()
 
-    queryfile = relative_file('data/dory-prot-query.faa')
+    queryfile = relative_file('data/dory-prot-query.db')
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")
@@ -793,7 +793,8 @@ def test_dory_multifasta_annot_x_mode_1_query_by_file(location):
     copy_dory_head()
     copy_dory_catlas()
 
-    queryfile = relative_file('data/dory-prot-query.faa')
+    queryfile = relative_file('data/dory-prot-query.combined.db')
+    #queryfile = relative_file('data/dory-prot-query.faa')
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")
@@ -825,7 +826,8 @@ def test_dory_multifasta_annot_x_mode_2(location):
     copy_dory_head()
     copy_dory_catlas()
 
-    queryfile = relative_file('data/dory-prot-query.faa')
+    queryfile = relative_file('data/dory-prot-query.db')
+    #queryfile = relative_file('data/dory-prot-query.faa')
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")
@@ -855,7 +857,8 @@ def test_dory_multifasta_annot_x_mode_3(location):
     copy_dory_head()
     copy_dory_catlas()
 
-    queryfile = relative_file('data/dory-prot-query.faa')
+    queryfile = relative_file('data/dory-prot-query.db')
+    #queryfile = relative_file('data/dory-prot-query.faa')
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")

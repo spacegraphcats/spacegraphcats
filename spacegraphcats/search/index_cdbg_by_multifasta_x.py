@@ -61,6 +61,7 @@ def load_sketch(db, sketch_id):
     c2.execute("SELECT hashval FROM hashes WHERE sketch_id=?", (sketch_id,))
 
     for hashval, in c2:
+        print('XXX', hashval)
         mh.add_hash(hashval)
 
     ss = sourmash.SourmashSignature(mh, name=name, filename=filename)
