@@ -66,6 +66,18 @@ def gather(query_mh, matches):
     return results
 
 
+def batch_process_dominators(dom_to_seq, prot_mh, annot_dblist):
+    all_mh = prot_mh.copy_and_clear()
+    for dom_id, records in dom_to_seq.items():
+        for record in records:
+            all_mh.add_sequence(record.sequence, force=True)
+
+    print('XXX', len(all_mh.hashes))
+
+    all_matches = prefetch(all_mh, annot_dblist)
+    return sourmash.index.LinearIndex(_signatures=all_matches)
+
+
 def main(argv):
     """\
     Query a catlas with a sequence (read, contig, or genome), and retrieve
@@ -170,39 +182,61 @@ def main(argv):
     # then aggregate into one set of hashes, and run gather.
 
     print(f'Iterating over {len(catlas.layer1_to_cdbg)} dominators.')
+    batch = {}
     for n, (dom_id, shadow) in enumerate(catlas.layer1_to_cdbg.items()):
-        if n % 100 == 0:
+        if n % 1000 == 0:
             print('...', n)
-        #  calculate & aggregate unitig hashes across dominator
-        dom_mh = prot_mh.copy_and_clear()
-        for record in search_utils.get_contigs_by_cdbg_sqlite(unitigs_db, shadow):
-            dom_mh.add_sequence(record.sequence, force=True)
 
-        # get overlapping signatures
-        matches = prefetch(dom_mh, annot_dblist)
-        if not matches:
-            continue
+        if (n % 1000 == 0 or n == len(catlas.layer1_to_cdbg) - 1) and batch:
+            matches_db = batch_process_dominators(batch, prot_mh,
+                                                  annot_dblist)
 
-        matching_annots = set()
+            if matches_db:
+                # now, process each dom_id individually.
+                for dom_id in batch:
+                    shadow = catlas.layer1_to_cdbg[dom_id]
+                    records = batch[dom_id]
 
-        # filter? do a gather, if requested
-        if args.mode == 'gather+nbhd':
-            results = gather(dom_mh, matches)
+                    dom_mh = prot_mh.copy_and_clear()
+                    for record in records:
+                        dom_mh.add_sequence(record.sequence, force=True)
 
-            for m in results:
-                matching_annots.add((m.filename, m.name))
-        else:
-            # no filter.
-            assert args.mode == 'search+nbhd'
-            for m in matches:
-                matching_annots.add((m.filename, m.name))
+                    # get overlapping signatures
+                    matches = prefetch(dom_mh, [matches_db])
+                    if not matches:
+                        continue
 
-        # store by cdbg_id
-        for cdbg_id in shadow:
-            # note: dominators should be disjoint, so we can directly
-            # assign set rather than updating! but assert anyway.
-            assert cdbg_id not in cdbg_to_records
-            cdbg_to_records[cdbg_id] = set(matching_annots)
+                    matching_annots = set()
+
+                    # filter? do a gather, if requested
+                    if args.mode == 'gather+nbhd':
+                        results = gather(dom_mh, matches)
+
+                        for m in results:
+                            matching_annots.add((m.filename, m.name))
+                    else:
+                        # no filter.
+                        assert args.mode == 'search+nbhd'
+                        for m in matches:
+                            matching_annots.add((m.filename, m.name))
+
+                    # store by cdbg_id
+                    for cdbg_id in shadow:
+                        # note: dominators should be disjoint, so we can directly
+                        # assign set rather than updating! but assert anyway.
+                        assert cdbg_id not in cdbg_to_records
+                        cdbg_to_records[cdbg_id] = set(matching_annots)
+
+            batch = {}
+            shadows = {}
+
+        records = []
+        for record in search_utils.get_contigs_by_cdbg_sqlite(unitigs_db,
+                                                              shadow):
+            records.append(record)
+        batch[dom_id] = records
+
+    ###
 
     notify('...done!')
 
