@@ -30,7 +30,6 @@ import screed
 import sourmash
 
 from ..utils.logging import notify, error
-from spacegraphcats.utils.counter_gather import CounterGather
 from .catlas import CAtlas
 from . import search_utils
 
@@ -176,9 +175,6 @@ def main(argv):
 
     # track all hashes by record, as well as file origin of query
     record_hashes = defaultdict(set)
-    query_idx_to_name = {}
-    name_to_query_idx = {}
-    hashval_to_queries = defaultdict(set)
 
     # CTB: as a future optimization, we could use an LCA database here
     # (on disk, etc.)
@@ -222,6 +218,8 @@ def main(argv):
 
         # get overlapping signatures
         matches = list(get_matching_sketches(annot_db, dom_mh))
+        if not matches:
+            continue
 
         matching_annots = set()
 
@@ -248,12 +246,11 @@ def main(argv):
                 matching_annots.add((m.filename, m.name))
 
         # store by cdbg_id
-        if matching_annots:
-            for cdbg_id in shadow:
-                # note: dominators should be disjoint, so we can directly
-                # assign set rather than updating! but assert anyway.
-                assert cdbg_id not in cdbg_to_records
-                cdbg_to_records[cdbg_id] = set(matching_annots)
+        for cdbg_id in shadow:
+            # note: dominators should be disjoint, so we can directly
+            # assign set rather than updating! but assert anyway.
+            assert cdbg_id not in cdbg_to_records
+            cdbg_to_records[cdbg_id] = set(matching_annots)
 
     notify('...done!')
 
@@ -272,7 +269,7 @@ def main(argv):
     with open(outfile, "wb") as fp:
         notify(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
-        notify(f"saved {len(records_to_cdbg)} query names with cDBG node mappings (of {len(query_idx_to_name)} queries total)")
+        notify(f"saved {len(records_to_cdbg)} query names with cDBG node mappings")
         n_cdbg_match = len(cdbg_to_records)
         n_cdbg_total = len(catlas.cdbg_to_layer1)
         notify(f"saved {n_cdbg_match} cDBG IDs (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) with at least one query match")
