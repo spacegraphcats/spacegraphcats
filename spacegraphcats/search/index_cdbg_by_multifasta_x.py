@@ -78,6 +78,43 @@ def batch_process_dominators(dom_to_seq, prot_mh, annot_dblist):
     return sourmash.index.LinearIndex(_signatures=all_matches)
 
 
+def process_batch(catlas, batch, prot_mh, matches_db, mode, cdbg_to_records):
+    # now, process each dom_id individually.
+    for dom_id in batch:
+        shadow = catlas.layer1_to_cdbg[dom_id]
+        records = batch[dom_id]
+
+        dom_mh = prot_mh.copy_and_clear()
+        for record in records:
+            dom_mh.add_sequence(record.sequence, force=True)
+
+        # get overlapping signatures
+        matches = prefetch(dom_mh, [matches_db])
+        if not matches:
+            continue
+
+        matching_annots = set()
+
+        # filter? do a gather, if requested
+        if mode == 'gather+nbhd':
+            results = gather(dom_mh, matches)
+
+            for m in results:
+                matching_annots.add((m.filename, m.name))
+        else:
+            # no filter.
+            assert mode == 'search+nbhd'
+            for m in matches:
+                matching_annots.add((m.filename, m.name))
+
+        # store by cdbg_id
+        for cdbg_id in shadow:
+            # note: dominators should be disjoint, so we can directly
+            # assign set rather than updating! but assert anyway.
+            assert cdbg_id not in cdbg_to_records
+            cdbg_to_records[cdbg_id] = set(matching_annots)
+
+
 def main(argv):
     """\
     Query a catlas with a sequence (read, contig, or genome), and retrieve
@@ -184,57 +221,32 @@ def main(argv):
     print(f'Iterating over {len(catlas.layer1_to_cdbg)} dominators.')
     batch = {}
     for n, (dom_id, shadow) in enumerate(catlas.layer1_to_cdbg.items()):
-        if n % 1000 == 0:
+        if n % 100 == 0:
             print('...', n)
 
-        if (n % 1000 == 0 or n == len(catlas.layer1_to_cdbg) - 1) and batch:
-            matches_db = batch_process_dominators(batch, prot_mh,
-                                                  annot_dblist)
-
-            if matches_db:
-                # now, process each dom_id individually.
-                for dom_id in batch:
-                    shadow = catlas.layer1_to_cdbg[dom_id]
-                    records = batch[dom_id]
-
-                    dom_mh = prot_mh.copy_and_clear()
-                    for record in records:
-                        dom_mh.add_sequence(record.sequence, force=True)
-
-                    # get overlapping signatures
-                    matches = prefetch(dom_mh, [matches_db])
-                    if not matches:
-                        continue
-
-                    matching_annots = set()
-
-                    # filter? do a gather, if requested
-                    if args.mode == 'gather+nbhd':
-                        results = gather(dom_mh, matches)
-
-                        for m in results:
-                            matching_annots.add((m.filename, m.name))
-                    else:
-                        # no filter.
-                        assert args.mode == 'search+nbhd'
-                        for m in matches:
-                            matching_annots.add((m.filename, m.name))
-
-                    # store by cdbg_id
-                    for cdbg_id in shadow:
-                        # note: dominators should be disjoint, so we can directly
-                        # assign set rather than updating! but assert anyway.
-                        assert cdbg_id not in cdbg_to_records
-                        cdbg_to_records[cdbg_id] = set(matching_annots)
-
+        if n % 100 == 0 and batch:
+            last_batch = batch
             batch = {}
-            shadows = {}
+
+            matches_db = batch_process_dominators(last_batch, prot_mh,
+                                                  annot_dblist)
+            if matches_db:
+                process_batch(catlas, last_batch, prot_mh, matches_db,
+                              args.mode, cdbg_to_records)
 
         records = []
         for record in search_utils.get_contigs_by_cdbg_sqlite(unitigs_db,
                                                               shadow):
             records.append(record)
         batch[dom_id] = records
+
+    # do last one...
+    if batch:
+        matches_db = batch_process_dominators(batch, prot_mh,
+                                              annot_dblist)
+        if matches_db:
+            process_batch(catlas, batch, prot_mh, matches_db,
+                          args.mode, cdbg_to_records)
 
     ###
 
