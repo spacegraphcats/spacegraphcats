@@ -34,73 +34,36 @@ from .catlas import CAtlas
 from . import search_utils
 
 
-MAX_SQLITE_INT = 2 ** 63 - 1
-sqlite3.register_adapter(
-    int, lambda x: hex(x) if x > MAX_SQLITE_INT else x)
-sqlite3.register_converter(
-    'integer', lambda b: int(b, 16 if b[:2] == b'0x' else 10))
+def prefetch(query_mh, annot_databases):
+    if not query_mh:
+        return
+
+    results = []
+    query = sourmash.SourmashSignature(query_mh)
+    for annot_db in annot_databases:
+        for match in annot_db.prefetch(query, 0):
+            results.append(match.signature)
+
+    return results
 
 
-def load_all_signature_metadata(db):
-    c = db.cursor()
-    c.execute("SELECT id, name, num, scaled, ksize, filename, is_dna, is_protein, is_dayhoff, is_hp, track_abundance, seed FROM sketches")
-    for (id, name, num, scaled, ksize, filename, is_dna, is_protein, is_dayhoff, is_hp, track_abundance, seed) in c:
-        yield id, name, filename, ksize, scaled, is_protein
+def gather(query_mh, matches):
+    counter = sourmash.index.CounterGather(query_mh)
+    for m in matches:
+        counter.add(m)
 
+    # build the min set cov
+    results = []
+    while 1:
+        result = counter.peek(query_mh, 0)
+        if result:
+            (sr, intersect_mh) = result
+            counter.consume(intersect_mh)
+            results.append(sr.signature)
+        else:
+            break
 
-def load_sketch(db, sketch_id):
-    c2 = db.cursor()
-
-    c2.execute("SELECT name, num, scaled, ksize, filename, is_dna, is_protein, is_dayhoff, is_hp, track_abundance, seed FROM sketches WHERE id=?", (sketch_id,))
-
-    name, num, scaled, ksize, filename, is_dna, is_protein, is_dayhoff, is_hp, track_abundance, seed = c2.fetchone()
-
-    mh = sourmash.MinHash(n=num, ksize=ksize, scaled=scaled, seed=seed, is_protein=is_protein, dayhoff=is_dayhoff, hp=is_hp, track_abundance=track_abundance)
-
-    c2.execute("SELECT hashval FROM hashes WHERE sketch_id=?", (sketch_id,))
-
-    for hashval, in c2:
-        mh.add_hash(hashval)
-
-    ss = sourmash.SourmashSignature(mh, name=name, filename=filename)
-    return ss
-
-
-def get_matching_sketches(db, unitig_mh):
-    query_cursor = db.cursor()
-    query_cursor.execute("DROP TABLE IF EXISTS hash_query")
-    query_cursor.execute("CREATE TEMPORARY TABLE hash_query (hashval INTEGER PRIMARY KEY)")
-    for hashval in unitig_mh.hashes:
-        query_cursor.execute("INSERT INTO hash_query (hashval) VALUES (?)", (hashval,))
-
-    #overlap = False
-    #query_cursor.execute("SELECT EXISTS (SELECT 1 FROM hashes WHERE hashes.hashval IN (SELECT hashval FROM hash_query))")
-    #overlap, = query_cursor.fetchone()
-
-    # do we have an overlap with any query at all??
-    query_cursor.execute("SELECT DISTINCT sketches.id FROM sketches,hashes WHERE sketches.id=hashes.sketch_id AND hashes.hashval IN (SELECT hashval FROM hash_query)")
-
-    for sketch_id, in query_cursor:
-        yield load_sketch(db, sketch_id)
-
-
-def get_matching_hashes(query_cursor, unitig_mh):
-    query_cursor.execute("DROP TABLE IF EXISTS hash_query")
-    query_cursor.execute("CREATE TEMPORARY TABLE hash_query (hashval INTEGER PRIMARY KEY)")
-    for hashval in unitig_mh.hashes:
-        query_cursor.execute("INSERT INTO hash_query (hashval) VALUES (?)", (hashval,))
-
-    query_cursor.execute("SELECT DISTINCT hashes.hashval FROM hashes,hash_query WHERE hashes.hashval=hash_query.hashval")
-
-    for hashval in query_cursor:
-        yield hashval
-
-
-def get_hashes_by_sketch_name_filename(query_cursor, name, filename):
-    query_cursor.execute("SELECT DISTINCT hashes.hashval FROM hashes,sketches where sketches.name=? and sketches.filename=?", (name, filename))
-
-    for hashval in query_cursor:
-        yield hashval
+    return results
 
 
 def main(argv):
@@ -190,15 +153,14 @@ def main(argv):
     assert len(args.query) == 1
     annot_database = args.query[0]
     notify(f"Reading annotation database: '{annot_database}'")
-    annot_db = sqlite3.connect(annot_database,
-                               detect_types=sqlite3.PARSE_DECLTYPES)
+    annot_db = sourmash.load_file_as_index(annot_database)
+    annot_dblist = [annot_db]
 
-    # get protein MinHash object to use.
-    for sketch_id, name, filename, ksize, scaled, is_protein in load_all_signature_metadata(annot_db):
-        first_sketch = load_sketch(annot_db, sketch_id)
-        assert first_sketch.minhash.is_protein
-        assert first_sketch.minhash.ksize == args.ksize
-        prot_mh = first_sketch.minhash.copy_and_clear()
+    # get protein MinHash object to use. @CTB use select etc etc here
+    for ss in annot_dblist[0].signatures():
+        prot_mh = ss.minhash.copy_and_clear()
+        assert prot_mh.is_protein
+        assert prot_mh.ksize == args.ksize
         break
 
     cdbg_to_records = {}
@@ -217,7 +179,7 @@ def main(argv):
             dom_mh.add_sequence(record.sequence, force=True)
 
         # get overlapping signatures
-        matches = list(get_matching_sketches(annot_db, dom_mh))
+        matches = prefetch(dom_mh, annot_dblist)
         if not matches:
             continue
 
@@ -225,20 +187,10 @@ def main(argv):
 
         # filter? do a gather, if requested
         if args.mode == 'gather+nbhd':
-            # build gather counter
-            counter = sourmash.index.CounterGather(dom_mh)
-            for m in matches:
-                counter.add(m)
+            results = gather(dom_mh, matches)
 
-            # build the min set cov
-            while 1:
-                result = counter.peek(dom_mh, 0)
-                if result:
-                    (sr, intersect_mh) = result
-                    counter.consume(intersect_mh)
-                    matching_annots.add((sr.signature.filename, sr.signature.name))
-                else:
-                    break
+            for m in results:
+                matching_annots.add((m.filename, m.name))
         else:
             # no filter.
             assert args.mode == 'search+nbhd'
