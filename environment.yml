@@ -11,7 +11,7 @@ dependencies:
     - numpy
     - pytest=5.3.2
     - sortedcontainers=2.1.0
-    - click=7.1.2
+    - click>=8.1.2,<9
     - pyflakes
     - bbhash>=0.5.4
     - sourmash>=4.2.2,<5
