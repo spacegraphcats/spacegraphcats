@@ -15,3 +15,4 @@ dependencies:
     - pyflakes
     - bbhash>=0.5.4
     - sourmash>=4.2.2,<5
+    - mamba>=0.22.1
