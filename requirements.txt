@@ -7,7 +7,7 @@ snakemake == 7.3.8
 click >= 8.1.2,<9
 sortedcontainers
 bbhash >= 0.5
-https://github.com/dib-lab/khmer/archive/master.zip
+khmer == 3.0.0a3
 sourmash>=4.2.2,<5
 flake8
 black
