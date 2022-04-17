@@ -49,7 +49,7 @@ setup(
         "snakemake==7.3.8",
         "sortedcontainers",
         "sourmash>=4.2.2,<5",
-        "khmer==3.0.0a3",
+        "khmer",
         "bbhash >= 0.5.4",
         "click >= 8.1.2,<9"
     ],
