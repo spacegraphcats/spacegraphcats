@@ -757,7 +757,7 @@ def test_dory_multifasta_annot_x_mode_1(location):
     copy_dory_head()
     copy_dory_catlas()
 
-    queryfile = relative_file('data/dory-prot-query.faa')
+    queryfile = relative_file('data/dory-prot-query.sqldb')
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")
@@ -793,7 +793,8 @@ def test_dory_multifasta_annot_x_mode_1_query_by_file(location):
     copy_dory_head()
     copy_dory_catlas()
 
-    queryfile = relative_file('data/dory-prot-query.faa')
+    queryfile = relative_file('data/dory-prot-query.combined.sqldb')
+    #queryfile = relative_file('data/dory-prot-query.faa')
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")
@@ -820,42 +821,14 @@ def test_dory_multifasta_annot_x_mode_1_query_by_file(location):
         assert k[0].endswith('dory-prot-query.faa')
         assert k[1] == 'dory-prot-query.faa'
 
-@pytest_utils.in_tempdir
-def test_dory_multifasta_annot_x_mode_2(location):
-    copy_dory_head()
-    copy_dory_catlas()
-
-    queryfile = relative_file('data/dory-prot-query.faa')
-
-    # index by multifasta
-    os.mkdir("dory_k21_r1_multifasta")
-    args = f"dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta_x.pickle --query {queryfile} -k 10 --mode gather+cdbg"
-    assert index_cdbg_by_multifasta_x.main(args.split()) == 0
-
-    with open('dory_k21_r1_multifasta/multifasta_x.pickle', 'rb') as fp:
-        catlas_prefix, records_to_cdbg, cdbg_to_records = pickle.load(fp)
-
-        assert catlas_prefix == 'dory_k21_r1'
-        assert len(records_to_cdbg) == 1
-        print(records_to_cdbg)
-        assert len(cdbg_to_records) == 2
-        print(cdbg_to_records)
-
-        assert 145 in cdbg_to_records
-        assert 63 in cdbg_to_records
-
-        x = list(records_to_cdbg.items())[0]
-        k, v = x
-        assert k[0].endswith('dory-prot-query.faa')
-        assert k[1] == 'OQR80224.1 NHP2 protein 1-like [Tropilaelaps mercedesae]'
-
 
 @pytest_utils.in_tempdir
 def test_dory_multifasta_annot_x_mode_3(location):
     copy_dory_head()
     copy_dory_catlas()
 
-    queryfile = relative_file('data/dory-prot-query.faa')
+    queryfile = relative_file('data/dory-prot-query.sqldb')
+    #queryfile = relative_file('data/dory-prot-query.faa')
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")
