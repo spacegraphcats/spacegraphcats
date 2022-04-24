@@ -72,8 +72,6 @@ def batch_process_dominators(dom_to_seq, prot_mh, annot_dblist):
         for record in records:
             all_mh.add_sequence(record.sequence, force=True)
 
-    print('XXX', len(all_mh.hashes))
-
     all_matches = prefetch(all_mh, annot_dblist)
     return sourmash.index.LinearIndex(_signatures=all_matches)
 
