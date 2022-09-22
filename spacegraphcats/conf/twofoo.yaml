@@ -16,3 +16,8 @@ multifasta_reference:
 - data/twofoo-genes.fa.gz
 multifasta_scaled: 1000
 multifasta_query_sig: data/63-os223.sig
+
+multifasta_x_reference:
+- data/shew-genes.faa.gz
+multifasta_x_protein_ksize: 10
+multifasta_x_query_is_dna: false

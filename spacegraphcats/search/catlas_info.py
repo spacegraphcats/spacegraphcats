@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+"Print out some basic information about the catlas."
 import argparse
 import os
 import sys
@@ -16,7 +17,7 @@ def main(argv=sys.argv[1:]):
     assert args.catlas_prefix.split("_")[-1] == "r1"
 
     basename = os.path.basename(args.catlas_prefix)
-    gxtfile = os.path.join(args.catlas_prefix, "cdbg.gxt")
+    gxtfile = os.path.join(args.cdbg_prefix, "cdbg.gxt")
 
     catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix)
     top_node_id, dag, dag_levels = catlas.root, catlas.children, catlas.levels

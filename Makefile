@@ -70,6 +70,7 @@ twofoo-test: twofoo.fq.gz # twofoo/bcalm.twofoo.k31.unitigs.fa
 	python -m spacegraphcats run twofoo extract_reads_for_hashvals
 	python -m spacegraphcats.search.characterize_catlas_regions twofoo_k31 twofoo_k31_r1 twofoo_k31_r1.vec --contigs-db twofoo_k31/bcalm.unitigs.db
 	python -m spacegraphcats run twofoo multifasta_query
+	python -m spacegraphcats run twofoo build_cdbg_list_by_record_x
 
 twofoo-clean:
 	rm -fr twofoo twofoo_k31_r1 twofoo_k31_r1_hashval_k51/ \

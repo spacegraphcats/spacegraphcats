@@ -17,3 +17,8 @@ multifasta_reference:
 - data/dory-head.fa
 multifasta_scaled: 100
 multifasta_query_sig: data/dory-subset.fq.sig
+
+multifasta_x_reference:
+- data/dory-prot-query.faa
+multifasta_x_protein_ksize: 10
+multifasta_x_query_is_dna: false

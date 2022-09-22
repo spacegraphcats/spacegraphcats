@@ -1,3 +1,6 @@
+"""
+Test many (most?) spacegraphcats scripts against the 'dory' small example data.
+"""
 import os.path
 import shutil
 import glob
@@ -28,9 +31,13 @@ from spacegraphcats.search import extract_reads
 from spacegraphcats.cdbg import index_cdbg_by_minhash
 from spacegraphcats.search import query_by_hashval
 from spacegraphcats.search import index_cdbg_by_multifasta
+from spacegraphcats.search import index_cdbg_by_multifasta_x
 from spacegraphcats.search import query_multifasta_by_sig
 from spacegraphcats.search import extract_cdbg_by_multifasta
 from spacegraphcats.search import search_utils
+from spacegraphcats.search import query_by_prot
+from spacegraphcats.search import extract_neighborhoods_by_cdbg_ids
+from spacegraphcats.search import count_dominator_abundance
 
 
 def copy_dory_catlas():
@@ -735,7 +742,7 @@ def test_dory_multifasta_query(location):
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")
-    args = "dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta.pickle --query dory-head.fa -k 21"
+    args = "dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta.pickle --query dory-head.fa"
     assert index_cdbg_by_multifasta.main(args.split()) == 0
 
     args = "-k 21 --scaled 100 dory_k21/bcalm.unitigs.db dory_k21_r1_multifasta/hashval.pickle"
@@ -753,6 +760,19 @@ def test_dory_multifasta_query(location):
 
 
 @pytest_utils.in_tempdir
+def test_dory_multifasta_annot_x(location):
+    copy_dory_head()
+    copy_dory_catlas()
+
+    queryfile = relative_file('data/dory-prot-query.faa')
+
+    # index by multifasta
+    os.mkdir("dory_k21_r1_multifasta")
+    args = f"dory_k21 dory_k21_r1 dory_k21_r1_multifasta/multifasta_x.pickle --query {queryfile} -k 10"
+    assert index_cdbg_by_multifasta_x.main(args.split()) == 0
+
+
+@pytest_utils.in_tempdir
 def test_dory_shadow_extract(location):
     # run extract_nodes_by_shadow_ratio
     copy_dory_catlas()
@@ -761,3 +781,95 @@ def test_dory_shadow_extract(location):
     args = "dory_k21 dory_k21_r1 shadow_out --contigs-db dory_k21/bcalm.unitigs.db".split()
     print("** running extract_nodes_by_shadow_ratio")
     assert extract_nodes_by_shadow_ratio.main(args) == 0
+
+
+@pytest_utils.in_tempdir
+def test_dory_protein_search(location):
+    # run query_by_prot
+    copy_dory_catlas()
+
+    queryfile = relative_file('data/dory-prot-query.faa')
+
+    args = f"{queryfile} dory_k21/bcalm.unitigs.db".split()
+    query_by_prot.main(args)
+
+    with gzip.open('dory-prot-query.faa.nodes.gz') as fp:
+        lines = fp.readlines()
+        assert int(lines[0].strip()) == 145
+        assert int(lines[1].strip()) == 63
+        assert len(lines) == 2
+
+
+@pytest_utils.in_tempdir
+def test_dory_translate_search(location):
+    # run query_by_prot with --query-is-dna
+    copy_dory_catlas()
+
+    queryfile = relative_file('data/dory-dna-translate-query.fa')
+
+    args = f"{queryfile} dory_k21/bcalm.unitigs.db --query-is-dna".split()
+    query_by_prot.main(args)
+
+    with gzip.open('dory-dna-translate-query.fa.nodes.gz') as fp:
+        lines = fp.readlines()
+        assert int(lines[0].strip()) == 145
+        assert int(lines[1].strip()) == 63
+        assert len(lines) == 2
+
+
+@pytest_utils.in_tempdir
+def test_extract_neighborhoods_by_cdbg_ids(location):
+    # run extract_neighborhoods_by_cdbg_ids
+    copy_dory_catlas()
+
+    with gzip.open('node-list.txt.gz', 'wt') as fp:
+        print('145', file=fp)
+        print('63', file=fp)
+
+    cmdline = 'dory_k21 dory_k21_r1 node-list.txt.gz -o xyz.out'.split()
+    extract_neighborhoods_by_cdbg_ids.main(cmdline)
+
+    with gzip.open('xyz.out', 'rt') as fp:
+        lines = fp.readlines()
+        nodes = set( [int(x.strip()) for x in lines] )
+
+        assert 63 in nodes
+        assert 145 in nodes
+        assert len(nodes) == 2
+
+
+@pytest_utils.in_tempdir
+def test_dory_cdbg_and_catlas_abund(location):
+    # run count_dominator_abundance
+    copy_dory_catlas()
+    copy_dory_subset()
+
+    args = "dory_k21 dory_k21_r1 dory-subset.fa".split()
+    print("** running count_dominator_abundance")
+    assert count_dominator_abundance.main(args) == 0
+
+    assert os.path.exists('dory_k21_r1_abund')
+
+    with open('dory_k21_r1_abund/dory-subset.fa.cdbg_abund.csv', newline="") as fp:
+        lines = fp.readlines()
+        assert len(lines) == 737
+
+        total_abund = 0
+        total_node_size = 0
+        for line in lines[1:]:
+            line = line.strip().split(',')
+            total_abund += int(line[1])
+            total_node_size += int(line[2])
+
+        assert total_abund == 240920
+        assert total_node_size == 212475
+
+    with open('dory_k21_r1_abund/dory-subset.fa.dom_abund.csv', newline="") as fp:
+        lines = fp.readlines()
+        assert len(lines) == 2836
+
+        for line in lines:
+            line = line.strip().split(',')
+            if line[1] == '7':             # top dom node
+                assert line[2] == '240920' # total k-mer abundances
+                assert line[3] == '212475' # total number of k-mers

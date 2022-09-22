@@ -46,10 +46,11 @@ setup(
         "screed >= 1.0.5,<2",
         "pytest",
         "numpy",
-        "snakemake==6.4.0",
+        "snakemake==7.3.8",
         "sortedcontainers",
-        "sourmash>=4.1.1,<5",
+        "sourmash>=4.5.0,<5",
         "bbhash >= 0.5.4",
+        "click >= 8.1.2,<9"
     ],
     long_description=long_description,
     long_description_content_type="text/markdown",
