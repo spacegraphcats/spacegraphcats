@@ -48,7 +48,7 @@ setup(
         "numpy",
         "snakemake==7.3.8",
         "sortedcontainers",
-        "sourmash>=4.2.2,<5",
+        "sourmash>=4.5.0,<5",
         "khmer",
         "bbhash >= 0.5.4",
         "click >= 8.1.2,<9"
