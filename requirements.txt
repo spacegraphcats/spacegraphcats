@@ -7,7 +7,6 @@ snakemake == 7.3.8
 click >= 8.1.2,<9
 sortedcontainers
 bbhash >= 0.5
-khmer
 sourmash>=4.5.0,<5
 flake8
 black
