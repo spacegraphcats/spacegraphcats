@@ -14,5 +14,5 @@ dependencies:
     - click>=8.1.2,<9
     - pyflakes
     - bbhash>=0.5.4
-    - sourmash>=4.4.3,<5
+    - sourmash>=4.5.0,<5
     - mamba>=0.22.1
