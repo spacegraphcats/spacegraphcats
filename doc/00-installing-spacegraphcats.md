@@ -43,7 +43,7 @@ and voila, done!
 
 ### 2. Installing dependencies in a virtual environment
 
-If you already have a functioning Python >= 3.7 along with a C/C++
+If you already have a functioning Python >= 3.8 along with a C/C++
 development environment, you can install the dependencies in a
 venv.
 
@@ -53,10 +53,10 @@ Install virtualenv if you have not done so:
 pip install virtualenv
 ```
 
-Change to a working directory, and create a virtualenv (replace `python3.5` with your Python version):
+Change to a working directory, and create a virtualenv:
 
 ```
-python -m virtualenv -p python3.7 catsenv
+python -m virtualenv -p python3.8 catsenv
 ```
 
 Activate the virtualenv, upgrade pip, and install Cython:
