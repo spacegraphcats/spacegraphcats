@@ -21,3 +21,4 @@ multifasta_x_reference:
 - data/shew-genes.faa.gz
 multifasta_x_protein_ksize: 10
 multifasta_x_query_is_dna: false
+multifasta_x_search_mode: search+nbhd
