@@ -1,6 +1,12 @@
-name: Test
+name: Run tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [latest]
+    tags: v*
+    pull_request:
+  schedule:
+    - cron: "0 0 * * *" # daily
 
 jobs:
   test:
