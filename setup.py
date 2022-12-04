@@ -43,12 +43,12 @@ setup(
     ],
     use_scm_version={"write_to": "spacegraphcats/version.py"},
     install_requires=[
-        "screed >= 1.0.5,<2",
+        "screed >= 1.1,<2",
         "pytest",
         "numpy",
         "snakemake==7.18.2",
         "sortedcontainers",
-        "sourmash>=4.5.0,<5",
+        "sourmash>=4.6.1,<5",
         "khmer",
         "bbhash >= 0.5.4",
         "click >= 8.1.2,<9"
