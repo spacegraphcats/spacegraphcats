@@ -46,6 +46,7 @@ jobs:
       - name: Install sgc
         run: pip install -e .
 
+      - run: pip check
       - run: make black
       - run: make flakes
       - run: make lint
