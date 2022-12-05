@@ -54,5 +54,5 @@ jobs:
       - run: pytest tests --cov=.
       - run: make twofoo-test
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+#      - name: Upload coverage to Codecov
+#        uses: codecov/codecov-action@v3
