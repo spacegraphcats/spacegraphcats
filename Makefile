@@ -4,7 +4,7 @@ flakes:
 	flake8 spacegraphcats/ scripts/ tests/
 
 black:
-	black .
+	black --check .
 
 test:
 	pytest tests
