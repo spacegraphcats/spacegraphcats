@@ -69,12 +69,15 @@ jobs:
         run: conda list
 
       - name: Install coverage dependencies
+        shell: bash -el {0}
         run: python -m pip install pytest-cov
 
       - name: Install Cython
+        shell: bash -el {0}
         run: python -m pip install Cython
 
       - name: Install sgc
+        shell: bash -el {0}
         run: python -m pip install -e .
 
 #      - name: Install test deps
@@ -82,16 +85,26 @@ jobs:
 
 #      - run: pip check
       - run: pytest tests
+        shell: bash -el {0}
 
       - run: pytest tests --cov=.
+        shell: bash -el {0}
 
 #      - run: pip check
       - run: make black
+        shell: bash -el {0}
+
       - run: make flakes
+        shell: bash -el {0}
+
       - run: make lint
+        shell: bash -el {0}
 
       - run: pytest tests --cov=.
+        shell: bash -el {0}
+
       - run: make twofoo-test
+        shell: bash -el {0}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
