@@ -51,14 +51,14 @@ jobs:
           CACHE_NUMBER: 0
           id: cache
 
-      - name: Show Python version
-        shell: bash -el {0}
-        run: python -V
-
       - name: Update environment
         run:
           mamba env update -n anaconda-client-env -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: Show Python version
+        shell: bash -el {0}
+        run: python -V
 
       - name: Conda info
         shell: bash -el {0}
@@ -70,7 +70,7 @@ jobs:
 
       - name: Install test dependencies
         shell: bash -el {0}
-        run: python -m pip install pytest-cov black
+        run: python -m pip install pytest-cov black flake8
 
       - name: Install Cython
         shell: bash -el {0}
@@ -95,9 +95,6 @@ jobs:
         shell: bash -el {0}
 
       - run: make flakes
-        shell: bash -el {0}
-
-      - run: make lint
         shell: bash -el {0}
 
       - run: pytest tests --cov=.

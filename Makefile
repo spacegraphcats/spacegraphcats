@@ -6,9 +6,6 @@ flakes:
 black:
 	black .
 
-lint:
-	#mypy spacegraphcats/*.py
-
 test:
 	pytest tests
 
