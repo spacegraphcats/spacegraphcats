@@ -72,9 +72,9 @@ jobs:
         shell: bash -el {0}
         run: python -m pip install pytest-cov black flake8
 
-      - name: Install Cython
+      - name: Install Cython and other dev deps
         shell: bash -el {0}
-        run: python -m pip install Cython
+        run: python -m pip install Cython setuptools_scm_git_archive
 
       - name: Install sgc
         shell: bash -el {0}
@@ -84,13 +84,7 @@ jobs:
 #        run: python -m pip install -e .[test]
 
 #      - run: pip check
-      - run: pytest tests
-        shell: bash -el {0}
 
-      - run: pytest tests --cov=.
-        shell: bash -el {0}
-
-#      - run: pip check
       - run: make black
         shell: bash -el {0}
 
@@ -100,6 +94,7 @@ jobs:
       - run: pytest tests --cov=.
         shell: bash -el {0}
 
+#      - run: pip check
       - run: make twofoo-test
         shell: bash -el {0}
 
