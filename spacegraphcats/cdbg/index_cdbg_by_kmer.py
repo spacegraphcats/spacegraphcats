@@ -21,7 +21,7 @@ from bbhash_table import BBHashTable
 
 from .hashing import hash_sequence, MPHF_KmerIndex
 
-UNSET_VALUE = 2**32 - 1             # BBHashTable "unset" value
+UNSET_VALUE = 2**32 - 1  # BBHashTable "unset" value
 
 
 def build_mphf(ksize, records_iter_fn):
@@ -50,13 +50,13 @@ def build_mphf(ksize, records_iter_fn):
     print(f"loaded {n_contigs} contigs.\n")
 
     if multicounts:
-        print('NOTE: likely hash collisions (or duplicate k-mers?) in input cDBG')
-        print(f'NOTE: {len(multicounts)} k-mer hash values are present more than once.')
-        print('NOTE: these k-mers are being removed from consideration.')
+        print("NOTE: likely hash collisions (or duplicate k-mers?) in input cDBG")
+        print(f"NOTE: {len(multicounts)} k-mer hash values are present more than once.")
+        print("NOTE: these k-mers are being removed from consideration.")
 
         all_kmers -= multicounts
     else:
-        print('NOTE: no multicount hashvals detected.')
+        print("NOTE: no multicount hashvals detected.")
 
     # build MPHF (this is the CPU intensive bit)
     print(f"building MPHF for {len(all_kmers)} k-mers in {n_contigs} nodes.")

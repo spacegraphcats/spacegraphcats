@@ -8,7 +8,12 @@ class CAtlas:
     """CAtlas class for searching."""
 
     def __init__(
-            self, cdbg_directory, catlas_directory, load_domfile=True, load_sizefile=False, min_abund=0.0
+        self,
+        cdbg_directory,
+        catlas_directory,
+        load_domfile=True,
+        load_sizefile=False,
+        min_abund=0.0,
     ):
         self.cdbg_dir = cdbg_directory
         self.name = catlas_directory

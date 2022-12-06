@@ -28,13 +28,13 @@ from spacegraphcats.search import search_utils
 
 def main(args):
     p = argparse.ArgumentParser()
-    p.add_argument('query')
-    p.add_argument('unitigs_db')
-    p.add_argument('-k', '--ksize', type=int, default=10,
-                   help='protein ksize')
-    p.add_argument('--out-prefix')
-    p.add_argument('--query-is-dna', help="translate query into protein",
-                   action='store_true')
+    p.add_argument("query")
+    p.add_argument("unitigs_db")
+    p.add_argument("-k", "--ksize", type=int, default=10, help="protein ksize")
+    p.add_argument("--out-prefix")
+    p.add_argument(
+        "--query-is-dna", help="translate query into protein", action="store_true"
+    )
     args = p.parse_args(args)
 
     out_prefix = args.out_prefix
@@ -45,8 +45,7 @@ def main(args):
     dna_ksize = args.ksize * 3
 
     dna_mh = sourmash.MinHash(n=0, scaled=1000, ksize=dna_ksize)
-    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize,
-                               is_protein=True)
+    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize, is_protein=True)
     translate_mh = prot_mh.copy_and_clear()
 
     ## query: for all of the query sequences (which are protein),
@@ -60,13 +59,17 @@ def main(args):
 
     for n, record in enumerate(screed.open(args.query)):
         if n and n % 1000 == 0:
-            print(f'... {n} {len(query_kmers)} (query)', end='\r', file=sys.stderr)
-        these_hashes = translate_mh.seq_to_hashes(record.sequence,
-                                                  is_protein=add_as_protein)
+            print(f"... {n} {len(query_kmers)} (query)", end="\r", file=sys.stderr)
+        these_hashes = translate_mh.seq_to_hashes(
+            record.sequence, is_protein=add_as_protein
+        )
         query_kmers.update(these_hashes)
     n += 1
 
-    print(f'loaded {n} query sequences {len(query_kmers)} prot kmers (query)', file=sys.stderr)
+    print(
+        f"loaded {n} query sequences {len(query_kmers)} prot kmers (query)",
+        file=sys.stderr,
+    )
 
     ## now unitigs... for all of the unitigs (which are DNA),
     ## first: translate the unitig into protein (up to six sequences),
@@ -81,7 +84,11 @@ def main(args):
     db = sqlite3.connect(args.unitigs_db)
     for n, record in enumerate(search_utils.contigs_iter_sqlite(db)):
         if n and n % 1000 == 0:
-            print(f'... searched {n} unitigs, found {len(matching_cdbg)} matching so far', end='\r', file=sys.stderr)
+            print(
+                f"... searched {n} unitigs, found {len(matching_cdbg)} matching so far",
+                end="\r",
+                file=sys.stderr,
+            )
 
         # translate into protein sequences
         seq = record.sequence
@@ -100,18 +107,18 @@ def main(args):
             prot_mh.add_sequence(record.sequence)
     n += 1
 
-    print(f'loaded {n} query sequences (unitigs)', file=sys.stderr)
-    print(f'total matches: {len(matching_cdbg)}', file=sys.stderr)
+    print(f"loaded {n} query sequences (unitigs)", file=sys.stderr)
+    print(f"total matches: {len(matching_cdbg)}", file=sys.stderr)
 
     dna_sig = sourmash.SourmashSignature(dna_mh, name="DNA")
     prot_sig = sourmash.SourmashSignature(prot_mh, name="prot")
 
-    outsig = out_prefix + '.sig'
-    with open(outsig, 'wt') as fp:
+    outsig = out_prefix + ".sig"
+    with open(outsig, "wt") as fp:
         sourmash.save_signatures([dna_sig, prot_sig], fp)
     print(f"saved prot & dna signatures to '{outsig}'")
 
-    outnodes = out_prefix + '.nodes.gz'
+    outnodes = out_prefix + ".nodes.gz"
     with gzip.open(outnodes, "wt") as fp:
         id_list = "\n".join([str(x) for x in sorted(matching_cdbg)])
         print(id_list, file=fp)
@@ -120,5 +127,5 @@ def main(args):
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

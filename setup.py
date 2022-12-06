@@ -51,7 +51,7 @@ setup(
         "sourmash>=4.6.1,<5",
         "khmer",
         "bbhash >= 0.5.4",
-        "click >= 8.1.2,<9"
+        "click >= 8.1.2,<9",
     ],
     long_description=long_description,
     long_description_content_type="text/markdown",
