@@ -51,6 +51,9 @@ jobs:
           CACHE_NUMBER: 0
           id: cache
 
+      - name: Show Python version
+        run: python -V
+
       - name: Update environment
         run:
           mamba env update -n anaconda-client-env -f environment.yml
