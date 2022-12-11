@@ -23,8 +23,9 @@ def main(argv):
     parser.add_argument("sqlite_db_out")
     parser.add_argument("mapping_pickle_out")
     parser.add_argument("-k", "--ksize", type=int, default=31)
-    parser.add_argument("--seed", type=int, default=42,
-                        help="minimizer seed for sorting contigs")
+    parser.add_argument(
+        "--seed", type=int, default=42, help="minimizer seed for sorting contigs"
+    )
     args = parser.parse_args(argv)
 
     unitigs = args.bcalm_unitigs
@@ -106,7 +107,10 @@ def main(argv):
     # remap everything into new coordinate space based on min_hashval ordering
     remapping = {}
     cursor.execute("SELECT id, offset FROM sequences ORDER BY min_hashval")
-    for new_key, (old_key, offset,) in enumerate(cursor):
+    for new_key, (
+        old_key,
+        offset,
+    ) in enumerate(cursor):
         remapping[old_key] = new_key
 
     # remap sequence IDs using offset as unique key

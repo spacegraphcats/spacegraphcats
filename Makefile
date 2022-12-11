@@ -4,10 +4,7 @@ flakes:
 	flake8 spacegraphcats/ scripts/ tests/
 
 black:
-	black .
-
-lint:
-	#mypy spacegraphcats/*.py
+	black --check .
 
 test:
 	pytest tests

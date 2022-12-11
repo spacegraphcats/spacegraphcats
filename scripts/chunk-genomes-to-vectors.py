@@ -63,7 +63,7 @@ def main():
 
     # now, build a matrix of GROUP_N rows x 4**ksize columns, where each
     # row will be the set of k-mer abundances associated with each group.
-    V = numpy.zeros((len(group_info), 4 ** args.ksize), dtype=numpy.uint16)
+    V = numpy.zeros((len(group_info), 4**args.ksize), dtype=numpy.uint16)
     for i, n in enumerate(group_info):
         mh = group_info[n]
         vec = dict(mh.get_mins(with_abundance=True))

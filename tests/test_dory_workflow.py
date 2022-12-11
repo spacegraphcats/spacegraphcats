@@ -119,7 +119,8 @@ def test_dory_sort_bcalm_diff_seed(location):
         relative_file("data/bcalm-BROKEN.dory.k21.unitigs.fa"),
         "dory_k21_seedtest/bcalm.unitigs.db",
         "dory_k21_seedtest/bcalm.unitigs.pickle",
-        "--seed", "43",
+        "--seed",
+        "43",
     ]
 
     assert sort_bcalm_unitigs.main(args) != 0
@@ -756,7 +757,7 @@ def test_dory_multifasta_annot_x(location):
     copy_dory_head()
     copy_dory_catlas()
 
-    queryfile = relative_file('data/dory-prot-query.faa')
+    queryfile = relative_file("data/dory-prot-query.faa")
 
     # index by multifasta
     os.mkdir("dory_k21_r1_multifasta")
@@ -770,7 +771,9 @@ def test_dory_shadow_extract(location):
     copy_dory_catlas()
 
     # make k-mer search index
-    args = "dory_k21 dory_k21_r1 shadow_out --contigs-db dory_k21/bcalm.unitigs.db".split()
+    args = (
+        "dory_k21 dory_k21_r1 shadow_out --contigs-db dory_k21/bcalm.unitigs.db".split()
+    )
     print("** running extract_nodes_by_shadow_ratio")
     assert extract_nodes_by_shadow_ratio.main(args) == 0
 
@@ -780,12 +783,12 @@ def test_dory_protein_search(location):
     # run query_by_prot
     copy_dory_catlas()
 
-    queryfile = relative_file('data/dory-prot-query.faa')
+    queryfile = relative_file("data/dory-prot-query.faa")
 
     args = f"{queryfile} dory_k21/bcalm.unitigs.db".split()
     query_by_prot.main(args)
 
-    with gzip.open('dory-prot-query.faa.nodes.gz') as fp:
+    with gzip.open("dory-prot-query.faa.nodes.gz") as fp:
         lines = fp.readlines()
         assert int(lines[0].strip()) == 145
         assert int(lines[1].strip()) == 63
@@ -797,12 +800,12 @@ def test_dory_translate_search(location):
     # run query_by_prot with --query-is-dna
     copy_dory_catlas()
 
-    queryfile = relative_file('data/dory-dna-translate-query.fa')
+    queryfile = relative_file("data/dory-dna-translate-query.fa")
 
     args = f"{queryfile} dory_k21/bcalm.unitigs.db --query-is-dna".split()
     query_by_prot.main(args)
 
-    with gzip.open('dory-dna-translate-query.fa.nodes.gz') as fp:
+    with gzip.open("dory-dna-translate-query.fa.nodes.gz") as fp:
         lines = fp.readlines()
         assert int(lines[0].strip()) == 145
         assert int(lines[1].strip()) == 63
@@ -814,16 +817,16 @@ def test_extract_neighborhoods_by_cdbg_ids(location):
     # run extract_neighborhoods_by_cdbg_ids
     copy_dory_catlas()
 
-    with gzip.open('node-list.txt.gz', 'wt') as fp:
-        print('145', file=fp)
-        print('63', file=fp)
+    with gzip.open("node-list.txt.gz", "wt") as fp:
+        print("145", file=fp)
+        print("63", file=fp)
 
-    cmdline = 'dory_k21 dory_k21_r1 node-list.txt.gz -o xyz.out'.split()
+    cmdline = "dory_k21 dory_k21_r1 node-list.txt.gz -o xyz.out".split()
     extract_neighborhoods_by_cdbg_ids.main(cmdline)
 
-    with gzip.open('xyz.out', 'rt') as fp:
+    with gzip.open("xyz.out", "rt") as fp:
         lines = fp.readlines()
-        nodes = set( [int(x.strip()) for x in lines] )
+        nodes = set([int(x.strip()) for x in lines])
 
         assert 63 in nodes
         assert 145 in nodes
@@ -840,28 +843,28 @@ def test_dory_cdbg_and_catlas_abund(location):
     print("** running count_dominator_abundance")
     assert count_dominator_abundance.main(args) == 0
 
-    assert os.path.exists('dory_k21_r1_abund')
+    assert os.path.exists("dory_k21_r1_abund")
 
-    with open('dory_k21_r1_abund/dory-subset.fa.cdbg_abund.csv', newline="") as fp:
+    with open("dory_k21_r1_abund/dory-subset.fa.cdbg_abund.csv", newline="") as fp:
         lines = fp.readlines()
         assert len(lines) == 737
 
         total_abund = 0
         total_node_size = 0
         for line in lines[1:]:
-            line = line.strip().split(',')
+            line = line.strip().split(",")
             total_abund += int(line[1])
             total_node_size += int(line[2])
 
         assert total_abund == 240920
         assert total_node_size == 212475
 
-    with open('dory_k21_r1_abund/dory-subset.fa.dom_abund.csv', newline="") as fp:
+    with open("dory_k21_r1_abund/dory-subset.fa.dom_abund.csv", newline="") as fp:
         lines = fp.readlines()
         assert len(lines) == 2836
 
         for line in lines:
-            line = line.strip().split(',')
-            if line[1] == '7':             # top dom node
-                assert line[2] == '240920' # total k-mer abundances
-                assert line[3] == '212475' # total number of k-mers
+            line = line.strip().split(",")
+            if line[1] == "7":  # top dom node
+                assert line[2] == "240920"  # total k-mer abundances
+                assert line[3] == "212475"  # total number of k-mers
