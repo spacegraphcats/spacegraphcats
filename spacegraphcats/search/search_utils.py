@@ -237,7 +237,7 @@ def decorate_catlas_with_kmer_sizes(
     layer1_to_cdbg, dag, dag_levels, cdbg_kmer_sizes, cdbg_weighted_kmer_sizes
 ):
     x = []
-    for (node_id, level) in dag_levels.items():
+    for node_id, level in dag_levels.items():
         x.append((level, node_id))
     x.sort()
 

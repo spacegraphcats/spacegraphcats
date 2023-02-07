@@ -56,7 +56,7 @@ def main(argv):
             cdbg_id = hashval_to_contig_id.get(hashval)
             if cdbg_id:
                 record_names = cdbg_to_records[cdbg_id]
-                for (filename, name) in record_names:
+                for filename, name in record_names:
                     w.writerow([hashval, catlas_base, filename, name])
                     found_records.add(name)
                     found_hashvals.add(hashval)

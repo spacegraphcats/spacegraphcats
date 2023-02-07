@@ -91,17 +91,17 @@ def main(args=sys.argv[1:]):
     print("total k-mers:", catlas.kmer_sizes[catlas.root])
 
     x.sort(reverse=True)
-    for (k, v, a, b) in x[:10]:
+    for k, v, a, b in x[:10]:
         print("ratio: {:.3f}".format(2**k), "/ shadow size:", a, "/ kmers:", b)
     print("... eliding {} nodes".format(len(x) - 20))
-    for (k, v, a, b) in x[-10:]:
+    for k, v, a, b in x[-10:]:
         print("ratio: {:.3f}".format(2**k), "/ shadow size:", a, "/ kmers:", b)
 
     # keep the last keep-fraction (default 10%) for examination
     keep_sum_kmer = args.keep_fraction * catlas.kmer_sizes[catlas.root]
     sofar = 0
     keep_terminal = set()
-    for (k, v, a, b) in reversed(x):
+    for k, v, a, b in reversed(x):
         sofar += b
         if sofar > keep_sum_kmer:
             break
