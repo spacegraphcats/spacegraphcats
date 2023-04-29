@@ -5,7 +5,7 @@ channels:
     - defaults
 dependencies:
     - bcalm=2.2.3
-    - snakemake-minimal=7.25.0
+    - snakemake-minimal=7.25.2
     - screed>=1.1,<2
     - khmer=3.0.0a3
     - numpy
