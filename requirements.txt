@@ -3,7 +3,7 @@ pytest >= 5.1.2
 pytest-dependency
 numpy
 pandas
-snakemake == 7.25.2
+snakemake == 7.28.3
 click >= 8.1.2,<9
 sortedcontainers
 bbhash >= 0.5
