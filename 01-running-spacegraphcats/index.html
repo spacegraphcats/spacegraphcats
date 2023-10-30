@@ -1,0 +1,975 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="http://spacegraphcats.github.io/spacegraphcats/01-running-spacegraphcats/">
+      
+      
+        <link rel="prev" href="../00-installing-spacegraphcats/">
+      
+      
+        <link rel="next" href="../02-spacegraphcats-use-cases/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.7">
+    
+    
+      
+        <title>Running spacegraphcats - spacegraphcats documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.4b4a2bd9.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.356b1318.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue_grey" data-md-color-accent="black">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#spacegraphcats-a-run-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="spacegraphcats documentation" class="md-header__button md-logo" aria-label="spacegraphcats documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 12-7-7v4C7 10 4 15 3 20c2.5-3.5 6-5.1 11-5.1V19l7-7Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            spacegraphcats documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Running spacegraphcats
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/spacegraphcats/spacegraphcats" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spacegraphcats
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="spacegraphcats documentation" class="md-nav__button md-logo" aria-label="spacegraphcats documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 12-7-7v4C7 10 4 15 3 20c2.5-3.5 6-5.1 11-5.1V19l7-7Z"/></svg>
+
+    </a>
+    spacegraphcats documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/spacegraphcats/spacegraphcats" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spacegraphcats
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../0a-primer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Primer on metagenomics and assembly graphs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Using spacegraphcats
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Using spacegraphcats
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00-installing-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installing spacegraphcats
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Running spacegraphcats
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Running spacegraphcats
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installing-the-spacegraphcats-software-and-its-dependencies" class="md-nav__link">
+    Installing the spacegraphcats software and its dependencies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-spacegraphcats-search-output-files" class="md-nav__link">
+    Running spacegraphcats search &amp; output files
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-and-running-spacegraphcats-itself" class="md-nav__link">
+    Configuring and running spacegraphcats itself
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#config-files-the-dory-example" class="md-nav__link">
+    Config files: the dory example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-larger-example-twofoo" class="md-nav__link">
+    A larger example: twofoo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interpreting-the-results-of-a-run" class="md-nav__link">
+    Interpreting the results of a run
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extracting-the-sequences-that-match-search-results" class="md-nav__link">
+    Extracting the sequences that match search results
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-information" class="md-nav__link">
+    Other information
+  </a>
+  
+    <nav class="md-nav" aria-label="Other information">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-spacegraphcats-script" class="md-nav__link">
+    The spacegraphcats script
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#characterizing-the-catlas" class="md-nav__link">
+    Characterizing the catlas
+  </a>
+  
+    <nav class="md-nav" aria-label="Characterizing the catlas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#extracting-high-articulated-bits-of-the-cdbg" class="md-nav__link">
+    Extracting high articulated bits of the cDBG
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-spacegraphcats-use-cases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Spacegraphcats use cases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-visualizing-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Visualizing spacegraphcats outputs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-spacegraphcats-parameters/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tuning parameters in spacegraphcats
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-alpha-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Alpha functionality in spacegraphcats
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-snakemake-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integrating spacegraphcats into a snakemake workflow
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../calculating-taxonomic-purity/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calculating taxonomic purity of spacegraphcats outputs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developing-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer's guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installing-the-spacegraphcats-software-and-its-dependencies" class="md-nav__link">
+    Installing the spacegraphcats software and its dependencies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-spacegraphcats-search-output-files" class="md-nav__link">
+    Running spacegraphcats search &amp; output files
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-and-running-spacegraphcats-itself" class="md-nav__link">
+    Configuring and running spacegraphcats itself
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#config-files-the-dory-example" class="md-nav__link">
+    Config files: the dory example
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-larger-example-twofoo" class="md-nav__link">
+    A larger example: twofoo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interpreting-the-results-of-a-run" class="md-nav__link">
+    Interpreting the results of a run
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extracting-the-sequences-that-match-search-results" class="md-nav__link">
+    Extracting the sequences that match search results
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-information" class="md-nav__link">
+    Other information
+  </a>
+  
+    <nav class="md-nav" aria-label="Other information">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-spacegraphcats-script" class="md-nav__link">
+    The spacegraphcats script
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#characterizing-the-catlas" class="md-nav__link">
+    Characterizing the catlas
+  </a>
+  
+    <nav class="md-nav" aria-label="Characterizing the catlas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#extracting-high-articulated-bits-of-the-cdbg" class="md-nav__link">
+    Extracting high articulated bits of the cDBG
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="spacegraphcats-a-run-guide">spacegraphcats: a run guide</h1>
+<h2 id="installing-the-spacegraphcats-software-and-its-dependencies">Installing the spacegraphcats software and its dependencies</h2>
+<p>Please see <a href="../00-installing-spacegraphcats/">Installing spacegraphcats</a>.</p>
+<h2 id="running-spacegraphcats-search-output-files">Running spacegraphcats search &amp; output files</h2>
+<pre><code>python -m spacegraphcats run dory-test search
+</code></pre>
+<p>This should run in a few seconds, and you should see something like this in the output:</p>
+<pre><code>...
+query inclusion by retrieved contigs: 100.000%
+query similarity to retrieved contigs: 100.000%
+total time: 0.0s
+Finished job 0.
+6 of 6 steps (100%) done
+</code></pre>
+<p>You will have a bunch of new output files:</p>
+<ul>
+<li>the <code>dory_k21/</code> directory contains the BCALM assembly of the input files into a compact De Bruijn graph; the key file here is <code>dory_k21/bcalm.unitigs.db</code>. There is also an output log file, <code>bcalm.log.txt</code>, that contains the console output of BCALM's run.</li>
+<li>the <code>dory_k21_r1/</code> directory contains the various files of the catlas constructed by spacegraphcats:<ul>
+<li>cdbg.gxt - the cDBG connection graph, in a custom format; produced by <code>bcalm_to_gxt.py</code></li>
+<li>contigs.info.csv - summary information about the cDBG unitigs; produced by <code>bcalm_to_gxt.py</code></li>
+<li>contigs.indices - a numpy savez file containing mapping arrays; produced by <code>index_contigs_by_kmer.py</code></li>
+<li>contigs.mphf - Minimal Perfect Hash Function parameters for all of the k-mers in the cDBG; produced by <code>index_contigs_by_kmer.py</code></li>
+<li>contigs.sig - sourmash signature for cDBG nodes. Defaults to scaled = 1000.</li>
+<li>contigs.sizes - sizes of all cDBG nodes in pickle format; produced by <code>index_cdbg_by_kmer.py</code></li>
+<li>first_doms.txt - the dominating set information for the cDBG; produced by <code>spacegraphcats/catlas/catlas.py</code></li>
+<li>catlas.csv - the catlas for the cDBG; produced by <code>spacegraphcats/catlas/catlas.py</code></li>
+<li>commands.log - a partial log of all of the commands</li>
+</ul>
+</li>
+<li>the <code>dory_k21_r1_search_oh0/</code> directory contains the output of a search:<ul>
+<li>results.csv - summary results for the queries (containment, similarity, etc.)</li>
+<li>dory-head.fa.cdbg_ids.txt.gz - cDBG node IDs (unitig IDs) matching query</li>
+<li>dory-head.fa.cdbg_ids.reads.gz - if <code>extract_reads</code> is used, reads from the original sequencing file that contain k-mers in the query neighborhood contigs. Reads will be output in the same format as the input data, e.g. in FASTQ if the original data was FASTQ, or FASTA if the original data was FASTA.</li>
+<li>dory-head.fa.contigs.sig - the sourmash signature of the entire match in the cDBG</li>
+<li>dory-head.fa.frontier.txt.gz - catlas node IDs matching query</li>
+<li>dory-head.fa.response.txt - response curve showing how much overhead is gained for each node</li>
+<li>command.txt - a partial log of the commands run</li>
+</ul>
+</li>
+</ul>
+<p>The <code>results.csv</code> file contains the following information:</p>
+<ul>
+<li><code>query</code>:  the file path to the query used by spacegraphcats </li>
+<li><code>containment</code>: the containment of the query in the retrieved neighborhood</li>
+<li><code>similarity</code>: the similarity of the query to the retrieved neighborhood</li>
+<li><code>bp</code>: the number of basepairs in the neighborhood</li>
+<li><code>contigs</code>: the number of unitigs contained in the query from the cDBG</li>
+<li><code>ksize</code>: the k-mer size used to perform the query</li>
+<li><code>num_query_kmers</code>: the number of k-mers in the query </li>
+<li><code>best_containment</code>: tbd</li>
+<li><code>cdbg_min_overhead</code>: tbd</li>
+<li><code>catlas_min_overhead</code>: tbd</li>
+</ul>
+<p>Note that:</p>
+<ul>
+<li>if the query Q is entirely in the indexed metagenome M, then 1/similarity is the relative neighborhood size, because |Q intersect M| is |Q|, and |Q union M| is |M|, so 1/similarity is |M|/|Q|. This does not hold if the query is not entirely within the indexed metagenome.</li>
+<li><code>num_query_kmers</code> is |Q|, not |Q intersect M|</li>
+</ul>
+<h2 id="configuring-and-running-spacegraphcats-itself">Configuring and running spacegraphcats itself</h2>
+<p>There are three important top-level files.</p>
+<ol>
+<li>
+<p>The script <code>python -m spacegraphcats</code> uses <a href="https://snakemake.readthedocs.io/en/stable/">snakemake</a> to run the pipeline.</p>
+</li>
+<li>
+<p>The Snakefile itself is under <code>conf/Snakefile</code>, and is not intended to be particularly human readable :). The snakemake run is configured by a <a href="https://www.cloudbees.com/blog/yaml-tutorial-everything-you-need-get-started/">YAML config file</a>.</p>
+</li>
+<li>
+<p>The configuration files are relatively simple, and are (by convention) contained in the <code>conf/</code> directory, although you can put them elsewhere. The filenames should end in either <code>.yaml</code> or <code>.conf</code>.</p>
+</li>
+</ol>
+<p>To run spacegraphcats on a new data set, you will need to write a new
+config file. An empty template is available as
+<code>spacegraphcats/conf/empty.yaml</code>, and you can display the empty config
+file with <code>python -m spacegraphcats showconf empty</code>.</p>
+<h2 id="config-files-the-dory-example">Config files: the <code>dory</code> example</h2>
+<p>Config files look like this:</p>
+<pre><code>catlas_base: dory
+input_sequences:
+- data/dory-subset.fq
+keep_graph_pendants: true
+paired_reads: false
+ksize: 21
+radius: 1
+search:
+- data/dory-head.fa
+</code></pre>
+<p>Here, the <code>catlas_base</code>, <code>ksize</code>, and <code>radius</code> are used to name output directories - hence <code>dory/</code> and <code>dory_k21_r1/</code>, above. <code>catlas_base</code> is arbitrary, <code>ksize</code> is the k-mer size (we suggest 21 or 31), and <code>radius</code> is the domset radius (we suggest 1).</p>
+<p>The <code>input_sequences</code> contains the set of input files (FASTA or FASTQ, potentially gzipped) to use to build the compact De Bruijn graph. Note, these should be k-mer-error-trimmed, or otherwise you will have very big cDBGs... see <a href="https://github.com/spacegraphcats/2018-paper-spacegraphcats/tree/master/pipeline-base#pipeline-to-generate-files-needed-for-figures-2-and-3">the error trimming information from Brown et al. for an example</a>. Note that the <code>trim-low-abund.py</code> command is in the khmer package, which is a requirement for spacegraphcats, so you will already have it installed.</p>
+<p>The <code>search</code> entry specifies the <em>query files</em> that you are using to search the catlas.</p>
+<p>So, in brief, this config file:</p>
+<ul>
+<li>builds a catlas with k=21 and r=1 from <code>data/dory-subset.fa</code>;</li>
+<li>searches with <code>data/dory-head.fa</code> when you call <code>search</code>.</li>
+</ul>
+<h2 id="a-larger-example-twofoo">A larger example: <code>twofoo</code></h2>
+<p>Here you can see another config file, for a synthetic mixture
+of two genomes (Akkermansia and Shewanella baltica OS 223) from the Shakya et al., 2014, benchmark study:</p>
+<pre><code>catlas_base: twofoo
+input_sequences:
+- twofoo.fq.gz
+ksize: 31
+radius: 1
+search:
+- data/2.fa.gz
+- data/47.fa.gz
+- data/63.fa.gz
+</code></pre>
+<p>To run this, you'll first need to download and prepare the input file, <code>twofoo.fq.gz</code>:</p>
+<pre><code>make twofoo.fq.gz
+</code></pre>
+<p>which will take a few minutes.</p>
+<p>Then, run:</p>
+<pre><code>python -m spacegraphcats run twofoo search
+</code></pre>
+<p>which will generate searches of the twofoo synthetic data set with <code>data/2.fa.gz</code>, <code>data/47.fa.gz</code>, and <code>data/63.fa.gz</code>.</p>
+<p>It should take about 5 minutes on a relatively recent laptop, and will require ~1 GB of RAM.</p>
+<h2 id="interpreting-the-results-of-a-run">Interpreting the results of a run</h2>
+<p>Start up a Jupyter notebook, and run this in a cell:</p>
+<pre><code>%matplotlib inline
+import pandas
+from matplotlib import pyplot
+
+results = pandas.read_csv('twofoo_k31_r1_search_oh0/results.csv')
+
+fig, axes = pyplot.subplots(nrows=1, ncols=2, figsize=(6, 3))
+axes[0].violinplot(results.similarity)
+axes[1].violinplot(results.containment)
+
+axes[0].axis(ymin=0.0)
+axes[0].axis(ymax=1.0)
+
+axes[0].get_xaxis().set_ticks([])
+axes[1].get_xaxis().set_ticks([])
+axes[1].get_yaxis().set_ticks([])
+
+
+axes[0].set_xlabel('similarity')
+axes[1].set_xlabel('containment')
+</code></pre>
+<p>This will plot the distribution of similarity and containment in the results.</p>
+<h2 id="extracting-the-sequences-that-match-search-results">Extracting the sequences that match search results</h2>
+<p>You can get the cDBG unitigs for the searches, and the reads
+corresponding to them, by using the targets <code>extract_reads</code> and
+<code>extract_contigs</code>.</p>
+<pre><code>python -m spacegraphcats run twofoo extract_contigs extract_reads
+</code></pre>
+<p>This will produce the files:</p>
+<pre><code>twofoo_k31_r1_search_oh0/2.fa.gz.cdbg_ids.contigs.fa.gz
+twofoo_k31_r1_search_oh0/47.fa.gz.cdbg_ids.contigs.fa.gz
+twofoo_k31_r1_search_oh0/63.fa.gz.cdbg_ids.contigs.fa.gz
+
+twofoo_k31_r1_search_oh0/2.fa.gz.cdbg_ids.reads.gz
+twofoo_k31_r1_search_oh0/47.fa.gz.cdbg_ids.reads.gz
+twofoo_k31_r1_search_oh0/63.fa.gz.cdbg_ids.reads.gz
+</code></pre>
+<p>which are (respectively) the contigs for the neighborhoods around each
+query, and the reads for the neighborhoods around each query.</p>
+<h2 id="other-information">Other information</h2>
+<h3 id="the-spacegraphcats-script">The <code>spacegraphcats</code> script</h3>
+<p>The <code>spacegraphcats</code> script has several targets, in addition to <code>search</code>.</p>
+<ul>
+<li><code>python -m spacegraphcats run twofoo build</code> will build the catlas</li>
+<li><code>python -m spacegraphcats run twofoo clean</code> should remove the build targets.</li>
+<li><code>python -m spacegraphcats run twofoo extract_contigs</code> -- get contigs for search results; see above.</li>
+<li><code>python -m spacegraphcats run twofoo extract_reads</code> -- get reads for search results; see above.</li>
+</ul>
+<p>You can also specify <code>--radius &lt;n&gt;</code> to override the radius defined in the YAML config file and <code>--experiment foo</code> to append a <code>_foo</code> to the search directory.)</p>
+<p>Last, but not least: snakemake locks the directory to make sure processes don't step on each other. This is important when catlases need to be built (you don't want two different <code>search</code> commands stepping on each other during the catlas building phase) but once you have built catlases you can do searches in parallel.  To enable this add <code>--nolock</code> to the run command. </p>
+<h2 id="characterizing-the-catlas">Characterizing the catlas</h2>
+<p>(The below may not be working. - CTB 7/22/2018.)</p>
+<h3 id="extracting-high-articulated-bits-of-the-cdbg">Extracting high articulated bits of the cDBG</h3>
+<p>First, build the twofoo data set with r5:</p>
+<pre><code>python -m spacegraphcats run twofoo build --radius=5
+</code></pre>
+<p>Then, extract nodes with many cDBG nodes and few k-mers (by ratio):</p>
+<pre><code>python -m spacegraphcats.search.extract_nodes_by_shadow_ratio twofoo_k31_r5 zzz.fq
+</code></pre>
+<p>Now, look at the content of the extracted nodes -- the presence of the Akkermansia genome is essentially nil,
+because there is no strain variation in this part of the graph / the assembly is quite good:</p>
+<pre><code>sourmash search --containment zzz.fq.sig data/2-akker.sig --threshold=0
+</code></pre>
+<p>should yield</p>
+<pre><code>similarity   match
+----------   -----
+  0.2%       CP001071.1 Akkermansia muciniphila ATCC BAA-835, complete...
+</code></pre>
+<p>while the two Shewanella genomes interfere with each other, creating a highly articulated cDBG that leads to poor assembly.  Thus the command above extracts the Shewanella bits of the catlas preferentially; so</p>
+<pre><code>sourmash search --containment zzz.fq.sig data/47-os185.sig --threshold=0
+</code></pre>
+<p>should yield</p>
+<pre><code>similarity   match
+----------   -----
+ 54.1%       NC_009665.1 Shewanella baltica OS185, complete genome
+</code></pre>
+<p>and</p>
+<pre><code>sourmash search --containment zzz.fq.sig data/63-os223.sig --threshold=0
+</code></pre>
+<p>should yield</p>
+<pre><code>similarity   match
+----------   -----
+ 59.1%       NC_011663.1 Shewanella baltica OS223, complete genome
+</code></pre>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2021 <a href="http://ivory.idyll.org/lab/">Lab for Data Intensive Biology</a> at UC Davis and <a href="https://www.cs.utah.edu/~sullivan/#!/">Theory in Practice Lab at University of Utah
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.aecac24b.min.js"></script>
+      
+    
+  </body>
+</html>

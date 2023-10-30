@@ -1,0 +1,818 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="http://spacegraphcats.github.io/spacegraphcats/0a-primer/">
+      
+      
+      
+        <link rel="next" href="../00-installing-spacegraphcats/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.7">
+    
+    
+      
+        <title>Primer on metagenomics and assembly graphs - spacegraphcats documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.4b4a2bd9.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.356b1318.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue_grey" data-md-color-accent="black">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#primer-on-metagenome-analysis-methods-and-spacegraphcats" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="spacegraphcats documentation" class="md-header__button md-logo" aria-label="spacegraphcats documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 12-7-7v4C7 10 4 15 3 20c2.5-3.5 6-5.1 11-5.1V19l7-7Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            spacegraphcats documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Primer on metagenomics and assembly graphs
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/spacegraphcats/spacegraphcats" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spacegraphcats
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="spacegraphcats documentation" class="md-nav__button md-logo" aria-label="spacegraphcats documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 12-7-7v4C7 10 4 15 3 20c2.5-3.5 6-5.1 11-5.1V19l7-7Z"/></svg>
+
+    </a>
+    spacegraphcats documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/spacegraphcats/spacegraphcats" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    spacegraphcats
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Primer on metagenomics and assembly graphs
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Primer on metagenomics and assembly graphs
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#analysis-options-for-metagenome-samples" class="md-nav__link">
+    Analysis options for metagenome samples
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#representing-all-the-k-mers-de-bruijn-graphs-and-compact-de-bruijn-graphs" class="md-nav__link">
+    Representing all the k-mers: de Bruijn graphs and compact de Bruijn graphs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assembly-graphs-in-the-wild" class="md-nav__link">
+    Assembly graphs in the wild
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sequence-context-in-a-cdbg" class="md-nav__link">
+    Sequence context in a cDBG
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#approaches-for-analyzing-assembly-graphs" class="md-nav__link">
+    Approaches for analyzing assembly graphs
+  </a>
+  
+    <nav class="md-nav" aria-label="Approaches for analyzing assembly graphs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#building-an-assembly-graph-and-blasting-against-it-to-identify-regions-of-interest" class="md-nav__link">
+    Building an assembly graph and BLASTing against it to identify regions of interest
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#identifying-antimicrobial-resistance-genes-and-their-assembly-graph-context-with-metacherchant" class="md-nav__link">
+    Identifying antimicrobial resistance genes and their assembly graph context with MetaCherchant
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#querying-an-assembly-graph-with-spacegraphcats" class="md-nav__link">
+    Querying an assembly graph with spacegraphcats
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Using spacegraphcats
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Using spacegraphcats
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00-installing-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installing spacegraphcats
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-running-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Running spacegraphcats
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-spacegraphcats-use-cases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Spacegraphcats use cases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-visualizing-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Visualizing spacegraphcats outputs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-spacegraphcats-parameters/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tuning parameters in spacegraphcats
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-alpha-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Alpha functionality in spacegraphcats
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-snakemake-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integrating spacegraphcats into a snakemake workflow
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../calculating-taxonomic-purity/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Calculating taxonomic purity of spacegraphcats outputs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developing-spacegraphcats/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer's guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#analysis-options-for-metagenome-samples" class="md-nav__link">
+    Analysis options for metagenome samples
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#representing-all-the-k-mers-de-bruijn-graphs-and-compact-de-bruijn-graphs" class="md-nav__link">
+    Representing all the k-mers: de Bruijn graphs and compact de Bruijn graphs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assembly-graphs-in-the-wild" class="md-nav__link">
+    Assembly graphs in the wild
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sequence-context-in-a-cdbg" class="md-nav__link">
+    Sequence context in a cDBG
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#approaches-for-analyzing-assembly-graphs" class="md-nav__link">
+    Approaches for analyzing assembly graphs
+  </a>
+  
+    <nav class="md-nav" aria-label="Approaches for analyzing assembly graphs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#building-an-assembly-graph-and-blasting-against-it-to-identify-regions-of-interest" class="md-nav__link">
+    Building an assembly graph and BLASTing against it to identify regions of interest
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#identifying-antimicrobial-resistance-genes-and-their-assembly-graph-context-with-metacherchant" class="md-nav__link">
+    Identifying antimicrobial resistance genes and their assembly graph context with MetaCherchant
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#querying-an-assembly-graph-with-spacegraphcats" class="md-nav__link">
+    Querying an assembly graph with spacegraphcats
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="primer-on-metagenome-analysis-methods-and-spacegraphcats">Primer on metagenome analysis methods and spacegraphcats</h1>
+<p>A metagenome is DNA sequencing data derived from a collection of genomes in a community.
+Both short and long read sequencing chemistries can be used to sequence a metagenome.
+Currently, short reads generally capture more diversity in a community but are difficult to reconstruct into population-level genomes.
+In contrast, long reads contain longer contiguous sequences but fail to capture diversity of sequences in a community. </p>
+<h2 id="analysis-options-for-metagenome-samples">Analysis options for metagenome samples</h2>
+<p>To get more information out of a metagenomics sample, there are five common approaches.</p>
+<ol>
+<li><strong>De novo assemble and bin the reads into metagenome assembled genomes.</strong>
+<em>de novo</em> assembly and binning are reference-free approaches to produce metagenome-assembled genomes (bins) from metagenome reads.
+<em>de novo</em> assembly works by finding overlaps between reads and assembling them into larger "contiguous sequences" (usually shortened to contigs).
+Depending on the depth, coverage, and biological properties of a sample, these contigs range in size from 500 base pairs to hundreds of thousands of base pairs.
+These assemblies can then be binned into metagenome-assembled genomes. 
+Most binners use tetranucleotide frequency and abundance information to bin contigs.
+A tetranucleotide is a 4 base pair sequence within a genome.
+Almost all tetranucleotides occur in almost all genomes, however the frequency that they occur in a given genome is usually conserved (see <a href="http://peteranoble.com/noble_pubs/noble_1998.pdf">here</a>).
+So, binners exploit this information and calculate tetranucleotide frequency for all contigs in an assembly, and group the contigs together that have similar frequencies.
+This is also coupled with abundance information; if two contigs belong together, they probably have the same abundance because they came from the same organism in a sample.
+These approaches allow researchers to ask questions about the genomes of organisms in metagenomes even if there is no reference that has been sequenced before.
+For this reason, they are both very popular and very powerful.
+However, both assembly and binning suffer from biases that lead to incomplete results.
+Assembly fails when either 1) an area does not have enough reads to cover the region (low coverage) and 2) when the region is too complicated and there are too many viable combinations of sequences so the assembler doesn't know how to make a decision.
+This second scenario can occur when there are a lot of errors in the reads, or when there is a lot of strain variation in a genome. 
+In either case, the assembly breaks and outputs fragmented contigs, or no contigs at all.
+Although tetranucleotide frequency and abundance information are strong signals, tetranucleotide frequency can only be reliably estimated on contigs that are &gt;2000 base pairs.
+Because many things fail to assemble to that length, they are not binned. </li>
+</ol>
+<p><img alt="" src="https://storage.googleapis.com/plos-corpus-prod/10.1371/journal.pone.0169662/1/pone.0169662.g002.PNG_L?X-Goog-Algorithm=GOOG4-RSA-SHA256&amp;X-Goog-Credential=wombat-sa%40plos-prod.iam.gserviceaccount.com%2F20210429%2Fauto%2Fstorage%2Fgoog4_request&amp;X-Goog-Date=20210429T184656Z&amp;X-Goog-Expires=3600&amp;X-Goog-SignedHeaders=host&amp;X-Goog-Signature=54662f5566e0832720b6e77eb35d5a86118de1602101850fc6a509e28acd46f4a75e988bcbf751880b1854a2545f7a0bfc675d85fb86d4f8358c85f3fe5397b88c3b82f31a52b54aed88b9f571edbd7099f08995545987377d358ccd7f0e42063049e73da29707f8808dd0538ed0158260fa71d604de21f3ed2ef00bdf1f6d494d062141d37d5511d52c3e889d37896c58b741d391ca8b883650203fa659357f431925281a19ff6a69730905a21bce1d13bed6dbd10bad540aeb0e600529c5ff1b34952093bebf54c5fb8038eb3663fceaeabe74328803ac2912fd4852ead83104aa49a8f445f14e312170d67ee63b4c32598b5f363cd339e16370ac3c21223b" /> <em>The bottom graph panel shows % read mapping rate for metagenomes from two different envrionments when different de novo assemblers are used. Many reads are not assembled, oftening leaving this fraction of the metagenome unanalyzed. Source <a href="https://doi.org/10.1371/journal.pone.0169662">Vollmers et al. 2017</a>.</em></p>
+<ol>
+<li><strong>Map reads to reference genomes</strong>
+With advances in culturomics and <em>de novo</em> metagenome analysis, reference databases contain hundreds of thousands of microbial genome sequences. 
+By mapping metagenome reads against these databases, you can use reference genomes to ascertain the taxonomic and functional profile of a metagenome sample. 
+However, metagenome reads that do not closely match any known reference go unanalyzed with reference-based approaches. </li>
+</ol>
+<p><img alt="" src="https://media.springernature.com/full/springer-static/image/art%3A10.1186%2Fs12864-019-6289-6/MediaObjects/12864_2019_6289_Fig7_HTML.png?as=webp" /> <em>Figure panel A shows the percent of reads in metagenomes from different environments that are not classifiable by different tools because sequences are not present in the database. Source <a href="https://doi.org/10.1186/s12864-019-6289-6">Tamames et al. 2019</a></em></p>
+<ol>
+<li><strong>Gene-level analysis</strong> Often times, many more contigs will assemble than will bin. 
+In cases like this, it's possible to do a gene-level analysis of a metagenome where you annotate open reading frames (ORFs) on the assembled contigs.
+This type of analysis can give you an idea of the functional potential in our metagenome.</li>
+<li><strong>Read-level analysis</strong>
+There are many tools that work directly on metagenome reads to estimate taxonomy or function (e.g. gene identity).
+These tools include Kraken and mifaser. </li>
+<li><strong>Use assembly graphs ([compact] de Bruijn graphs) to rescue unassembled and unbinned reads that are not in reference databases, and analyze these reads</strong>
+Assembly graphs contain all of the sequences that are contained in the reads. 
+Using assembly graphs, it is possible to access and analyze unassembled and unbinned reads that have not been previously deposited in a reference database.
+Many tools facilitate assembly graph analysis, including the assembly graph builder <a href="https://github.com/GATB/bcalm">BCALM</a> and the assembly graph visualizer <a href="https://rrwick.github.io/Bandage/">Bandage</a>.
+Spacegraphcats introduces a computationally efficient framework for organizing and querying assembly graphs at scale.</li>
+</ol>
+<p>Below we introduce the concept of assembly graphs and their utility in metagenome analysis.</p>
+<h2 id="representing-all-the-k-mers-de-bruijn-graphs-and-compact-de-bruijn-graphs">Representing all the k-mers: de Bruijn graphs and compact de Bruijn graphs</h2>
+<p>In real life, DNA sequences are fully contiguous within a genome (or chromosome).
+When a genome is chopped up into little pieces for sequencing, connectivity information is lost.
+In order to get this connectivity information back to create an assembly, assemblers use different strategies to identify overlapping sequences among reads.</p>
+<p><img alt="" src="https://i.imgur.com/1ZS1WNe.png" /> <em>Figure from Ayling et al. 2020 (https://doi.org/10.1093/bib/bbz020) depicting two strategies commonly used by assemblers.</em></p>
+<p>A de Bruijn graph is one way to represent this information.
+A de Bruijn graph is built by breaking sequencing data down into k-mers and finding all overlaps of size k-1 between all k-mers.
+The figure above below demonstrates this process.
+Each node in the graph represents a k-mer (here of size 3), and each arrow represents an overlap between two k-mer by <em>k</em>-1 nucleotides (here, by 2 nucleotides).
+Each k-mer only occurs in the graph once.</p>
+<p>A compact de Bruijn graph (cDBG) is built from the de Bruijn graph by collapsing all linear paths of k-mers into a single node.
+While all the nodes in this graph happen to be the same length, nodes in a cDBG usually vary in size.
+Every k-mer still only occurs once in the graph, but now nodes grow in size to be greater than <em>k</em>.
+Annecdotally, nodes in a metagenome cDBG range from <em>k</em> to ~2000 nucleotides when <em>k</em> = 31.</p>
+<p><img alt="" src="https://i.imgur.com/a74QkYI.jpg" /> <em>de Bruijn graph collapsed to a compact de Bruijn graph.</em></p>
+<p>Both DBGs and cDBGs contain every k-mer from a sample.</p>
+<h2 id="assembly-graphs-in-the-wild">Assembly graphs in the wild</h2>
+<p>Real metagenome assembly graphs are complex.
+Below is an assembly graph from a mouse gut metagenome by @SilasKieser. 
+Many metagenome graphs are fully connected (e.g. have a single component), and are large and complex.</p>
+<p><img alt="" src="https://i.imgur.com/TEJ3zJZ.png" /> <em>An assembly graph of a mouse gut metagenome. The assembly graph was built by metaspades and visualized with Bandage. Image courtesy of Silas Kieser.</em></p>
+<h2 id="sequence-context-in-a-cdbg">Sequence context in a cDBG</h2>
+<p>Depending on how a graph is built, nodes within a graph may be arranged so that sequences that were contiguous within a genome are co-located.
+The figure below depicts an assembly graph from five metagenomes sequenced from bacterial communities that feed on percholate (see the original blog post <a href="https://tylerbarnum.com/2018/02/26/how-to-use-assembly-graphs-with-metagenomic-datasets/">here</a>).
+In this assembly graph, sequences that were binned together appear in the same color, showing that sequences that orginate from the same genome (or from closely related genomes) are connected within the assembly graph.</p>
+<p><img alt="" src="https://tylerbarnum.files.wordpress.com/2018/01/graph-100-e1515009146413.png?w=1038" /> <em>A combined assembly graph from 5 metagenomes sequenced from percholate-feeding bacterial communities. Each of the 48 bins is one of 12 colors, every color is used 4 times. Unbinned sequences are in gray. Source <a href="https://tylerbarnum.com/2018/02/26/how-to-use-assembly-graphs-with-metagenomic-datasets/">here</a>.</em></p>
+<p>While assembly graphs organize sequences from closely related genomes on a macro scale within the graph, there is also ~gene level organization at a smaller scale.
+In the two figures below, genes that have high sequence similarity in multiple genes overlap in the graph. 
+On either side of the gene sequence itself, different genome sequences branch off.   </p>
+<p><img alt="" src="https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41396-018-0081-5/MediaObjects/41396_2018_81_Fig4_HTML.jpg?as=webp" /> <em>In figure panel A, gene pcrA is collapsed within the assembly graph. Source <a href="https://www.nature.com/articles/s41396-018-0081-5">Barnum et al. 2018</a>.</em></p>
+<p><img alt="" src="https://oup.silverchair-cdn.com/oup/backfile/Content_public/Journal/bioinformatics/34/3/10.1093_bioinformatics_btx681/3/m_btx681f4.png?Expires=1622658116&amp;Signature=1oKGKpWncO8Mz4poy5kkiX-yRfbv-rJ7MuMcfcreRO0c1idQRb24zdvgq5wCwkLkPWoEho11rXUuL2UnHnHDG1Ma5Z2KXKAreaXrdO~nVD~Yq0450RyAliyUSqB09Vu2p86fxFL7HgMU50tAWp722AjgOv2cqNe8sAaog7JasnWBibAj6wL2IrvvCFfucZZkrih8NItDqCrNMlgoCsi24cxH3qXVe1Ds9tD~qX3MUjyRXV0weJ2gtN9NN8TOSuxQR2fCWGbMs0o8oyOEGNTA8r8V-gVvOld34QmSYuOtaw~jdYOvol~uy4fEBNY6dcdm82X8Q~LlysqauQGVxNRmdg__&amp;Key-Pair-Id=APKAIE5G5CRDK6RD3PGA" /> <em>A portion of an assembly graph depicting antibiotic resistance gene cfxA3. The gene is surrounded by multiple species, indicating that this gene likely occurred in each of these genomes. Source <a href="https://academic.oup.com/bioinformatics/article/34/3/434/4575138">Olekhnovih et al. 2018</a></em></p>
+<h2 id="approaches-for-analyzing-assembly-graphs">Approaches for analyzing assembly graphs</h2>
+<p>As outlined above, many reads do not match known references, don't assemble, and/or don't bin. 
+Because these sequences are in the assembly graph, they can still be accessed and analyzed.
+Below we discuss three approaches for analyzing sequences in assembly graphs.</p>
+<h3 id="building-an-assembly-graph-and-blasting-against-it-to-identify-regions-of-interest">Building an assembly graph and BLASTing against it to identify regions of interest</h3>
+<p>Many tools can be used to build an assembly graph (e.g. BCALM, metaspades). 
+Then, the assembly graph can be visualized with the tool Bandage. 
+Bandage allows users to BLAST the assembly graph, revealing the context of sequences within the graph.
+See <a href="https://doi.org/10.1038/s41396-018-0081-5">Barnum et al. 2018</a> for an example of this workflow.
+This approach is great, but time consuming and difficult to automate. </p>
+<h3 id="identifying-antimicrobial-resistance-genes-and-their-assembly-graph-context-with-metacherchant">Identifying antimicrobial resistance genes and their assembly graph context with MetaCherchant</h3>
+<p>Metacherchant automates the identification of antimicrobial resistance genes and their context in metagenomes. 
+See <a href="https://doi.org/10.1093/bioinformatics/btx681">Olekhnovich et al. 2018</a> for a description of this tool.</p>
+<h3 id="querying-an-assembly-graph-with-spacegraphcats">Querying an assembly graph with spacegraphcats</h3>
+<p>Spacegraphcats uses a novel data structure to represent the cDBG with less complexity while maintaining biological relationships between the sequences. 
+It then uses novel algorithms that exploit properties of the cDBG to quickly query into the data structure.</p>
+<p>To visualize this, look the figure below depicting a cDBG of an <em>Escherichia coli</em> genome + errors 
+(this is an isolate, so the errors simulate strain variation in a real metagenome community. 
+It's a rough approximation that works well for visualizing what spacegraphcats does under the hood). 
+On the left is the cDBG, and on the right is the simplified structure produced by spacegraphcats.
+The structure on the right is simplified so its faster to query into.</p>
+<p><img alt="" src="https://dib-lab.github.io/dib_rotation/_static/ecoli_cdbg_sgc.png" /> <em>Escherichia coli compact de Bruign graph and spacegraphcats catlas.</em></p>
+<p>Spacegraphcats queries work by decomposing the query into k-mers, finding the node in which a query k-mer is contained within the spacegraphcats graph, and returning all of the k-mers in that node. 
+This process is efficient enough to work on the whole metagenome for every k-mer in the query.</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2021 <a href="http://ivory.idyll.org/lab/">Lab for Data Intensive Biology</a> at UC Davis and <a href="https://www.cs.utah.edu/~sullivan/#!/">Theory in Practice Lab at University of Utah
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.aecac24b.min.js"></script>
+      
+    
+  </body>
+</html>
