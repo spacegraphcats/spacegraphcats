@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python: [3.8]
+        python: [3.9]
 
     name: Python ${{ matrix.python }}
 
