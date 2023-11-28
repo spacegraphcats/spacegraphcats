@@ -24,7 +24,7 @@ jobs:
 
       # per https://github.com/conda-incubator/setup-miniconda#caching-environments
       - name: Setup Mambaforge
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
