@@ -127,6 +127,9 @@ onsuccess:
                 print(f'search output directory: {search_dir}', file=sys.stderr)
             print('')
 
+# Add write permissions to bcalm.unitigs.db
+if os.path.exists(f'{cdbg_dir}/bcalm.unitigs.db'):
+    shell(f"chmod u+w {cdbg_dir}/bcalm.unitigs.db")
 
 ###############################################################################
 
