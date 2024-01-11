@@ -127,10 +127,6 @@ onsuccess:
                 print(f'search output directory: {search_dir}', file=sys.stderr)
             print('')
 
-# Add write permissions to bcalm.unitigs.db
-if os.path.exists(f'{cdbg_dir}/bcalm.unitigs.db'):
-    shell(f"chmod u+w {cdbg_dir}/bcalm.unitigs.db")
-
 ###############################################################################
 
 # print out the configuration
@@ -221,7 +217,7 @@ rule bcalm_catlas_prepare_input:
         gxt = f"{cdbg_dir}/cdbg.gxt",
         info = f"{cdbg_dir}/contigs.info.csv",
         sig = f"{cdbg_dir}/contigs.sig",
-        db = f"{cdbg_dir}/bcalm.unitigs.db",
+        db = protected(f"{cdbg_dir}/bcalm.unitigs.db"),
     shadow: "shallow"
     params:
         remove_pendants = "-P" if config.get('keep_graph_pendants', 0) else "",
@@ -232,7 +228,6 @@ rule bcalm_catlas_prepare_input:
             {input.db} {input.mapping} \
             {output.gxt} {params.contigs_prefix}
         mv {input.db} {output.db}
-        chmod u-w {output.db}
      """
 
 # output contigs file
