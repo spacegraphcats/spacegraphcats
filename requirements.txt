@@ -6,9 +6,8 @@ pandas
 snakemake == 7.30.1
 click >= 8.1.2,<9
 sortedcontainers
-bbhash >= 0.5
-khmer
-sourmash>=4.6.1,<5
+bbhash >= 0.6.0
+sourmash>=4.9.4,<5
 flake8
 black
 pre-commit

@@ -30,8 +30,8 @@ Sequential graph with 736 nodes
         assert k in actual
 
 
-class Test_LoadCatlas(object):
-    def setup(self):
+class Test_LoadCatlas:
+    def setup_method(self):
         cdbg_prefix = os.path.join(thisdir, "test-data/catlas.dory_k21")
         catlas_prefix = os.path.join(thisdir, "test-data/catlas.dory_k21_r1")
         self.catlas = CAtlas(cdbg_prefix, catlas_prefix)
