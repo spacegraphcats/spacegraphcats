@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 """
+@CTB rename
+
 Sort the bcalm unitigs.fa output (a cDBG) into deterministic order.
 Produces output consumed by `bcalm_to_gxt`.
 
