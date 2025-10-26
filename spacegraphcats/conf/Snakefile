@@ -160,27 +160,27 @@ rule clean:
         rm -fr {cdbg_dir} {catlas_dir} {search_dir}
     """
 
-# build cDBG using bcalm
-rule bcalm_cdbg:
+# build cDBG using cuttlefish
+# @CTB chagne bcalm name? :)
+rule build_cdbg:
     input:
         f"{cdbg_dir}/bcalm.inputlist.txt"
     output:
         temp(f"{cdbg_dir}/bcalm.unitigs.fa"),
     log: f"{cdbg_dir}/bcalm.log.txt",
+    params:
+        out_prefix=f'{cdbg_dir}/bcalm.unitigs'
     threads: 16
     shadow: "shallow"
     shell: """
-        # ok, run bcalm for real; use tee to both save & output stderr,
+        # ok, run cuttlefish; use tee to both save & output stderr,
         # per https://stackoverflow.com/questions/692000/how-do-i-write-stderr-to-a-file-while-using-tee-with-a-pipe
-        bcalm -in {input} -out {cdbg_dir}/bcalm -nb-cores {threads} \
-           -kmer-size {ksize} -abundance-min 1 > >(tee -a {log} >& 2)
-
-        # remove large temp files: .h5, unitig glue files
-        rm -f {cdbg_dir}/bcalm.{{h5,unitigs.fa.glue*}}
+        cuttlefish build -t {threads} -l {input} -k {ksize} -c 1 \
+           -o {params.out_prefix} --read > >(tee -a {log} >& 2)
     """
 
 # create list of input files for bcalm
-rule bcalm_cdbg_inpfiles:
+rule make_cdbg_inpfiles:
     input:
         input_sequences
     output:

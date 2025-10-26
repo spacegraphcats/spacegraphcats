@@ -4,15 +4,16 @@ channels:
     - bioconda
     - defaults
 dependencies:
-    - python>=3.9,<3.10
-    - bcalm=2.2.3
+    - python>=3.12,<3.14
+    - cuttlefish>=2.2.0,<3
     - snakemake-minimal=7.30.2
     - screed>=1.1,<2
     - numpy
-    - pytest=5.3.2
+    - pytest
     - sortedcontainers=2.1.0
     - click>=8.1.2,<9
     - pyflakes
     - bbhash>=0.6.0
-    - sourmash>=4.6.1,<5
-    - mamba>=0.22.1
+    - sourmash>=4.9.4,<5
+    - mamba
+
