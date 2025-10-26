@@ -1,4 +1,5 @@
 "Tests snakemake execution via click CLI module."
+
 import pytest
 import tempfile
 import shutil

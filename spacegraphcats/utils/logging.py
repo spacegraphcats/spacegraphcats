@@ -1,4 +1,5 @@
 """Various output and logging functions."""
+
 import os
 import subprocess as sp
 import sys

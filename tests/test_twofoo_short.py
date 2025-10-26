@@ -1,4 +1,5 @@
 "Test a mildly real subset of twofoo data."
+
 import pytest
 import tempfile
 import shutil

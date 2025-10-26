@@ -1,4 +1,5 @@
 "Utilities for pytest-based tests; see test_* under spacegraphcats package."
+
 import shutil
 import os
 import tempfile
@@ -71,4 +72,5 @@ def in_thisdir(fn):
 
 class Args(object):
     "Empty object to use for stashing argparse-like args."
+
     pass

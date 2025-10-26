@@ -1,4 +1,5 @@
 """Reading and writing functions."""
+
 from .graph_parser import parse, write
 from .graph import Graph, DictGraph
 

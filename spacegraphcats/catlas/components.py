@@ -1,4 +1,5 @@
 """Compute the components of a graph."""
+
 from collections import defaultdict
 from typing import Set, ValuesView, Dict
 
