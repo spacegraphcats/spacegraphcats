@@ -8,12 +8,11 @@ dependencies:
     - bcalm=2.2.3
     - snakemake-minimal=7.30.2
     - screed>=1.1,<2
-    - khmer=3.0.0a3
     - numpy
     - pytest=5.3.2
     - sortedcontainers=2.1.0
     - click>=8.1.2,<9
     - pyflakes
-    - bbhash>=0.5.4
+    - bbhash>=0.6.0
     - sourmash>=4.6.1,<5
     - mamba>=0.22.1

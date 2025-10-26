@@ -14,22 +14,18 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python: [3.9]
-
+        python: [3.12]
     name: Python ${{ matrix.python }}
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # per https://github.com/conda-incubator/setup-miniconda#caching-environments
-      - name: Setup Mambaforge
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
           activate-environment: anaconda-client-env
-          use-mamba: true
           python-version: ${{ matrix.python }}
 
       - name: Get Date
