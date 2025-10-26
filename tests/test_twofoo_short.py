@@ -1,4 +1,5 @@
 "Test a mildly real subset of twofoo data."
+
 import pytest
 import tempfile
 import shutil
@@ -27,7 +28,6 @@ def setup_module(m):
 
 
 def teardown_module(m):
-    global _tempdir
     try:
         shutil.rmtree(_tempdir, ignore_errors=True)
     except OSError:
@@ -37,8 +37,6 @@ def teardown_module(m):
 @pytest.mark.pairing
 @pytest.mark.dependency()
 def test_build_and_search():
-    global _tempdir
-
     conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
     target = "search"
     status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
@@ -58,8 +56,6 @@ def test_build_and_search():
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
 def test_dump_contigs():
-    global _tempdir
-
     conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
     target = "dump_contigs"
     status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
@@ -71,8 +67,6 @@ def test_dump_contigs():
 @pytest.mark.pairing
 @pytest.mark.dependency(depends=["test_build_and_search"])
 def test_label_reads():
-    global _tempdir
-
     conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
     target = "index_reads"
     status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
@@ -85,7 +79,6 @@ def test_label_reads():
 @pytest.mark.dependency(depends=["test_label_reads"])
 def test_index_reads_paired():
     # dig into some of the read pairing stuff in detail
-    global _tempdir
     from spacegraphcats.cdbg import index_reads
 
     test_reads = f"{_tempdir}/twofoo-short/reads.bgz"
@@ -131,7 +124,6 @@ def test_index_reads_paired():
 @pytest.mark.dependency(depends=["test_label_reads"])
 def test_index_reads_nopairing():
     # dig into some of the read pairing stuff in detail; here, turn off pairs
-    global _tempdir
     from spacegraphcats.cdbg import index_reads
 
     test_reads = f"{_tempdir}/twofoo-short/reads.bgz"
@@ -175,8 +167,6 @@ def test_index_reads_nopairing():
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_contigs_vs_unitigs():
-    global _tempdir
-
     bcalm_sig = "twofoo-short_k31/bcalm.unitigs.fa.sig"
     bcalm_out = sourmash.load_one_signature(os.path.join(_tempdir, bcalm_sig))
 
@@ -188,8 +178,6 @@ def test_check_contigs_vs_unitigs():
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
 def test_extract_reads_paired():
-    global _tempdir
-
     conf = utils.relative_file("spacegraphcats/conf/twofoo-short.yaml")
     target = "extract_reads"
     status = run_snakemake(conf, verbose=True, outdir=_tempdir, extra_args=[target])
@@ -233,8 +221,6 @@ def test_extract_reads_paired():
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_results():
-    global _tempdir
-
     results_csv = os.path.join(_tempdir, "twofoo-short_k31_r1_search_oh0/results.csv")
 
     with open(results_csv, "rt") as fp:
@@ -254,8 +240,6 @@ def test_check_results():
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_md5():
-    global _tempdir
-
     gxt = os.path.join(_tempdir, "twofoo-short_k31/cdbg.gxt")
     catlas = os.path.join(_tempdir, "twofoo-short_k31_r1/catlas.csv")
 
@@ -279,8 +263,6 @@ def test_check_md5():
 
 @pytest.mark.dependency(depends=["test_build_and_search"])
 def test_check_catlas_vs_contigs():
-    global _tempdir
-
     cdbg_prefix = os.path.join(_tempdir, "twofoo-short_k31")
     catlas_prefix = os.path.join(_tempdir, "twofoo-short_k31_r1")
     catlas = CAtlas(cdbg_prefix, catlas_prefix)

@@ -1,4 +1,5 @@
 """Graph data structure."""
+
 import itertools
 from collections import defaultdict
 

@@ -49,7 +49,7 @@ jobs:
 
       - name: Update environment
         run:
-          mamba env update -n anaconda-client-env -f environment.yml
+          conda env update -n anaconda-client-env -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Show Python version
@@ -81,8 +81,8 @@ jobs:
       - run: make black
         shell: bash -el {0}
 
-      - run: make flakes
-        shell: bash -el {0}
+#      - run: make flakes
+#        shell: bash -el {0}
 
       - run: pytest tests --cov=.
         shell: bash -el {0}

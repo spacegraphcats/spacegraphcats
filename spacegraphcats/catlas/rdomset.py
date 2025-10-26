@@ -1,4 +1,5 @@
 """Algorithms for r-dominating set computation."""
+
 from collections import defaultdict, deque
 from .graph import Graph, DictGraph
 

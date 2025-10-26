@@ -1,4 +1,5 @@
 "Enable python -m spacegraphcats.click"
+
 import sys
 import os
 import subprocess

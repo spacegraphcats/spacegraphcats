@@ -11,6 +11,7 @@ Note: relies on the fact that for a cDBG constructed at a particular k,
 no k-mer will appear in more than one cDBG node and every k-mer will
 be in at least one cDBG node, i.e. k <-> cdbg_id is bijective.
 """
+
 import sys
 import argparse
 import pickle

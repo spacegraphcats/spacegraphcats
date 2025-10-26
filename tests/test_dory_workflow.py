@@ -1,6 +1,7 @@
 """
 Test many (most?) spacegraphcats scripts against the 'dory' small example data.
 """
+
 import os.path
 import shutil
 import glob
@@ -672,7 +673,7 @@ def test_dory_extract_reads_fq(location):
 
 @pytest_utils.in_tempdir
 def test_dory_evaluate_overhead(location):
-    pytest.importorskip('khmer')
+    pytest.importorskip("khmer")
     from spacegraphcats.search import evaluate_overhead
 
     copy_dory_catlas()

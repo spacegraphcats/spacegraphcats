@@ -1,6 +1,7 @@
 """
 Hashing code for k-mers -> hash values.
 """
+
 import os
 import pickle
 
