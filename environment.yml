@@ -12,6 +12,6 @@ dependencies:
     - sortedcontainers=2.1.0
     - click>=8.1.2,<9
     - pyflakes
-    - bbhash>=0.5.4
+    - bbhash>=0.6.0
     - sourmash>=4.6.1,<5
     - mamba>=0.22.1

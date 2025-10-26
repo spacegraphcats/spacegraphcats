@@ -49,7 +49,7 @@ setup(
         "snakemake==7.30.1",
         "sortedcontainers",
         "sourmash>=4.9.4,<5",
-        "bbhash >= 0.5.4",
+        "bbhash >= 0.6.0",
         "click >= 8.1.2,<9",
     ],
     long_description=long_description,
