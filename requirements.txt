@@ -1,9 +1,9 @@
 screed>=1.1,<2
-pytest >= 5.1.2
+pytest
 pytest-dependency
 numpy
 pandas
-snakemake == 7.30.2
+snakemake
 click >= 8.1.2,<9
 sortedcontainers
 bbhash >= 0.6.0
