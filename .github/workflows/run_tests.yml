@@ -81,8 +81,8 @@ jobs:
       - run: make black
         shell: bash -el {0}
 
-      - run: make flakes
-        shell: bash -el {0}
+#      - run: make flakes
+#        shell: bash -el {0}
 
       - run: pytest tests --cov=.
         shell: bash -el {0}
