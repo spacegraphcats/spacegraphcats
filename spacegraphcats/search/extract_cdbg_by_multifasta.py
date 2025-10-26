@@ -67,13 +67,17 @@ def main(argv):
 
             # write out cdbg id list
             cdbg_file = f"record{filenum}-nbhd.cdbg_ids.txt.gz"
-            cdbg_file = os.path.join(os.path.dirname(args.output_cdbg_record), cdbg_file)
+            cdbg_file = os.path.join(
+                os.path.dirname(args.output_cdbg_record), cdbg_file
+            )
             with gzip.open(cdbg_file, "wt") as outfp:
                 outfp.write("\n".join([str(i) for i in cdbg_ids]))
 
             # generate *name* of reads.fa.gz file to make
             reads_file = f"record{filenum}-nbhd.reads.fa.gz"
-            reads_file = os.path.join(os.path.dirname(args.output_cdbg_record), reads_file)
+            reads_file = os.path.join(
+                os.path.dirname(args.output_cdbg_record), reads_file
+            )
 
             # generate info: total k-mers, mean_abund / weighted
             total_kmers = 0
@@ -116,7 +120,7 @@ def main(argv):
                 "cdbg_id",
             ]
         )
-    
+
         filenum = 0
         for (filename, record_name), cdbg_ids in records_to_cdbg.items():
             if not cdbg_ids:
@@ -126,7 +130,7 @@ def main(argv):
             for cdbg_id in cdbg_ids:
                 cdbg_id = str(cdbg_id)
                 w.writerow(
-                     [
+                    [
                         filename,
                         record_name,
                         record_number,

@@ -200,7 +200,6 @@ if sys.platform == "win32":
         # Remove trailing \n to match the Unix function,
         return stdout.rstrip("\n")
 
-
 elif sys.version_info[0] >= 3:
     # Use subprocess.getoutput on Python 3,
     from subprocess import getoutput

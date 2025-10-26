@@ -295,7 +295,7 @@ def domination_graph(graph: Graph, domset: Set[int], radius: int):
 
     # Sanity-check
     for v, value in assigned_dominator.items():
-        assert value >= 0, 'not assigned: v={}'.format(v)
+        assert value >= 0, "not assigned: v={}".format(v)
 
     # Compute domgraph edges
     print("computing domgraph edges")

@@ -5,13 +5,13 @@ channels:
     - defaults
 dependencies:
     - bcalm=2.2.3
-    - snakemake-minimal=7.3.8
-    - screed>=1.0.5,<2
+    - snakemake-minimal=7.30.1
+    - screed>=1.1,<2
     - numpy
     - pytest=5.3.2
     - sortedcontainers=2.1.0
     - click>=8.1.2,<9
     - pyflakes
     - bbhash>=0.5.4
-    - sourmash>=4.5.0,<5
+    - sourmash>=4.6.1,<5
     - mamba>=0.22.1

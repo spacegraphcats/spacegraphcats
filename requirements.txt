@@ -1,13 +1,13 @@
-screed
+screed>=1.1,<2
 pytest >= 5.1.2
 pytest-dependency
 numpy
 pandas
-snakemake == 7.3.8
+snakemake == 7.30.1
 click >= 8.1.2,<9
 sortedcontainers
 bbhash >= 0.5
-sourmash>=4.5.0,<5
+sourmash>=4.9.4,<5
 flake8
 black
 pre-commit

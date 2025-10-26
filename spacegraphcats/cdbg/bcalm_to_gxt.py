@@ -276,7 +276,10 @@ def main(argv):
 
     c2 = db.cursor()
     cursor.execute("SELECT sequence, offset FROM sequences ORDER BY min_hashval")
-    for new_key, (sequence, offset,) in enumerate(cursor):
+    for new_key, (
+        sequence,
+        offset,
+    ) in enumerate(cursor):
         c2.execute("UPDATE sequences SET id=? WHERE offset=?", (new_key, offset))
         out_mh.add_sequence(sequence)
         assert c2.rowcount == 1

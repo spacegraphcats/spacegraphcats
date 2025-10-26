@@ -5,7 +5,7 @@ import shutil
 import os
 
 from spacegraphcats.__main__ import run_snakemake
-from spacegraphcats.snakemake import (catlas_search, catlas_build, catlas_extract_reads)
+from spacegraphcats.snakemake import catlas_search, catlas_build, catlas_extract_reads
 from . import pytest_utils as utils
 
 # NOTE re dependencies (@pytest.mark.dependency):

@@ -65,8 +65,7 @@ def main(argv):
 
     ksize = kmer_idx.ksize
     notify(f"Using ksize {ksize} from k-mer index.")
-    notify("loaded {} k-mers in index ({:.1f}s)",
-           len(kmer_idx), time.time() - ki_start)
+    notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
 
     # calculate the k-mer sizes for each catlas node.
     catlas.decorate_with_index_sizes(kmer_idx)
@@ -109,15 +108,22 @@ def main(argv):
         screed_fp.close()
 
     if not records_to_cdbg:
-        print("WARNING: nothing in query matched to cDBG. Saving empty dictionaries.", file=sys.stderr)
+        print(
+            "WARNING: nothing in query matched to cDBG. Saving empty dictionaries.",
+            file=sys.stderr,
+        )
 
     with open(outfile, "wb") as fp:
         print(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
-        print(f"saved {n_records_found} query names with cDBG node mappings (of {len(records_to_cdbg)} queries total)")
+        print(
+            f"saved {n_records_found} query names with cDBG node mappings (of {len(records_to_cdbg)} queries total)"
+        )
         n_cdbg_match = len(cdbg_to_records)
         n_cdbg_total = len(catlas.cdbg_to_layer1)
-        print(f"saved {n_cdbg_match} cDBG IDs (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) with at least one query match")
+        print(
+            f"saved {n_cdbg_match} cDBG IDs (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) with at least one query match"
+        )
 
     return 0
 

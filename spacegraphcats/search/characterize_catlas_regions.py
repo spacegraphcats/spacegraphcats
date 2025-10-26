@@ -57,8 +57,8 @@ def compute_matrix(group_info, group_ident, ksize, output):
 
     # now, build a matrix of GROUP_N rows x 4**ksize columns, where each
     # row will be the set of k-mer abundances associated with each group.
-    print("creating", len(group_info), 4 ** ksize)
-    V = numpy.zeros((len(group_info), 4 ** ksize), dtype=numpy.uint16)
+    print("creating", len(group_info), 4**ksize)
+    V = numpy.zeros((len(group_info), 4**ksize), dtype=numpy.uint16)
     node_id_to_group_idx = {}
     for i, n in enumerate(group_info):
         if i % 1000 == 0:
@@ -101,7 +101,12 @@ def main(args=sys.argv[1:]):
     print("ksize: {}".format(args.ksize))
     print("min_abund: {}".format(args.min_abund))
 
-    catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix, load_sizefile=True, min_abund=args.min_abund)
+    catlas = CAtlas(
+        args.cdbg_prefix,
+        args.catlas_prefix,
+        load_sizefile=True,
+        min_abund=args.min_abund,
+    )
     catlas.decorate_with_shadow_sizes()
 
     # everything is loaded!

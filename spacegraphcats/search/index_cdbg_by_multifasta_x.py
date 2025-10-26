@@ -47,11 +47,11 @@ def main(argv):
     p.add_argument("--query", help="query sequences", nargs="+")
 
     p.add_argument(
-        "-k", "--ksize", default=10, type=int,
-        help="protein k-mer size (default: 10)"
+        "-k", "--ksize", default=10, type=int, help="protein k-mer size (default: 10)"
     )
-    p.add_argument('--query-is-dna', help='translate query to protein as well',
-                   action='store_true')
+    p.add_argument(
+        "--query-is-dna", help="translate query to protein as well", action="store_true"
+    )
     p.add_argument("-v", "--verbose", action="store_true")
 
     args = p.parse_args(argv)
@@ -69,8 +69,7 @@ def main(argv):
 
     # get a single ksize for query
     prot_ksize = int(args.ksize)
-    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize,
-                               is_protein=True)
+    prot_mh = sourmash.MinHash(n=0, scaled=100, ksize=prot_ksize, is_protein=True)
     print(f"Using protein k-mer size {prot_ksize}")
 
     # translate query, or not?
@@ -86,7 +85,7 @@ def main(argv):
     notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
     notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
 
-    unitigs_db = os.path.join(args.cdbg_prefix, 'bcalm.unitigs.db')
+    unitigs_db = os.path.join(args.cdbg_prefix, "bcalm.unitigs.db")
 
     ### done loading! now let's do the thing.
 
@@ -94,7 +93,7 @@ def main(argv):
     record_hashes = defaultdict(set)
     query_idx_to_name = {}
     hashval_to_queries = defaultdict(set)
-    
+
     # read all the queries into memory.
     this_query_idx = 0
     all_kmers = set()
@@ -103,15 +102,16 @@ def main(argv):
 
         screed_fp = screed.open(filename)
         for record in screed_fp:
-            these_hashes = prot_mh.seq_to_hashes(record.sequence,
-                                                 is_protein=add_as_protein)
+            these_hashes = prot_mh.seq_to_hashes(
+                record.sequence, is_protein=add_as_protein
+            )
 
             query_idx_to_name[this_query_idx] = (filename, record.name)
             for hashval in these_hashes:
                 hashval_to_queries[hashval].add(this_query_idx)
 
             all_kmers.update(these_hashes)
-            
+
             this_query_idx += 1
 
         screed_fp.close()
@@ -145,9 +145,9 @@ def main(argv):
 
         screed_fp.close()
 
-    print('...done!')
+    print("...done!")
 
-    print('Expanding neighborhoods:')
+    print("Expanding neighborhoods:")
 
     # ok, last iteration? expand neighborhoods.
     records_to_cdbg = {}
@@ -168,15 +168,22 @@ def main(argv):
             cdbg_to_records[cdbg_node].add((filename, record.name))
 
     if not records_to_cdbg:
-        print("WARNING: nothing in query matched to cDBG. Saving empty dictionaries.", file=sys.stderr)
+        print(
+            "WARNING: nothing in query matched to cDBG. Saving empty dictionaries.",
+            file=sys.stderr,
+        )
 
     with open(outfile, "wb") as fp:
         print(f"saving pickled index to '{outfile}'")
         pickle.dump((args.catlas_prefix, records_to_cdbg, cdbg_to_records), fp)
-        print(f"saved {len(records_to_cdbg)} query names with cDBG node mappings (of {this_query_idx + 1} queries total)")
+        print(
+            f"saved {len(records_to_cdbg)} query names with cDBG node mappings (of {this_query_idx + 1} queries total)"
+        )
         n_cdbg_match = len(cdbg_to_records)
         n_cdbg_total = len(catlas.cdbg_to_layer1)
-        print(f"saved {n_cdbg_match} cDBG IDs (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) with at least one query match")
+        print(
+            f"saved {n_cdbg_match} cDBG IDs (of {n_cdbg_total} total; {n_cdbg_match / n_cdbg_total * 100:.1f}%) with at least one query match"
+        )
 
     return 0
 

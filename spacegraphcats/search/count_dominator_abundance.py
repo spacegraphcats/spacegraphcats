@@ -23,24 +23,27 @@ import screed
 
 def main(args=sys.argv[1:]):
     p = argparse.ArgumentParser(description=main.__doc__)
-    p.add_argument('cdbg_prefix', help='cdbg prefix')
-    p.add_argument('catlas_prefix', help='catlas prefix')
-    p.add_argument('samples', nargs='+')
-    p.add_argument('--outdir', default=None,
-                   help='output directory; by default, {catlas_prefix}_abund')
-    p.add_argument('--prefix', default="",
-                   help="A prefix to use for all output file names.")
+    p.add_argument("cdbg_prefix", help="cdbg prefix")
+    p.add_argument("catlas_prefix", help="catlas prefix")
+    p.add_argument("samples", nargs="+")
+    p.add_argument(
+        "--outdir",
+        default=None,
+        help="output directory; by default, {catlas_prefix}_abund",
+    )
+    p.add_argument(
+        "--prefix", default="", help="A prefix to use for all output file names."
+    )
     args = p.parse_args(args)
 
     # load catlas DAG
     catlas = CAtlas(args.cdbg_prefix, args.catlas_prefix, load_sizefile=True)
-    notify('loaded {} nodes from catlas {}', len(catlas), args.catlas_prefix)
-    notify('loaded {} layer 1 catlas nodes', len(catlas.layer1_to_cdbg))
+    notify("loaded {} nodes from catlas {}", len(catlas), args.catlas_prefix)
+    notify("loaded {} layer 1 catlas nodes", len(catlas.layer1_to_cdbg))
 
     ki_start = time.time()
     kmer_idx = MPHF_KmerIndex.from_directory(args.cdbg_prefix)
-    notify('loaded {} k-mers in index ({:.1f}s)',
-           len(kmer_idx), time.time() - ki_start)
+    notify("loaded {} k-mers in index ({:.1f}s)", len(kmer_idx), time.time() - ki_start)
 
     catlas_root_children = set(catlas.children[catlas.root])
     max_level = max(catlas.levels.values())
@@ -52,7 +55,7 @@ def main(args=sys.argv[1:]):
     # set and/or create output dir
     outdir = args.outdir
     if not outdir:
-        catlas_name = args.catlas_prefix.rstrip('/')
+        catlas_name = args.catlas_prefix.rstrip("/")
         catlas_name = os.path.basename(catlas_name)
         assert catlas_name
         outdir = f"{catlas_name}_abund"
@@ -71,7 +74,7 @@ def main(args=sys.argv[1:]):
         # here, cdbg_counts is the summed k-mer abundance from the counts
         # of k-mers in the sample, for each cdbg_id.
 
-        notify(f'reading sequences from {sample}')
+        notify(f"reading sequences from {sample}")
         cdbg_counts = defaultdict(int)
         total_hashes = 0
         for record in screed.open(sample):
@@ -81,8 +84,8 @@ def main(args=sys.argv[1:]):
                 cdbg_id = kmer_idx.get_cdbg_id(hashval)
                 cdbg_counts[cdbg_id] += 1
 
-        notify(f'done! read {total_hashes} total k-mers/abundances.')
-        notify('--')
+        notify(f"done! read {total_hashes} total k-mers/abundances.")
+        notify("--")
 
         # aggregate to layer1 domset across all cDBG nodes
         dom_counts = defaultdict(int)
@@ -96,12 +99,12 @@ def main(args=sys.argv[1:]):
         outfile = f"{args.prefix}{sample_name}.cdbg_abund.csv"
         outfile = os.path.join(outdir, outfile)
 
-        notify(f'outputting cDBG abundances to {outfile}')
+        notify(f"outputting cDBG abundances to {outfile}")
         total_cdbg_counts = 0
-        with open(outfile, 'wt') as fp:
+        with open(outfile, "wt") as fp:
             w = csv.writer(fp)
-            w.writerow(['cdbg_id', 'abund', 'node_size'])
-            for cdbg_id in sorted(catlas.cdbg_sizes):   # get all cDBG IDs
+            w.writerow(["cdbg_id", "abund", "node_size"])
+            for cdbg_id in sorted(catlas.cdbg_sizes):  # get all cDBG IDs
                 count = cdbg_counts[cdbg_id]
                 size = catlas.cdbg_sizes[cdbg_id]
                 w.writerow([cdbg_id, count, size])
@@ -114,10 +117,10 @@ def main(args=sys.argv[1:]):
         outfile = f"{args.prefix}{sample_name}.dom_abund.csv"
         outfile = os.path.join(outdir, outfile)
 
-        notify(f'outputting dom node abundances for all levels to {outfile}')
-        with open(outfile, 'wt') as fp:
+        notify(f"outputting dom node abundances for all levels to {outfile}")
+        with open(outfile, "wt") as fp:
             w = csv.writer(fp)
-            w.writerow(['dom_id', 'level', 'abund', 'size'])
+            w.writerow(["dom_id", "level", "abund", "size"])
 
             for node_id in sorted(catlas):
                 leaves = catlas.leaves([node_id])
@@ -164,17 +167,17 @@ def main(args=sys.argv[1:]):
         assert len(level_sizes_values) == 1
         level_size = list(level_sizes_values)[0]
 
-        print(f'- each catlas level has {level_count} sum counts')
-        print('- total_cdbg_counts:', total_cdbg_counts)
-        print('- dom_counts:', sum(dom_counts.values()))
+        print(f"- each catlas level has {level_count} sum counts")
+        print("- total_cdbg_counts:", total_cdbg_counts)
+        print("- dom_counts:", sum(dom_counts.values()))
 
         assert total_cdbg_counts == sum(dom_counts.values())
 
-        print(f'- each catlas level has {level_size} k-mers underneath')
-        print('- total_cdbg_sizes:', sum(catlas.cdbg_sizes.values()))
+        print(f"- each catlas level has {level_size} k-mers underneath")
+        print("- total_cdbg_sizes:", sum(catlas.cdbg_sizes.values()))
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

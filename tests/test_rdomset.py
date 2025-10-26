@@ -82,7 +82,18 @@ class ParserRDomset(unittest.TestCase):
         r = 3
         g = Graph(num_nodes=10, radius=r)
 
-        edges = [(0, 6), (6, 7), (6, 5), (6, 8), (5, 8), (8, 9), (8, 2), (2, 1), (2, 3), (3, 4)]
+        edges = [
+            (0, 6),
+            (6, 7),
+            (6, 5),
+            (6, 8),
+            (5, 8),
+            (8, 9),
+            (8, 2),
+            (2, 1),
+            (2, 3),
+            (3, 4),
+        ]
 
         for x, y in edges:
             g.add_arc(x, y)
@@ -97,14 +108,14 @@ class ParserRDomset(unittest.TestCase):
         domgraph, dominated = domination_graph(g, [0, 4], r)
         self.assertEqual(
             dominated,
-            SortedDict({0: SortedSet([0, 5, 6, 7, 8, 9]), 4: SortedSet([1, 2, 3, 4])})
+            SortedDict({0: SortedSet([0, 5, 6, 7, 8, 9]), 4: SortedSet([1, 2, 3, 4])}),
         )
         self.assertEqual(set(domgraph.arcs(1)), set([(0, 4), (4, 0)]))
 
         domgraph, dominated = domination_graph(g, [3, 6], r)
         self.assertEqual(
             dominated,
-            SortedDict({3: SortedSet([1, 2, 3, 4]), 6: SortedSet([0, 5, 6, 7, 8, 9])})
+            SortedDict({3: SortedSet([1, 2, 3, 4]), 6: SortedSet([0, 5, 6, 7, 8, 9])}),
         )
         self.assertEqual(set(domgraph.arcs(1)), set([(3, 6), (6, 3)]))
 
@@ -114,9 +125,17 @@ class ParserRDomset(unittest.TestCase):
         domgraph, dominated = domination_graph(g, [2, 5, 6], r)
         self.assertEqual(
             dominated,
-            SortedDict({2: SortedSet([1, 2, 3, 4, 8, 9]), 5: SortedSet([5]), 6: SortedSet([0, 6, 7])})
+            SortedDict(
+                {
+                    2: SortedSet([1, 2, 3, 4, 8, 9]),
+                    5: SortedSet([5]),
+                    6: SortedSet([0, 6, 7]),
+                }
+            ),
         )
-        self.assertEqual(set(domgraph.arcs(1)), set([(2, 5), (2, 6), (5, 2), (5, 6), (6, 2), (6, 5)]))
+        self.assertEqual(
+            set(domgraph.arcs(1)), set([(2, 5), (2, 6), (5, 2), (5, 6), (6, 2), (6, 5)])
+        )
 
         # error cases (should raise an error when the given vertex set is not an r-dominating set)
         self.assertRaises(AssertionError, domination_graph, g, [], r)
