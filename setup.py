@@ -46,7 +46,7 @@ setup(
         "screed >= 1.1,<2",
         "pytest",
         "numpy",
-        "snakemake==7.30.2",
+        "snakemake==9.13.5",
         "sortedcontainers",
         "sourmash>=4.9.4,<5",
         "bbhash >= 0.6.0",
