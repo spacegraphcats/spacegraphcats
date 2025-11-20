@@ -285,7 +285,7 @@ rule build_catlas:
     """
 
 # index contigs, count node sizes
-rule make_contigs_kmer_index:
+rule index_cdbg:
     input:
         db = f"{cdbg_dir}/bcalm.unitigs.db",
     output:
